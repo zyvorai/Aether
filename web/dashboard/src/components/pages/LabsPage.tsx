@@ -32,7 +32,7 @@ function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fabric'), { workload: workload.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="labs-context-fabric-link"
           >
             Fabric →
@@ -40,7 +40,7 @@ function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workload.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="labs-context-compose-link"
           >
             Compose →
@@ -48,7 +48,7 @@ function LabsPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('helm'), { workload: workload.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="labs-context-helm-link"
           >
             Helm →

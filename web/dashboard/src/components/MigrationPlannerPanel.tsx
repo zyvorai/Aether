@@ -133,7 +133,7 @@ export default function MigrationPlannerPanel() {
       label="AI Migration Planner"
       title="Move workload with risk analysis"
       subtitle="Select a workload and target runtime. Aether recommends strategy, predicted downtime, and migration risk."
-      icon={<Rocket className="h-5 w-5 text-brand" />}
+      icon={<Rocket className="h-5 w-5 text-primary" />}
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-4">
@@ -175,8 +175,8 @@ export default function MigrationPlannerPanel() {
                   onClick={() => workload && void loadPlan(workload, rt)}
                   className={`rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
                     target === rt
-                      ? 'border-brand/50 bg-brand/10 text-brand'
-                      : 'glass-divider glass text-muted hover:border-brand/30'
+                      ? 'border-primary/50 bg-primary/10 text-primary'
+                      : 'glass-divider glass text-muted hover:border-primary/30'
                   } disabled:opacity-40`}
                   data-testid={`migration-target-${rt}`}
                 >
@@ -222,7 +222,7 @@ export default function MigrationPlannerPanel() {
 
             <div className="glass p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Shield className="h-4 w-4 text-brand" />
+                <Shield className="h-4 w-4 text-primary" />
                 Risk analysis
               </div>
               <div className="space-y-2">

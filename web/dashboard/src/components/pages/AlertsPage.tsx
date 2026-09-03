@@ -190,7 +190,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="alerts-context-policy-link"
             >
               Policy →
@@ -198,7 +198,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="alerts-openapi-link"
             >
               OpenAPI →
@@ -206,7 +206,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain alerts for ${workloadFocus}` })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="alerts-context-copilot-link"
             >
               Copilot →
@@ -214,7 +214,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="alerts-context-secrets-link"
             >
               Secrets →
@@ -222,7 +222,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="alerts-context-rbac-link"
             >
               RBAC →
@@ -245,7 +245,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
               ? pathWithQuery(viewToPath('events'), { workload: workloadFocus })
               : viewToPath('events')
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="alerts-events-link"
         >
           View events feed →
@@ -253,7 +253,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
         {' · '}
         <Link
           to={workloadFocus ? pathWithQuery(viewToPath('policy'), { workload: workloadFocus }) : viewToPath('policy')}
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="alerts-policy-link"
         >
           Policy check →
@@ -263,7 +263,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-              className="text-xs text-brand hover:underline"
+              className="text-xs text-primary hover:underline"
               data-testid="alerts-trust-link"
             >
               Trust & attestation →
@@ -277,7 +277,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <Radio className="text-brand" size={20} />
+              <Radio className="text-primary" size={20} />
               <h2 className="text-lg font-semibold text-foreground">Notification channels</h2>
             </div>
             <button
@@ -292,7 +292,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {channels.length === 0 && !showAddChannel && (
             <p className="text-sm text-subtle mb-4">
               No channels configured.{' '}
-              <Link to={viewToPath('platform')} className="text-brand hover:underline">
+              <Link to={viewToPath('platform')} className="text-primary hover:underline">
                 Configure audit webhooks on Platform →
               </Link>
             </p>
@@ -386,7 +386,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
               <BellRing className="text-amber-400" size={20} />
               <h2 className="text-lg font-semibold text-foreground">Alert rules</h2>
             </div>
-            <Link to={viewToPath('events')} className="text-xs text-brand hover:underline" data-testid="alerts-rules-events-link">
+            <Link to={viewToPath('events')} className="text-xs text-primary hover:underline" data-testid="alerts-rules-events-link">
               Events feed →
             </Link>
           </div>
@@ -409,7 +409,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       {rule.workload ? (
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: rule.workload, tab: 'trust' })}
-                          className="text-xs font-mono text-brand hover:underline"
+                          className="text-xs font-mono text-primary hover:underline"
                           data-testid={`alerts-rule-workload-${rule.workload}`}
                         >
                           {rule.workload}

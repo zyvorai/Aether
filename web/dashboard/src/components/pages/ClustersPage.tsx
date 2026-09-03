@@ -795,7 +795,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('health'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-context-health-link"
           >
             Health →
@@ -803,7 +803,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-platform-link"
           >
             Platform →
@@ -811,7 +811,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-openapi-link"
           >
             OpenAPI →
@@ -819,7 +819,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-policy-link"
           >
             Policy →
@@ -827,7 +827,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-context-rbac-link"
           >
             RBAC →
@@ -835,7 +835,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-context-fleet-link"
           >
             Fleet →
@@ -843,7 +843,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Cluster context for ${workloadFocus}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-context-copilot-link"
           >
             Copilot →
@@ -851,7 +851,7 @@ function ClustersPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="clusters-context-intelligence-link"
           >
             Intelligence →
@@ -1051,7 +1051,7 @@ function ClustersPage() {
                 setResourceView('cards');
                 try { localStorage.setItem('aether_clusters_view', 'cards'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
             >
               <LayoutGrid size={14} />
               Cards
@@ -1062,7 +1062,7 @@ function ClustersPage() {
                 setResourceView('table');
                 try { localStorage.setItem('aether_clusters_view', 'table'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
             >
               <List size={14} />
               Table
@@ -1104,7 +1104,7 @@ function ClustersPage() {
                       {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) ? (
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-brand transition hover:bg-brand/10"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/10"
                         >
                           Workloads
                         </Link>
@@ -1135,13 +1135,13 @@ function ClustersPage() {
                       <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-brand transition-colors">
+                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-primary transition-colors">
                               {resource.name}
                             </button>
                             {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
                               <Link
                                 to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
-                                className="text-xs text-brand hover:underline"
+                                className="text-xs text-primary hover:underline"
                                 title="Open in workloads"
                               >
                                 →

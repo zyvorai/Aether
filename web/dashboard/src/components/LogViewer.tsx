@@ -266,7 +266,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
           <button
             type="button"
             onClick={jumpToBottom}
-            className="absolute bottom-3 right-3 rounded-full glass-inset-surface px-3 py-1.5 text-xs text-foreground shadow-lg hover:text-brand"
+            className="absolute bottom-3 right-3 rounded-full glass-inset-surface px-3 py-1.5 text-xs text-foreground shadow-lg hover:text-primary"
             data-testid="log-jump-bottom"
           >
             ↓ Jump to latest

@@ -107,7 +107,7 @@ export default function MacOSPlatformPanel() {
           <button
             type="button"
             onClick={() => void refreshOfflineCache()}
-            className="mt-2 text-xs text-brand hover:underline"
+            className="mt-2 text-xs text-primary hover:underline"
           >
             Refresh cache
           </button>

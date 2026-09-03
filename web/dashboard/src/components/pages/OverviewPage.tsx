@@ -402,7 +402,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
             <button
               type="button"
               onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               Retry
@@ -694,7 +694,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-platform-link"
           >
             Platform →
@@ -702,7 +702,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-clusters-link"
           >
             Clusters →
@@ -710,7 +710,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-rbac-link"
           >
             RBAC →
@@ -718,7 +718,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Summarize ${focusedWorkload}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-copilot-link"
           >
             Copilot →
@@ -726,7 +726,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-openapi-link"
           >
             OpenAPI →
@@ -734,7 +734,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-intelligence-link"
           >
             Intelligence →
@@ -742,7 +742,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-policy-link"
           >
             Policy →
@@ -750,7 +750,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-secrets-link"
           >
             Secrets →
@@ -758,7 +758,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-editor-link"
           >
             Editor →
@@ -766,7 +766,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-deps-link"
           >
             Dependencies →
@@ -774,7 +774,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-compose-link"
           >
             Compose →
@@ -782,7 +782,7 @@ function LegacyOverviewDetails({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="overview-fleet-link"
           >
             Fleet →
@@ -801,7 +801,7 @@ function LegacyOverviewDetails({
           <button
             type="button"
             onClick={() => onNavigate('platform')}
-            className="mt-3 text-sm font-medium text-brand hover:text-blue-300 transition-colors"
+            className="mt-3 text-sm font-medium text-primary hover:text-blue-300 transition-colors"
           >
             Open Platform &amp; HA →
           </button>
@@ -909,7 +909,7 @@ function LegacyOverviewDetails({
               title="Cluster data unavailable"
               description="Could not load cluster summary from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-primary hover:underline">
                   Retry
                 </button>
               }
@@ -963,7 +963,7 @@ function LegacyOverviewDetails({
             <button
               type="button"
               onClick={() => goFiltered('events')}
-              className="text-sm text-brand hover:text-aether-light transition-colors"
+              className="text-sm text-primary hover:text-aether-light transition-colors"
             >
               View all
             </button>
@@ -974,7 +974,7 @@ function LegacyOverviewDetails({
               title="Events unavailable"
               description="Could not load events from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-primary hover:underline">
                   Retry
                 </button>
               }
@@ -998,7 +998,7 @@ function LegacyOverviewDetails({
                       {ev.workload ? (
                         <button
                           type="button"
-                          className="text-brand hover:underline"
+                          className="text-primary hover:underline"
                           onClick={() => goFiltered('events', { workload: ev.workload! })}
                         >
                           {ev.workload}
@@ -1018,7 +1018,7 @@ function LegacyOverviewDetails({
             <button
               type="button"
               onClick={() => onNavigate('health')}
-              className="text-sm text-brand hover:text-aether-light transition-colors"
+              className="text-sm text-primary hover:text-aether-light transition-colors"
             >
               View all
             </button>
@@ -1029,7 +1029,7 @@ function LegacyOverviewDetails({
               title="Health data unavailable"
               description="Could not load health summary from the API."
               action={
-                <button type="button" onClick={() => void load()} className="text-sm text-brand hover:underline">
+                <button type="button" onClick={() => void load()} className="text-sm text-primary hover:underline">
                   Retry
                 </button>
               }

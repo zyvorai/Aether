@@ -85,7 +85,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('cost'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-context-cost-link"
           >
             Cost →
@@ -93,7 +93,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('affinity'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-affinity-link"
           >
             Affinity →
@@ -101,7 +101,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-banner-fleet-link"
           >
             Fleet →
@@ -109,7 +109,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'place' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-context-intelligence-link"
           >
             Intelligence →
@@ -117,7 +117,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-context-platform-link"
           >
             Platform →
@@ -125,7 +125,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="scheduler-context-openapi-link"
           >
             OpenAPI →
@@ -157,7 +157,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <StatCard title="Workloads" value={`${rt.workload_count}/${rt.max_workloads}`} color="blue" />
                 <Link
                   to={pathWithQuery(viewToPath('fleet'), {})}
-                  className="text-xs text-brand hover:underline shrink-0"
+                  className="text-xs text-primary hover:underline shrink-0"
                   data-testid="scheduler-fleet-link"
                 >
                   Fleet →
@@ -210,10 +210,10 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-foreground">Optimization Suggestions</h2>
           <div className="flex items-center gap-2">
-            <Link to={viewToPath('affinity')} className="text-xs text-brand hover:underline">
+            <Link to={viewToPath('affinity')} className="text-xs text-primary hover:underline">
               Runtime affinity →
             </Link>
-            <Link to={viewToPath('cost')} className="text-xs text-brand hover:underline" data-testid="scheduler-cost-link">
+            <Link to={viewToPath('cost')} className="text-xs text-primary hover:underline" data-testid="scheduler-cost-link">
               Cost estimation →
             </Link>
             <button
@@ -221,7 +221,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
             data-testid="scheduler-refresh-optimize"
             onClick={() => void handleRefresh()}
             disabled={refreshing}
-            className="text-xs rounded-lg border glass-divider px-3 py-1.5 text-muted hover:border-brand/40 disabled:opacity-50"
+            className="text-xs rounded-lg border glass-divider px-3 py-1.5 text-muted hover:border-primary/40 disabled:opacity-50"
           >
             {refreshing ? 'Refreshing…' : 'Refresh suggestions'}
           </button>

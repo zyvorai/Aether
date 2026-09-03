@@ -29,7 +29,7 @@ export default function TenantSwitcher() {
 
   return (
     <label className="hidden items-center gap-2 text-xs text-muted md:flex" data-testid="navbar-tenant-switcher">
-      <Building2 className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
+      <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
       <span className="sr-only">Active tenant</span>
       <select
         value={active}

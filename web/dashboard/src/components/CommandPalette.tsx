@@ -1219,7 +1219,7 @@ export default function CommandPalette({
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
                     className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
-                      i === selectedIndex ? 'bg-brand-wash text-brand' : 'text-muted hover:bg-hover'
+                      i === selectedIndex ? 'bg-primary-wash text-primary' : 'text-muted hover:bg-hover'
                     }`}
                   >
                     <span className="flex-1 truncate">{cmd.label}</span>

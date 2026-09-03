@@ -295,7 +295,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('gitops'), { workload: workloadName })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="trust-panel-gitops-link"
               >
                 GitOps sync →
@@ -305,7 +305,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { q: workloadName })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="trust-panel-secrets-link"
           >
             Secrets →
@@ -384,7 +384,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             type="button"
             disabled={sovereignBusy}
             onClick={() => void runSovereignCheck()}
-            className="rounded border glass-divider px-2.5 py-1 text-xs text-muted hover:border-brand/50 disabled:opacity-50"
+            className="rounded border glass-divider px-2.5 py-1 text-xs text-muted hover:border-primary/50 disabled:opacity-50"
           >
             {sovereignBusy ? 'Evaluating…' : 'Run sovereign check'}
           </button>
@@ -513,7 +513,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           <button
             type="button"
             onClick={() => void loadExplain()}
-            className="mt-3 text-xs text-brand hover:underline"
+            className="mt-3 text-xs text-primary hover:underline"
           >
             {showExplain ? 'Hide attestation explain' : 'Explain attestation'}
           </button>
@@ -607,7 +607,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             data-testid="guestkit-prelaunch"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('pre-launch')}
-            className="px-2.5 py-1 text-xs rounded border glass-divider text-muted hover:border-brand/50 disabled:opacity-50"
+            className="px-2.5 py-1 text-xs rounded border glass-divider text-muted hover:border-primary/50 disabled:opacity-50"
           >
             Pre-launch check
           </button>
@@ -616,7 +616,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             data-testid="guestkit-repair"
             disabled={guestkitBusy}
             onClick={() => void runGuestkit('attested-repair')}
-            className="px-2.5 py-1 text-xs rounded border glass-divider text-muted hover:border-brand/50 disabled:opacity-50"
+            className="px-2.5 py-1 text-xs rounded border glass-divider text-muted hover:border-primary/50 disabled:opacity-50"
           >
             Repair playbook
           </button>
@@ -686,7 +686,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
                         type="button"
                         disabled={!canMutate || secretReleaseBusy === s.secret_name}
                         onClick={() => void releaseSecret(s.secret_name, s.provider)}
-                        className="rounded border glass-divider px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-brand/50 disabled:opacity-40"
+                        className="rounded border glass-divider px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted hover:border-primary/50 disabled:opacity-40"
                       >
                         {secretReleaseBusy === s.secret_name ? 'Releasing…' : 'Release'}
                       </button>

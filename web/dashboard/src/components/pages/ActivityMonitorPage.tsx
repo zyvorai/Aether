@@ -231,7 +231,7 @@ function ActivityMonitorPage() {
                 {topCpu.map((p) => (
                   <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
                     <span className="text-sm text-foreground font-mono">{p.name}</span>
-                    <span className="text-sm text-brand">{p.cpu}</span>
+                    <span className="text-sm text-primary">{p.cpu}</span>
                   </div>
                 ))}
               </div>
@@ -249,7 +249,7 @@ function ActivityMonitorPage() {
                 {topMemory.map((p) => (
                   <div key={p.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
                     <span className="text-sm text-foreground font-mono">{p.name}</span>
-                    <span className="text-sm text-brand">{p.memory}</span>
+                    <span className="text-sm text-primary">{p.memory}</span>
                   </div>
                 ))}
               </div>

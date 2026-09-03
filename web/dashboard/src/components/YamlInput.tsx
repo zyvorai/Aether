@@ -152,7 +152,7 @@ export default function YamlInput({
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {editorLoading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border glass-divider glass-inset-surface">
-                <Loader2 className="w-6 h-6 animate-spin text-brand" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 <span className="ml-2 text-sm text-muted">Loading template…</span>
               </div>
             ) : null}

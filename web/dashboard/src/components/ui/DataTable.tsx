@@ -114,12 +114,12 @@ export default function DataTable<T>({
               onClick={() => onSelect?.(item)}
               onDoubleClick={() => onOpen?.(item)}
               className="data-row relative flex cursor-pointer items-center border-b border-rule pl-5 font-mono text-[12.5px] text-muted transition-colors hover:bg-hover"
-              style={{ background: isSelected ? 'var(--selected)' : undefined }}
+              style={{ background: isSelected ? 'var(--accent-tint)' : undefined }}
             >
               {(isBad || isSelected) && stripe ? (
                 <span
                   className="absolute left-0 top-0 bottom-0 w-[3px]"
-                  style={{ background: isBad ? stripe : 'var(--brand)' }}
+                  style={{ background: isBad ? stripe : 'var(--primary)' }}
                 />
               ) : null}
               {columns.map((col) => (

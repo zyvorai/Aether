@@ -42,13 +42,13 @@ export default function FleetIntelligenceBrief({ onNavigate, refreshKey = 0 }: F
     <section className="glass mb-8 p-6 sm:p-8" data-testid="fleet-intelligence-brief">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">Fleet Intelligence</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Fleet Intelligence</p>
           <h2 className="mt-1 text-xl font-semibold text-foreground">AI-generated fleet posture</h2>
         </div>
         <button
           type="button"
           onClick={() => onNavigate('intelligence')}
-          className="text-xs font-medium text-brand hover:underline transition-colors"
+          className="text-xs font-medium text-primary hover:underline transition-colors"
         >
           Full intelligence →
         </button>

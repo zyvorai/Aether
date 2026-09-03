@@ -40,14 +40,14 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
 
   return (
     <div
-      className="border-b border-brand/20 bg-brand/[0.06] px-4 py-2 backdrop-blur-md lg:px-6"
+      className="border-b border-primary/20 bg-primary/[0.06] px-4 py-2 backdrop-blur-md lg:px-6"
       data-testid="zyra-context-bar"
     >
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Sparkles className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-brand/90">Zyra</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-primary/90">Zyra</p>
             <p className="truncate text-sm text-foreground">{insights.summary}</p>
           </div>
           {workload.trim() ? (
@@ -62,7 +62,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
               key={action}
               type="button"
               onClick={() => onAskZyra?.(action)}
-              className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-1 text-xs text-brand hover:border-brand/40"
+              className="rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs text-primary hover:border-primary/40"
             >
               {action}
             </button>
@@ -70,7 +70,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
           <button
             type="button"
             onClick={() => onAskZyra?.('Summarize fleet health and recommend next actions')}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-muted hover:border-brand/30 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-muted hover:border-primary/30 hover:text-foreground"
             data-testid="zyra-context-explain"
           >
             <Zap className="h-3 w-3" />

@@ -53,7 +53,7 @@ export function getRuntimeColor(runtime: string): string {
   if (r.includes('podman')) return 'text-deepblue';
   if (r.includes('kubevirt') || r.includes('virt')) return 'text-lavender';
   if (r.includes('kube') || r.includes('k8s')) return 'text-sage';
-  if (r.includes('metal')) return 'text-brand';
+  if (r.includes('metal')) return 'text-primary';
   if (r.includes('docker')) return 'text-mistblue';
   return 'text-subtle';
 }
@@ -63,7 +63,7 @@ export function getRuntimeBg(runtime: string): string {
   if (r.includes('podman')) return 'bg-deepblue/10 text-deepblue border-deepblue/20';
   if (r.includes('kubevirt') || r.includes('virt')) return 'bg-lavender/10 text-lavender border-lavender/20';
   if (r.includes('kube') || r.includes('k8s')) return 'bg-sage/10 text-sage border-sage/20';
-  if (r.includes('metal')) return 'bg-brand-wash text-brand border-brand-wash';
+  if (r.includes('metal')) return 'bg-primary-wash text-primary border-primary-wash';
   if (r.includes('docker')) return 'bg-mistblue/10 text-mistblue border-mistblue/20';
   return 'bg-hover text-subtle border-rule';
 }

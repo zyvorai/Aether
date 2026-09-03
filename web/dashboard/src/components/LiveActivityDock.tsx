@@ -84,7 +84,7 @@ export default function LiveActivityDock() {
         >
           <div className="mb-2 flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Rocket className={`h-4 w-4 ${activity.phase === 'failed' ? 'text-red-400' : 'text-brand'}`} />
+              <Rocket className={`h-4 w-4 ${activity.phase === 'failed' ? 'text-red-400' : 'text-primary'}`} />
               <div>
                 <div className="text-sm font-semibold text-foreground">{activity.title}</div>
                 <div className="text-xs text-subtle truncate max-w-[220px]">{activity.subtitle}</div>
@@ -110,7 +110,7 @@ export default function LiveActivityDock() {
                   ? 'bg-red-500'
                   : activity.phase === 'completed'
                     ? 'bg-emerald-400'
-                    : 'bg-brand'
+                    : 'bg-primary'
               }`}
               style={{ width: `${Math.min(100, Math.max(4, activity.percent))}%` }}
             />

@@ -65,7 +65,7 @@ export default function K8sControlCenter({
             onClick={() => onNavigate(view)}
             className="quick-link-chip flex flex-col items-center gap-2 py-4"
           >
-            <Icon size={20} className="text-brand" />
+            <Icon size={20} className="text-primary" />
             <span className="text-center text-xs font-medium">{label}</span>
           </button>
         ))}

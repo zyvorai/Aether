@@ -43,7 +43,7 @@ export default function AutonomousModePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -94,7 +94,7 @@ export default function AutonomousModePanel() {
                   <li key={row.workload} className="rounded-xl border glass-divider px-3 py-2 text-sm text-muted">
                     <Link
                       to={`${viewToPath('workloads')}?workload=${encodeURIComponent(row.workload)}`}
-                      className="font-medium text-brand hover:underline"
+                      className="font-medium text-primary hover:underline"
                     >
                       {row.workload}
                     </Link>

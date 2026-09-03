@@ -146,7 +146,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-editor-link"
           >
             Editor →
@@ -154,7 +154,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-openapi-link"
           >
             OpenAPI →
@@ -162,7 +162,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-secrets-link"
           >
             Secrets →
@@ -170,7 +170,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-context-rbac-link"
           >
             RBAC →
@@ -178,7 +178,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-context-audit-link"
           >
             Audit →
@@ -186,7 +186,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="policy-context-compose-link"
           >
             Compose →
@@ -205,7 +205,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('drift'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="policy-context-drift-link"
         >
           Drift detection →
@@ -219,7 +219,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : pathWithQuery(viewToPath('workloads'), { validate: '1' }),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="policy-validate-link"
         >
           Validate workloads →
@@ -233,7 +233,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('platform'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="policy-platform-link"
         >
           Platform &amp; HA →
@@ -248,7 +248,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="rounded-lg border border-brand/40 bg-brand/10 px-3 py-1 text-xs font-medium text-brand hover:bg-brand/20"
+            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
           >
             Open Platform
           </button>
@@ -266,7 +266,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
       {opaConfigured && (
         <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-            <ShieldCheck size={20} className="text-brand" />
+            <ShieldCheck size={20} className="text-primary" />
             OPA admission (live)
           </h2>
           <p className="text-sm text-subtle mb-4">

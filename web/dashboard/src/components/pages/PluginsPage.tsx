@@ -124,7 +124,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-editor-link"
             >
               Editor →
@@ -132,7 +132,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-secrets-link"
             >
               Secrets →
@@ -140,7 +140,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-drift-link"
             >
               Drift →
@@ -148,7 +148,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-context-platform-link"
             >
               Platform →
@@ -156,7 +156,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-context-gitops-link"
             >
               GitOps →
@@ -164,7 +164,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Plugin guidance for ${search.trim()}` })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-context-copilot-link"
             >
               Copilot →
@@ -172,7 +172,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="plugins-context-openapi-link"
             >
               OpenAPI →
@@ -223,7 +223,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
           type="button"
           data-testid="plugins-scheduler-link"
           onClick={() => navigate(viewToPath('scheduler'))}
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           Placement scheduler →
         </button>
@@ -235,7 +235,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="ml-3 text-xs text-brand hover:underline"
+            className="ml-3 text-xs text-primary hover:underline"
           >
             Platform integrations →
           </button>

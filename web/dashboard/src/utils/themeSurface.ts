@@ -15,5 +15,5 @@ export function dropdownSurfaceClass(): string {
 }
 
 export function dropdownItemClass(active: boolean): string {
-  return active ? 'text-brand bg-brand-wash' : 'text-muted hover:text-foreground hover:bg-hover';
+  return active ? 'text-primary bg-primary-wash' : 'text-muted hover:text-foreground hover:bg-hover';
 }

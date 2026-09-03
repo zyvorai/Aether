@@ -163,10 +163,10 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
           return (
             <article
               key={chart.id}
-              className="glass p-5 hover:border-brand/40 transition-colors"
+              className="glass p-5 hover:border-primary/40 transition-colors"
             >
               <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-brand/10 p-3 text-brand">
+                <div className="rounded-xl bg-primary/10 p-3 text-primary">
                   <Icon size={22} />
                 </div>
                 <div className="min-w-0 flex-1">

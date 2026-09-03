@@ -13,7 +13,7 @@ export default function PageLoading({ rows = 4, variant = 'skeleton', label, cla
   if (variant === 'spinner' || label) {
     return (
       <div className={`flex flex-col items-center justify-center gap-3 ${className ?? 'py-16'}`}>
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         {label ? <p className="text-sm text-subtle">{label}</p> : null}
       </div>
     );

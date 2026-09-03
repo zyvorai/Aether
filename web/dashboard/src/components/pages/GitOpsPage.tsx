@@ -212,7 +212,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <button
         type="button"
         onClick={() => openWorkloadFromPath(filePath)}
-        className="font-mono text-xs text-brand hover:underline text-left"
+        className="font-mono text-xs text-primary hover:underline text-left"
         title={`Open workload ${workloadName}`}
       >
         {filePath}
@@ -233,19 +233,19 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="mb-2 glass-context-banner" data-testid="gitops-hub-context">
         GitOps
         {' · '}
-        <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="gitops-hub-orchestrator-link">
+        <Link to={viewToPath('health')} className="text-primary hover:underline" data-testid="gitops-hub-orchestrator-link">
           Orchestrator →
         </Link>
         {' · '}
-        <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="gitops-hub-intelligence-link">
+        <Link to={viewToPath('intelligence')} className="text-primary hover:underline" data-testid="gitops-hub-intelligence-link">
           Intelligence →
         </Link>
         {' · '}
-        <Link to={`${viewToPath('fleet')}?tab=edge`} className="text-brand hover:underline" data-testid="gitops-hub-edge-link">
+        <Link to={`${viewToPath('fleet')}?tab=edge`} className="text-primary hover:underline" data-testid="gitops-hub-edge-link">
           Edge →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="gitops-hub-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="gitops-hub-hosted-link">
           Hosted SaaS →
         </Link>
       </div>
@@ -290,7 +290,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-platform-link"
           >
             Platform →
@@ -298,7 +298,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-fleet-link"
           >
             Fleet →
@@ -306,7 +306,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-hosted-link"
           >
             Hosted SaaS →
@@ -314,7 +314,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-openapi-link"
           >
             OpenAPI →
@@ -322,7 +322,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-policy-link"
           >
             Policy →
@@ -330,7 +330,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-secrets-link"
           >
             Secrets →
@@ -338,7 +338,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-editor-link"
           >
             Editor →
@@ -346,7 +346,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-compose-link"
           >
             Compose →
@@ -354,7 +354,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="gitops-context-fleet-link"
           >
             Fleet →
@@ -366,7 +366,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
-          <GitBranch className="w-5 h-5 text-brand" />
+          <GitBranch className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">GitOps reconciliation</h2>
           {data?.configured !== false && <Badge text="CONFIGURED" variant="green" />}
           {data?.configured === false && <Badge text="NOT CONFIGURED" variant="muted" />}
@@ -420,7 +420,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     href={data.repo_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-brand hover:underline"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline"
                     data-testid="gitops-repo-external-link"
                   >
                     {data.repo_url}
@@ -463,7 +463,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('drift'),
             )
           }
-          className="mt-4 mr-4 text-xs text-brand hover:underline"
+          className="mt-4 mr-4 text-xs text-primary hover:underline"
         >
           Drift detection →
         </button>
@@ -477,7 +477,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('policy'),
             )
           }
-          className="mt-4 text-xs text-brand hover:underline"
+          className="mt-4 text-xs text-primary hover:underline"
         >
           Policy check →
         </button>
@@ -556,7 +556,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   type="button"
                   data-testid="gitops-confidential-link"
                   onClick={() => navigate(viewToPath('confidential'))}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   Open confidential page →
                 </button>
@@ -587,7 +587,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                                   }),
                                 )
                               }
-                              className="text-brand hover:underline"
+                              className="text-primary hover:underline"
                               data-testid={`gitops-confidential-row-${row.workload}`}
                             >
                               {row.workload}
@@ -637,7 +637,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
         <div data-testid="gitops-sync-confirm">
         <p className="text-sm text-muted mb-4">
-          Pull from <span className="font-mono text-brand">{data?.repo_url ?? 'repository'}</span> and apply
+          Pull from <span className="font-mono text-primary">{data?.repo_url ?? 'repository'}</span> and apply
           detected YAML changes. Review the diff preview below before syncing.
         </p>
         <div

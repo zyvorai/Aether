@@ -31,7 +31,7 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
   return (
     <div
       className={cn(
-        'tahoe-stat-tile relative rounded-[var(--radius-md)] border border-border bg-surface p-4 transition hover:border-brand/30 hover:shadow-card',
+        'tahoe-stat-tile relative rounded-[var(--radius-md)] border border-border bg-surface p-4 transition hover:border-primary/30 hover:shadow-card',
         compact && 'p-3',
         empty && 'opacity-70',
       )}

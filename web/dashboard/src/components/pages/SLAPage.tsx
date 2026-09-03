@@ -97,7 +97,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-editor-link"
             >
               Editor →
@@ -105,7 +105,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-drift-link"
             >
               Drift →
@@ -113,7 +113,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-secrets-link"
             >
               Secrets →
@@ -121,7 +121,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-context-alerts-link"
             >
               Alerts →
@@ -129,7 +129,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-context-policy-link"
             >
               Policy →
@@ -137,7 +137,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `SLA status for ${search.trim()}` })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-context-copilot-link"
             >
               Copilot →
@@ -145,7 +145,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-context-platform-link"
             >
               Platform →
@@ -153,7 +153,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="sla-context-openapi-link"
             >
               OpenAPI →
@@ -197,13 +197,13 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
               {adding ? 'Adding…' : 'Add target'}
             </button>
           </form>
-          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="mt-3 inline-flex text-xs text-brand hover:underline">
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="mt-3 inline-flex text-xs text-primary hover:underline">
             SLA events →
           </Link>
-          <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-brand hover:underline">
+          <Link to={viewToPath('health')} className="mt-3 ml-4 inline-flex text-xs text-primary hover:underline">
             Open health monitor →
           </Link>
-          <Link to={viewToPath('scheduler')} className="mt-3 ml-4 inline-flex text-xs text-brand hover:underline" data-testid="sla-scheduler-link">
+          <Link to={viewToPath('scheduler')} className="mt-3 ml-4 inline-flex text-xs text-primary hover:underline" data-testid="sla-scheduler-link">
             Placement scheduler →
           </Link>
         </div>
@@ -233,7 +233,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
-                    className="hover:text-brand"
+                    className="hover:text-primary"
                   >
                     {w.name}
                   </Link>
@@ -269,28 +269,28 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <div className="mt-4 flex flex-wrap gap-3 text-xs">
                   <Link
                     to={pathWithQuery(viewToPath('health'), { workload: w.name })}
-                    className="text-brand hover:underline"
+                    className="text-primary hover:underline"
                     data-testid={`sla-health-link-${w.name}`}
                   >
                     Health →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('events'), { workload: w.name, category: 'sla' })}
-                    className="text-brand hover:underline"
+                    className="text-primary hover:underline"
                     data-testid={`sla-events-link-${w.name}`}
                   >
                     SLA events →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('alerts'), { workload: w.name })}
-                    className="text-brand hover:underline"
+                    className="text-primary hover:underline"
                     data-testid={`sla-alerts-link-${w.name}`}
                   >
                     Alerts →
                   </Link>
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name, tab: 'trust' })}
-                    className="text-brand hover:underline"
+                    className="text-primary hover:underline"
                     data-testid={`sla-trust-link-${w.name}`}
                   >
                     Trust →

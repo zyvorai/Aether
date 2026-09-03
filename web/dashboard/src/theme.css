@@ -86,15 +86,25 @@
   --rule: var(--border);
   --rule-strong: var(--glass-border-strong);
   --subtle: #86868b;
-  --brand: #0071e3;
-  --brand-rgb: 0 113 227;
   --primary-rgb: 0 113 227;
-  --brand-wash: #e8f1fd;
   --scrim: rgba(0, 0, 0, 0.4);
   --glass: var(--nav-bg);
   --shadow: var(--shadow-card);
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* iPhone 17 categorical accents — used by categoricalColor.ts (chip
+     coloring) and formatters.ts (runtime identity colors), not decorative */
+  --iphone-deep-blue: #32374a;
+  --iphone-deep-blue-rgb: 50 55 74;
+  --iphone-sage: #7a9068;
+  --iphone-sage-rgb: 122 144 104;
+  --iphone-mist-blue: #6b8fb5;
+  --iphone-mist-blue-rgb: 107 143 181;
+  --iphone-lavender: #9b7fb0;
+  --iphone-lavender-rgb: 155 127 176;
+  --iphone-gold: #b8860b;
+  --iphone-gold-rgb: 184 134 11;
 
   color-scheme: light;
 }
@@ -129,10 +139,7 @@ html.dark-theme,
   --glass-border-strong: rgba(255, 255, 255, 0.22);
   --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --brand: #0a84ff;
-  --brand-rgb: 10 132 255;
   --primary-rgb: 10 132 255;
-  --brand-wash: rgba(10, 132, 255, 0.16);
   --subtle: #8e8e93;
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: var(--nav-bg);

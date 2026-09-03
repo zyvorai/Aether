@@ -28,7 +28,7 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
         <button
           type="button"
           onClick={onViewLogs}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-medium text-white hover:bg-aether-light"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-aether-light"
         >
           <FileText className="h-3.5 w-3.5" />
           View logs

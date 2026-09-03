@@ -135,7 +135,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-cost-link"
             >
               Cost →
@@ -143,7 +143,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-platform-link"
             >
               Platform →
@@ -151,7 +151,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-drift-link"
             >
               Drift →
@@ -159,7 +159,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-context-intelligence-link"
             >
               Intelligence →
@@ -167,7 +167,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('alerts'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-context-alerts-link"
             >
               Alerts →
@@ -175,7 +175,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('scheduler'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-context-scheduler-link"
             >
               Scheduler →
@@ -183,7 +183,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="metrics-context-openapi-link"
             >
               OpenAPI →
@@ -291,7 +291,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40 hover:text-brand"
+                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-primary/40 hover:text-primary"
                 data-testid="metrics-cluster-browser-link"
               >
                 Open cluster browser (network)
@@ -322,7 +322,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       : viewToPath('fleet'),
                   )
                 }
-                className="text-xs text-brand hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 Fleet overview →
               </button>
@@ -336,7 +336,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       : viewToPath('cost'),
                   )
                 }
-                className="text-xs text-brand hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 Cost estimator →
               </button>
@@ -350,7 +350,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       : viewToPath('workloads'),
                   )
                 }
-                className="text-xs text-brand hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 All workloads →
               </button>
@@ -359,7 +359,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 type="button"
                 data-testid="metrics-chargeback-export"
                 onClick={downloadChargebackCsv}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-primary/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -391,7 +391,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                           onClick={() =>
                             navigate(pathWithQuery(viewToPath('workloads'), { workload: line.workload }))
                           }
-                          className="text-brand hover:underline"
+                          className="text-primary hover:underline"
                         >
                           {line.workload}
                         </button>
@@ -419,7 +419,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 href={grafanaUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
+                className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/20"
               >
                 Open Grafana <ExternalLink size={14} />
               </a>
@@ -478,13 +478,13 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
           data-testid="metrics-scoped-footer"
         >
           <span>Scoped links for {search.trim()}:</span>
-          <Link to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })} className="text-brand hover:underline">
+          <Link to={pathWithQuery(viewToPath('cost'), { workload: search.trim() })} className="text-primary hover:underline">
             Cost
           </Link>
-          <Link to={pathWithQuery(viewToPath('health'), { workload: search.trim() })} className="text-brand hover:underline">
+          <Link to={pathWithQuery(viewToPath('health'), { workload: search.trim() })} className="text-primary hover:underline">
             Health
           </Link>
-          <Link to={pathWithQuery(viewToPath('fleet'), { workload: search.trim() })} className="text-brand hover:underline">
+          <Link to={pathWithQuery(viewToPath('fleet'), { workload: search.trim() })} className="text-primary hover:underline">
             Fleet
           </Link>
         </footer>

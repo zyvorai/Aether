@@ -27,7 +27,7 @@ function WorkloadNodeLink({ name }: { name: string }) {
   return (
     <Link
       to={pathWithQuery(viewToPath('workloads'), { workload: name })}
-      className="text-brand hover:underline"
+      className="text-primary hover:underline"
     >
       {name}
     </Link>
@@ -58,7 +58,7 @@ function GraphVisual({
             <span
               key={node}
               className={`quick-link-chip rounded-full px-3 py-1.5 text-sm text-foreground ${
-                highlightWorkload === node ? 'border-brand/60 ring-1 ring-aether/30' : 'glass-divider'
+                highlightWorkload === node ? 'border-primary/60 ring-1 ring-aether/30' : 'glass-divider'
               }`}
               data-testid={highlightWorkload === node ? 'deps-workload-highlight' : undefined}
             >
@@ -73,9 +73,9 @@ function GraphVisual({
               className="glass flex items-center gap-2 text-sm px-4 py-2"
             >
               <span className="font-medium text-foreground"><WorkloadNodeLink name={edge.from} /></span>
-              <ArrowRight size={14} className="text-brand shrink-0" />
+              <ArrowRight size={14} className="text-primary shrink-0" />
               <span className="text-muted">depends on</span>
-              <span className="font-medium text-brand"><WorkloadNodeLink name={edge.to} /></span>
+              <span className="font-medium text-primary"><WorkloadNodeLink name={edge.to} /></span>
               {onRemove && (
                 <button
                   type="button"
@@ -101,11 +101,11 @@ function GraphVisual({
           <div key={name} className="flex items-center gap-3">
             {i > 0 && <ArrowRight size={14} className="text-subtle shrink-0 -ml-1" />}
             <div className="glass flex items-center gap-3 flex-1 px-4 py-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                 {i + 1}
               </span>
               <span
-                className={`text-sm text-foreground ${highlightWorkload === name ? 'text-brand font-medium' : ''}`}
+                className={`text-sm text-foreground ${highlightWorkload === name ? 'text-primary font-medium' : ''}`}
                 data-testid={highlightWorkload === name ? 'deps-workload-highlight' : undefined}
               >
                 <WorkloadNodeLink name={name} />
@@ -201,7 +201,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('compose'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           Compose import →
         </button>
@@ -215,7 +215,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('envs'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Environments →
         </button>
@@ -227,7 +227,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-compose-link"
           >
             Compose →
@@ -235,7 +235,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('envs'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-envs-scoped-link"
           >
             Environments →
@@ -243,7 +243,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-policy-link"
           >
             Policy →
@@ -251,7 +251,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-secrets-link"
           >
             Secrets →
@@ -259,7 +259,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-editor-link"
           >
             Editor →
@@ -267,7 +267,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: highlightWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-openapi-link"
           >
             OpenAPI →
@@ -275,7 +275,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: highlightWorkload, q: `Dependency graph for ${highlightWorkload}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="deps-context-copilot-link"
           >
             Copilot →
@@ -296,7 +296,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="e.g. web-app"
-              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-brand"
+              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-primary"
             />
           </div>
           <div>
@@ -306,7 +306,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               value={addDependency}
               onChange={(e) => setAddDependency(e.target.value)}
               placeholder="e.g. database"
-              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-brand"
+              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-primary"
             />
           </div>
           <button
@@ -369,7 +369,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   type="button"
                   data-testid="deps-scheduler-link"
                   onClick={() => navigate(viewToPath('scheduler'))}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   Placement scheduler →
                 </button>

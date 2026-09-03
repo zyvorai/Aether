@@ -100,13 +100,13 @@ export default function CostIntelligencePanel() {
           >
             Dry-run right-size
           </button>
-          <Link to={viewToPath('intelligence') + '?tab=cost'} className="text-xs text-brand hover:underline">
+          <Link to={viewToPath('intelligence') + '?tab=cost'} className="text-xs text-primary hover:underline">
             Full report →
           </Link>
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -143,7 +143,7 @@ export default function CostIntelligencePanel() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
                     to={`${viewToPath('workloads')}?workload=${encodeURIComponent(rec.workload)}`}
-                    className="font-medium text-brand hover:underline"
+                    className="font-medium text-primary hover:underline"
                   >
                     {rec.workload}
                   </Link>
@@ -158,7 +158,7 @@ export default function CostIntelligencePanel() {
                 <div className="text-lg font-semibold text-emerald-300">{formatUSD(rec.savings_monthly_usd)}</div>
                 <Link
                   to={`${viewToPath('migrations')}?workload=${encodeURIComponent(rec.workload)}`}
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-brand hover:underline"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
                 >
                   Plan migration <ArrowRight className="h-3 w-3" />
                 </Link>

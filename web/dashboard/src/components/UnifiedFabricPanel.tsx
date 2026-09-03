@@ -37,7 +37,7 @@ export default function UnifiedFabricPanel() {
             <p className="text-sm text-muted">Edge agents linked to federated clusters and workloads</p>
           </div>
         </div>
-        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted transition hover:border-brand/30">
+        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted transition hover:border-primary/30">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </div>

@@ -21,7 +21,7 @@ function confidenceVariant(confidence: number): 'green' | 'yellow' | 'muted' {
 function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recommended: string }) {
   const isRecommended = score.runtime === recommended;
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-brand/40 bg-brand/5' : 'glass-divider glass'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-primary/40 bg-primary/5' : 'glass-divider glass'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended ? <Badge text="Recommended" variant="accent" /> : null}
@@ -60,7 +60,7 @@ export default function RuntimeAdvisorPanel() {
         accent="purple"
         title="AI Runtime Advisor"
         subtitle="Recommended runtime with reasons, warnings, and confidence."
-        icon={<Target className="h-5 w-5 text-brand" />}
+        icon={<Target className="h-5 w-5 text-primary" />}
       >
         <YamlInput
           buttonText="Analyze placement"

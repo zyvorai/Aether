@@ -84,7 +84,7 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
               type="button"
               data-testid="breadcrumb-workload"
               onClick={() => navigate(pathWithQuery(viewToPath(currentView), { workload }))}
-              className="max-w-[12rem] truncate rounded-lg px-2 py-1 text-[13px] font-mono text-brand transition hover:bg-white/[0.04] hover:underline"
+              className="max-w-[12rem] truncate rounded-lg px-2 py-1 text-[13px] font-mono text-primary transition hover:bg-white/[0.04] hover:underline"
             >
               {workload}
             </button>

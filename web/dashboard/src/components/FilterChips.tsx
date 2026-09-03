@@ -28,7 +28,7 @@ export default function FilterChips({ chips, active, onSelect, testId, className
             onClick={() => onSelect(chip.id)}
             className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
               isActive
-                ? 'border border-brand/40 bg-brand/20 text-brand'
+                ? 'border border-primary/40 bg-primary/20 text-primary'
                 : 'glass-inset-surface border glass-divider text-muted hover:text-foreground'
             }`}
           >

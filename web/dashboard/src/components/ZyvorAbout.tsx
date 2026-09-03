@@ -62,7 +62,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
             boxShadow: `0 8px 24px ${AETHER}22`,
           }}
         >
-          <Hexagon className="w-8 h-8 text-brand" aria-hidden />
+          <Hexagon className="w-8 h-8 text-primary" aria-hidden />
         </div>
         <div className="min-w-0 pt-0.5">
           <h3 className={`text-lg font-semibold ${'text-foreground'}`}>{AETHER_PRODUCT}</h3>
@@ -104,7 +104,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 hover:text-brand transition-colors ${'text-muted'}`}
+                className={`inline-flex items-center gap-1.5 hover:text-primary transition-colors ${'text-muted'}`}
               >
                 <span>{link.label}</span>
                 <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-60" aria-hidden />

@@ -153,7 +153,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-editor-link"
             >
               Editor →
@@ -161,7 +161,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-context-gitops-link"
             >
               GitOps →
@@ -169,7 +169,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-secrets-link"
             >
               Secrets →
@@ -177,7 +177,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-context-drift-link"
             >
               Drift →
@@ -185,7 +185,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-context-compose-link"
             >
               Compose →
@@ -193,7 +193,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-context-policy-link"
             >
               Policy →
@@ -201,7 +201,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: search.trim(), tab: 'predictions' })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="templates-context-intelligence-link"
             >
               Intelligence →
@@ -219,7 +219,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
               pathWithQuery(viewToPath('workloads'), search.trim() ? { validate: '1', workload: search.trim() } : { validate: '1' }),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="templates-policy-link"
         >
           Policy validate →
@@ -227,7 +227,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
         <button
           type="button"
           onClick={() => navigate(pathWithQuery(viewToPath('gitops'), search.trim() ? { workload: search.trim() } : {}))}
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="templates-gitops-link"
         >
           GitOps sync →
@@ -235,7 +235,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
         <button
           type="button"
           onClick={() => navigate(pathWithQuery(viewToPath('compose'), search.trim() ? { workload: search.trim() } : {}))}
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
           data-testid="templates-compose-link"
         >
           Compose import →
@@ -279,7 +279,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
                     type="button"
                     onClick={() => void handleGenerate(t.name)}
                     disabled={generateLoading === t.name}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
                   >
                     <Wand2 size={13} />
                     {generateLoading === t.name ? '…' : 'Generate'}

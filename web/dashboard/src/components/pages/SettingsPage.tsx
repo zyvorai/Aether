@@ -36,19 +36,19 @@ function SettingsPage() {
       <div className="mb-6 glass-context-banner" data-testid="settings-hub-context">
         Settings hub
         {' · '}
-        <Link to={viewToPath('platform')} className="text-brand hover:underline" data-testid="settings-context-platform-link">
+        <Link to={viewToPath('platform')} className="text-primary hover:underline" data-testid="settings-context-platform-link">
           Platform →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="settings-context-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="settings-context-hosted-link">
           Hosted SaaS →
         </Link>
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="settings-context-fleet-link">
+        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="settings-context-fleet-link">
           Fleet →
         </Link>
         {' · '}
-        <Link to={viewToPath('rbac')} className="text-brand hover:underline" data-testid="settings-context-rbac-link">
+        <Link to={viewToPath('rbac')} className="text-primary hover:underline" data-testid="settings-context-rbac-link">
           Access Control →
         </Link>
       </div>

@@ -169,7 +169,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-deps-link"
           >
             Dependencies →
@@ -177,7 +177,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-editor-link"
           >
             Editor →
@@ -185,7 +185,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('templates'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-templates-link"
           >
             Templates →
@@ -193,7 +193,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-secrets-link"
           >
             Secrets →
@@ -201,7 +201,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-policy-link"
           >
             Policy →
@@ -209,7 +209,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-context-gitops-link"
           >
             GitOps →
@@ -217,7 +217,7 @@ function ComposePage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('envs'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="compose-context-envs-link"
           >
             Environments →
@@ -228,8 +228,8 @@ function ComposePage() {
       <section className="space-y-6">
       <div>
         <p className="text-sm text-subtle">
-          Validate dependency order and deploy a stack. Use <code className="text-brand/90">spec_yaml</code> for inline
-          workloads or <code className="text-brand/90">spec</code> for file paths on the server.
+          Validate dependency order and deploy a stack. Use <code className="text-primary/90">spec_yaml</code> for inline
+          workloads or <code className="text-primary/90">spec</code> for file paths on the server.
         </p>
       </div>
 
@@ -258,10 +258,10 @@ function ComposePage() {
                     <ol className="space-y-1 text-sm text-muted">
                       {result.deploy_order.map((item, index) => (
                         <li key={`${item}-${index}`} className="flex items-center gap-2">
-                          <span className="text-brand font-mono text-xs">{index + 1}.</span>
+                          <span className="text-primary font-mono text-xs">{index + 1}.</span>
                           <Link
                             to={pathWithQuery(viewToPath('workloads'), { workload: item })}
-                            className="text-brand hover:underline"
+                            className="text-primary hover:underline"
                           >
                             {item}
                           </Link>
@@ -274,7 +274,7 @@ function ComposePage() {
                   <div className="flex flex-wrap gap-3">
                     <Link
                       to={viewToPath('deps')}
-                      className="inline-flex items-center self-center text-xs text-brand hover:underline"
+                      className="inline-flex items-center self-center text-xs text-primary hover:underline"
                       data-testid="compose-deps-link"
                     >
                       Dependency graph →

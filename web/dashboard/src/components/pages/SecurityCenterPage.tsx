@@ -106,19 +106,19 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
     <div className="mb-6 glass-context-banner" data-testid="security-hub-context">
       Security
       {' · '}
-      <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="security-context-orchestrator-link">
+      <Link to={viewToPath('health')} className="text-primary hover:underline" data-testid="security-context-orchestrator-link">
         Orchestrator →
       </Link>
       {' · '}
-      <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="security-context-intelligence-link">
+      <Link to={viewToPath('intelligence')} className="text-primary hover:underline" data-testid="security-context-intelligence-link">
         Intelligence →
       </Link>
       {' · '}
-      <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="security-context-fleet-link">
+      <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="security-context-fleet-link">
         Fleet →
       </Link>
       {' · '}
-      <Link to={viewToPath('confidential')} className="text-brand hover:underline" data-testid="security-context-confidential-hub-link">
+      <Link to={viewToPath('confidential')} className="text-primary hover:underline" data-testid="security-context-confidential-hub-link">
         Confidential →
       </Link>
     </div>
@@ -133,7 +133,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="security-context-rbac-link"
           >
             RBAC →
@@ -141,7 +141,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: workloadFocus.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="security-context-audit-link"
           >
             Audit →
@@ -149,7 +149,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('confidential'), { workload: workloadFocus.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="security-context-confidential-link"
           >
             Confidential →
@@ -195,12 +195,12 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="glass" data-testid="security-sbom-card">
           <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-            <FileCheck size={18} className="text-brand" /> SBOM
+            <FileCheck size={18} className="text-primary" /> SBOM
           </h3>
           {sbom ? (
             <>
               <p className="text-sm text-muted">{sbom.bom_format} {sbom.spec_version} · {sbom.component_count} components</p>
-              <a href="/api/security/sbom" className="mt-3 inline-block text-sm text-brand hover:underline" download="aether-sbom.json">
+              <a href="/api/security/sbom" className="mt-3 inline-block text-sm text-primary hover:underline" download="aether-sbom.json">
                 Download CycloneDX JSON
               </a>
             </>
@@ -266,7 +266,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
             <p className="text-xs text-subtle">Sources: {remediation.sources.join(', ') || 'none'}</p>
             {remediation.actions.slice(0, 6).map((a, i) => (
               <div key={`${a.action_type}-${a.target}-${i}`} className="text-sm text-muted glass-divider-t pt-2">
-                <span className="font-mono text-brand">{a.action_type}</span> — {a.target}: {a.reason}
+                <span className="font-mono text-primary">{a.action_type}</span> — {a.target}: {a.reason}
               </div>
             ))}
           </div>
@@ -276,7 +276,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Shield size={18} className="text-brand" /> Threat scan
+            <Shield size={18} className="text-primary" /> Threat scan
           </h3>
           {criticalThreats.length === 0 ? (
             <p className="text-sm text-emerald-400">No critical threats detected.</p>
@@ -292,7 +292,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('zyra'), { workload: t.workload, q: `Fix security issue: ${t.reason}` }))}
-                    className="mt-2 text-xs text-brand hover:underline"
+                    className="mt-2 text-xs text-primary hover:underline"
                   >
                     Fix with Copilot →
                   </button>
@@ -304,13 +304,13 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
 
         <div className="glass">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <FileCheck size={18} className="text-brand" /> Policy &amp; secrets
+            <FileCheck size={18} className="text-primary" /> Policy &amp; secrets
           </h3>
           <div className="space-y-3 mb-4">
             <button
               type="button"
               onClick={() => navigate(viewToPath('policy'))}
-              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-brand/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-primary/40"
             >
               <span className="text-sm text-foreground">Open Policy Check</span>
               <p className="text-xs text-subtle mt-0.5">Validate workloads against production rules</p>
@@ -318,7 +318,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
             <button
               type="button"
               onClick={() => navigate(viewToPath('secrets'))}
-              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-brand/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-primary/40"
             >
               <span className="text-sm text-foreground">Manage Secrets</span>
               <p className="text-xs text-subtle mt-0.5">{rotationNeeded.length} secret(s) need rotation</p>
@@ -326,7 +326,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
             <button
               type="button"
               onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-brand/40"
+              className="w-full text-left rounded-lg border glass-divider px-3 py-3 hover:border-primary/40"
             >
               <span className="text-sm text-foreground">Network policies</span>
               <p className="text-xs text-subtle mt-0.5">Review Cilium and Kubernetes network policy gaps</p>

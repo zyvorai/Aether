@@ -48,7 +48,7 @@ export default function AutonomousSrePanel() {
           <button
             type="button"
             onClick={() => void copyRunbook()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
           >
             <Copy className="h-3.5 w-3.5" />
             {copied ? 'Copied' : 'Copy markdown'}
@@ -56,7 +56,7 @@ export default function AutonomousSrePanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -85,7 +85,7 @@ export default function AutonomousSrePanel() {
             ))}
           </div>
           <details className="mt-6">
-            <summary className="cursor-pointer text-sm text-brand">View full markdown</summary>
+            <summary className="cursor-pointer text-sm text-primary">View full markdown</summary>
             <pre className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
               {report.runbook_markdown}
             </pre>

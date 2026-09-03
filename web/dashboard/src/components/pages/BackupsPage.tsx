@@ -110,19 +110,19 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="mb-6 glass-context-banner" data-testid="backups-hub-context">
         Backups hub
         {' · '}
-        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="backups-context-settings-link">
+        <Link to={viewToPath('settings')} className="text-primary hover:underline" data-testid="backups-context-settings-link">
           Settings →
         </Link>
         {' · '}
-        <Link to={viewToPath('audit')} className="text-brand hover:underline" data-testid="backups-context-audit-link">
+        <Link to={viewToPath('audit')} className="text-primary hover:underline" data-testid="backups-context-audit-link">
           Audit →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="backups-context-hosted-link">
+        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="backups-context-hosted-link">
           Hosted SaaS →
         </Link>
         {' · '}
-        <Link to={viewToPath('migrations')} className="text-brand hover:underline" data-testid="backups-context-migrations-link">
+        <Link to={viewToPath('migrations')} className="text-primary hover:underline" data-testid="backups-context-migrations-link">
           Migrations →
         </Link>
       </div>
@@ -133,7 +133,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-editor-link"
             >
               Editor →
@@ -141,7 +141,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-drift-link"
             >
               Drift →
@@ -149,7 +149,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-secrets-link"
             >
               Secrets →
@@ -157,7 +157,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-context-rbac-link"
             >
               RBAC →
@@ -165,7 +165,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-context-gitops-link"
             >
               GitOps →
@@ -173,7 +173,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-context-policy-link"
             >
               Policy →
@@ -181,7 +181,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: search.trim(), q: `Backup guidance for ${search.trim()}` })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="backups-context-copilot-link"
             >
               Copilot →
@@ -202,7 +202,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('audit'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           View restore audit trail →
         </button>
@@ -216,7 +216,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('platform'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           Remote backup config →
         </button>

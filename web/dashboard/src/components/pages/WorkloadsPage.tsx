@@ -645,7 +645,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 e.stopPropagation();
                 togglePin(w.name);
               }}
-              className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-brand' : 'text-subtle hover:text-muted'}`}
+              className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-primary' : 'text-subtle hover:text-muted'}`}
               title={pinned ? 'Unpin workload' : 'Pin workload'}
             >
               <Star size={13} className={pinned ? 'fill-current' : ''} />
@@ -656,7 +656,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 e.stopPropagation();
                 openWorkloadDetail(w, 'overview');
               }}
-              className="block w-full min-w-0 truncate text-left text-foreground hover:text-brand"
+              className="block w-full min-w-0 truncate text-left text-foreground hover:text-primary"
               title={w.name}
             >
               <span className="block truncate">{shortName}</span>
@@ -771,7 +771,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               onClick={() => setPinnedOnly((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                 pinnedOnly
-                  ? 'bg-brand/20 text-brand border border-brand/40'
+                  ? 'bg-primary/20 text-primary border border-primary/40'
                   : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
               }`}
               title="Show pinned workloads only"
@@ -839,7 +839,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 onClick={() => setKindFilter(kind)}
                 className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                   active
-                    ? 'bg-brand/20 text-brand border border-brand/40'
+                    ? 'bg-primary/20 text-primary border border-primary/40'
                     : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
                 }`}
               >
@@ -853,7 +853,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
             title="Card view"
           >
             <LayoutGrid size={14} />
@@ -862,7 +862,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
             title="Table view"
           >
             <List size={14} />
@@ -892,7 +892,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                   onClick={() => setNamespaceFilter(active ? 'all' : namespace)}
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
                     active
-                      ? 'border-brand-wash bg-brand-wash text-brand'
+                      ? 'border-primary-wash bg-primary-wash text-primary'
                       : 'border-rule text-subtle hover:text-muted'
                   }`}
                 >
@@ -921,7 +921,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-platform-link"
           >
             Platform →
@@ -929,7 +929,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-clusters-link"
           >
             Clusters →
@@ -937,7 +937,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-openapi-link"
           >
             OpenAPI →
@@ -945,7 +945,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-rbac-link"
           >
             RBAC →
@@ -953,7 +953,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-policy-link"
           >
             Policy →
@@ -961,7 +961,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-secrets-link"
           >
             Secrets →
@@ -969,7 +969,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-editor-link"
           >
             Editor →
@@ -977,7 +977,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-copilot-link"
           >
             Copilot →
@@ -985,7 +985,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-compose-link"
           >
             Compose →
@@ -993,7 +993,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-deps-link"
           >
             Dependencies →
@@ -1001,7 +1001,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: workloadParam.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="workloads-context-gitops-link"
           >
             GitOps →
@@ -1017,7 +1017,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
             <>
               {' '}
-              <button type="button" onClick={() => setSourceFilter('cluster')} className="text-brand hover:underline">
+              <button type="button" onClick={() => setSourceFilter('cluster')} className="text-primary hover:underline">
                 View {clusterDiscoveredCount} discovered
               </button>
             </>
@@ -1025,13 +1025,13 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           {sourceFilterVal === 'cluster' && aetherManagedCount > 0 ? (
             <>
               {' '}
-              <button type="button" onClick={() => setSourceFilter('aether')} className="text-brand hover:underline">
+              <button type="button" onClick={() => setSourceFilter('aether')} className="text-primary hover:underline">
                 View {aetherManagedCount} Aether-managed
               </button>
             </>
           ) : null}
           {' · '}
-          <button type="button" onClick={() => setSourceFilter('all')} className="text-brand hover:underline">
+          <button type="button" onClick={() => setSourceFilter('all')} className="text-primary hover:underline">
             show all
           </button>
         </div>
@@ -1065,7 +1065,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       </section>
 
       {selectedNames.size > 0 && canMutate && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3" data-testid="workloads-bulk-bar">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
           <span className="text-sm text-muted">{selectedNames.size} selected</span>
           <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
           <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
@@ -1267,7 +1267,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               disabled={adviceLoading || actionLoading !== null}
               className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors capitalize ${
                 migrateTarget === rt
-                  ? 'border-brand/50 bg-brand/10 text-brand'
+                  ? 'border-primary/50 bg-primary/10 text-primary'
                   : 'glass-inset-surface glass-inset-hover glass-divider text-foreground'
               }`}
             >
@@ -1358,7 +1358,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               type="button"
               onClick={() => migrateModal && migrateTarget && handleMigrate(migrateModal, migrateTarget, migrateStrategy)}
               disabled={actionLoading !== null}
-              className="w-full py-3 bg-brand hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
+              className="w-full py-3 bg-primary hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
             >
               {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
             </button>

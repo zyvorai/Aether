@@ -148,7 +148,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-policy-link"
           >
             Policy →
@@ -156,7 +156,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-secrets-link"
           >
             Secrets →
@@ -164,7 +164,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-context-rbac-link"
           >
             RBAC →
@@ -172,7 +172,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-context-copilot-link"
           >
             Copilot →
@@ -180,7 +180,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-context-editor-link"
           >
             Editor →
@@ -188,7 +188,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="openapi-context-gitops-link"
           >
             GitOps →
@@ -199,7 +199,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
       <section className="glass mb-6 p-6 sm:p-8">
       <div className="glass mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <BookOpen className="w-5 h-5 text-brand" />
+          <BookOpen className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">
             {doc?.info?.title ?? 'Aether API'} {doc?.info?.version ? `v${doc.info.version}` : ''}
           </h2>
@@ -208,7 +208,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           <p className="text-sm text-muted mb-4">{doc.info.description}</p>
         )}
         <p className="text-xs text-subtle">
-          Raw document: <code className="text-brand/90">GET /api/openapi.json</code>
+          Raw document: <code className="text-primary/90">GET /api/openapi.json</code>
         </p>
         <button
           type="button"
@@ -243,16 +243,16 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <tr
                   key={`${row.method}-${row.path}`}
                   data-testid={workloadRoute ? 'openapi-workload-route-highlight' : undefined}
-                  className={`glass-table-row glass-inset-hover ${workloadRoute ? 'bg-brand/5' : ''}`}
+                  className={`glass-table-row glass-inset-hover ${workloadRoute ? 'bg-primary/5' : ''}`}
                 >
-                  <td className="py-2 px-4 font-mono text-xs text-brand">{row.method}</td>
+                  <td className="py-2 px-4 font-mono text-xs text-primary">{row.method}</td>
                   <td className="py-2 px-4 font-mono text-xs text-muted">
                     {row.path.includes('/rbac/keys') ? (
                       <button
                         type="button"
                         data-testid="openapi-rbac-link"
                         onClick={() => navigate(viewToPath('rbac'))}
-                        className="text-brand hover:underline"
+                        className="text-primary hover:underline"
                       >
                         {row.path}
                       </button>
@@ -263,7 +263,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
                         onClick={() =>
                           navigate(pathWithQuery(viewToPath('workloads'), { workload: focusedWorkload }))
                         }
-                        className="text-brand hover:underline"
+                        className="text-primary hover:underline"
                       >
                         {row.path}
                       </button>
@@ -277,7 +277,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
                       type="button"
                       data-testid={`openapi-copy-${row.method}-${row.path}`}
                       onClick={() => void copyPath(row.path)}
-                      className="rounded-lg p-1.5 text-subtle glass-inset-hover hover:text-brand"
+                      className="rounded-lg p-1.5 text-subtle glass-inset-hover hover:text-primary"
                       title="Copy path"
                     >
                       <Copy size={14} />

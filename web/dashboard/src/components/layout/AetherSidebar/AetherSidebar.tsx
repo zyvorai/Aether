@@ -78,8 +78,8 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
-        active ? 'bg-brand-wash text-brand' : 'text-muted hover:bg-hover hover:text-foreground',
+        'flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        active ? 'bg-primary-wash text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
         rail ? 'w-full justify-center px-1.5 py-1.5' : 'w-full',
         className,
       )}
@@ -137,8 +137,8 @@ function SidebarSectionBlock({
           onFocus={openFlyout}
           onBlur={scheduleClose}
           className={cn(
-            'mx-auto my-0.5 flex h-3 w-full items-center justify-center rounded-md text-subtle hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
-            hasActiveItem ? 'text-brand' : '',
+            'mx-auto my-0.5 flex h-3 w-full items-center justify-center rounded-md text-subtle hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+            hasActiveItem ? 'text-primary' : '',
           )}
         >
           <span className="h-px w-6 bg-border" aria-hidden />
@@ -175,7 +175,7 @@ function SidebarSectionBlock({
         type="button"
         aria-expanded={expanded}
         onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-subtle hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-subtle hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
         <span className="truncate">{section.label}</span>
@@ -264,7 +264,7 @@ export default function AetherSidebar({
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter"
               aria-label="Filter navigation"
-              className="w-full min-w-0 rounded-md bg-hover py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-brand/30"
+              className="w-full min-w-0 rounded-md bg-hover py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
             {filter ? (
               <button

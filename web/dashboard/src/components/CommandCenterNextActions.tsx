@@ -32,7 +32,7 @@ function actionTone(actionType: string): string {
     case 'investigate':
       return 'border-red-500/20 bg-red-500/[0.06]';
     case 'optimize':
-      return 'border-brand/20 bg-brand/[0.06]';
+      return 'border-primary/20 bg-primary/[0.06]';
     case 'migrate':
     case 'place':
       return 'border-aether-ai/20 bg-aether-ai/[0.06]';
@@ -133,8 +133,8 @@ export default function CommandCenterNextActions({
     <section className="glass mb-8 p-6 sm:p-8" data-testid="command-center-next-actions">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand/25 bg-brand/10">
-            <ListChecks className="h-5 w-5 text-brand" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10">
+            <ListChecks className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-foreground">Next actions</h3>
@@ -177,7 +177,7 @@ export default function CommandCenterNextActions({
                     </span>
                     <span className="mt-1 block text-xs leading-relaxed text-muted">{action.detail}</span>
                   </span>
-                  <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-subtle transition group-hover:text-brand" />
+                  <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-subtle transition group-hover:text-primary" />
                 </button>
               </li>
             );

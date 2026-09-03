@@ -106,7 +106,7 @@ export default function IntentPipelinePanel() {
             type="button"
             onClick={() => void runPipeline()}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Run pipeline
@@ -124,7 +124,7 @@ export default function IntentPipelinePanel() {
           type="button"
           onClick={() => void parseNl()}
           disabled={loading}
-          className="mt-2 rounded-lg border glass-divider px-3 py-1 text-xs text-muted hover:border-brand/40"
+          className="mt-2 rounded-lg border glass-divider px-3 py-1 text-xs text-muted hover:border-primary/40"
         >
           Parse NL → intent block
         </button>
@@ -193,7 +193,7 @@ export default function IntentPipelinePanel() {
                     {step.title}
                   </div>
                   <p className="mt-1 text-sm text-muted">{step.detail}</p>
-                  <p className="mt-1 text-xs text-brand">{step.action}</p>
+                  <p className="mt-1 text-xs text-primary">{step.action}</p>
                 </li>
               ))}
             </ol>
@@ -202,11 +202,11 @@ export default function IntentPipelinePanel() {
           <div className="flex flex-wrap gap-3">
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: report.workload_name })}
-              className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
             >
               Open in editor <ArrowRight className="h-3 w-3" />
             </Link>
-            <Link to={viewToPath('fabric')} className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
+            <Link to={viewToPath('fabric')} className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
               Runtime fabric <ArrowRight className="h-3 w-3" />
             </Link>
           </div>

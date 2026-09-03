@@ -73,7 +73,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
   const isRecommended = score.runtime === recommended;
 
   return (
-    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-brand/40 bg-brand/5' : 'glass-divider glass'}`}>
+    <div className={`rounded-xl border p-3 ${isRecommended ? 'border-primary/40 bg-primary/5' : 'glass-divider glass'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <RuntimeBadge runtime={score.runtime} />
         {isRecommended && <Badge text="Recommended" variant="accent" />}
@@ -215,7 +215,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
           ))}
         </div>
       )}
-      <Link to={scoringHref} className="inline-flex text-xs text-brand hover:underline">
+      <Link to={scoringHref} className="inline-flex text-xs text-primary hover:underline">
         Open scoring for {data.name} →
       </Link>
     </div>
@@ -255,7 +255,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       )}
       <Link
         to={pathWithQuery(viewToPath('workloads'), { workload: workloadName, tab: 'logs' })}
-        className="inline-flex text-xs text-brand hover:underline"
+        className="inline-flex text-xs text-primary hover:underline"
       >
         View logs for {workloadName} →
       </Link>
@@ -432,7 +432,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'predictions' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="ai-context-intelligence-link"
           >
             Intelligence →
@@ -440,7 +440,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Analyze ${workloadQuery.trim()}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="ai-context-copilot-link"
           >
             Copilot →
@@ -448,7 +448,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="ai-context-editor-link"
           >
             Editor →
@@ -456,7 +456,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="ai-context-policy-link"
           >
             Policy →
@@ -464,7 +464,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="ai-context-secrets-link"
           >
             Secrets →
@@ -530,15 +530,15 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-min">
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-brand/10 rounded-xl">
-                <Zap className="text-brand" size={20} />
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Zap className="text-primary" size={20} />
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-foreground">AI Recommendation</h3>
                 <p className="text-xs text-subtle">Get intelligent runtime suggestions</p>
                 <Link
                   to={viewToPath('intelligence')}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="ai-intelligence-link"
                 >
                   Intelligence reports →
@@ -672,7 +672,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {selectedWorkload && (
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: selectedWorkload, tab: 'scoring' })}
-                    className="mt-3 inline-flex text-xs text-brand hover:underline"
+                    className="mt-3 inline-flex text-xs text-primary hover:underline"
                   >
                     Open scoring for {selectedWorkload} →
                   </Link>

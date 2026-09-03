@@ -176,7 +176,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="envs-editor-link"
           >
             Editor →
@@ -184,7 +184,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="envs-drift-link"
           >
             Drift →
@@ -192,7 +192,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="envs-secrets-link"
           >
             Secrets →
@@ -200,7 +200,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="envs-compose-link"
           >
             Compose →
@@ -208,7 +208,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="envs-policy-link"
           >
             Policy →
@@ -222,7 +222,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="envs-context-editor-link"
               >
                 Editor →
@@ -230,7 +230,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('drift'), { workload: search.trim() })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="envs-context-drift-link"
               >
                 Drift →
@@ -238,7 +238,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('secrets'), { workload: search.trim() })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="envs-context-secrets-link"
               >
                 Secrets →
@@ -246,7 +246,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('compose'), { workload: search.trim() })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="envs-context-compose-link"
               >
                 Compose →
@@ -254,7 +254,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {' · '}
               <Link
                 to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="envs-context-policy-link"
               >
                 Policy →
@@ -356,7 +356,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
             <>
               <pre data-testid="envs-parity-result" className="mt-3 text-xs text-muted overflow-x-auto max-h-48">{parityResult}</pre>
               {parityResult.toLowerCase().includes('drift') || parityResult.toLowerCase().includes('mismatch') ? (
-                <Link to={viewToPath('drift')} className="mt-2 inline-flex text-xs text-brand hover:underline" data-testid="envs-drift-link">
+                <Link to={viewToPath('drift')} className="mt-2 inline-flex text-xs text-primary hover:underline" data-testid="envs-drift-link">
                   Open drift detection →
                 </Link>
               ) : null}
@@ -444,7 +444,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       <li key={name} className="flex justify-between gap-2 glass-table-row rounded-lg px-3 py-2">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: name })}
-                          className="text-foreground hover:text-brand"
+                          className="text-foreground hover:text-primary"
                         >
                           {name}
                         </Link>

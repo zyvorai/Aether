@@ -159,7 +159,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('rbac'),
             )
           }
-          className="text-brand hover:underline"
+          className="text-primary hover:underline"
         >
           API access control →
         </button>
@@ -168,7 +168,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           type="button"
           data-testid="secrets-confidential-link"
           onClick={() => navigate(viewToPath('confidential'))}
-          className="text-brand hover:underline"
+          className="text-primary hover:underline"
         >
           Confidential computing →
         </button>
@@ -180,7 +180,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-editor-link"
             >
               Editor →
@@ -188,7 +188,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('backups'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-backups-link"
             >
               Backups →
@@ -196,7 +196,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-context-rbac-link"
             >
               RBAC →
@@ -204,7 +204,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-context-policy-link"
             >
               Policy →
@@ -212,7 +212,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('confidential'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-context-confidential-link"
             >
               Confidential →
@@ -220,7 +220,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-context-gitops-link"
             >
               GitOps →
@@ -228,7 +228,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('templates'), { workload: search.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="secrets-context-templates-link"
             >
               Templates →
@@ -290,7 +290,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                               <button
                                 type="button"
                                 onClick={() => void copyKeyName(key)}
-                                className="text-subtle hover:text-brand"
+                                className="text-subtle hover:text-primary"
                                 title="Copy key name"
                                 data-testid={`secrets-copy-key-${key}`}
                               >
@@ -317,7 +317,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                     >
                       {detailLoading === s.name ? (
-                        <span className="h-3 w-3 animate-spin rounded-full border-b border-brand" />
+                        <span className="h-3 w-3 animate-spin rounded-full border-b border-primary" />
                       ) : expanded ? (
                         <ChevronDown size={13} />
                       ) : (

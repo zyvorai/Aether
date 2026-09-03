@@ -128,7 +128,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('scheduler'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-scheduler-scoped-link"
           >
             Scheduler →
@@ -136,7 +136,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-ai-link"
           >
             AI engine →
@@ -144,7 +144,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Placement guidance for ${workloadFocus}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-context-copilot-link"
           >
             Copilot →
@@ -152,7 +152,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('cost'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-context-cost-link"
           >
             Cost →
@@ -160,7 +160,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-context-drift-link"
           >
             Drift →
@@ -168,7 +168,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="affinity-context-platform-link"
           >
             Platform →
@@ -194,7 +194,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-foreground">Runtime compatibility matrix</h2>
-            <Link to={viewToPath('scheduler')} className="text-xs text-brand hover:underline" data-testid="affinity-scheduler-link">
+            <Link to={viewToPath('scheduler')} className="text-xs text-primary hover:underline" data-testid="affinity-scheduler-link">
               Placement scheduler →
             </Link>
           </div>
@@ -214,7 +214,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <td className="py-2 px-3">
                     <Link
                       to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })}
-                      className="text-brand hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {row.runtime}
                     </Link>
@@ -233,7 +233,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="mb-3 flex flex-wrap gap-2">
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'place' })}
-              className="text-xs text-brand hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Placement intelligence →
             </Link>
@@ -253,7 +253,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
               <div
                 key={cls}
                 className={`glass ${
-                  classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-brand/30' : ''
+                  classMatchesWorkload(cls) ? 'ring-1 ring-aether/40 border-primary/30' : ''
                 }`}
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
               >
@@ -264,7 +264,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
                   {top && (
                     <Link
                       to={pathWithQuery(viewToPath('scheduler'), {})}
-                      className="text-xs text-brand hover:underline"
+                      className="text-xs text-primary hover:underline"
                     >
                       Scheduler placement →
                     </Link>
@@ -288,7 +288,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {top && (
                   <Link
                     to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })}
-                    className="mt-4 inline-flex text-xs text-brand hover:underline"
+                    className="mt-4 inline-flex text-xs text-primary hover:underline"
                   >
                     Compare {top.runtime} in AI engine →
                   </Link>

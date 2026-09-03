@@ -134,7 +134,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-openapi-link"
             >
               OpenAPI →
@@ -142,7 +142,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('rbac'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-rbac-link"
             >
               RBAC →
@@ -150,7 +150,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-secrets-link"
             >
               Secrets →
@@ -158,7 +158,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-context-policy-link"
             >
               Policy →
@@ -166,7 +166,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-context-editor-link"
             >
               Editor →
@@ -174,7 +174,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('gitops'), { workload: workloadFilter.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="audit-context-gitops-link"
             >
               GitOps →
@@ -195,7 +195,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
                 type="button"
                 data-testid="audit-export-json"
                 onClick={() => downloadExport('json')}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 JSON
@@ -204,7 +204,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
                 type="button"
                 data-testid="audit-export-csv"
                 onClick={() => downloadExport('csv')}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 CSV
@@ -226,7 +226,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               data-testid="audit-clear-filters"
               onClick={() => setResultFilter('')}
-              className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:text-brand"
+              className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:text-primary"
             >
               Clear result filter
             </button>
@@ -242,7 +242,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
               ? pathWithQuery(viewToPath('events'), { workload: workloadFilter.trim() })
               : viewToPath('events')
           }
-          className="text-brand hover:underline"
+          className="text-primary hover:underline"
           data-testid="audit-events-link"
         >
           View events feed →
@@ -251,7 +251,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
           <WorkloadScopedCrossLinks workload={workloadFilter} prefix="audit" />
         ) : null}
         {' · '}
-        <Link to={viewToPath('rbac')} className="text-brand hover:underline" data-testid="audit-footer-rbac-link">
+        <Link to={viewToPath('rbac')} className="text-primary hover:underline" data-testid="audit-footer-rbac-link">
           API access control →
         </Link>
       </div>
@@ -290,7 +290,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
               data-testid="audit-reverify"
               onClick={() => void reVerify()}
               disabled={verifying}
-              className="ml-auto rounded-lg border glass-divider px-3 py-1 text-xs text-muted hover:border-brand/40 disabled:opacity-50"
+              className="ml-auto rounded-lg border glass-divider px-3 py-1 text-xs text-muted hover:border-primary/40 disabled:opacity-50"
             >
               {verifying ? 'Verifying…' : 'Re-verify integrity'}
             </button>
@@ -327,7 +327,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <span className="text-xs text-subtle">on</span>
                     <Link
                       to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
-                      className="text-sm text-brand hover:underline"
+                      className="text-sm text-primary hover:underline"
                     >
                       {ev.workload}
                     </Link>

@@ -174,7 +174,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-context-intelligence-link"
             >
               Intelligence →
@@ -182,7 +182,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('fabric'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-context-fabric-link"
             >
               Fabric →
@@ -190,7 +190,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-editor-link"
             >
               Editor →
@@ -198,7 +198,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-context-openapi-link"
             >
               OpenAPI →
@@ -206,7 +206,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-context-policy-link"
             >
               Policy →
@@ -214,7 +214,7 @@ function ZyraPage() {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="zyra-context-secrets-link"
             >
               Secrets →
@@ -243,7 +243,7 @@ function ZyraPage() {
                 setSessionId(null);
                 setPending([]);
               }}
-              className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted transition hover:border-brand/30 hover:text-foreground"
+              className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted transition hover:border-primary/30 hover:text-foreground"
             >
               Clear chat
             </button>
@@ -253,7 +253,7 @@ function ZyraPage() {
           )}
           <Link
             to={viewToPath('intelligence')}
-            className="text-xs text-brand hover:underline"
+            className="text-xs text-primary hover:underline"
             data-testid="zyra-intelligence-link"
           >
             Intelligence reports →
@@ -264,7 +264,7 @@ function ZyraPage() {
                 ? pathWithQuery(viewToPath('health'), { workload: workloadFocus })
                 : viewToPath('health')
             }
-            className="text-xs text-brand hover:underline ml-3"
+            className="text-xs text-primary hover:underline ml-3"
             data-testid="zyra-health-link"
           >
             Health monitor →
@@ -273,21 +273,21 @@ function ZyraPage() {
             <>
               <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-                className="text-xs text-brand hover:underline ml-3"
+                className="text-xs text-primary hover:underline ml-3"
                 data-testid="zyra-trust-link"
               >
                 Trust tab →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workloadFocus })}
-                className="text-xs text-brand hover:underline ml-3"
+                className="text-xs text-primary hover:underline ml-3"
                 data-testid="zyra-alerts-link"
               >
                 Alert rules →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('events'), { workload: workloadFocus })}
-                className="text-xs text-brand hover:underline ml-3"
+                className="text-xs text-primary hover:underline ml-3"
                 data-testid="zyra-events-link"
               >
                 Events →

@@ -29,7 +29,7 @@ function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workload.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fabric-context-fleet-link"
           >
             Fleet →
@@ -37,7 +37,7 @@ function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('migrations'), { workload: workload.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fabric-context-migrations-link"
           >
             Migrations →
@@ -45,7 +45,7 @@ function FabricPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workload.trim(), q: `Fabric analysis for ${workload.trim()}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fabric-context-zyra-link"
           >
             Zyra →

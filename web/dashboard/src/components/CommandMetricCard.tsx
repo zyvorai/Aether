@@ -35,7 +35,7 @@ export default function CommandMetricCard({
     <button
       type="button"
       onClick={onClick}
-      className={`tahoe-stat-tile group w-full rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left transition hover:border-brand/30 hover:shadow-card ${isEmpty ? 'opacity-70' : ''}`}
+      className={`tahoe-stat-tile group w-full rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left transition hover:border-primary/30 hover:shadow-card ${isEmpty ? 'opacity-70' : ''}`}
       data-testid={testId}
     >
       <div className="flex items-start justify-between gap-3">

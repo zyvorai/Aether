@@ -119,19 +119,19 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="mb-6 glass-context-banner" data-testid="platform-hub-context">
         Platform
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="platform-context-fleet-hub-link">
+        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="platform-context-fleet-hub-link">
           Fleet →
         </Link>
         {' · '}
-        <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="platform-context-hosted-hub-link">
+        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="platform-context-hosted-hub-link">
           Hosted SaaS →
         </Link>
         {' · '}
-        <Link to={viewToPath('security')} className="text-brand hover:underline" data-testid="platform-context-security-hub-link">
+        <Link to={viewToPath('security')} className="text-primary hover:underline" data-testid="platform-context-security-hub-link">
           Security →
         </Link>
         {' · '}
-        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="platform-context-settings-hub-link">
+        <Link to={viewToPath('settings')} className="text-primary hover:underline" data-testid="platform-context-settings-hub-link">
           Settings →
         </Link>
       </div>
@@ -148,7 +148,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-clusters-link"
           >
             Clusters →
@@ -156,7 +156,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-rbac-link"
           >
             RBAC →
@@ -164,7 +164,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-openapi-link"
           >
             OpenAPI →
@@ -172,7 +172,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-copilot-link"
           >
             Zyra →
@@ -180,7 +180,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-policy-link"
           >
             Policy →
@@ -188,7 +188,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-intelligence-link"
           >
             Intelligence →
@@ -196,7 +196,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-secrets-link"
           >
             Secrets →
@@ -204,7 +204,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-fleet-link"
           >
             Fleet →
@@ -212,7 +212,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-context-hosted-link"
           >
             Hosted SaaS →
@@ -220,7 +220,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-editor-link"
           >
             Editor →
@@ -228,7 +228,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="platform-deps-link"
           >
             Dependencies →
@@ -252,7 +252,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
-            <Server className="text-brand" size={20} />
+            <Server className="text-primary" size={20} />
             <h2 className="text-lg font-semibold text-foreground">Runtime</h2>
           </div>
           <dl className="space-y-3 text-sm">
@@ -306,7 +306,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             </div>
           </dl>
           {!platform?.opa?.configured && (
-            <Link to={viewToPath('policy')} className="mt-4 inline-flex text-xs text-brand hover:underline">
+            <Link to={viewToPath('policy')} className="mt-4 inline-flex text-xs text-primary hover:underline">
               Configure policy engine →
             </Link>
           )}
@@ -316,7 +316,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 ? pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })
                 : viewToPath('audit')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
             data-testid="platform-audit-link"
           >
             Audit trail →
@@ -327,7 +327,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 ? pathWithQuery(viewToPath('backups'), { workload: focusedWorkload })
                 : viewToPath('backups')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
             data-testid="platform-backups-link"
           >
             Backups →
@@ -338,7 +338,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
                 : viewToPath('confidential')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
             data-testid="platform-confidential-link"
           >
             Confidential computing →
@@ -349,7 +349,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 ? pathWithQuery(viewToPath('health'), { workload: focusedWorkload })
                 : viewToPath('health')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
             data-testid="platform-health-link"
           >
             Health monitor →
@@ -360,7 +360,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 ? pathWithQuery(viewToPath('events'), { workload: focusedWorkload })
                 : viewToPath('events')
             }
-            className="mt-4 ml-4 inline-flex text-xs text-brand hover:underline"
+            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
             data-testid="platform-events-link"
           >
             Events feed →
@@ -427,7 +427,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                     type="button"
                     onClick={() => void runConnectivityProbe()}
                     disabled={probeLoading}
-                    className="text-xs text-brand hover:underline disabled:opacity-50"
+                    className="text-xs text-primary hover:underline disabled:opacity-50"
                     data-testid="platform-cilium-probe-btn"
                   >
                     {probeLoading ? 'Running…' : 'Run check'}
@@ -461,7 +461,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             {cilium.cluster && (
               <Link
                 to={pathWithQuery(viewToPath('clusters'), { cluster: cilium.cluster, tab: 'network' })}
-                className="inline-flex text-xs text-brand hover:underline"
+                className="inline-flex text-xs text-primary hover:underline"
                 data-testid="platform-cilium-cluster-link"
               >
                 Browse network policies in cluster browser →
@@ -505,7 +505,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                   href={grafanaDashboardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
+                  className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/20"
                 >
                   Open Aether dashboard <ExternalLink size={14} />
                 </a>
@@ -564,7 +564,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
         <p className="mt-4 text-xs text-subtle">
           Multi-cluster inventory: open{' '}
-          <a href="/fleet" className="text-brand hover:underline">
+          <a href="/fleet" className="text-primary hover:underline">
             Fleet Overview
           </a>
           . Set <code className="text-muted">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.

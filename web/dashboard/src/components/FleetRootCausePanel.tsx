@@ -48,7 +48,7 @@ export default function FleetRootCausePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-sm text-muted hover:border-brand/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-sm text-muted hover:border-primary/40"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Scan fleet
@@ -81,7 +81,7 @@ export default function FleetRootCausePanel() {
                   <button
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload }))}
-                    className="text-left text-base font-semibold text-foreground hover:text-brand"
+                    className="text-left text-base font-semibold text-foreground hover:text-primary"
                   >
                     {row.workload}
                   </button>
@@ -116,10 +116,10 @@ export default function FleetRootCausePanel() {
               ) : null}
 
               <div className="mt-3 flex flex-wrap gap-3 text-xs">
-                <Link to={pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'logs' })} className="text-brand hover:underline">
+                <Link to={pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'logs' })} className="text-primary hover:underline">
                   View logs →
                 </Link>
-                <Link to={pathWithQuery(viewToPath('zyra'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-brand hover:underline">
+                <Link to={pathWithQuery(viewToPath('zyra'), { workload: row.workload, q: `Fix ${row.workload}` })} className="text-primary hover:underline">
                   Ask copilot →
                 </Link>
               </div>

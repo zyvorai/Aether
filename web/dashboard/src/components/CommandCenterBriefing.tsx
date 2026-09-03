@@ -127,8 +127,8 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-brand" aria-hidden />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">Command Center</p>
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Command Center</p>
           </div>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -136,7 +136,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
               {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
             </p>
             {clusterContext ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
                 {clusterContext.clusterCount > 0
                   ? `${clusterContext.clusterCount} cluster${clusterContext.clusterCount === 1 ? '' : 's'} · ${clusterContext.connected ? 'Live' : 'Offline'}`
                   : clusterContext.mode ?? 'Local mode · No kubeconfig'}
@@ -164,7 +164,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           {!fleetEmpty ? (
             <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
-                className="h-full rounded-full bg-brand transition-all"
+                className="h-full rounded-full bg-primary transition-all"
                 style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct))}%` }}
               />
             </div>

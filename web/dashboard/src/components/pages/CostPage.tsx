@@ -122,19 +122,19 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
     <div className="mb-6 glass-context-banner" data-testid="cost-hub-context">
       FinOps
       {' · '}
-      <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="cost-context-intelligence-hub-link">
+      <Link to={viewToPath('intelligence')} className="text-primary hover:underline" data-testid="cost-context-intelligence-hub-link">
         Intelligence →
       </Link>
       {' · '}
-      <Link to={viewToPath('hosted')} className="text-brand hover:underline" data-testid="cost-context-hosted-link">
+      <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="cost-context-hosted-link">
         Hosted SaaS →
       </Link>
       {' · '}
-      <Link to={viewToPath('migrations')} className="text-brand hover:underline" data-testid="cost-context-migrations-link">
+      <Link to={viewToPath('migrations')} className="text-primary hover:underline" data-testid="cost-context-migrations-link">
         Migrations →
       </Link>
       {' · '}
-      <Link to={viewToPath('platform')} className="text-brand hover:underline" data-testid="cost-context-platform-hub-link">
+      <Link to={viewToPath('platform')} className="text-primary hover:underline" data-testid="cost-context-platform-hub-link">
         Platform →
       </Link>
     </div>
@@ -156,7 +156,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('scheduler'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-scheduler-scoped-link"
           >
             Scheduler →
@@ -164,7 +164,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('intelligence'), { workload: workloadQuery.trim(), tab: 'cost' })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-intelligence-link"
           >
             Intelligence →
@@ -172,7 +172,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('affinity'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-context-affinity-link"
           >
             Affinity →
@@ -180,7 +180,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-context-platform-link"
           >
             Platform →
@@ -188,7 +188,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-context-drift-link"
           >
             Drift →
@@ -196,7 +196,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="cost-context-secrets-link"
           >
             Secrets →
@@ -225,19 +225,19 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
                     : viewToPath('metrics'),
                 )
               }
-              className="text-xs text-brand hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Full report on Metrics →
             </button>
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { tab: 'cost' })}
-              className="text-xs text-brand hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Cost optimize →
             </Link>
             <Link
               to={viewToPath('scheduler')}
-              className="text-xs text-brand hover:underline"
+              className="text-xs text-primary hover:underline"
               data-testid="cost-scheduler-link"
             >
               Placement scheduler →
@@ -252,12 +252,12 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
               {chargeback.lines.map((line) => (
                 <li
                   key={line.workload}
-                  className={`flex flex-wrap items-center justify-between gap-2 ${workloadQuery.trim() === line.workload ? 'rounded-lg border border-brand/40 bg-brand/5 px-2 py-1' : ''}`}
+                  className={`flex flex-wrap items-center justify-between gap-2 ${workloadQuery.trim() === line.workload ? 'rounded-lg border border-primary/40 bg-primary/5 px-2 py-1' : ''}`}
                   data-testid={workloadQuery.trim() === line.workload ? 'cost-workload-highlight' : undefined}
                 >
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: line.workload })}
-                    className="text-brand hover:underline font-mono text-xs"
+                    className="text-primary hover:underline font-mono text-xs"
                   >
                     {line.workload}
                   </Link>

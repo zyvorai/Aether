@@ -55,7 +55,7 @@ export default function GlassSection({
         <CardHeader className="flex flex-wrap items-start justify-between gap-3 border-border">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {icon ? (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-brand">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-primary">
                 {icon}
               </div>
             ) : null}

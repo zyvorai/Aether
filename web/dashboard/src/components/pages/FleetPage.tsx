@@ -182,17 +182,17 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="mb-6 glass-context-banner" data-testid="fleet-hub-context">
         Fleet
         {' · '}
-        <Link to={viewToPath('health')} className="text-brand hover:underline" data-testid="fleet-context-orchestrator-link">
+        <Link to={viewToPath('health')} className="text-primary hover:underline" data-testid="fleet-context-orchestrator-link">
           Orchestrator →
         </Link>
         {' · '}
-        <Link to={viewToPath('intelligence')} className="text-brand hover:underline" data-testid="fleet-context-intelligence-link">
+        <Link to={viewToPath('intelligence')} className="text-primary hover:underline" data-testid="fleet-context-intelligence-link">
           Intelligence →
         </Link>
         {' · '}
         <Link
           to={`${viewToPath('fleet')}?tab=edge`}
-          className="text-brand hover:underline"
+          className="text-primary hover:underline"
           data-testid="fleet-context-edge-link"
         >
           Edge →
@@ -215,7 +215,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-clusters-scoped-link"
           >
             Clusters →
@@ -223,7 +223,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-openapi-link"
           >
             OpenAPI →
@@ -231,7 +231,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-context-policy-link"
           >
             Policy →
@@ -239,7 +239,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-context-secrets-link"
           >
             Secrets →
@@ -247,7 +247,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-context-editor-link"
           >
             Editor →
@@ -255,7 +255,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Fleet guidance for ${focusedWorkload}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-context-copilot-link"
           >
             Copilot →
@@ -263,7 +263,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={viewToPath('hosted')}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="fleet-context-hosted-link"
           >
             Hosted SaaS →
@@ -281,7 +281,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('clusters'),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           Cluster browser →
         </button>
@@ -295,7 +295,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('metrics'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Metrics &amp; chargeback →
         </button>
@@ -309,7 +309,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('scheduler'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Placement scheduler →
         </button>
@@ -323,7 +323,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('drift'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Drift detection →
         </button>
@@ -337,7 +337,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('confidential'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Confidential fleet →
         </button>
@@ -351,7 +351,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('health'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Health monitor →
         </button>
@@ -365,7 +365,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 : viewToPath('events'),
             )
           }
-          className="text-xs text-brand hover:underline ml-3"
+          className="text-xs text-primary hover:underline ml-3"
         >
           Events feed →
         </button>
@@ -421,7 +421,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                 setPlacementPlan(res.success ? (res.data as FederationPlan) : null);
                 setPlacementLoading(false);
               }}
-              className="rounded-lg bg-brand px-3 py-1.5 text-sm text-white disabled:opacity-50"
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm text-white disabled:opacity-50"
             >
               {placementLoading ? 'Planning…' : 'Plan for focused workload'}
             </button>
@@ -502,7 +502,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
         {clusters.length === 0 ? (
           <p className="text-sm text-subtle">
             No clusters in kubeconfig inventory. Configure kubeconfig on the API server or open{' '}
-            <button type="button" onClick={() => navigate(viewToPath('clusters'))} className="text-brand hover:underline">
+            <button type="button" onClick={() => navigate(viewToPath('clusters'))} className="text-primary hover:underline">
               Cluster Browser
             </button>
             .
@@ -663,7 +663,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.grafana_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand/10 px-4 py-2 text-sm text-brand hover:bg-brand/20"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/20"
             >
               Grafana <ExternalLink size={14} />
             </a>

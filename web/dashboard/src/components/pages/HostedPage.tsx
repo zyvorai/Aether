@@ -161,19 +161,19 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="mb-6 glass-context-banner" data-testid="hosted-hub-context">
         Hosted control plane
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="hosted-context-fleet-link">
+        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="hosted-context-fleet-link">
           Fleet →
         </Link>
         {' · '}
-        <Link to={viewToPath('platform')} className="text-brand hover:underline" data-testid="hosted-context-platform-link">
+        <Link to={viewToPath('platform')} className="text-primary hover:underline" data-testid="hosted-context-platform-link">
           Platform →
         </Link>
         {' · '}
-        <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="hosted-context-federation-link">
+        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="hosted-context-federation-link">
           Federation →
         </Link>
         {' · '}
-        <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="hosted-context-settings-link">
+        <Link to={viewToPath('settings')} className="text-primary hover:underline" data-testid="hosted-context-settings-link">
           Identity & SSO →
         </Link>
       </div>
@@ -359,7 +359,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       data-testid="hosted-upgrade-button"
                       disabled={upgradingId === t.id}
                       onClick={() => void handleUpgrade(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
                     >
                       {upgradingId === t.id ? '…' : 'Upgrade'}
                     </button>

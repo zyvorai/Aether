@@ -176,7 +176,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
           <button
             type="button"
             onClick={clearChat}
-            className="rounded-lg border glass-divider px-2 py-1 text-[10px] text-muted transition hover:border-brand/30 hover:text-foreground"
+            className="rounded-lg border glass-divider px-2 py-1 text-[10px] text-muted transition hover:border-primary/30 hover:text-foreground"
           >
             Clear
           </button>

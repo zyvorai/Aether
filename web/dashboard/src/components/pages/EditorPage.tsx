@@ -250,7 +250,7 @@ function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="editor-banner-gitops-link"
           >
             GitOps →
@@ -258,7 +258,7 @@ function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('backups'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="editor-banner-backups-link"
           >
             Backups →
@@ -266,7 +266,7 @@ function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('templates'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="editor-banner-templates-link"
           >
             Templates →
@@ -274,7 +274,7 @@ function EditorPage() {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="editor-banner-policy-link"
           >
             Policy →
@@ -285,7 +285,7 @@ function EditorPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div>
-            <Link to={viewToPath('templates')} className="text-xs text-brand hover:underline" data-testid="editor-templates-link">
+            <Link to={viewToPath('templates')} className="text-xs text-primary hover:underline" data-testid="editor-templates-link">
               Browse templates →
             </Link>
             {workloadQuery.trim() && form.name === workloadQuery ? (
@@ -293,7 +293,7 @@ function EditorPage() {
                 {' · '}
                 <Link
                   to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="editor-policy-link"
                 >
                   Policy check →
@@ -301,7 +301,7 @@ function EditorPage() {
                 {' · '}
                 <Link
                   to={pathWithQuery(viewToPath('gitops'), { workload: workloadQuery.trim() })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="editor-gitops-link"
                 >
                   GitOps →
@@ -668,7 +668,7 @@ function EditorPage() {
           )}
 
           {exportPath && (
-            <p className="text-xs text-subtle mt-2">Helm output: <code className="text-brand/90">{exportPath}</code></p>
+            <p className="text-xs text-subtle mt-2">Helm output: <code className="text-primary/90">{exportPath}</code></p>
           )}
 
           <div className="flex flex-wrap gap-3 pt-4 glass-divider-t">

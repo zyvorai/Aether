@@ -1022,7 +1022,7 @@ export default function WorkloadDetail({
                   <button
                     type="button"
                     onClick={() => onMigrate(workload.name)}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-brand/15 text-brand hover:bg-brand/25 border border-brand/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30 transition-colors"
                   >
                     Migrate
                   </button>
@@ -1664,7 +1664,7 @@ export default function WorkloadDetail({
                         setCopiedCmd('all');
                         window.setTimeout(() => setCopiedCmd(''), 1500);
                       }}
-                      className="rounded px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-muted transition-colors hover:bg-white/5 hover:text-brand"
+                      className="rounded px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-muted transition-colors hover:bg-white/5 hover:text-primary"
                       data-testid="workload-kubectl-copy-all"
                     >
                       {copiedCmd === 'all' ? 'Copied all' : 'Copy all'}
@@ -1689,7 +1689,7 @@ export default function WorkloadDetail({
                             setCopiedCmd(cmd.label);
                             window.setTimeout(() => setCopiedCmd(''), 1500);
                           }}
-                          className="shrink-0 rounded px-2 py-1 text-[11px] text-muted transition-colors hover:bg-white/5 hover:text-brand"
+                          className="shrink-0 rounded px-2 py-1 text-[11px] text-muted transition-colors hover:bg-white/5 hover:text-primary"
                         >
                           {copiedCmd === cmd.label ? 'Copied' : 'Copy'}
                         </button>
@@ -1751,7 +1751,7 @@ export default function WorkloadDetail({
                   key={link.label}
                   href={link.path}
                   data-testid={`workload-link-${link.slug}`}
-                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-muted hover:border-brand/40 hover:text-brand transition-colors"
+                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-muted hover:border-primary/40 hover:text-primary transition-colors"
                 >
                   {link.label}
                 </a>
@@ -1805,7 +1805,7 @@ export default function WorkloadDetail({
                 </dl>
                 <a
                   href={clusterBrowseNetworkPath}
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
                 >
                   Browse cluster network policies
                   <Link2 className="h-3.5 w-3.5" />
@@ -1929,7 +1929,7 @@ export default function WorkloadDetail({
             <p>
               Runtime scoring evaluates a workload spec (YAML), which this panel does not have for{' '}
               {workload.name} — only its live runtime status. Paste the spec on{' '}
-              <Link to={pathWithQuery(viewToPath('ai'), { workload: workload.name })} className="text-brand hover:underline">
+              <Link to={pathWithQuery(viewToPath('ai'), { workload: workload.name })} className="text-primary hover:underline">
                 AI Engine
               </Link>{' '}
               to compare runtime placements.
@@ -1946,35 +1946,35 @@ export default function WorkloadDetail({
             <div className="mb-3 flex flex-wrap gap-3 text-xs" data-testid="workload-events-cross-links">
               <Link
                 to={pathWithQuery(viewToPath('events'), { workload: workload.name })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="workload-events-events-link"
               >
                 Full events feed →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workload.name })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="workload-events-alerts-link"
               >
                 Alert rules →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('health'), { workload: workload.name })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="workload-events-health-link"
               >
                 Health monitor →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('drift'), { workload: workload.name })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="workload-events-drift-link"
               >
                 Drift →
               </Link>
               <Link
                 to={pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' })}
-                className="text-brand hover:underline"
+                className="text-primary hover:underline"
                 data-testid="workload-events-trust-link"
               >
                 Trust &amp; attestation →

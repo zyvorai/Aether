@@ -75,8 +75,8 @@ export default function WorkloadCard({
         data-testid={`workload-card-${shortName}`}
         className={`group w-full rounded-xl border px-3 py-2.5 text-left transition ${
           selected
-            ? 'border-brand/50 bg-brand/10 shadow-[0_0_0_1px_rgba(211,84,0,0.25)]'
-            : 'glass-divider glass-inset-surface hover:border-brand/30 hover:bg-white/[0.03]'
+            ? 'border-primary/50 bg-primary/10 shadow-[0_0_0_1px_rgba(211,84,0,0.25)]'
+            : 'glass-divider glass-inset-surface hover:border-primary/30 hover:bg-white/[0.03]'
         }`}
       >
         <div className="flex items-start gap-2">
@@ -93,7 +93,7 @@ export default function WorkloadCard({
               {[workload.kind, locationLabel || null].filter(Boolean).join(' · ') || workload.runtime}
             </div>
           </div>
-          {pinned ? <Star size={12} className="mt-0.5 shrink-0 fill-current text-brand" /> : null}
+          {pinned ? <Star size={12} className="mt-0.5 shrink-0 fill-current text-primary" /> : null}
         </div>
       </button>
     );
@@ -105,18 +105,18 @@ export default function WorkloadCard({
       style={{ animationDelay: `${delayMs}ms` }}
       className={`workload-card-rise group relative overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
         selected
-          ? 'border-brand/45 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
-          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-brand/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
+          ? 'border-primary/45 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
+          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-primary/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
       }`}
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${statusAccent(workload.status)}`} aria-hidden />
-      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand/12 blur-3xl transition duration-500 group-hover:bg-brand/22 group-hover:scale-110" aria-hidden />
+      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-primary/12 blur-3xl transition duration-500 group-hover:bg-primary/22 group-hover:scale-110" aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-60" aria-hidden />
 
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
           <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent">
-            <KindIcon size={18} className="text-muted transition group-hover:text-brand" />
+            <KindIcon size={18} className="text-muted transition group-hover:text-primary" />
             {running ? (
               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-emerald-400 platform-pulse" />
             ) : null}
@@ -124,7 +124,7 @@ export default function WorkloadCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <button type="button" onClick={() => onOpen('overview')} className="min-w-0 flex-1 text-left">
-                <h3 className="truncate text-base font-semibold tracking-tight text-foreground transition group-hover:text-brand">
+                <h3 className="truncate text-base font-semibold tracking-tight text-foreground transition group-hover:text-primary">
                   {shortName}
                 </h3>
                 <p className="mt-0.5 truncate text-[11px] text-subtle" title={workload.name}>
@@ -134,7 +134,7 @@ export default function WorkloadCard({
               <button
                 type="button"
                 onClick={onTogglePin}
-                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-brand' : 'text-subtle hover:text-muted'}`}
+                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-primary' : 'text-subtle hover:text-muted'}`}
                 title={pinned ? 'Unpin' : 'Pin'}
                 aria-label={pinned ? `Unpin ${shortName}` : `Pin ${shortName}`}
               >

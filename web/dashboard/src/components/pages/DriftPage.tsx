@@ -206,7 +206,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
               }),
             )
           }
-          className="text-xs text-brand hover:underline"
+          className="text-xs text-primary hover:underline"
         >
           Drift events →
         </button>
@@ -223,7 +223,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-platform-link"
           >
             Platform →
@@ -231,7 +231,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-policy-link"
           >
             Policy →
@@ -239,7 +239,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-context-compose-link"
           >
             Compose →
@@ -247,7 +247,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-context-secrets-link"
           >
             Secrets →
@@ -255,7 +255,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-context-editor-link"
           >
             Editor →
@@ -263,7 +263,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-context-openapi-link"
           >
             OpenAPI →
@@ -271,7 +271,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="drift-context-copilot-link"
           >
             Copilot →
@@ -294,7 +294,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                   : viewToPath('gitops'),
               )
             }
-            className="ml-3 text-xs text-brand hover:underline"
+            className="ml-3 text-xs text-primary hover:underline"
             data-testid="drift-bulk-gitops-link"
           >
             GitOps sync →
@@ -321,9 +321,9 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                   data-testid={workloadFocus === w.name ? 'drift-workload-highlight' : undefined}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
                     driftResult?.workload_name === w.name
-                      ? 'border-brand/50 bg-brand/10 text-brand'
+                      ? 'border-primary/50 bg-primary/10 text-primary'
                       : workloadFocus === w.name
-                        ? 'border-brand/60 ring-1 ring-aether/30 bg-brand/5 text-brand'
+                        ? 'border-primary/60 ring-1 ring-aether/30 bg-primary/5 text-primary'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
                           : 'glass-divider glass text-foreground hover:bg-white/[0.04]'
@@ -354,7 +354,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                     type="button"
                     data-testid="drift-open-workload"
                     onClick={() => openWorkloadDrift(driftResult.workload_name)}
-                    className="text-sm text-brand hover:underline"
+                    className="text-sm text-primary hover:underline"
                   >
                     {driftResult.workload_name} → detail
                   </button>

@@ -39,7 +39,7 @@ export function WorkloadScopedCrossLinks({
       {' · '}
       <Link
         to={pathWithQuery(viewToPath('events'), eventsQuery)}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={`${prefix}-events-link`}
       >
         Events →
@@ -47,7 +47,7 @@ export function WorkloadScopedCrossLinks({
       {' · '}
       <Link
         to={pathWithQuery(viewToPath('alerts'), { workload: name })}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={`${prefix}-alerts-link`}
       >
         Alerts →
@@ -55,7 +55,7 @@ export function WorkloadScopedCrossLinks({
       {' · '}
       <Link
         to={pathWithQuery(viewToPath('health'), { workload: name })}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={`${prefix}-health-link`}
       >
         Health →
@@ -63,7 +63,7 @@ export function WorkloadScopedCrossLinks({
       {' · '}
       <Link
         to={pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'trust' })}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={`${prefix}-trust-link`}
       >
         Trust →
@@ -73,7 +73,7 @@ export function WorkloadScopedCrossLinks({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('drift'), { workload: name })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid={`${prefix}-drift-link`}
           >
             Drift →
@@ -85,7 +85,7 @@ export function WorkloadScopedCrossLinks({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: name })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid={`${prefix}-audit-link`}
           >
             Audit →
@@ -97,7 +97,7 @@ export function WorkloadScopedCrossLinks({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: name })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid={`${prefix}-gitops-link`}
           >
             GitOps →
@@ -109,7 +109,7 @@ export function WorkloadScopedCrossLinks({
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('metrics'), { workload: name })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid={`${prefix}-metrics-link`}
           >
             Metrics →
@@ -142,12 +142,12 @@ export function WorkloadContextBanner({
       data-testid={testId}
       className="mb-6 glass-context-banner"
     >
-      {description ?? 'Workload context'} for <span className="font-mono text-brand">{name}</span>
+      {description ?? 'Workload context'} for <span className="font-mono text-primary">{name}</span>
       {' · '}
       <button
         type="button"
         onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: name }))}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={openTestId ?? `${testId}-open`}
       >
         Open workload →
@@ -177,12 +177,12 @@ export function SearchQueryContextBanner({
       data-testid={testId}
       className="mb-6 glass-context-banner"
     >
-      Filtered {entityLabel} matching <span className="font-mono text-brand">{q}</span>
+      Filtered {entityLabel} matching <span className="font-mono text-primary">{q}</span>
       {' · '}
       <button
         type="button"
         onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: q }))}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid={`${testId}-open`}
       >
         Open workload →

@@ -38,7 +38,7 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
               to={viewToPath(link.view)}
               className="group glass glass-hover-lift block rounded-[var(--radius-liquid)] p-4 no-underline"
             >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-brand/20 bg-brand-wash text-brand">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary-wash text-primary">
                 {link.icon}
               </div>
               <div className="flex items-start justify-between gap-2">
@@ -46,7 +46,7 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
                   <h3 className="font-medium text-foreground">{link.title}</h3>
                   <p className="mt-1 text-sm text-muted">{link.description}</p>
                 </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted transition group-hover:text-brand" />
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted transition group-hover:text-primary" />
               </div>
             </Link>
           ))}

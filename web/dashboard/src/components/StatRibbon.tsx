@@ -19,7 +19,7 @@ const valueTone: Record<RibbonTone, string> = {
   violet: 'text-violet-200',
   sky: 'text-sky-200',
   red: 'text-red-300',
-  aether: 'text-brand',
+  aether: 'text-primary',
 };
 
 const hoverTone: Record<RibbonTone, string> = {
@@ -29,7 +29,7 @@ const hoverTone: Record<RibbonTone, string> = {
   violet: 'hover:bg-violet-500/5',
   sky: 'hover:bg-sky-500/5',
   red: 'hover:bg-red-500/5',
-  aether: 'hover:bg-brand/5',
+  aether: 'hover:bg-primary/5',
 };
 
 interface StatRibbonProps {

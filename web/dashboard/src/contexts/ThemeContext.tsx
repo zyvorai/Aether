@@ -92,7 +92,7 @@ export function useTheme() {
 
 /** @deprecated Removed with Aurora UX — kept so old imports compile until cleaned. */
 export const ACCENT_OPTIONS: { value: 'blue'; label: string; swatchClass: string }[] = [
-  { value: 'blue', label: 'Apple Blue', swatchClass: 'bg-brand' },
+  { value: 'blue', label: 'Apple Blue', swatchClass: 'bg-primary' },
 ];
 
 export type AccentColor = 'blue';

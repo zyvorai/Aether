@@ -151,13 +151,13 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
     <div className="mb-6 glass-context-banner" data-testid="health-hub-context">
       Orchestrator
       {' · '}
-      <Link to={viewToPath('fleet')} className="text-brand hover:underline" data-testid="health-context-fleet-link">
+      <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="health-context-fleet-link">
         Fleet →
       </Link>
       {' · '}
       <Link
         to={viewToPath('intelligence')}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid="health-context-intelligence-hub-link"
       >
         Intelligence →
@@ -165,13 +165,13 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
       {' · '}
       <Link
         to={`${viewToPath('fleet')}?tab=edge`}
-        className="text-brand hover:underline"
+        className="text-primary hover:underline"
         data-testid="health-context-edge-link"
       >
         Edge →
       </Link>
       {' · '}
-      <Link to={viewToPath('settings')} className="text-brand hover:underline" data-testid="health-context-settings-link">
+      <Link to={viewToPath('settings')} className="text-primary hover:underline" data-testid="health-context-settings-link">
         Identity & SSO →
       </Link>
     </div>
@@ -215,7 +215,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-platform-link"
             >
               Platform →
@@ -223,7 +223,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-openapi-link"
             >
               OpenAPI →
@@ -231,7 +231,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Why is ${workloadParam.trim()} unhealthy?` })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-copilot-link"
             >
               Copilot →
@@ -239,7 +239,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-context-policy-link"
             >
               Policy →
@@ -247,7 +247,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-context-secrets-link"
             >
               Secrets →
@@ -255,7 +255,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
             {' · '}
             <Link
               to={pathWithQuery(viewToPath('intelligence'), { workload: workloadParam.trim(), tab: 'predictions' })}
-              className="text-brand hover:underline"
+              className="text-primary hover:underline"
               data-testid="health-context-intelligence-link"
             >
               Intelligence →
@@ -322,7 +322,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               data-testid="health-clear-filter"
               onClick={() => setStatusFilter('all')}
-              className="rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:text-brand"
+              className="rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:text-primary"
             >
               Clear filter
             </button>
@@ -372,7 +372,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                   onClick={() =>
                     navigate(pathWithQuery(viewToPath('workloads'), { workload: selected.workload.name }))
                   }
-                  className="text-brand hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {selected.workload.name}
                 </button>
@@ -438,27 +438,27 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {rollingMsg ? <span className="text-xs text-muted">{rollingMsg}</span> : null}
                 <Link
                   to={pathWithQuery(viewToPath('events'), { workload: selected.workload.name })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   View events →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('gitops'), { workload: selected.workload.name })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="health-gitops-link"
                 >
                   GitOps →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('drift'), { workload: selected.workload.name })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="health-drift-link"
                 >
                   Drift →
                 </Link>
                 <Link
                   to={pathWithQuery(viewToPath('alerts'), { workload: selected.workload.name })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="health-alerts-link"
                 >
                   Alert rules →
@@ -468,14 +468,14 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                     workload: selected.workload.name,
                     tab: 'trust',
                   })}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="health-trust-link"
                 >
                   Trust & attestation →
                 </Link>
                 <Link
                   to={viewToPath('sla')}
-                  className="text-xs text-brand hover:underline"
+                  className="text-xs text-primary hover:underline"
                   data-testid="health-sla-link"
                 >
                   SLA compliance →

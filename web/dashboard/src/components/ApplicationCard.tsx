@@ -23,7 +23,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       : tone === 'critical'
         ? 'border-red-500/40 hover:border-red-500/60'
         : tone === 'stopped'
-          ? 'glass-divider hover:border-brand/30'
+          ? 'glass-divider hover:border-primary/30'
           : 'border-amber-500/30 hover:border-amber-500/50';
 
   const statusVariant =
@@ -47,7 +47,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
           <div className="flex items-center gap-1.5">
-            <Layers size={14} className="text-brand shrink-0" />
+            <Layers size={14} className="text-primary shrink-0" />
             <span className="truncate">{app.kind ?? 'Application'}</span>
           </div>
           <div className="flex items-center gap-1.5 truncate">
@@ -60,7 +60,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex items-center gap-1 rounded-lg bg-brand/15 px-2.5 py-1.5 text-xs font-medium text-brand hover:bg-brand/25"
+          className="inline-flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/25"
         >
           <Rocket size={12} /> Open
         </button>

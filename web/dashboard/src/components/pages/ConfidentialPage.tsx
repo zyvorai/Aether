@@ -239,7 +239,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
               workload: workloadQuery.trim(),
               tab: 'predictions',
             })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-intelligence-link"
           >
             Intelligence →
@@ -247,7 +247,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('rbac'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-rbac-link"
           >
             RBAC →
@@ -255,7 +255,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-secrets-link"
           >
             Secrets →
@@ -263,7 +263,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('zyra'), { workload: workloadQuery.trim(), q: `Confidential posture for ${workloadQuery.trim()}` })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-context-copilot-link"
           >
             Copilot →
@@ -271,7 +271,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-context-policy-link"
           >
             Policy →
@@ -279,7 +279,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-context-audit-link"
           >
             Audit →
@@ -287,7 +287,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('platform'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-context-platform-link"
           >
             Platform →
@@ -295,7 +295,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('fleet'), { workload: workloadQuery.trim() })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="confidential-context-fleet-link"
           >
             Fleet →
@@ -312,7 +312,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Lock className="w-5 h-5 text-brand" />
+                <Lock className="w-5 h-5 text-primary" />
                 Integration
               </h2>
               <p className="text-sm text-subtle mt-1">
@@ -332,7 +332,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
               target="_blank"
               rel="noreferrer"
               data-testid="confidential-ragnarok-link"
-              className="inline-flex items-center gap-2 text-sm text-brand hover:underline"
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
             >
               Open Ragnarok VM console
               <ExternalLink className="w-3.5 h-3.5" />
@@ -429,8 +429,8 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
                     }),
                   )
                 }
-                className={`text-left rounded-lg border glass p-3 hover:border-brand/40 transition-colors ${
-                  focused ? 'border-brand/50 ring-1 ring-aether/30' : 'glass-divider'
+                className={`text-left rounded-lg border glass p-3 hover:border-primary/40 transition-colors ${
+                  focused ? 'border-primary/50 ring-1 ring-aether/30' : 'glass-divider'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
@@ -464,7 +464,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
                     onClick={() =>
                       navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload, tab: 'trust' }))
                     }
-                    className="text-foreground hover:text-brand text-left"
+                    className="text-foreground hover:text-primary text-left"
                   >
                     {row.workload}
                   </button>
@@ -504,7 +504,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => navigate(viewToPath('gitops'))}
-            className="mb-4 mr-4 text-xs text-brand hover:underline"
+            className="mb-4 mr-4 text-xs text-primary hover:underline"
           >
             GitOps confidential sync →
           </button>
@@ -512,7 +512,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
             type="button"
             data-testid="confidential-secrets-link"
             onClick={() => navigate(viewToPath('secrets'))}
-            className="mb-4 mr-4 text-xs text-brand hover:underline"
+            className="mb-4 mr-4 text-xs text-primary hover:underline"
           >
             Secrets vault →
           </button>
@@ -520,7 +520,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
             type="button"
             data-testid="confidential-policy-link"
             onClick={() => navigate(viewToPath('policy'))}
-            className="mb-4 text-xs text-brand hover:underline"
+            className="mb-4 text-xs text-primary hover:underline"
           >
             Policy check →
           </button>
@@ -546,8 +546,8 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
                   }
                   className={`w-full text-left p-3 rounded-lg border glass transition-colors ${
                     workloadQuery.trim() === row.workload
-                      ? 'border-brand/60 ring-1 ring-aether/30'
-                      : 'glass-divider hover:border-brand/40'
+                      ? 'border-primary/60 ring-1 ring-aether/30'
+                      : 'glass-divider hover:border-primary/40'
                   }`}
                   data-testid={workloadQuery.trim() === row.workload ? 'confidential-workload-highlight' : undefined}
                 >

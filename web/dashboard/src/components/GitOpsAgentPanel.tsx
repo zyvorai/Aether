@@ -70,7 +70,7 @@ export default function GitOpsAgentPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -101,7 +101,7 @@ export default function GitOpsAgentPanel() {
           <ul className="space-y-2">
             {prLinks.map((pr) => (
               <li key={pr.url} className="rounded-lg border glass-divider px-3 py-2 text-sm">
-                <a href={pr.url} target="_blank" rel="noreferrer" className="text-brand hover:underline">
+                <a href={pr.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
                   {pr.title}
                 </a>
                 <span className="ml-2 text-xs text-subtle">{pr.workload}</span>

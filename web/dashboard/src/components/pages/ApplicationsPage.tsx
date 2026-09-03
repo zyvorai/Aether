@@ -167,7 +167,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-brand text-brand' : 'glass-divider text-muted'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-primary text-primary' : 'glass-divider text-muted'}`}
             aria-label="Grid view"
           >
             <Grid3X3 size={16} />
@@ -175,7 +175,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-brand text-brand' : 'glass-divider text-muted'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-primary text-primary' : 'glass-divider text-muted'}`}
             aria-label="List view"
           >
             <LayoutList size={16} />
@@ -231,7 +231,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <td className="p-3 text-muted">{app.status}</td>
                   <td className="p-3 text-muted">{app.kind ?? 'Application'}</td>
                   <td className="p-3">
-                    <button type="button" onClick={() => openApp(app)} className="text-brand text-xs hover:underline mr-3">
+                    <button type="button" onClick={() => openApp(app)} className="text-primary text-xs hover:underline mr-3">
                       Open
                     </button>
                     <button type="button" onClick={() => openApp(app, 'logs')} className="text-muted text-xs hover:underline">

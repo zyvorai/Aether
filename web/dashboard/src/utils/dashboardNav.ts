@@ -52,16 +52,6 @@ import type { AppView } from '../types/api';
 
 export type NavGroup = 'primary' | 'intelligence' | 'operations' | 'resources';
 
-/** iPhone 17 categorical accent per nav group (see theme.css) — a small dot
- * next to each group's dropdown label in Navbar.tsx, purely a wayfinding
- * accent, not tied to severity or the brand color. */
-export const NAV_GROUP_COLOR: Record<NavGroup, string> = {
-  primary: 'bg-brand',
-  intelligence: 'bg-lavender',
-  operations: 'bg-mistblue',
-  resources: 'bg-sage',
-};
-
 export interface DashboardViewMeta {
   view: AppView;
   path: string;

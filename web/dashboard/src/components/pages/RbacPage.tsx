@@ -136,7 +136,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('audit'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-audit-link"
           >
             Audit →
@@ -144,7 +144,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-openapi-link"
           >
             OpenAPI →
@@ -152,7 +152,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-context-secrets-link"
           >
             Secrets →
@@ -160,7 +160,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-context-policy-link"
           >
             Policy →
@@ -168,7 +168,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-context-gitops-link"
           >
             GitOps →
@@ -176,7 +176,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-context-editor-link"
           >
             Editor →
@@ -184,7 +184,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           {' · '}
           <Link
             to={pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })}
-            className="text-brand hover:underline"
+            className="text-primary hover:underline"
             data-testid="rbac-context-confidential-link"
           >
             Confidential →
@@ -196,7 +196,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-5 h-5 text-brand" />
+          <Shield className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">Create RBAC API key</h2>
         </div>
         {canAdmin ? (
@@ -228,10 +228,10 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : (
           <p className="text-sm text-muted">Only admin users can create or revoke API keys.</p>
         )}
-        <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-brand hover:underline">
+        <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-primary hover:underline">
           View audit trail →
         </Link>
-        <Link to={viewToPath('secrets')} className="mt-3 ml-4 inline-flex text-xs text-brand hover:underline" data-testid="rbac-vault-link">
+        <Link to={viewToPath('secrets')} className="mt-3 ml-4 inline-flex text-xs text-primary hover:underline" data-testid="rbac-vault-link">
           Secrets vault →
         </Link>
       </div>
@@ -284,7 +284,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
         {created && (
           <div className="space-y-4" data-testid="rbac-created-key">
             <p className="text-sm text-muted">This plaintext key is only returned once. Store it before closing.</p>
-            <div className="glass-code-block-body px-4 py-3 font-mono text-sm text-brand break-all">
+            <div className="glass-code-block-body px-4 py-3 font-mono text-sm text-primary break-all">
               {created.key}
             </div>
             <button
@@ -295,7 +295,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
                 setKeyCopied(true);
                 setTimeout(() => setKeyCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-1.5 text-xs text-muted hover:border-primary/40"
             >
               <Copy size={14} />
               {keyCopied ? 'Copied' : 'Copy key'}

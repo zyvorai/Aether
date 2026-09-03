@@ -335,7 +335,7 @@ export default function SreReliabilityPanel() {
 
       {!loading && tab === 'postmortem' && postmortem ? (
         <details className="mt-4">
-          <summary className="cursor-pointer text-sm text-brand">View markdown</summary>
+          <summary className="cursor-pointer text-sm text-primary">View markdown</summary>
           <pre className="mt-2 max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
             {postmortem.markdown}
           </pre>
