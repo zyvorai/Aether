@@ -424,7 +424,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
             <>
               <div className="glass">
                 <p className="text-sm text-muted">Total potential savings</p>
-                <p className="text-2xl font-semibold text-emerald-400">
+                <p className="text-2xl font-semibold text-success">
                   {cost.total_potential_savings_pct.toFixed(1)}%
                 </p>
               </div>
@@ -459,7 +459,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                       {rec.current_runtime} → {rec.suggested_runtime}
                     </p>
                     <p className="text-xs text-muted mt-1">{rec.reason}</p>
-                    <p className="text-xs text-emerald-400 mt-2">{formatUSD(rec.savings_monthly_usd)}/mo estimated</p>
+                    <p className="text-xs text-success mt-2">{formatUSD(rec.savings_monthly_usd)}/mo estimated</p>
                   </div>
                 ))
               )}
@@ -563,7 +563,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
             >
               {placeBusy ? 'Ranking…' : 'Recommend placement'}
             </button>
-            {placeError && <p className="text-sm text-red-400">{placeError}</p>}
+            {placeError && <p className="text-sm text-danger">{placeError}</p>}
           </div>
           {placeResults && placeResults.length > 0 && (
             <div className="space-y-3">

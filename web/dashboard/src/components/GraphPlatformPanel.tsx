@@ -116,7 +116,7 @@ export default function GraphPlatformPanel() {
       testId="graph-platform-panel"
       title="Graph Intelligence Platform"
       subtitle="Impact, blast radius, CMDB sync, placement, and export"
-      icon={<Radar className="h-5 w-5 text-cyan-400" />}
+      icon={<Radar className="h-5 w-5 text-primary" />}
       actions={<div className="flex flex-wrap items-center gap-2">
           <input
             value={workload}
@@ -142,7 +142,7 @@ export default function GraphPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-primary/40 bg-primary/10 text-primary' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -166,13 +166,13 @@ export default function GraphPlatformPanel() {
 
       {tab === 'blast' ? (
         <div data-testid="graph-blast-radius-panel">
-          <p className="mb-3 text-lg font-semibold text-amber-300">
+          <p className="mb-3 text-lg font-semibold text-warning">
             Score {((blast?.blast_score ?? 0) * 100).toFixed(0)}/100
           </p>
           <p className="mb-2 text-sm text-muted">{blast?.summary}</p>
           <ul className="space-y-1">
             {(blast?.migration_blockers ?? []).map((b) => (
-              <li key={b} className="text-xs text-amber-200">
+              <li key={b} className="text-xs text-warning">
                 {b}
               </li>
             ))}
@@ -184,7 +184,7 @@ export default function GraphPlatformPanel() {
         <ul className="space-y-2" data-testid="threat-paths-panel">
           {(threats?.paths ?? []).slice(0, 8).map((p, i) => (
             <li key={i} className="rounded-lg border glass-divider px-3 py-2 text-sm">
-              <ShieldAlert className="mr-1 inline h-3.5 w-3.5 text-red-400" />
+              <ShieldAlert className="mr-1 inline h-3.5 w-3.5 text-danger" />
               {p.summary}
               <div className="mt-1 text-xs text-subtle">{p.path.join(' → ')}</div>
             </li>
@@ -205,7 +205,7 @@ export default function GraphPlatformPanel() {
             <button
               type="button"
               onClick={() => void runSearch()}
-              className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/30 px-3 py-2 text-xs text-cyan-200"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary/30 px-3 py-2 text-xs text-primary"
             >
               <Search className="h-3.5 w-3.5" />
               Search
@@ -226,7 +226,7 @@ export default function GraphPlatformPanel() {
           <button
             type="button"
             onClick={() => void captureSnapshot()}
-            className="mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-200"
+            className="mb-4 rounded-xl border border-lavender/30 bg-lavender/10 px-3 py-2 text-xs text-lavender"
           >
             Capture snapshot
           </button>
@@ -245,7 +245,7 @@ export default function GraphPlatformPanel() {
           <button
             type="button"
             onClick={() => void syncCmdb()}
-            className="mb-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200"
+            className="mb-4 inline-flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success"
           >
             <Database className="h-3.5 w-3.5" />
             Sync CMDB (dry-run)

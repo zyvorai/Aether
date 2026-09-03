@@ -296,7 +296,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               data-testid="health-run-checks"
               onClick={() => void runOrchestratorAction('health-check')}
               disabled={orchBusy !== null}
-              className="rounded-xl bg-emerald-600/20 border border-emerald-500/40 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-600/30 disabled:opacity-50"
+              className="rounded-xl bg-success/20 border border-success/40 px-4 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
             >
               {orchBusy === 'health-check' ? 'Checking…' : 'Run health checks'}
             </button>
@@ -384,7 +384,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                 </div>
                 <div className="glass py-3">
                   <div className="text-xs text-subtle mb-1">Ready checks</div>
-                  <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
+                  <div className="text-lg font-semibold text-success">{selected.history.ready_checks}</div>
                 </div>
                 <div className="glass py-3">
                   <div className="text-xs text-subtle mb-1">Uptime</div>
@@ -406,7 +406,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => void runOrchestratorAction('reset-circuit', selected.workload.name)}
-                    className="text-xs rounded-lg border border-amber-500/40 px-2 py-1 text-amber-300 hover:bg-amber-500/10"
+                    className="text-xs rounded-lg border border-warning/40 px-2 py-1 text-warning hover:bg-warning/10"
                   >
                     Reset circuit
                   </button>
@@ -429,7 +429,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                       data-testid="health-rolling-update-submit"
                       onClick={() => void runRollingUpdate(selected.workload.name)}
                       disabled={orchBusy !== null}
-                      className="text-xs rounded-lg border border-emerald-500/40 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
+                      className="text-xs rounded-lg border border-success/40 px-2 py-1 text-success hover:bg-success/10 disabled:opacity-50"
                     >
                       {orchBusy === 'rolling-update' ? 'Updating…' : 'Rolling update'}
                     </button>

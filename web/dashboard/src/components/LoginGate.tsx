@@ -180,7 +180,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
         <div className="absolute -left-32 top-1/4 h-80 w-80 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <div className="relative z-10 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl border border-white/15 bg-white/10 flex items-center justify-center shadow-lg">
-            <Hexagon className="h-5 w-5 text-sky-300" strokeWidth={1.6} aria-hidden />
+            <Hexagon className="h-5 w-5 text-primary" strokeWidth={1.6} aria-hidden />
           </div>
           <div>
             <div className="text-lg font-semibold tracking-tight">Aether</div>
@@ -190,7 +190,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
         <div className="relative z-10 my-auto max-w-2xl py-16 lg:py-20">
           <div className="login-fade-in inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs text-white/70">
-            <Radio className="h-3.5 w-3.5 text-sky-300" aria-hidden />
+            <Radio className="h-3.5 w-3.5 text-primary" aria-hidden />
             One control plane. Every runtime.
           </div>
           <h1 className="login-fade-in login-fade-in-d1 mt-7 text-4xl sm:text-5xl xl:text-6xl font-semibold tracking-[-0.04em] leading-[1.04]">
@@ -210,7 +210,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
               { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions' },
             ].map(({ icon: Icon, title, text }) => (
               <div key={title} className="rounded-xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-sm">
-                <Icon className="h-4 w-4 text-sky-300" aria-hidden />
+                <Icon className="h-4 w-4 text-primary" aria-hidden />
                 <div className="mt-3 text-sm font-medium text-white/90">{title}</div>
                 <div className="mt-1 text-xs leading-relaxed text-white/45">{text}</div>
               </div>
@@ -247,12 +247,12 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
           <div className="login-glass p-5 sm:p-6">
             {notice ? (
-              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900" role="alert">
+              <div className="mb-4 rounded-xl border border-warning bg-warning px-3.5 py-3 text-sm text-warning" role="alert">
                 {notice}
               </div>
             ) : null}
             {error ? (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700" role="alert">
+              <div className="mb-4 rounded-xl border border-danger bg-danger px-3.5 py-3 text-sm text-danger" role="alert">
                 {error}
               </div>
             ) : null}
@@ -349,7 +349,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
                     {providers.ldap.domain ? `Use your ${providers.ldap.domain} account.` : 'Use your directory account.'}
                   </p>
                   <input type="password" value={ldapPassword} onChange={(event) => setLdapPassword(event.target.value)} className="login-input !pl-3.5" placeholder="Directory password" autoComplete="current-password" required />
-                  {ldapError ? <p className="text-xs text-red-600" role="alert">{ldapError}</p> : null}
+                  {ldapError ? <p className="text-xs text-danger" role="alert">{ldapError}</p> : null}
                   <button type="submit" className="login-btn-primary" disabled={ldapBusy || !username.trim() || !ldapPassword}>
                     {ldapBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                     {ldapBusy ? 'Signing in…' : 'Continue with Active Directory'}
@@ -374,7 +374,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
                     {showApiKeyValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {apiKeyError ? <p className="mt-2 text-xs text-red-600" role="alert">{apiKeyError}</p> : null}
+                {apiKeyError ? <p className="mt-2 text-xs text-danger" role="alert">{apiKeyError}</p> : null}
                 <button type="submit" className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50" disabled={apiKeyBusy}>
                   {apiKeyBusy ? 'Verifying…' : 'Continue with API key'}
                 </button>

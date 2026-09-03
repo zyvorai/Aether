@@ -58,7 +58,7 @@ export default function IdentitySsoPanel() {
         testId="identity-sso-panel"
         title="Identity & SSO"
         subtitle="OpenID Connect, SAML, and Active Directory configuration (read-only)."
-        icon={<Fingerprint className="h-5 w-5 text-violet-400" />}
+        icon={<Fingerprint className="h-5 w-5 text-lavender" />}
       >
         <PageLoading label="Loading identity settings…" />
       </GlassSection>
@@ -72,9 +72,9 @@ export default function IdentitySsoPanel() {
         testId="identity-sso-panel"
         title="Identity & SSO"
         subtitle="OpenID Connect, SAML, and Active Directory configuration (read-only)."
-        icon={<Fingerprint className="h-5 w-5 text-violet-400" />}
+        icon={<Fingerprint className="h-5 w-5 text-lavender" />}
       >
-        <p className="text-sm text-red-400">{error ?? 'Unknown error'}</p>
+        <p className="text-sm text-danger">{error ?? 'Unknown error'}</p>
       </GlassSection>
     );
   }
@@ -107,7 +107,7 @@ export default function IdentitySsoPanel() {
         testId="identity-oidc-panel"
         title="OpenID Connect"
         subtitle="Authorization code + PKCE; discovery, callback, and JWT session issuance."
-        icon={<LogIn className="h-5 w-5 text-sky-400" />}
+        icon={<LogIn className="h-5 w-5 text-primary" />}
         actions={<StatusBadge enabled={settings.oidc.enabled} />}
       >
         <ConfigRow label="Issuer" value={settings.oidc.issuer} />
@@ -135,7 +135,7 @@ export default function IdentitySsoPanel() {
         testId="identity-saml-panel"
         title="SAML 2.0"
         subtitle="HTTP-Redirect login and HTTP-POST ACS; SP metadata for IdP federation."
-        icon={<Shield className="h-5 w-5 text-violet-400" />}
+        icon={<Shield className="h-5 w-5 text-lavender" />}
         actions={<StatusBadge enabled={settings.saml.enabled} />}
       >
         <ConfigRow label="SP entity ID" value={settings.saml.sp_entity_id} />
@@ -180,7 +180,7 @@ export default function IdentitySsoPanel() {
         testId="identity-ldap-panel"
         title="Active Directory / LDAP"
         subtitle="Username + password bind; issues the same JWT session cookie."
-        icon={<Fingerprint className="h-5 w-5 text-emerald-400" />}
+        icon={<Fingerprint className="h-5 w-5 text-success" />}
         actions={<StatusBadge enabled={settings.ldap.enabled} />}
       >
         <ConfigRow label="LDAP URL" value={settings.ldap.url} />

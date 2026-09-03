@@ -8,11 +8,11 @@ import { cardRiseDelay } from './CardGrid';
 export type EntityStatusTone = 'green' | 'red' | 'amber' | 'muted' | 'sky';
 
 const dotTone: Record<EntityStatusTone, string> = {
-  green: 'bg-emerald-400',
-  red: 'bg-red-400',
-  amber: 'bg-amber-400',
+  green: 'bg-success',
+  red: 'bg-danger',
+  amber: 'bg-warning',
   muted: 'bg-slate-500',
-  sky: 'bg-sky-400',
+  sky: 'bg-primary',
 };
 
 const accentTone: Record<EntityStatusTone, string> = {

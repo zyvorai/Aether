@@ -51,13 +51,13 @@ export default function CapacityScalePanel() {
       testId="capacity-scale-panel"
       title="Capacity Auto-Scale"
       subtitle="Predictive HPA/VPA suggestions from failure signals"
-      icon={<Gauge className="h-5 w-5 text-amber-400" />}
+      icon={<Gauge className="h-5 w-5 text-warning" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void execute(true)}
             disabled={executing}
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 hover:border-amber-400/50 disabled:opacity-60"
+            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning hover:border-warning/50 disabled:opacity-60"
             data-testid="capacity-scale-dry-run"
           >
             Dry-run scale

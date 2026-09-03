@@ -82,9 +82,9 @@ export default function WorkloadCard({
         <div className="flex items-start gap-2">
           <span
             className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
-              variant === 'green' ? 'bg-emerald-400' :
-              variant === 'red' ? 'bg-red-400' :
-              variant === 'muted' ? 'bg-slate-500' : 'bg-amber-400'
+              variant === 'green' ? 'bg-success' :
+              variant === 'red' ? 'bg-danger' :
+              variant === 'muted' ? 'bg-slate-500' : 'bg-warning'
             } ${running ? 'platform-pulse' : ''}`}
           />
           <div className="min-w-0 flex-1">
@@ -118,7 +118,7 @@ export default function WorkloadCard({
           <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent">
             <KindIcon size={18} className="text-muted transition group-hover:text-primary" />
             {running ? (
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-emerald-400 platform-pulse" />
+              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-success platform-pulse" />
             ) : null}
           </div>
           <div className="min-w-0 flex-1">
@@ -152,8 +152,8 @@ export default function WorkloadCard({
             <RuntimeBadge runtime={workload.runtime} />
             <span className={`rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${
               discovered
-                ? 'border-sky-500/25 bg-sky-500/10 text-sky-300'
-                : 'border-violet-500/25 bg-violet-500/10 text-violet-200'
+                ? 'border-primary/25 bg-primary/10 text-primary'
+                : 'border-lavender/25 bg-lavender/10 text-lavender'
             }`}>
               {discovered ? 'discovered' : 'managed'}
             </span>
@@ -181,7 +181,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('logs')}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-sky-500/15 hover:text-sky-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary"
               title="Logs"
               data-testid={`workload-card-logs-${shortName}`}
             >
@@ -193,7 +193,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('overview', true)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-emerald-500/15 hover:text-emerald-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-success/15 hover:text-success"
               title="Exec into pod"
               data-testid={`workload-card-shell-${shortName}`}
             >

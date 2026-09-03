@@ -11,9 +11,9 @@ export interface HeaderPill {
 
 const pillTone: Record<NonNullable<HeaderPill['tone']>, string> = {
   brand: 'border-primary-wash bg-primary-wash text-primary',
-  ok: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-  warn: 'border-amber-500/25 bg-amber-500/10 text-amber-200',
-  info: 'border-sky-500/25 bg-sky-500/10 text-sky-200',
+  ok: 'border-success/25 bg-success/10 text-success',
+  warn: 'border-warning/25 bg-warning/10 text-warning',
+  info: 'border-primary/25 bg-primary/10 text-primary',
   muted: 'border-rule bg-hover text-subtle',
 };
 

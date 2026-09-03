@@ -30,7 +30,7 @@ export default function MigrationWavePanel() {
       testId="migration-wave-panel"
       title="Migration Wave Planner"
       subtitle="Multi-cluster coordinated migration waves"
-      icon={<Layers className="h-5 w-5 text-emerald-400" />}
+      icon={<Layers className="h-5 w-5 text-success" />}
       actions={
         <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}

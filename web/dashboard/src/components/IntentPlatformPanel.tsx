@@ -66,7 +66,7 @@ export default function IntentPlatformPanel() {
       testId="intent-platform-panel"
       title="Intent Platform"
       subtitle="Violations, templates, bundles, and version history"
-      icon={<Layers className="h-5 w-5 text-violet-400" />}
+      icon={<Layers className="h-5 w-5 text-lavender" />}
       actions={
         <button
           type="button"
@@ -85,7 +85,7 @@ export default function IntentPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-lavender/40 bg-lavender/10 text-lavender' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -125,7 +125,7 @@ export default function IntentPlatformPanel() {
           {(templates?.templates ?? []).map((tpl) => (
             <li key={tpl.id} className="rounded-xl border glass-divider p-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-400" />
+                <Sparkles className="h-4 w-4 text-lavender" />
                 <span className="font-medium text-foreground">{tpl.title}</span>
                 <Badge text={tpl.goal} variant="muted" />
               </div>
@@ -140,7 +140,7 @@ export default function IntentPlatformPanel() {
           <button
             type="button"
             onClick={() => void loadBundle()}
-            className="mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-200"
+            className="mb-4 rounded-xl border border-lavender/30 bg-lavender/10 px-3 py-2 text-xs text-lavender"
           >
             Generate app + db + cache bundle
           </button>

@@ -72,22 +72,22 @@ export default function GitOpsCenter({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <div className="glass border-emerald-500/20 bg-emerald-950/20 py-4">
-          <div className="flex items-center gap-2 text-emerald-300">
+        <div className="glass border-success/20 bg-success/20 py-4">
+          <div className="flex items-center gap-2 text-success">
             <CheckCircle2 size={18} />
             <span className="text-sm font-medium">Synced</span>
           </div>
           <p className="text-2xl font-semibold text-foreground mt-2">{synced ? 'Yes' : outOfSync ? 'Partial' : '—'}</p>
         </div>
-        <div className="glass border-amber-500/20 bg-amber-950/20 py-4">
-          <div className="flex items-center gap-2 text-amber-300">
+        <div className="glass border-warning/20 bg-warning/20 py-4">
+          <div className="flex items-center gap-2 text-warning">
             <AlertTriangle size={18} />
             <span className="text-sm font-medium">Out of sync</span>
           </div>
           <p className="text-2xl font-semibold text-foreground mt-2">{changes.length}</p>
         </div>
-        <div className="glass border-red-500/20 bg-red-950/20 py-4">
-          <div className="flex items-center gap-2 text-red-300">
+        <div className="glass border-danger/20 bg-danger/20 py-4">
+          <div className="flex items-center gap-2 text-danger">
             <XCircle size={18} />
             <span className="text-sm font-medium">Failed</span>
           </div>
@@ -100,7 +100,7 @@ export default function GitOpsCenter({
           GitOps is not configured. Run <code className="text-muted">aether git-ops init</code> to connect a repository.
         </p>
       ) : changes.length === 0 ? (
-        <div className="flex items-center gap-2 text-sm text-emerald-300">
+        <div className="flex items-center gap-2 text-sm text-success">
           <GitBranch size={16} />
           All apps synced{lastSync ? ` · Last sync ${lastSync}` : ''}
         </div>

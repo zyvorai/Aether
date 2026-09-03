@@ -283,7 +283,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
 
         <div className="glass">
           <div className="flex items-center gap-3 mb-4">
-            <Shield className="text-emerald-400" size={20} />
+            <Shield className="text-success" size={20} />
             <h2 className="text-lg font-semibold text-foreground">Policy & integrations</h2>
           </div>
           <dl className="space-y-3 text-sm">
@@ -382,7 +382,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         />
       <div className="glass">
         <div className="flex items-center gap-3 mb-4">
-          <Network className="text-purple-400" size={20} />
+          <Network className="text-lavender" size={20} />
           <h2 className="text-lg font-semibold text-foreground">Kubernetes / Cilium</h2>
           {cilium && (
             <Badge
@@ -486,7 +486,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         />
       <div className="glass" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
-          <Database className="text-blue-400" size={20} />
+          <Database className="text-primary" size={20} />
           <h2 className="text-lg font-semibold text-foreground">Observability links</h2>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -541,7 +541,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.hubble_ui_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-purple-700/50 bg-purple-950/30 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-lavender/50 bg-lavender/30 px-4 py-2 text-sm text-lavender hover:bg-lavender/50"
             >
               Hubble UI <ExternalLink size={14} />
             </a>
@@ -551,7 +551,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-700/50 bg-cyan-950/30 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-950/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/30 px-4 py-2 text-sm text-primary hover:bg-primary/50"
             >
               PacketWolf <ExternalLink size={14} />
             </a>

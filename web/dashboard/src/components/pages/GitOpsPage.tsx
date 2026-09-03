@@ -597,7 +597,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                           )}
                         </td>
                         <td className="py-2 pr-4 font-mono text-xs text-muted">{row.file_path}</td>
-                        <td className="py-2 pr-4 text-xs text-amber-200/90">
+                        <td className="py-2 pr-4 text-xs text-warning/90">
                           {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
                         </td>
                         <td className="py-2">
@@ -606,7 +606,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                             variant={row.sovereign_compliant ? 'green' : 'red'}
                           />
                           {row.sovereign_violations.length > 0 && (
-                            <p className="mt-1 text-xs text-red-300/90">{row.sovereign_violations.join('; ')}</p>
+                            <p className="mt-1 text-xs text-danger/90">{row.sovereign_violations.join('; ')}</p>
                           )}
                         </td>
                       </tr>
@@ -647,7 +647,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {previewLoading ? (
             <p className="text-sm text-subtle">Loading pending changes…</p>
           ) : previewError ? (
-            <p className="text-sm text-red-400">{previewError}</p>
+            <p className="text-sm text-danger">{previewError}</p>
           ) : previewChanges.length === 0 ? (
             <p className="text-sm text-subtle">No YAML changes detected in the latest commit.</p>
           ) : (

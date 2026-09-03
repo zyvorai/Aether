@@ -33,8 +33,8 @@ function normalizeStatus(status: string): AgentCard['status'] {
 }
 
 function agentStatusDot(status: AgentCard['status']): string {
-  if (status === 'alert') return 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]';
-  if (status === 'active') return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]';
+  if (status === 'alert') return 'bg-danger shadow-[0_0_8px_rgba(248,113,113,0.6)]';
+  if (status === 'active') return 'bg-success shadow-[0_0_8px_rgba(52,211,153,0.5)]';
   return 'glass-status-dot-muted';
 }
 
@@ -76,9 +76,9 @@ export default function AgentStatusDock() {
 
   const tone = (status: AgentCard['status']) =>
     status === 'alert'
-      ? 'border-red-500/30 bg-red-500/[0.08]'
+      ? 'border-danger/30 bg-danger/[0.08]'
       : status === 'active'
-        ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
+        ? 'border-success/25 bg-success/[0.06]'
         : 'glass-divider glass';
 
   return (
@@ -90,7 +90,7 @@ export default function AgentStatusDock() {
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="glass border border-border shadow-card mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-muted transition hover:border-primary/30 hover:text-blue-200"
+        className="glass border border-border shadow-card mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-muted transition hover:border-primary/30 hover:text-primary"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>

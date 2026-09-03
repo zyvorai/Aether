@@ -362,7 +362,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                         type="button"
                         onClick={() => void handleDeleteChannel(ch.name)}
                         disabled={channelDeleting === ch.name}
-                        className="p-1.5 text-subtle hover:text-red-400 rounded"
+                        className="p-1.5 text-subtle hover:text-danger rounded"
                         title="Remove channel"
                       >
                         <Trash2 size={14} />
@@ -383,7 +383,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass" data-testid="alerts-rules-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <BellRing className="text-amber-400" size={20} />
+              <BellRing className="text-warning" size={20} />
               <h2 className="text-lg font-semibold text-foreground">Alert rules</h2>
             </div>
             <Link to={viewToPath('events')} className="text-xs text-primary hover:underline" data-testid="alerts-rules-events-link">
@@ -432,7 +432,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass mt-6">
         <div className="flex items-center gap-3 mb-4">
-          <Send className="text-blue-400" size={20} />
+          <Send className="text-primary" size={20} />
           <h2 className="text-lg font-semibold text-foreground">Test webhook</h2>
         </div>
         <p className="text-sm text-subtle mb-4">

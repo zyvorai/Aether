@@ -71,7 +71,7 @@ export default function ZyraPromptLibrary() {
               <p className="text-sm font-medium text-foreground">{a.name}</p>
               <p className="mt-1 text-xs text-subtle">{a.description}</p>
               {a.installed ? (
-                <span className="mt-2 inline-block text-xs text-emerald-400">Installed</span>
+                <span className="mt-2 inline-block text-xs text-success">Installed</span>
               ) : (
                 <button type="button" className="btn-secondary mt-2 text-xs" onClick={() => void install(a.id)}>
                   <Download className="mr-1 inline h-3 w-3" />

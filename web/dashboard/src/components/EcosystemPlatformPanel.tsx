@@ -106,13 +106,13 @@ export default function EcosystemPlatformPanel() {
       testId="ecosystem-platform-panel"
       title="Platform & Ecosystem"
       subtitle="Multi-tenant SaaS, plugin marketplace, Helm v2, public v1 API, autonomous SRE"
-      icon={<Boxes className="h-5 w-5 text-blue-400" />}
+      icon={<Boxes className="h-5 w-5 text-primary" />}
       actions={
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void generateHelm()}
-            className="inline-flex items-center gap-1 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-200"
+            className="inline-flex items-center gap-1 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary"
             data-testid="ecosystem-helm-v2"
           >
             <Rocket className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export default function EcosystemPlatformPanel() {
           <button
             type="button"
             onClick={() => void runAutonomousSre()}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200"
+            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success"
             data-testid="ecosystem-sre-execute"
           >
             SRE dry-run
@@ -150,7 +150,7 @@ export default function EcosystemPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-primary/40 bg-primary/10 text-primary' : 'glass-divider text-muted'
             }`}
           >
             {t.label}

@@ -257,7 +257,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => setRevokeName(entry.name)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/15 hover:text-danger"
                   >
                     <Trash2 size={13} />
                     Revoke
@@ -314,7 +314,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
             <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-muted glass-inset-hover">
               Cancel
             </button>
-            <button type="button" onClick={() => void handleRevoke()} className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-medium text-white">
+            <button type="button" onClick={() => void handleRevoke()} className="rounded-lg bg-danger hover:bg-danger px-4 py-2 text-sm font-medium text-white">
               Revoke
             </button>
           </div>

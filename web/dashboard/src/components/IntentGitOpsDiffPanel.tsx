@@ -30,7 +30,7 @@ export default function IntentGitOpsDiffPanel() {
       testId="intent-gitops-diff-panel"
       title="Intent GitOps diff"
       subtitle="Intent block drift separate from spec drift"
-      icon={<GitBranch className="h-5 w-5 text-amber-400" />}
+      icon={<GitBranch className="h-5 w-5 text-warning" />}
       actions={
         <button
           type="button"

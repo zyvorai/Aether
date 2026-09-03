@@ -39,7 +39,7 @@ function TrustBar({ label, value }: { label: string; value: number }) {
       </div>
       <div className="h-1.5 glass-progress-track">
         <div
-          className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+          className={`h-full rounded-full ${pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -333,7 +333,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           />
           <p className="text-xs text-subtle mt-2">{analysis.summary}</p>
           {(analysis.recommendations?.length ?? 0) > 0 && (
-            <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
+            <ul className="mt-2 space-y-1 text-xs text-warning/90">
               {analysis.recommendations.slice(0, 3).map((r) => (
                 <li key={r}>{r}</li>
               ))}
@@ -356,14 +356,14 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             )}
           </div>
           {(placement.blockers?.length ?? 0) > 0 && (
-            <ul className="text-xs text-red-300/90 space-y-1 mb-2">
+            <ul className="text-xs text-danger/90 space-y-1 mb-2">
               {placement.blockers.map((b) => (
                 <li key={b}>{b}</li>
               ))}
             </ul>
           )}
           {(placement.gitops_issues?.length ?? 0) > 0 && (
-            <ul className="text-xs text-amber-300/90 space-y-1 mb-2">
+            <ul className="text-xs text-warning/90 space-y-1 mb-2">
               {placement.gitops_issues.map((issue) => (
                 <li key={issue}>GitOps: {issue}</li>
               ))}
@@ -396,7 +396,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
               variant={sovereignVerdict.compliant ? 'green' : 'red'}
             />
             {sovereignVerdict.violations.length > 0 && (
-              <ul className="space-y-1 text-xs text-red-300/90">
+              <ul className="space-y-1 text-xs text-danger/90">
                 {sovereignVerdict.violations.map((v) => (
                   <li key={v}>{v}</li>
                 ))}
@@ -426,7 +426,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             {migrationPlan.encrypted_migration_uri}
           </p>
           {migrationPlan.blockers.length > 0 && (
-            <ul className="mt-2 space-y-1 text-xs text-red-300/90">
+            <ul className="mt-2 space-y-1 text-xs text-danger/90">
               {migrationPlan.blockers.map((b) => (
                 <li key={b}>{b}</li>
               ))}
@@ -521,7 +521,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
             <div className="glass-drawer mt-3 text-sm">
               <p className="text-muted mb-2">{explain.summary}</p>
               {explain.failure_reasons.length > 0 && (
-                <ul className="space-y-1 text-xs text-red-300/90">
+                <ul className="space-y-1 text-xs text-danger/90">
                   {explain.failure_reasons.map((r) => (
                     <li key={r.code}>
                       [{r.severity}] {r.message}
@@ -534,7 +534,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
                   <p className="text-xs text-subtle mb-1">GuestKit ({explain.guestkit.last_mode})</p>
                   <Badge text={explain.guestkit.passed ? 'passed' : 'failed'} variant={explain.guestkit.passed ? 'green' : 'red'} />
                   {explain.guestkit.repair_steps.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-xs text-amber-200/90">
+                    <ul className="mt-2 space-y-1 text-xs text-warning/90">
                       {explain.guestkit.repair_steps.map((step) => (
                         <li key={step}>{step}</li>
                       ))}
@@ -589,7 +589,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           type="button"
           disabled={!canMutate || attestVerifyBusy}
           onClick={() => void submitAttestation()}
-          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+          className="rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:bg-success disabled:opacity-40"
         >
           {attestVerifyBusy ? 'Verifying…' : 'Verify attestation'}
         </button>
@@ -651,7 +651,7 @@ export default function ConfidentialWorkloadPanel({ workloadName, runtime }: Con
           <h4 className="text-sm font-medium text-muted mb-3">Tenant isolation</h4>
           <Badge text={isolation.compliant ? 'compliant' : 'violations'} variant={isolation.compliant ? 'green' : 'red'} />
           {isolation.violations.length > 0 && (
-            <ul className="mt-2 space-y-1 text-xs text-red-300/90">
+            <ul className="mt-2 space-y-1 text-xs text-danger/90">
               {isolation.violations.map((v) => (
                 <li key={v}>{v}</li>
               ))}

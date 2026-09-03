@@ -147,7 +147,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
             </ol>
           )}
           {plan.blockers.length > 0 && (
-            <ul className="text-xs text-amber-300/90 space-y-1">
+            <ul className="text-xs text-warning/90 space-y-1">
               {plan.blockers.map((b) => (
                 <li key={b}>• {b}</li>
               ))}
@@ -173,7 +173,7 @@ export default function ConfidentialMigrationWizard({ workloads }: ConfidentialM
             type="button"
             disabled={!canMutate || migrating || plan.blockers.length > 0}
             onClick={() => void startMigration()}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success disabled:opacity-40"
           >
             {migrating ? 'Starting…' : (
               <>

@@ -248,7 +248,7 @@ function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
                   </button>
                   <button
                     type="button"
-                    className="btn-secondary text-xs text-red-300"
+                    className="btn-secondary text-xs text-danger"
                     aria-label={`Remove ${p.display_name}`}
                     onClick={() => void removeProvider(p.id)}
                   >

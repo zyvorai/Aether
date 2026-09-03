@@ -162,7 +162,7 @@ function ActivityMonitorPage() {
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide ${
               sseConnected && liveEnabled
-                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                ? 'bg-success/15 text-success border border-success/30'
                 : 'glass-inset-surface text-subtle border glass-divider'
             }`}
           >
@@ -261,7 +261,7 @@ function ActivityMonitorPage() {
           <div>
             <h3 className="text-sm font-semibold text-muted mb-4">Applications needing attention</h3>
             {failingApps.length === 0 ? (
-              <p className="text-sm text-emerald-400">No failing applications detected.</p>
+              <p className="text-sm text-success">No failing applications detected.</p>
             ) : (
               <div className="space-y-2">
                 {failingApps.map((app) => (
@@ -269,10 +269,10 @@ function ActivityMonitorPage() {
                     key={app.name}
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('applications'), { workload: app.name }))}
-                    className="w-full text-left flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/15 px-3 py-2 hover:border-red-500/40"
+                    className="w-full text-left flex items-center justify-between rounded-lg border border-danger/20 bg-danger/15 px-3 py-2 hover:border-danger/40"
                   >
                     <span className="text-sm text-foreground">{app.name}</span>
-                    <span className="text-xs text-red-300">{app.status}</span>
+                    <span className="text-xs text-danger">{app.status}</span>
                   </button>
                 ))}
               </div>

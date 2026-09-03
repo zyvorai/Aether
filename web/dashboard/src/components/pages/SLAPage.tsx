@@ -242,7 +242,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-muted">Uptime target</dt>
-                      <dd className="text-emerald-400 font-medium">{sla.uptime_target_pct}%</dd>
+                      <dd className="text-success font-medium">{sla.uptime_target_pct}%</dd>
                     </div>
                     {sla.max_latency_ms !== null && (
                       <div className="flex justify-between">

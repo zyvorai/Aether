@@ -86,12 +86,12 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
       {result.violations.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-            <AlertCircle size={16} className="text-red-400" />
+            <AlertCircle size={16} className="text-danger" />
             Violations ({result.violations.length})
           </h4>
           <div className="space-y-2">
             {result.violations.map((v, i) => (
-              <div key={i} className="bg-red-500/5 border border-red-500/20 rounded-lg p-3">
+              <div key={i} className="bg-danger/5 border border-danger/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-foreground text-sm">{v.policy}</span>
                   <SeverityBadge severity={v.severity} />
@@ -109,15 +109,15 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
       {result.warnings.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-400" />
+            <AlertTriangle size={16} className="text-warning" />
             Warnings ({result.warnings.length})
           </h4>
           <div className="space-y-2">
             {result.warnings.map((w, i) => (
-              <div key={i} className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+              <div key={i} className="bg-warning/5 border border-warning/20 rounded-lg p-3">
                 <div className="font-medium text-foreground text-sm mb-1">{w.policy}</div>
                 <div className="text-sm text-muted">{w.message}</div>
-                <div className="text-xs text-amber-400 mt-1">{w.suggestion}</div>
+                <div className="text-xs text-warning mt-1">{w.suggestion}</div>
               </div>
             ))}
           </div>
@@ -296,7 +296,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
               {opaResult.denials.length > 0 && (
                 <ul className="mt-3 space-y-2 text-sm text-muted">
                   {opaResult.denials.map((d) => (
-                    <li key={d} className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
+                    <li key={d} className="rounded-lg bg-danger/10 border border-danger/20 px-3 py-2">
                       {d}
                     </li>
                   ))}

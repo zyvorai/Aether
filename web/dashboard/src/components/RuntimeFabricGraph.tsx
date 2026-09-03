@@ -361,10 +361,10 @@ export default function RuntimeFabricGraph({
       ) : null}
 
       <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.14em] text-subtle">
-        <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-sky-400" /> Application</span>
-        <span className="inline-flex items-center gap-1"><Network className="h-3 w-3 text-violet-400" /> Runtime</span>
-        <span className="inline-flex items-center gap-1"><HardDrive className="h-3 w-3 text-teal-400" /> Cluster</span>
-        <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-amber-400" /> Resources</span>
+        <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-primary" /> Application</span>
+        <span className="inline-flex items-center gap-1"><Network className="h-3 w-3 text-lavender" /> Runtime</span>
+        <span className="inline-flex items-center gap-1"><HardDrive className="h-3 w-3 text-mistblue" /> Cluster</span>
+        <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3 text-warning" /> Resources</span>
       </div>
     </div>
   );

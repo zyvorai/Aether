@@ -79,7 +79,7 @@ export default function KnowledgeGraphPanel() {
       testId="knowledge-graph-panel"
       title="Infrastructure Knowledge Graph"
       subtitle="Workloads, dependencies, threats, and drift — unified graph for impact analysis."
-      icon={<GitBranch className="h-5 w-5 text-teal-400" />}
+      icon={<GitBranch className="h-5 w-5 text-mistblue" />}
       actions={
         <button
           type="button"
@@ -104,7 +104,7 @@ export default function KnowledgeGraphPanel() {
                 )
               }
               className={`rounded-full border px-3 py-1 text-xs ${
-                active ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-muted'
+                active ? 'border-mistblue/40 bg-mistblue/10 text-mistblue' : 'glass-divider text-muted'
               }`}
             >
               {kind}

@@ -328,7 +328,7 @@ function ZyraPage() {
               key={`${msg.role}-${i}`}
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
-                  ? 'ml-auto border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-violet-50'
+                  ? 'ml-auto border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-lavender'
                   : 'border glass-divider glass-inset-surface text-foreground'
               }`}
             >
@@ -337,15 +337,15 @@ function ZyraPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-sm" data-testid="zyra-pending-actions">
+            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 backdrop-blur-sm" data-testid="zyra-pending-actions">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-medium text-amber-200">Actions awaiting confirmation</p>
+                <p className="text-xs font-medium text-warning">Actions awaiting confirmation</p>
                 {pending.length > 1 ? (
                   <button
                     type="button"
                     data-testid="zyra-confirm-batch"
                     onClick={() => void confirmBatch()}
-                    className="rounded-lg bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500"
+                    className="rounded-lg bg-warning px-2 py-1 text-xs text-white hover:bg-warning"
                   >
                     Approve all ({pending.length})
                   </button>
@@ -357,7 +357,7 @@ function ZyraPage() {
                   <button
                     type="button"
                     onClick={() => confirmAction(a.id)}
-                    className="rounded-lg bg-amber-600 px-2 py-1 text-white hover:bg-amber-500"
+                    className="rounded-lg bg-warning px-2 py-1 text-white hover:bg-warning"
                   >
                     Confirm
                   </button>

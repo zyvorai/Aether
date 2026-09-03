@@ -13,9 +13,9 @@ import type { PredictionReport, RuntimeUtilization } from '../types/api';
 import GlassSection from './GlassSection';
 
 function utilTone(value: number): string {
-  if (value >= 0.85) return 'text-red-300';
-  if (value >= 0.7) return 'text-amber-200';
-  return 'text-emerald-300';
+  if (value >= 0.85) return 'text-danger';
+  if (value >= 0.7) return 'text-warning';
+  return 'text-success';
 }
 
 function UtilBar({ label, value }: { label: string; value: number }) {
@@ -28,7 +28,7 @@ function UtilBar({ label, value }: { label: string; value: number }) {
       </div>
       <div className="h-2 overflow-hidden rounded-full glass-inset-surface">
         <div
-          className={`h-full rounded-full transition-all ${value >= 0.85 ? 'bg-red-500' : value >= 0.7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+          className={`h-full rounded-full transition-all ${value >= 0.85 ? 'bg-danger' : value >= 0.7 ? 'bg-warning' : 'bg-success'}`}
           style={{ width: `${Math.min(100, pct)}%` }}
         />
       </div>
@@ -82,7 +82,7 @@ export default function CapacityForecastPanel() {
       testId="capacity-forecast-panel"
       title="Capacity Forecast"
       subtitle="Scheduler utilization + failure predictions + saturation horizon."
-      icon={<Gauge className="h-5 w-5 text-amber-400" />}
+      icon={<Gauge className="h-5 w-5 text-warning" />}
       actions={
         <button
           type="button"
@@ -112,7 +112,7 @@ export default function CapacityForecastPanel() {
             <span className="text-3xl font-semibold text-foreground">
               {formatPercent(predictions?.fleet_risk_score ?? 0, 0)}
             </span>
-            <TrendingUp className="mb-1 h-4 w-4 text-amber-400" />
+            <TrendingUp className="mb-1 h-4 w-4 text-warning" />
           </div>
           {topRisks.length === 0 ? (
             <p className="text-sm text-subtle">No elevated workload risks detected.</p>
@@ -140,12 +140,12 @@ export default function CapacityForecastPanel() {
           ) : (
             <ul className="space-y-2">
               {briefing!.capacity_risks.map((risk) => (
-                <li key={`${risk.resource}-${risk.summary}`} className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                <li key={`${risk.resource}-${risk.summary}`} className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
                   <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-medium text-amber-100">{risk.resource}</span>
-                    <span className="text-xs text-amber-200/80">{risk.days_remaining}d</span>
+                    <span className="font-medium text-warning">{risk.resource}</span>
+                    <span className="text-xs text-warning/80">{risk.days_remaining}d</span>
                   </div>
-                  <p className="mt-1 text-xs text-amber-100/80">{risk.summary}</p>
+                  <p className="mt-1 text-xs text-warning/80">{risk.summary}</p>
                 </li>
               ))}
             </ul>

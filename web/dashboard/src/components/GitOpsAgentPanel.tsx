@@ -56,13 +56,13 @@ export default function GitOpsAgentPanel() {
       testId="gitops-agent-panel"
       title="GitOps Agent"
       subtitle="Federation-aware drift reconcile loop"
-      icon={<GitBranch className="h-5 w-5 text-violet-400" />}
+      icon={<GitBranch className="h-5 w-5 text-lavender" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void sync(true)}
             disabled={executing}
-            className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-200 hover:border-violet-400/50 disabled:opacity-60"
+            className="rounded-xl border border-lavender/30 bg-lavender/10 px-3 py-2 text-xs text-lavender hover:border-lavender/50 disabled:opacity-60"
             data-testid="gitops-agent-dry-run"
           >
             Dry-run sync
@@ -88,7 +88,7 @@ export default function GitOpsAgentPanel() {
         <ul className="space-y-2">
           {plan.planned_actions.map((action) => (
             <li key={action} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
-              <Play className="mr-1 inline h-3 w-3 text-violet-400" />
+              <Play className="mr-1 inline h-3 w-3 text-lavender" />
               {action}
             </li>
           ))}

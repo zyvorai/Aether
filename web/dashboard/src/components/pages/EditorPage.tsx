@@ -589,8 +589,8 @@ function EditorPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
-            <h3 className="text-sm font-medium text-purple-300">Confidential computing (Ragnarok / Aether)</h3>
+          <div className="rounded-xl border border-lavender/20 bg-lavender/5 p-4 space-y-3">
+            <h3 className="text-sm font-medium text-lavender">Confidential computing (Ragnarok / Aether)</h3>
             <ConfidentialFormFields
               runtime={form.runtime}
               state={form}
@@ -662,7 +662,7 @@ function EditorPage() {
           )}
 
           {result && (
-            <p className={`text-sm p-3 rounded-xl border ${result.startsWith('Error') ? 'border-red-500/30 text-red-400 bg-red-500/5' : 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'}`}>
+            <p className={`text-sm p-3 rounded-xl border ${result.startsWith('Error') ? 'border-danger/30 text-danger bg-danger/5' : 'border-success/30 text-success bg-success/5'}`}>
               {result}
             </p>
           )}

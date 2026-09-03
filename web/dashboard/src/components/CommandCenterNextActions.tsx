@@ -28,16 +28,16 @@ interface CommandCenterNextActionsProps {
 function actionTone(actionType: string): string {
   switch (actionType) {
     case 'heal':
-      return 'border-emerald-500/20 bg-emerald-500/[0.06]';
+      return 'border-success/20 bg-success/[0.06]';
     case 'investigate':
-      return 'border-red-500/20 bg-red-500/[0.06]';
+      return 'border-danger/20 bg-danger/[0.06]';
     case 'optimize':
       return 'border-primary/20 bg-primary/[0.06]';
     case 'migrate':
     case 'place':
       return 'border-aether-ai/20 bg-aether-ai/[0.06]';
     case 'capacity':
-      return 'border-amber-500/20 bg-amber-500/[0.06]';
+      return 'border-warning/20 bg-warning/[0.06]';
     default:
       return 'glass-divider glass-inset-surface';
   }

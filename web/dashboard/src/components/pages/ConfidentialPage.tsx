@@ -38,7 +38,7 @@ function TrustBar({ label, value }: { label: string; value: number }) {
       </div>
       <div className="h-1.5 glass-progress-track">
         <div
-          className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+          className={`h-full rounded-full ${pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -495,7 +495,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <div className="glass" data-testid="confidential-fleet-panel">
           <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <ShieldCheck className="w-5 h-5 text-success" />
             Confidential workloads
           </h2>
           <p className="text-sm text-subtle mb-4">
@@ -719,7 +719,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
             {verifyResult && (
               <div
                 data-testid="confidential-verify-result"
-                className={`mt-3 p-2 rounded text-sm border ${verifyResult.verified ? 'border-emerald-800/60 bg-emerald-950/30 text-emerald-200' : 'border-red-800/60 bg-red-950/30 text-red-200'}`}
+                className={`mt-3 p-2 rounded text-sm border ${verifyResult.verified ? 'border-success/60 bg-success/30 text-success' : 'border-danger/60 bg-danger/30 text-danger'}`}
               >
                 <Badge text={verifyResult.verified ? 'verified' : 'not found'} variant={verifyResult.verified ? 'green' : 'red'} />
                 <span className="ml-2 text-xs">{verifyResult.message}</span>

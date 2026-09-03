@@ -66,29 +66,29 @@ export default function FleetIntelligenceBrief({ onNavigate, refreshKey = 0 }: F
           <div className="text-xs text-subtle">Clusters</div>
         </button>
         <button type="button" onClick={() => onNavigate('health')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <TrendingUp className="mb-2 h-4 w-4 text-emerald-400" />
-          <div className={`text-2xl font-semibold ${healthy === 0 ? 'text-subtle' : 'text-emerald-300'}`}>{healthy}</div>
+          <TrendingUp className="mb-2 h-4 w-4 text-success" />
+          <div className={`text-2xl font-semibold ${healthy === 0 ? 'text-subtle' : 'text-success'}`}>{healthy}</div>
           <div className="text-xs text-subtle">Healthy</div>
         </button>
         <button type="button" onClick={() => onNavigate('observability')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <TrendingUp className="mb-2 h-4 w-4 text-amber-400" />
-          <div className={`text-2xl font-semibold ${riskCount === 0 ? 'text-subtle' : 'text-amber-200'}`}>{riskCount}</div>
+          <TrendingUp className="mb-2 h-4 w-4 text-warning" />
+          <div className={`text-2xl font-semibold ${riskCount === 0 ? 'text-subtle' : 'text-warning'}`}>{riskCount}</div>
           <div className="text-xs text-subtle">At risk</div>
         </button>
         <button type="button" onClick={() => onNavigate('cost')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
-          <div className={`text-2xl font-semibold ${savings === 0 ? 'text-subtle' : 'text-emerald-300'}`}>{formatUSD(savings)}</div>
+          <DollarSign className="mb-2 h-4 w-4 text-success" />
+          <div className={`text-2xl font-semibold ${savings === 0 ? 'text-subtle' : 'text-success'}`}>{formatUSD(savings)}</div>
           <div className="text-xs text-subtle">Savings/mo</div>
         </button>
         <button type="button" onClick={() => onNavigate('security')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <Shield className="mb-2 h-4 w-4 text-red-400" />
-          <div className={`text-2xl font-semibold ${securityIssues === 0 ? 'text-subtle' : 'text-red-300'}`}>{securityIssues}</div>
+          <Shield className="mb-2 h-4 w-4 text-danger" />
+          <div className={`text-2xl font-semibold ${securityIssues === 0 ? 'text-subtle' : 'text-danger'}`}>{securityIssues}</div>
           <div className="text-xs text-subtle">Security issues</div>
         </button>
       </div>
 
       {briefing?.capacity_risks[0] ? (
-        <p className="mt-4 text-sm text-amber-200/90">
+        <p className="mt-4 text-sm text-warning/90">
           Capacity: {briefing.capacity_risks[0].summary}
         </p>
       ) : null}

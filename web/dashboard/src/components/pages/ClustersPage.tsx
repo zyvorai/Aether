@@ -883,7 +883,7 @@ function ClustersPage() {
       {ciliumStatus && (
         <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-subtle">CNI</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'glass-inset-surface text-muted'}`}>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-success/40 text-success' : 'glass-inset-surface text-muted'}`}>
             {ciliumStatus.cni}
           </span>
           <span className="text-subtle">·</span>
@@ -891,7 +891,7 @@ function ClustersPage() {
           <span className="text-foreground">{ciliumStatus.egress_mode}</span>
           <span className="text-subtle">·</span>
           <span className="text-subtle">metrics-server</span>
-          <span className={ciliumStatus.metrics_server ? 'text-emerald-400' : 'text-amber-400'}>
+          <span className={ciliumStatus.metrics_server ? 'text-success' : 'text-warning'}>
             {ciliumStatus.metrics_server ? 'ok' : 'missing'}
           </span>
         </div>
@@ -1026,7 +1026,7 @@ function ClustersPage() {
             }
             setCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-600/20"
+          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20"
         >
           <Plus size={16} />
           Create Resource
@@ -1205,21 +1205,21 @@ function ClustersPage() {
                   <button
                     onClick={() => handleResourceAction('drain')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-red-700 bg-red-900/20 px-3 py-2 text-sm text-red-200 hover:bg-red-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-danger bg-danger/20 px-3 py-2 text-sm text-danger hover:bg-danger/30 disabled:opacity-50"
                   >
                     {actionLoading === 'drain' ? 'Draining...' : 'Drain'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('cordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-amber-700 bg-amber-900/20 px-3 py-2 text-sm text-amber-200 hover:bg-amber-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
                   >
                     {actionLoading === 'cordon' ? 'Cordoning...' : 'Cordon'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('uncordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/20 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     {actionLoading === 'uncordon' ? 'Uncordoning...' : 'Uncordon'}
                   </button>
@@ -1230,14 +1230,14 @@ function ClustersPage() {
                   <button
                     onClick={() => handleResourceAction('start')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/20 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     {actionLoading === 'start' ? 'Starting...' : 'Start'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('stop')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-amber-700 bg-amber-900/20 px-3 py-2 text-sm text-amber-200 hover:bg-amber-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
                   >
                     {actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
                   </button>
@@ -1248,14 +1248,14 @@ function ClustersPage() {
                   <button
                     onClick={() => handleResourceAction('suspend')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-amber-700 bg-amber-900/20 px-3 py-2 text-sm text-amber-200 hover:bg-amber-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
                   >
                     {actionLoading === 'suspend' ? 'Suspending...' : 'Suspend'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('resume')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-900/20 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     {actionLoading === 'resume' ? 'Resuming...' : 'Resume'}
                   </button>
@@ -1276,7 +1276,7 @@ function ClustersPage() {
                   <button
                     onClick={() => handleResourceAction('scale')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
                   >
                     {actionLoading === 'scale' ? 'Scaling...' : 'Scale'}
                   </button>
@@ -1295,7 +1295,7 @@ function ClustersPage() {
               <button
                 onClick={() => handleResourceAction('delete')}
                 disabled={!!actionLoading || selected.kind === 'Node' || !canDeleteCluster}
-                className="flex items-center gap-2 rounded-lg border border-red-600/30 bg-red-600/10 px-3 py-2 text-sm text-red-300 hover:bg-red-600/20 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/20 disabled:opacity-50"
               >
                 <Trash2 size={14} />
                 {selected.kind === 'Node' ? 'Delete Disabled' : actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
@@ -1338,7 +1338,7 @@ function ClustersPage() {
                       {selected.owned_resources!.map((child) => (
                         <span
                           key={`${child.kind}/${child.name}`}
-                          className="rounded-full border border-amber-800/40 bg-amber-950/30 px-3 py-1 text-xs text-amber-100"
+                          className="rounded-full border border-warning/40 bg-warning/30 px-3 py-1 text-xs text-warning"
                         >
                           {child.kind}/{child.name}
                         </span>
@@ -1355,7 +1355,7 @@ function ClustersPage() {
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
                   <div>
                     <div className="text-subtle">Level</div>
-                    <div className={healthSummary.level === 'healthy' ? 'text-emerald-400' : healthSummary.level === 'degraded' ? 'text-amber-400' : 'text-red-400'}>{healthSummary.level}</div>
+                    <div className={healthSummary.level === 'healthy' ? 'text-success' : healthSummary.level === 'degraded' ? 'text-warning' : 'text-danger'}>{healthSummary.level}</div>
                   </div>
                   <div>
                     <div className="text-subtle">Pods</div>
@@ -1381,7 +1381,7 @@ function ClustersPage() {
                     <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-foreground">{condition.type_}</span>
-                        <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>{condition.status}</span>
+                        <span className={condition.status === 'True' ? 'text-success' : 'text-warning'}>{condition.status}</span>
                       </div>
                       {condition.reason && <div className="mt-1 text-xs text-muted">{condition.reason}</div>}
                       {condition.message && <div className="mt-1 text-xs text-subtle">{condition.message}</div>}
@@ -1425,7 +1425,7 @@ function ClustersPage() {
                     <div key={`${event.timestamp}:${event.reason}:${index}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-foreground">{event.reason}</div>
-                        <div className={event.type_ === 'Warning' ? 'text-amber-400 text-xs' : 'text-emerald-400 text-xs'}>
+                        <div className={event.type_ === 'Warning' ? 'text-warning text-xs' : 'text-success text-xs'}>
                           {event.type_}
                         </div>
                       </div>
@@ -1482,21 +1482,21 @@ function ClustersPage() {
                   <button
                     onClick={() => handleRolloutAction('pause')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-amber-700 bg-amber-900/20 px-3 py-2 text-sm text-amber-200 hover:bg-amber-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-pause' ? 'Pausing...' : 'Pause'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('resume')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-emerald-700 bg-emerald-900/20 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-resume' ? 'Resuming...' : 'Resume'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('restart')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
@@ -1567,14 +1567,14 @@ function ClustersPage() {
                   <button
                     onClick={() => handleHelmAction('upgrade')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
                   >
                     {actionLoading === 'helm-upgrade' ? 'Upgrading...' : 'Upgrade'}
                   </button>
                   <button
                     onClick={() => handleHelmAction('install')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-emerald-700 bg-emerald-900/20 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     {actionLoading === 'helm-install' ? 'Installing...' : 'Install'}
                   </button>
@@ -1619,7 +1619,7 @@ function ClustersPage() {
                     >
                       {terminalExpanded ? 'Compact' : 'Expand'}
                     </button>
-                    <div className={`text-xs ${execConnected ? 'text-emerald-400' : 'text-subtle'}`}>
+                    <div className={`text-xs ${execConnected ? 'text-success' : 'text-subtle'}`}>
                       {execConnected ? 'connected' : 'disconnected'}
                     </div>
                   </div>
@@ -1646,7 +1646,7 @@ function ClustersPage() {
                     <button
                       onClick={connectExec}
                       disabled={!execPod}
-                      className="flex-1 rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
                     >
                       Connect
                     </button>
@@ -1659,7 +1659,7 @@ function ClustersPage() {
                     </button>
                   </div>
                 </div>
-                <pre className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-emerald-300 ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <pre className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-success ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={execInput}
@@ -1676,7 +1676,7 @@ function ClustersPage() {
                   <button
                     onClick={sendExecLine}
                     disabled={!execConnected || !execInput}
-                    className="rounded-lg border border-emerald-700 bg-emerald-900/20 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/20 px-4 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                   >
                     Send
                   </button>
@@ -1714,7 +1714,7 @@ function ClustersPage() {
                       data-testid="clusters-port-forward-start"
                       onClick={handlePortForwardStart}
                       disabled={!portForwardPod || !portForwardRemotePort || !!portForwardSession}
-                      className="flex-1 rounded-lg border border-blue-700 bg-blue-900/20 px-3 py-2 text-sm text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
                     >
                       {actionLoading === 'port-forward' ? 'Starting...' : 'Start'}
                     </button>
@@ -1730,7 +1730,7 @@ function ClustersPage() {
                 </div>
                 {portForwardSession && (
                   <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-muted">
-                    Active: <span className="text-emerald-300">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
+                    Active: <span className="text-success">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </div>
                 )}
               </div>
@@ -1743,7 +1743,7 @@ function ClustersPage() {
                 <button
                   onClick={handleApply}
                   disabled={!!actionLoading || selected.kind === 'HelmRelease'}
-                  className="flex items-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-300 hover:bg-emerald-600/20 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
                 >
                   <Save size={14} />
                   {actionLoading === 'apply' ? 'Applying...' : selected.kind === 'HelmRelease' ? 'Managed by Helm' : 'Apply Changes'}
@@ -1767,9 +1767,9 @@ function ClustersPage() {
                       key={`${line.kind}:${index}`}
                       className={
                         line.kind === 'add'
-                          ? 'text-emerald-300'
+                          ? 'text-success'
                           : line.kind === 'remove'
-                            ? 'text-red-300'
+                            ? 'text-danger'
                             : 'text-subtle'
                       }
                     >
@@ -1834,7 +1834,7 @@ function ClustersPage() {
             <button
               onClick={handleCreateResource}
               disabled={!!actionLoading || (kind === 'HelmRelease' && (!createHelmRelease || !createHelmChart))}
-              className="flex items-center gap-2 rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-600/20 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
             >
               <Save size={14} />
               {actionLoading === 'create' ? (kind === 'HelmRelease' ? 'Installing...' : 'Applying...') : (kind === 'HelmRelease' ? 'Install Release' : 'Create / Apply')}

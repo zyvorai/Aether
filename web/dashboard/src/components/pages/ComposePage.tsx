@@ -294,7 +294,7 @@ function ComposePage() {
                       data-testid="compose-stack-down"
                       onClick={() => void handleComposeDown()}
                       disabled={downLoading}
-                      className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-danger/40 px-4 py-2.5 text-sm text-danger hover:bg-danger/10 disabled:opacity-50"
                     >
                       {downLoading ? 'Stopping…' : 'Compose down'}
                     </button>
@@ -304,7 +304,7 @@ function ComposePage() {
                 {deployResult ? (
                   <div
                     data-testid="compose-deploy-result"
-                    className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-300"
+                    className="rounded-xl border border-success/30 bg-success/5 p-3 text-sm text-success"
                   >
                     Deployed {deployResult.count} workload(s):{' '}
                     {deployResult.deployed.map((name, i) => (
@@ -312,7 +312,7 @@ function ComposePage() {
                         {i > 0 ? ', ' : ''}
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: name })}
-                          className="text-emerald-200 hover:underline"
+                          className="text-success hover:underline"
                         >
                           {name}
                         </Link>
@@ -320,10 +320,10 @@ function ComposePage() {
                     ))}
                   </div>
                 ) : null}
-                {error ? <p className="text-sm text-red-400">{error}</p> : null}
+                {error ? <p className="text-sm text-danger">{error}</p> : null}
               </div>
             ) : error ? (
-              <p className="text-sm text-red-400 mt-3">{error}</p>
+              <p className="text-sm text-danger mt-3">{error}</p>
             ) : null}
           </>
         }

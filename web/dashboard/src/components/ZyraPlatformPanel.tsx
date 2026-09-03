@@ -139,7 +139,7 @@ export default function ZyraPlatformPanel() {
       testId="zyra-platform-panel"
       title="Zyra Platform"
       subtitle="Memory, multi-agent routing, LLM status, runbooks, policy explain, audit, RBAC"
-      icon={<Bot className="h-5 w-5 text-violet-400" />}
+      icon={<Bot className="h-5 w-5 text-lavender" />}
       actions={
         <button
           type="button"
@@ -158,7 +158,7 @@ export default function ZyraPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-violet-500/40 bg-violet-500/10 text-violet-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-lavender/40 bg-lavender/10 text-lavender' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -177,7 +177,7 @@ export default function ZyraPlatformPanel() {
             <ul className="space-y-2">
               {memory.entries.map((e) => (
                 <li key={e.session_id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
-                  <p className="font-mono text-xs text-violet-300">{e.session_id.slice(0, 8)}…</p>
+                  <p className="font-mono text-xs text-lavender">{e.session_id.slice(0, 8)}…</p>
                   <p className="mt-1 text-muted">{e.summary}</p>
                   <p className="text-xs text-subtle">{e.updated_at}</p>
                 </li>
@@ -199,7 +199,7 @@ export default function ZyraPlatformPanel() {
             <button
               type="button"
               onClick={() => void routeAgent()}
-              className="rounded-lg bg-violet-600 px-3 py-2 text-xs text-white hover:bg-violet-500"
+              className="rounded-lg bg-lavender px-3 py-2 text-xs text-white hover:bg-lavender"
               data-testid="zyra-route-button"
             >
               Route agent
@@ -226,7 +226,7 @@ export default function ZyraPlatformPanel() {
       {tab === 'llm' ? (
         <div data-testid="zyra-llm-panel" className="space-y-2 text-sm">
           <p>
-            Active provider: <span className="font-medium text-violet-200">{llm?.active_provider ?? '—'}</span>
+            Active provider: <span className="font-medium text-lavender">{llm?.active_provider ?? '—'}</span>
           </p>
           <p className="text-muted">Model: {llm?.model ?? '—'}</p>
           <p className="text-xs text-subtle">
@@ -234,14 +234,14 @@ export default function ZyraPlatformPanel() {
             Ollama: {llm?.ollama_configured ? 'yes' : 'no'}
           </p>
           {llm?.fallback_rule_based ? (
-            <p className="text-xs text-amber-300/90">Rule-based fallback active when no LLM keys are configured.</p>
+            <p className="text-xs text-warning/90">Rule-based fallback active when no LLM keys are configured.</p>
           ) : null}
         </div>
       ) : null}
 
       {tab === 'voice' ? (
         <div data-testid="zyra-voice-lab-panel" className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-violet-200">
+          <div className="flex items-center gap-2 text-lavender">
             <Mic className="h-4 w-4" />
             Voice zyra lab ({voice?.status ?? '—'})
           </div>
@@ -262,7 +262,7 @@ export default function ZyraPlatformPanel() {
             <button
               type="button"
               onClick={() => void authorRunbook()}
-              className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-3 py-2 text-xs text-white hover:bg-violet-500"
+              className="inline-flex items-center gap-1 rounded-lg bg-lavender px-3 py-2 text-xs text-white hover:bg-lavender"
               data-testid="zyra-runbook-button"
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -284,7 +284,7 @@ export default function ZyraPlatformPanel() {
           <button
             type="button"
             onClick={() => void explainPolicy()}
-            className="mb-3 inline-flex items-center gap-1 rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:border-violet-500/40"
+            className="mb-3 inline-flex items-center gap-1 rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:border-lavender/40"
             data-testid="zyra-policy-button"
           >
             <Shield className="h-3.5 w-3.5" />
@@ -317,7 +317,7 @@ export default function ZyraPlatformPanel() {
             <ul className="max-h-64 space-y-2 overflow-y-auto">
               {audit.entries.map((e, i) => (
                 <li key={`${e.timestamp}-${i}`} className="rounded-lg border glass-divider px-3 py-2 text-xs">
-                  <span className="text-violet-300">{e.action}</span>
+                  <span className="text-lavender">{e.action}</span>
                   {e.tool ? <span className="text-subtle"> · {e.tool}</span> : null}
                   <p className="text-muted">{e.detail}</p>
                   <p className="text-subtle">{e.timestamp}</p>

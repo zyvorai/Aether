@@ -987,7 +987,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setShellOpen(true);
                     }}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-success/20 text-success hover:bg-success/40 border border-success/30 transition-colors"
                   >
                     Exec
                   </button>
@@ -1009,9 +1009,9 @@ export default function WorkloadDetail({
                     disabled={!!actionLoading}
                     className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                       action === 'delete'
-                        ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30'
+                        ? 'bg-danger/20 text-danger hover:bg-danger/40 border border-danger/30'
                         : action === 'rollback'
-                          ? 'bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 border border-amber-600/30'
+                          ? 'bg-warning/20 text-warning hover:bg-warning/40 border border-warning/30'
                         : 'glass-inset-surface text-muted hover:bg-white/[0.08] border glass-divider'
                     } disabled:opacity-50`}
                   >
@@ -1035,12 +1035,12 @@ export default function WorkloadDetail({
               </div>
             ) : (
               <div className="mb-4 space-y-3">
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-300">
+                <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
                   This resource is discovered directly from Kubernetes. Aether can inspect it and execute native cluster actions from this panel.
                 </div>
                 {execDeniedByRole && shellableDiscovered ? (
                   <div
-                    className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+                    className="rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-sm text-warning"
                     data-testid="workload-exec-rbac-hint"
                   >
                     Exec is available for Operator and Admin roles. Your current role is read-only.
@@ -1057,7 +1057,7 @@ export default function WorkloadDetail({
                         setShellWantConnect(false);
                         setShellOpen(true);
                       }}
-                      className="px-3 py-1.5 text-sm font-medium rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30 transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium rounded bg-success/20 text-success hover:bg-success/40 border border-success/30 transition-colors"
                     >
                       Exec
                     </button>
@@ -1124,7 +1124,7 @@ export default function WorkloadDetail({
                       <button
                         onClick={() => handleAction('scale')}
                         disabled={!!actionLoading}
-                        className="px-3 py-1.5 text-sm font-medium rounded bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-600/30 disabled:opacity-50"
+                        className="px-3 py-1.5 text-sm font-medium rounded bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 disabled:opacity-50"
                       >
                         {actionLoading === 'scale' ? '...' : 'Scale'}
                       </button>
@@ -1135,7 +1135,7 @@ export default function WorkloadDetail({
                       workload: workload.name,
                       q: `Diagnose ${workload.kind ?? 'workload'} ${clusterResourceName} in ${workload.namespace ?? 'default'}`,
                     })}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-violet-600/20 text-violet-300 hover:bg-violet-600/30 border border-violet-600/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-lavender/20 text-lavender hover:bg-lavender/30 border border-lavender/30 transition-colors"
                     data-testid="workload-diagnose-link"
                   >
                     Diagnose
@@ -1157,7 +1157,7 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm font-medium rounded bg-danger/20 text-danger hover:bg-danger/40 border border-danger/30 disabled:opacity-50"
                   >
                     {actionLoading === 'delete' ? '...' : 'Delete'}
                   </button>
@@ -1222,7 +1222,7 @@ export default function WorkloadDetail({
                           <td className="px-3 py-2 font-mono text-foreground">{pod.name}</td>
                           <td className="px-3 py-2 text-muted">{pod.phase}</td>
                           <td className="px-3 py-2 text-muted">{pod.ready}/{pod.total_containers}</td>
-                          <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-amber-400 font-medium' : 'text-muted'}`}>{pod.restarts}</td>
+                          <td className={`px-3 py-2 ${pod.restarts > 5 ? 'text-warning font-medium' : 'text-muted'}`}>{pod.restarts}</td>
                           <td className="px-3 py-2 text-muted truncate max-w-[10rem]" title={(pod.images?.length ? pod.images : pod.containers ?? []).join(', ')}>
                             {(pod.images?.length ? pod.images : pod.containers ?? []).join(', ') || '—'}
                           </td>
@@ -1249,7 +1249,7 @@ export default function WorkloadDetail({
                                   setShellPod(pod.name);
                                   setShellOpen(true);
                                 }}
-                                className="rounded px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
+                                className="rounded px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-success/10 hover:text-success"
                                 title="Exec into this pod"
                                 data-testid={`workload-pod-shell-${pod.name}`}
                               >
@@ -1261,7 +1261,7 @@ export default function WorkloadDetail({
                                 type="button"
                                 onClick={() => void handleDeletePod(pod.name)}
                                 disabled={!!actionLoading}
-                                className="rounded px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                className="rounded px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
                                 title="Delete pod (controller recreates it)"
                                 data-testid={`workload-pod-delete-${pod.name}`}
                               >
@@ -1286,8 +1286,8 @@ export default function WorkloadDetail({
                       key={`${condition.type_}:${condition.reason ?? 'none'}`}
                       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] ${
                         condition.status === 'True'
-                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                          : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                          ? 'border-success/30 bg-success/10 text-success'
+                          : 'border-warning/30 bg-warning/10 text-warning'
                       }`}
                       title={[condition.reason, condition.message].filter(Boolean).join(' — ')}
                     >
@@ -1333,13 +1333,13 @@ export default function WorkloadDetail({
               <details className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-manifest-insights">
                 <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-subtle">
                   Labels, resources &amp; images
-                  {imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">drift</span> : null}
+                  {imageDrift ? <span className="ml-2 text-warning normal-case tracking-normal">drift</span> : null}
                 </summary>
                 <div className="mt-3 space-y-3">
                 {(imageDrift || observedImages.length > 0) ? (
                   <div data-testid="workload-image-drift">
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">
-                      Images{imageDrift ? <span className="ml-2 text-amber-400 normal-case tracking-normal">· drift detected</span> : null}
+                      Images{imageDrift ? <span className="ml-2 text-warning normal-case tracking-normal">· drift detected</span> : null}
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {(observedImages.length > 0 ? observedImages : containerResources.map((c) => c.image).filter(Boolean) as string[]).map((image) => (
@@ -1458,7 +1458,7 @@ export default function WorkloadDetail({
                       {clusterEvents.map((event, index) => (
                         <div key={`${event.timestamp}-${event.reason}-${index}`} className="rounded glass-inset-surface px-2.5 py-1.5">
                           <div className="flex items-center gap-2 text-[11px]">
-                            <span className={event.type_ === 'Warning' ? 'text-amber-400' : 'text-emerald-400'}>
+                            <span className={event.type_ === 'Warning' ? 'text-warning' : 'text-success'}>
                               {event.type_}
                             </span>
                             <span className="font-medium text-foreground">{event.reason}</span>
@@ -1507,7 +1507,7 @@ export default function WorkloadDetail({
                     <div key={rev.revision} className="flex flex-wrap gap-2 glass-divider-t py-1 text-muted">
                       <span className="font-mono text-muted">#{rev.revision}</span>
                       <span>{rev.chart}</span>
-                      <span className={rev.status === 'deployed' ? 'text-emerald-400' : ''}>{rev.status}</span>
+                      <span className={rev.status === 'deployed' ? 'text-success' : ''}>{rev.status}</span>
                       <span className="ml-auto text-subtle">{rev.updated ? formatTimestamp(rev.updated) : ''}</span>
                     </div>
                   ))}
@@ -1612,7 +1612,7 @@ export default function WorkloadDetail({
                       type="button"
                       onClick={() => void handlePortForwardStart()}
                       disabled={!!portForwardSession || !!actionLoading || (!portForwardPod && workload.kind !== 'Service')}
-                      className="flex-1 rounded-lg border border-blue-700/40 bg-blue-900/20 px-2 py-1.5 text-xs text-blue-200 hover:bg-blue-800/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary/40 bg-primary/20 px-2 py-1.5 text-xs text-primary hover:bg-primary/30 disabled:opacity-50"
                       data-testid="workload-pf-start"
                     >
                       {actionLoading === 'port-forward' ? '...' : 'Start'}
@@ -1629,7 +1629,7 @@ export default function WorkloadDetail({
                   </div>
                 </div>
                 {portForwardSession ? (
-                  <p className="mt-2 text-xs text-emerald-300" data-testid="workload-pf-active">
+                  <p className="mt-2 text-xs text-success" data-testid="workload-pf-active">
                     Active: {portForwardSession.local_url} → {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </p>
                 ) : null}
@@ -1778,7 +1778,7 @@ export default function WorkloadDetail({
                             type="button"
                             onClick={() => void rollbackSnapshot(snap.version)}
                             disabled={!!actionLoading}
-                            className="rounded border border-amber-600/40 px-2 py-1 text-xs text-amber-300 hover:bg-amber-600/10 disabled:opacity-50"
+                            className="rounded border border-warning/40 px-2 py-1 text-xs text-warning hover:bg-warning/10 disabled:opacity-50"
                           >
                             {actionLoading === `rollback-v${snap.version}` ? 'Rolling back…' : 'Rollback'}
                           </button>
@@ -1853,7 +1853,7 @@ export default function WorkloadDetail({
                         <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-foreground">{condition.type_}</span>
-                            <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>
+                            <span className={condition.status === 'True' ? 'text-success' : 'text-warning'}>
                               {condition.status}
                             </span>
                           </div>
@@ -1900,17 +1900,17 @@ export default function WorkloadDetail({
             {!isAetherManaged ? (
               <p className="text-subtle">Drift analysis is currently available only for Aether-managed workloads.</p>
             ) : driftFailed ? (
-              <p className="text-red-400">Could not load drift data for {workload.name}. Check that the server can read its stored spec.</p>
+              <p className="text-danger">Could not load drift data for {workload.name}. Check that the server can read its stored spec.</p>
             ) : driftData ? (
               <div>
-                <div className={`text-sm font-medium mb-2 ${(driftData as Record<string, unknown>).has_drift ? 'text-orange-400' : 'text-emerald-400'}`}>
+                <div className={`text-sm font-medium mb-2 ${(driftData as Record<string, unknown>).has_drift ? 'text-warning' : 'text-success'}`}>
                   {(driftData as Record<string, unknown>).has_drift
                     ? `${((driftData as Record<string, unknown>).drifts as unknown[])?.length || 0} drift item(s) detected`
                     : 'No drift detected'}
                 </div>
                 {((driftData as Record<string, unknown>).drifts as Array<Record<string, string>>)?.map((d, i: number) => (
                   <div key={i} className="glass-inset-surface rounded p-2 mb-2 text-sm">
-                    <span className={`font-medium ${d.severity === 'Critical' ? 'text-red-400' : d.severity === 'Warning' ? 'text-orange-400' : 'text-blue-400'}`}>
+                    <span className={`font-medium ${d.severity === 'Critical' ? 'text-danger' : d.severity === 'Warning' ? 'text-warning' : 'text-primary'}`}>
                       [{d.severity}]
                     </span>
                     {' '}<span className="text-muted">{d.field}</span>
@@ -2013,7 +2013,7 @@ export default function WorkloadDetail({
                 <div className="font-medium" data-testid="workload-shell-title">
                   Exec — {shellPod || workload.name}
                 </div>
-                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-emerald-500/20 text-emerald-400' : 'glass-inset-surface text-muted'}`}>
+                <div className={`text-xs px-2 py-0.5 rounded ${shellConnected ? 'bg-success/20 text-success' : 'glass-inset-surface text-muted'}`}>
                   {shellConnected ? 'Connected' : shellWantConnect ? 'Connecting…' : 'Disconnected'}
                 </div>
                 {shellPods.length > 0 ? (
@@ -2095,7 +2095,7 @@ export default function WorkloadDetail({
                     setShellWantConnect(true);
                   }}
                   disabled={shellResolving || !shellPod || !selectedPodExecReady}
-                  className="text-xs px-3 py-1 rounded border border-emerald-700 bg-emerald-900/20 text-emerald-200 hover:bg-emerald-800/30 disabled:opacity-50"
+                  className="text-xs px-3 py-1 rounded border border-success bg-success/20 text-success hover:bg-success/30 disabled:opacity-50"
                   data-testid="workload-shell-connect"
                 >
                   Connect
@@ -2160,7 +2160,7 @@ export default function WorkloadDetail({
             <div className="p-4">
               {!shellConnected && !shellWantConnect && /No Running pod|No pods found|No pod available/.test(shellStatusMessage) ? (
                 <div
-                  className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+                  className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-sm text-warning"
                   data-testid="workload-shell-empty-state"
                 >
                   <span>No Running pod for exec.</span>
@@ -2172,7 +2172,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setActiveTab('logs');
                     }}
-                    className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-100 hover:bg-amber-500/25"
+                    className="rounded border border-warning/40 bg-warning/15 px-2 py-0.5 text-xs text-warning hover:bg-warning/25"
                     data-testid="workload-shell-open-logs"
                   >
                     Open Logs

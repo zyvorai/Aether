@@ -328,7 +328,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/15 hover:text-danger"
                     >
                       <Trash2 size={13} />
                       Delete
@@ -404,7 +404,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => confirmDelete && void handleDelete(confirmDelete)}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium"
+            className="px-4 py-2 bg-danger hover:bg-danger text-white rounded-lg text-sm font-medium"
           >
             Delete
           </button>

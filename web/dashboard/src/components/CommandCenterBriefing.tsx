@@ -49,8 +49,8 @@ interface CommandCenterBriefingProps {
 
 function severityTone(severity: string): string {
   const s = severity.toLowerCase();
-  if (s === 'critical' || s === 'high') return 'border-red-500/30 bg-red-500/10 text-red-200';
-  if (s === 'medium') return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
+  if (s === 'critical' || s === 'high') return 'border-danger/30 bg-danger/10 text-danger';
+  if (s === 'medium') return 'border-warning/30 bg-warning/10 text-warning';
   return 'glass text-muted';
 }
 
@@ -136,7 +136,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
               {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
             </p>
             {clusterContext ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                 {clusterContext.clusterCount > 0
                   ? `${clusterContext.clusterCount} cluster${clusterContext.clusterCount === 1 ? '' : 's'} · ${clusterContext.connected ? 'Live' : 'Offline'}`
                   : clusterContext.mode ?? 'Local mode · No kubeconfig'}
@@ -216,19 +216,19 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
       {topCapacity ? (
         <div
-          className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 backdrop-blur-sm"
+          className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 backdrop-blur-sm"
           data-testid="briefing-capacity-risk"
         >
-          <TrendingUp className="h-4 w-4 shrink-0 text-amber-300" />
-          <div className="min-w-0 flex-1 text-sm text-amber-100">
+          <TrendingUp className="h-4 w-4 shrink-0 text-warning" />
+          <div className="min-w-0 flex-1 text-sm text-warning">
             <span className="font-medium">Predicted capacity risk — </span>
             {topCapacity.summary}
-            <span className="text-amber-200/80"> · {topCapacity.days_remaining} days</span>
+            <span className="text-warning/80"> · {topCapacity.days_remaining} days</span>
           </div>
           <button
             type="button"
             onClick={() => onNavigate('fabric')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs font-medium text-warning hover:text-foreground"
           >
             Open Fabric
             <ArrowRight className="h-3.5 w-3.5" />

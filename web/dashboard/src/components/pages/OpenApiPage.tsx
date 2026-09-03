@@ -283,7 +283,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
                       <Copy size={14} />
                     </button>
                     {copiedPath === row.path ? (
-                      <span className="ml-1 text-[10px] text-emerald-400">Copied</span>
+                      <span className="ml-1 text-[10px] text-success">Copied</span>
                     ) : null}
                   </td>
                 </tr>

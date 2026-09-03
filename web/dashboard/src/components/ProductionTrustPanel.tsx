@@ -63,7 +63,7 @@ export default function ProductionTrustPanel() {
     <GlassSection
       title="Production & Trust"
       subtitle="Era M — readiness scorecard, auth/HA planes, and CI verify manifests"
-      icon={<ShieldCheck className="h-5 w-5 text-emerald-400" />}
+      icon={<ShieldCheck className="h-5 w-5 text-success" />}
       testId="production-trust-panel"
       actions={
         <button type="button" onClick={() => void load()} className="btn-secondary text-xs">
@@ -105,7 +105,7 @@ export default function ProductionTrustPanel() {
             {scorecard.checks.map((c) => (
               <li key={c.label} className="flex justify-between text-muted">
                 <span>{c.label}</span>
-                <span className={c.ok ? 'text-emerald-400' : 'text-amber-400'}>
+                <span className={c.ok ? 'text-success' : 'text-warning'}>
                   {c.ok ? 'OK' : c.severity}
                 </span>
               </li>

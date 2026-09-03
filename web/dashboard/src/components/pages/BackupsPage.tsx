@@ -270,7 +270,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <button
                   type="button"
                   onClick={() => setRestoreOpen(b.filename)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-emerald-500/15 hover:text-emerald-300"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-success/15 hover:text-success"
                 >
                   <RotateCcw size={13} />
                   Restore

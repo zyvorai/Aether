@@ -23,17 +23,17 @@ export default function FixItPanel({ workload, onAction }: FixItPanelProps) {
       data-testid="fix-it-panel"
     >
       <div className="flex items-start gap-3">
-        <Wrench className="text-amber-400 shrink-0 mt-0.5" size={18} />
+        <Wrench className="text-warning shrink-0 mt-0.5" size={18} />
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-amber-100">{fix.title}</h4>
-          <p className="text-sm text-amber-200/80 mt-1">{fix.summary}</p>
+          <h4 className="text-sm font-semibold text-warning">{fix.title}</h4>
+          <p className="text-sm text-warning/80 mt-1">{fix.summary}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {fix.actions.map((a) => (
               <button
                 key={a.label}
                 type="button"
                 onClick={() => onAction(a.action)}
-                className="btn-secondary !border-amber-500/30 !bg-amber-500/10 !text-amber-100 hover:!border-amber-400/40"
+                className="btn-secondary !border-warning/30 !bg-warning/10 !text-warning hover:!border-warning/40"
               >
                 {a.label}
               </button>

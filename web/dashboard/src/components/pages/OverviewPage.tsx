@@ -142,7 +142,7 @@ function OverviewFleetSnapshot({
           onClick={() => onNavigate('fabric')}
           valueTestId="overview-runtime-fabric-count"
         >
-          <span className="absolute right-4 top-4 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+          <span className="absolute right-4 top-4 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] text-success">
             {sseConnected ? 'live' : 'syncing'}
           </span>
         </CommandMetricCard>
@@ -792,8 +792,8 @@ function LegacyOverviewDetails({
 
       {setupHints.length > 0 ? (
         <div className="glass-alert-info mb-6">
-          <p className="text-sm font-medium text-blue-200 mb-2">Platform setup recommended</p>
-          <ul className="text-sm text-blue-100/90 space-y-1 list-disc list-inside">
+          <p className="text-sm font-medium text-primary mb-2">Platform setup recommended</p>
+          <ul className="text-sm text-primary/90 space-y-1 list-disc list-inside">
             {setupHints.map((hint) => (
               <li key={hint}>{hint}</li>
             ))}
@@ -801,7 +801,7 @@ function LegacyOverviewDetails({
           <button
             type="button"
             onClick={() => onNavigate('platform')}
-            className="mt-3 text-sm font-medium text-primary hover:text-blue-300 transition-colors"
+            className="mt-3 text-sm font-medium text-primary hover:text-primary transition-colors"
           >
             Open Platform &amp; HA →
           </button>
@@ -810,15 +810,15 @@ function LegacyOverviewDetails({
 
       {failedEndpoints.length > 0 ? (
         <div className="glass-alert-warn mb-6 flex flex-wrap items-center gap-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className="text-sm text-amber-200 flex-1 min-w-0">
+          <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+          <p className="text-sm text-warning flex-1 min-w-0">
             Some sections failed to load:{' '}
             {failedEndpoints.map((e) => ENDPOINT_LABELS[e]).join(', ')}.
           </p>
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/15 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-warning/40 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/15 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Retry
@@ -925,8 +925,8 @@ function LegacyOverviewDetails({
               <div
                 className={`rounded-lg border px-4 py-3 text-sm ${
                   clusterSummary.connected
-                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                    : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                    ? 'border-success/20 bg-success/10 text-success'
+                    : 'border-warning/20 bg-warning/10 text-warning'
                 }`}
               >
                 {clusterSummary.connected
@@ -946,7 +946,7 @@ function LegacyOverviewDetails({
                         <div className="text-foreground font-medium">{cluster.name}</div>
                         <div className="text-subtle text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
                       </div>
-                      <div className={cluster.reachable ? 'text-emerald-400' : 'text-amber-400'}>
+                      <div className={cluster.reachable ? 'text-success' : 'text-warning'}>
                         {cluster.reachable ? 'reachable' : 'offline'}
                       </div>
                     </div>

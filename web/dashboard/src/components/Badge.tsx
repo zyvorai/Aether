@@ -12,11 +12,11 @@ interface BadgeProps {
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
-  green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  red: 'bg-red-500/10 text-red-400 border-red-500/20',
-  yellow: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  green: 'bg-success/10 text-success border-success/20',
+  red: 'bg-danger/10 text-danger border-danger/20',
+  yellow: 'bg-warning/10 text-warning border-warning/20',
+  blue: 'bg-primary/10 text-primary border-primary/20',
+  purple: 'bg-lavender/10 text-lavender border-lavender/20',
   muted: 'glass-inset-surface text-muted border glass-divider',
   accent: 'bg-primary/10 text-primary border-primary/20',
 };

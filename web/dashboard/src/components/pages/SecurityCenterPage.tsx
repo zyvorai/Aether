@@ -186,8 +186,8 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
       </section>
 
       {hardening && (
-        <div className="glass mb-6 border border-violet-500/20">
-          <h3 className="text-sm font-semibold text-violet-200 mb-2">AI Hardening Plan</h3>
+        <div className="glass mb-6 border border-lavender/20">
+          <h3 className="text-sm font-semibold text-lavender mb-2">AI Hardening Plan</h3>
           <pre className="text-sm text-muted whitespace-pre-wrap font-sans">{hardening}</pre>
         </div>
       )}
@@ -279,7 +279,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
             <Shield size={18} className="text-primary" /> Threat scan
           </h3>
           {criticalThreats.length === 0 ? (
-            <p className="text-sm text-emerald-400">No critical threats detected.</p>
+            <p className="text-sm text-success">No critical threats detected.</p>
           ) : (
             <div className="space-y-3">
               {criticalThreats.slice(0, 8).map((t) => (

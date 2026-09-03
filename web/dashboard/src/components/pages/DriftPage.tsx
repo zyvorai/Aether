@@ -188,9 +188,9 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
       {fleetDrift ? (
         <section className="glass mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
           <div className="glass py-3 px-4"><div className="text-xs text-subtle">Tracked</div><div className="text-lg font-semibold text-foreground">{fleetDrift.total_workloads}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Drifted</div><div className="text-lg font-semibold text-warning">{fleetDrift.drifted}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Critical</div><div className="text-lg font-semibold text-danger">{fleetDrift.critical}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Warnings</div><div className="text-lg font-semibold text-warning">{fleetDrift.warning}</div></div>
         </section>
       ) : null}
 
@@ -325,7 +325,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                       : workloadFocus === w.name
                         ? 'border-primary/60 ring-1 ring-aether/30 bg-primary/5 text-primary'
                         : bulkScan?.drifted.includes(w.name)
-                          ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                          ? 'border-danger/40 bg-danger/10 text-danger'
                           : 'glass-divider glass text-foreground hover:bg-white/[0.04]'
                   }`}
                 >
@@ -374,11 +374,11 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
                             <div>
                               <span className="text-subtle">Expected: </span>
-                              <span className="text-emerald-400">{d.expected}</span>
+                              <span className="text-success">{d.expected}</span>
                             </div>
                             <div>
                               <span className="text-subtle">Actual: </span>
-                              <span className="text-red-400">{d.actual}</span>
+                              <span className="text-danger">{d.actual}</span>
                             </div>
                           </div>
                         </div>

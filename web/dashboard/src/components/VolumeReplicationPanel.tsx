@@ -30,7 +30,7 @@ export default function VolumeReplicationPanel() {
       testId="volume-replication-panel"
       title="Volume Replication"
       subtitle="CSI executor readiness across persistent workloads"
-      icon={<HardDrive className="h-5 w-5 text-violet-400" />}
+      icon={<HardDrive className="h-5 w-5 text-lavender" />}
       actions={
         <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}

@@ -129,13 +129,13 @@ export default function SecurityPlatformPanel() {
       testId="security-platform-panel"
       title="Security Platform"
       subtitle="Policy apply, SBOM drift, confidential fleet, zero-trust wizard, threat hunt, compliance"
-      icon={<Shield className="h-5 w-5 text-red-400" />}
+      icon={<Shield className="h-5 w-5 text-danger" />}
       actions={
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void applyPolicies(true)}
-            className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200"
+            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
             data-testid="security-policy-apply-dry-run"
           >
             Policy dry-run
@@ -143,7 +143,7 @@ export default function SecurityPlatformPanel() {
           <button
             type="button"
             onClick={() => void rotateSecrets(true)}
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning"
             data-testid="security-rotation-agent"
           >
             Rotation agent
@@ -166,7 +166,7 @@ export default function SecurityPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-danger/40 bg-danger/10 text-danger' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -177,7 +177,7 @@ export default function SecurityPlatformPanel() {
       {tab === 'score' ? (
         <div data-testid="security-score-panel" className="space-y-2 text-sm">
           <p className="text-muted">
-            Fleet security score: <span className="font-semibold text-emerald-300">{score?.current_score.toFixed(1) ?? '—'}</span>
+            Fleet security score: <span className="font-semibold text-success">{score?.current_score.toFixed(1) ?? '—'}</span>
             {' · '}
             {score?.trend_direction ?? '—'}
           </p>
@@ -186,7 +186,7 @@ export default function SecurityPlatformPanel() {
               <div
                 key={p.label}
                 className={`flex-1 rounded-t ${
-                  p.score >= 80 ? 'bg-emerald-500/50' : p.score >= 50 ? 'bg-amber-500/50' : 'bg-red-500/50'
+                  p.score >= 80 ? 'bg-success/50' : p.score >= 50 ? 'bg-warning/50' : 'bg-danger/50'
                 }`}
                 style={{ height: `${Math.max(8, p.score)}%` }}
                 title={`${p.label}: ${p.score.toFixed(1)}`}
@@ -199,9 +199,9 @@ export default function SecurityPlatformPanel() {
       {tab === 'sbom' ? (
         <div data-testid="security-sbom-drift-panel" className="text-sm text-muted">
           {sbom?.drift_detected ? (
-            <p className="text-amber-300">{sbom.alerts.length} SBOM drift alert(s)</p>
+            <p className="text-warning">{sbom.alerts.length} SBOM drift alert(s)</p>
           ) : (
-            <p className="text-emerald-400">No SBOM drift detected</p>
+            <p className="text-success">No SBOM drift detected</p>
           )}
           <p className="text-xs text-subtle mt-1">{sbom?.current_component_count ?? 0} components tracked</p>
         </div>
@@ -242,7 +242,7 @@ export default function SecurityPlatformPanel() {
             <button
               type="button"
               onClick={() => void runHunt()}
-              className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-2 text-xs text-white"
+              className="inline-flex items-center gap-1 rounded-lg bg-danger px-3 py-2 text-xs text-white"
               data-testid="security-hunt-button"
             >
               <Target className="h-3.5 w-3.5" />
@@ -257,7 +257,7 @@ export default function SecurityPlatformPanel() {
             <ul className="space-y-1 text-xs text-muted">
               {hunt.findings.map((f, i) => (
                 <li key={`${f.source}-${i}`} className="flex gap-2">
-                  <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                  <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-warning" />
                   <span>
                     [{f.source}] {f.summary}
                   </span>
@@ -275,7 +275,7 @@ export default function SecurityPlatformPanel() {
             {(compliance?.sections ?? []).map((s) => (
               <li key={s.control} className="flex justify-between gap-2">
                 <span>{s.control}</span>
-                <span className={s.status === 'pass' ? 'text-emerald-400' : 'text-amber-300'}>{s.status}</span>
+                <span className={s.status === 'pass' ? 'text-success' : 'text-warning'}>{s.status}</span>
               </li>
             ))}
           </ul>

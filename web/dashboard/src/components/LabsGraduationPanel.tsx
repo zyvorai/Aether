@@ -138,7 +138,7 @@ export default function LabsGraduationPanel() {
                 <span className="text-foreground">
                   Phase {f.phase}: {f.name}
                 </span>
-                <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
+                <span className="text-xs text-success uppercase">{f.status}</span>
               </li>
             ))}
           </ul>

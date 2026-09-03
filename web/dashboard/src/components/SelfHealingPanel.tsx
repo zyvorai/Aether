@@ -85,14 +85,14 @@ export default function SelfHealingPanel() {
       testId="self-healing-panel"
       title="Self-Healing Orchestrator"
       subtitle="Preview autonomous restarts, drift reconcile, and anomaly remediation before they run."
-      icon={<HeartPulse className="h-5 w-5 text-red-400" />}
+      icon={<HeartPulse className="h-5 w-5 text-danger" />}
       actions={
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void runHealer(true)}
             disabled={executing}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200 hover:border-emerald-400/50 disabled:opacity-60"
+            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success hover:border-success/50 disabled:opacity-60"
             data-testid="healer-dry-run"
           >
             Dry-run healer
@@ -101,7 +101,7 @@ export default function SelfHealingPanel() {
             type="button"
             onClick={() => void runHealer(false)}
             disabled={executing || !(preview?.would_execute.length ?? 0)}
-            className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200 hover:border-red-400/50 disabled:opacity-60"
+            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger hover:border-danger/50 disabled:opacity-60"
             data-testid="healer-execute"
           >
             Execute healer
@@ -131,7 +131,7 @@ export default function SelfHealingPanel() {
           <div className="text-xs text-subtle">Would execute</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-amber-200">{preview?.would_skip.length ?? 0}</div>
+          <div className="text-2xl font-semibold text-warning">{preview?.would_skip.length ?? 0}</div>
           <div className="text-xs text-subtle">Blocked by policy</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
@@ -148,7 +148,7 @@ export default function SelfHealingPanel() {
           ) : (
             <ul className="space-y-2">
               {preview?.would_execute.map((line) => (
-                <li key={line} className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-100">
+                <li key={line} className="rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-sm text-success">
                   <Play className="mr-1 inline h-3 w-3" />
                   {line}
                 </li>

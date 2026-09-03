@@ -43,7 +43,7 @@ export default function AutonomousSrePanel() {
       testId="autonomous-sre-panel"
       title="Autonomous SRE Runbook"
       subtitle="AI-generated operational brief from fleet health, healing, remediation, and FinOps."
-      icon={<FileText className="h-5 w-5 text-amber-400" />}
+      icon={<FileText className="h-5 w-5 text-warning" />}
       actions={<div className="flex gap-2">
           <button
             type="button"
@@ -64,7 +64,7 @@ export default function AutonomousSrePanel() {
         </div>}
     >{report ? (
         <>
-          <p className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-100">
+          <p className="mb-6 rounded-2xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
             {report.summary}
           </p>
           <div className="grid gap-4 lg:grid-cols-2">

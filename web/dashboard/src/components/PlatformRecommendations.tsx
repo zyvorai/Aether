@@ -10,20 +10,20 @@ import { dismissRecommendation, getDismissedRecommendations } from '../utils/dis
 function severityIcon(severity: string) {
   switch (severity) {
     case 'critical':
-      return <AlertCircle className="shrink-0 text-red-400" size={18} aria-hidden />;
+      return <AlertCircle className="shrink-0 text-danger" size={18} aria-hidden />;
     case 'warn':
-      return <AlertTriangle className="shrink-0 text-amber-400" size={18} aria-hidden />;
+      return <AlertTriangle className="shrink-0 text-warning" size={18} aria-hidden />;
     default:
-      return <Info className="shrink-0 text-sky-400" size={18} aria-hidden />;
+      return <Info className="shrink-0 text-primary" size={18} aria-hidden />;
   }
 }
 
 function severityBorder(severity: string): string {
   switch (severity) {
     case 'critical':
-      return 'border-red-500/30 bg-red-500/5';
+      return 'border-danger/30 bg-danger/5';
     case 'warn':
-      return 'border-amber-500/30 bg-amber-500/5';
+      return 'border-warning/30 bg-warning/5';
     default:
       return 'glass-divider/40 glass-inset-surface';
   }
@@ -66,7 +66,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
         Optional improvements and remediation steps. Dismiss items you have already addressed.
       </p>
       {visible.length === 0 ? (
-        <p className="text-sm text-emerald-300/90 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+        <p className="text-sm text-success/90 rounded-xl border border-success/20 bg-success/5 px-4 py-3">
           No open setup items — platform checks look good for your current configuration.
         </p>
       ) : (

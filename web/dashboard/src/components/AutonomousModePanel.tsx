@@ -38,7 +38,7 @@ export default function AutonomousModePanel() {
       testId="autonomous-mode-panel"
       title="Autonomous Mode"
       subtitle="Global policy for self-healing, drift reconcile, migration, and evolution agents."
-      icon={<Bot className="h-5 w-5 text-violet-400" />}
+      icon={<Bot className="h-5 w-5 text-lavender" />}
       actions={
         <button
           type="button"
@@ -65,7 +65,7 @@ export default function AutonomousModePanel() {
 
           <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-              <ShieldCheck className="mb-2 h-4 w-4 text-emerald-400" />
+              <ShieldCheck className="mb-2 h-4 w-4 text-success" />
               <Badge text={policy?.auto_restart ? 'On' : 'Off'} variant={tierVariant(!!policy?.auto_restart)} />
               <div className="mt-2 text-xs text-subtle">Auto restart</div>
             </div>

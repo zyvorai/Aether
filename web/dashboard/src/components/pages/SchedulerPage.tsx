@@ -237,7 +237,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <div className="flex-1">
                   <div className="text-sm text-foreground">{s.message}</div>
                   {s.potential_saving !== null && (
-                    <div className="text-xs text-emerald-400 mt-1">
+                    <div className="text-xs text-success mt-1">
                       Potential saving: {formatUSD(s.potential_saving)}/day
                     </div>
                   )}

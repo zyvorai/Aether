@@ -91,13 +91,13 @@ export default function IntentPipelinePanel() {
       testId="intent-pipeline-panel"
       title="Intent → Infrastructure"
       subtitle="Describe outcomes — Aether generates spec, runtime, placement, and deploy steps."
-      icon={<Wand2 className="h-5 w-5 text-violet-400" />}
+      icon={<Wand2 className="h-5 w-5 text-lavender" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void deployPipeline(true)}
             disabled={deploying}
-            className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-200 disabled:opacity-60"
+            className="rounded-xl border border-lavender/30 bg-lavender/10 px-3 py-2 text-xs text-lavender disabled:opacity-60"
             data-testid="intent-pipeline-deploy-dry-run"
           >
             Dry-run deploy
@@ -154,7 +154,7 @@ export default function IntentPipelinePanel() {
                 onClick={() => toggle(g.id)}
                 className={`rounded-full border px-3 py-1 text-xs ${
                   selected.has(g.id)
-                    ? 'border-violet-500/40 bg-violet-500/10 text-violet-200'
+                    ? 'border-lavender/40 bg-lavender/10 text-lavender'
                     : 'glass-divider text-muted'
                 }`}
               >
@@ -169,7 +169,7 @@ export default function IntentPipelinePanel() {
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-              <Sparkles className="mb-2 h-4 w-4 text-violet-400" />
+              <Sparkles className="mb-2 h-4 w-4 text-lavender" />
               <div className="text-lg font-semibold text-foreground">{report.recommended_runtime}</div>
               <div className="text-xs text-subtle">Recommended runtime</div>
             </div>

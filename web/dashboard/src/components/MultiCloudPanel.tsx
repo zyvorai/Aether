@@ -31,7 +31,7 @@ export default function MultiCloudPanel() {
       testId="multicloud-panel"
       title="Multi-Cloud Posture"
       subtitle="Federated cluster reachability, anomaly signals, and placement scores."
-      icon={<Globe className="h-5 w-5 text-teal-400" />}
+      icon={<Globe className="h-5 w-5 text-mistblue" />}
       actions={
         <button
           type="button"
@@ -65,7 +65,7 @@ export default function MultiCloudPanel() {
                 <p className="mt-2 text-xs text-subtle">{cluster.server ?? 'local context'}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
                   <span>Score {formatPercent(cluster.score, 0)}</span>
-                  {cluster.anomaly_count > 0 ? <span className="text-amber-300">{cluster.anomaly_count} anomalies</span> : null}
+                  {cluster.anomaly_count > 0 ? <span className="text-warning">{cluster.anomaly_count} anomalies</span> : null}
                 </div>
               </div>
             ))}

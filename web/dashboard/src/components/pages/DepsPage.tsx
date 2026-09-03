@@ -81,7 +81,7 @@ function GraphVisual({
                   type="button"
                   disabled={removeBusy === `${edge.from}->${edge.to}`}
                   onClick={() => onRemove(edge.from, edge.to)}
-                  className="ml-auto p-1 text-subtle hover:text-red-400"
+                  className="ml-auto p-1 text-subtle hover:text-danger"
                   title="Remove dependency"
                 >
                   <Trash2 size={14} />
@@ -285,7 +285,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass mb-6">
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Plus size={20} className="text-emerald-400" />
+          <Plus size={20} className="text-success" />
           Add dependency
         </h2>
         <div className="flex flex-wrap items-end gap-3" data-testid="deps-add-form">
@@ -382,7 +382,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               ) : (
                 <div className="space-y-2">
                   {graph.issues.map((issue, i) => (
-                    <div key={i} className="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                    <div key={i} className="flex items-start gap-2 p-3 bg-danger/5 border border-danger/20 rounded-lg">
                       <Badge text="Issue" variant="red" />
                       <span className="text-sm text-muted">{issue}</span>
                     </div>

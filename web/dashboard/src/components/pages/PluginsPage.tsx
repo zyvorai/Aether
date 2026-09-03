@@ -303,7 +303,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => void handleRemove(p.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/15 hover:text-danger"
                     >
                       <Trash2 size={13} />
                       Remove

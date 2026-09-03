@@ -137,13 +137,13 @@ export default function SreReliabilityPanel() {
       testId="sre-reliability-panel"
       title="SRE Reliability Platform"
       subtitle="Incident timeline, error budgets, postmortems, on-call, escalation, and MTTR"
-      icon={<Shield className="h-5 w-5 text-rose-400" />}
+      icon={<Shield className="h-5 w-5 text-danger" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void executeRunbook()}
             disabled={executing}
-            className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200 disabled:opacity-60"
+            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger disabled:opacity-60"
             data-testid="runbook-execute-dry-run"
           >
             Execute runbook (dry-run)
@@ -173,7 +173,7 @@ export default function SreReliabilityPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-rose-500/40 bg-rose-500/10 text-rose-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-danger/40 bg-danger/10 text-danger' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -238,7 +238,7 @@ export default function SreReliabilityPanel() {
             type="button"
             onClick={() => void testOnCall()}
             disabled={executing}
-            className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-200"
+            className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary"
           >
             Test PagerDuty (dry-run)
           </button>
@@ -272,7 +272,7 @@ export default function SreReliabilityPanel() {
 
       {tab === 'mttr' ? (
         <div data-testid="mttr-panel">
-          <p className="mb-3 text-sm text-emerald-300">
+          <p className="mb-3 text-sm text-success">
             Fleet avg MTTR: {(mttr?.fleet_avg_mttr_minutes ?? 0).toFixed(1)} min
           </p>
           <ul className="space-y-2">
@@ -298,7 +298,7 @@ export default function SreReliabilityPanel() {
                 type="button"
                 onClick={() => void runChaos(e.id)}
                 disabled={executing}
-                className="rounded-lg border border-amber-500/30 px-2 py-1 text-xs text-amber-200"
+                className="rounded-lg border border-warning/30 px-2 py-1 text-xs text-warning"
               >
                 Dry-run
               </button>
@@ -312,7 +312,7 @@ export default function SreReliabilityPanel() {
           {(gameDays?.scenarios ?? []).map((s) => (
             <li key={s.id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <div className="mb-2 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-violet-400" />
+                <Zap className="h-4 w-4 text-lavender" />
                 <span className="font-medium text-foreground">{s.title}</span>
                 <Badge text={`${s.duration_minutes}m`} variant="muted" />
               </div>

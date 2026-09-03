@@ -80,13 +80,13 @@ export default function CostIntelligencePanel() {
       testId="cost-intelligence-panel"
       title="Cost Intelligence"
       subtitle="FinOps recommendations from utilization profiles and runtime placement."
-      icon={<Sparkles className="h-5 w-5 text-emerald-400" />}
+      icon={<Sparkles className="h-5 w-5 text-success" />}
       actions={<div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => void enforceBudget(true)}
             disabled={applying}
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 hover:border-amber-400/50 disabled:opacity-60"
+            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning hover:border-warning/50 disabled:opacity-60"
             data-testid="intent-budget-enforce"
           >
             Enforce budget
@@ -95,7 +95,7 @@ export default function CostIntelligencePanel() {
             type="button"
             onClick={() => void applyPatches(true)}
             disabled={applying || !(report?.recommendations.length ?? 0)}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200 hover:border-emerald-400/50 disabled:opacity-60"
+            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success hover:border-success/50 disabled:opacity-60"
             data-testid="cost-apply-dry-run"
           >
             Dry-run right-size
@@ -114,8 +114,8 @@ export default function CostIntelligencePanel() {
         </div>}
     ><div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
-          <div className="text-2xl font-semibold text-emerald-300">{formatUSD(totalSavings)}</div>
+          <DollarSign className="mb-2 h-4 w-4 text-success" />
+          <div className="text-2xl font-semibold text-success">{formatUSD(totalSavings)}</div>
           <div className="text-xs text-subtle">Potential savings / mo</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
@@ -155,7 +155,7 @@ export default function CostIntelligencePanel() {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-lg font-semibold text-emerald-300">{formatUSD(rec.savings_monthly_usd)}</div>
+                <div className="text-lg font-semibold text-success">{formatUSD(rec.savings_monthly_usd)}</div>
                 <Link
                   to={`${viewToPath('migrations')}?workload=${encodeURIComponent(rec.workload)}`}
                   className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"

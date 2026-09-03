@@ -20,21 +20,21 @@ function toneClasses(tone: TileTone): { ring: string; dot: string; text: string 
   switch (tone) {
     case 'ok':
       return {
-        ring: 'border-emerald-500/25 bg-emerald-500/10',
-        dot: 'bg-emerald-400 platform-pulse',
-        text: 'text-emerald-300',
+        ring: 'border-success/25 bg-success/10',
+        dot: 'bg-success platform-pulse',
+        text: 'text-success',
       };
     case 'warn':
       return {
-        ring: 'border-amber-500/25 bg-amber-500/10',
-        dot: 'bg-amber-400',
-        text: 'text-amber-300',
+        ring: 'border-warning/25 bg-warning/10',
+        dot: 'bg-warning',
+        text: 'text-warning',
       };
     case 'bad':
       return {
-        ring: 'border-red-500/25 bg-red-500/10',
-        dot: 'bg-red-400',
-        text: 'text-red-300',
+        ring: 'border-danger/25 bg-danger/10',
+        dot: 'bg-danger',
+        text: 'text-danger',
       };
     default:
       return {
@@ -140,8 +140,8 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
           <div
             className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
               systemReady
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-red-500/30 bg-red-500/10 text-red-300'
+                ? 'border-success/30 bg-success/10 text-success'
+                : 'border-danger/30 bg-danger/10 text-danger'
             }`}
           >
             {systemReady ? 'Ready' : 'Degraded'}

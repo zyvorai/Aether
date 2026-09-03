@@ -68,7 +68,7 @@ export default function ExtensionsGraduationPanel() {
     <GlassSection
       title="Extensions Graduation"
       subtitle="Era L — SRE chaos, game days, and macOS native features shipped"
-      icon={<Zap className="h-5 w-5 text-amber-400" />}
+      icon={<Zap className="h-5 w-5 text-warning" />}
       testId="extensions-graduation-panel"
       actions={
         <button type="button" onClick={() => void load()} className="btn-secondary text-xs">
@@ -107,7 +107,7 @@ export default function ExtensionsGraduationPanel() {
             {overview.features.slice(0, 6).map((f) => (
               <li key={f.phase} className="flex justify-between rounded-xl border glass-divider glass px-3 py-2">
                 <span className="text-foreground">Phase {f.phase}: {f.name}</span>
-                <span className="text-xs text-emerald-400 uppercase">{f.status}</span>
+                <span className="text-xs text-success uppercase">{f.status}</span>
               </li>
             ))}
           </ul>

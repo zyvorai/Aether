@@ -84,8 +84,8 @@ const DEFAULT_PROMPTS = [
 ];
 
 function agentStatusDot(status: string): string {
-  if (status === 'alert') return 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]';
-  if (status === 'active') return 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]';
+  if (status === 'alert') return 'bg-danger shadow-[0_0_8px_rgba(248,113,113,0.6)]';
+  if (status === 'active') return 'bg-success shadow-[0_0_8px_rgba(52,211,153,0.5)]';
   return 'glass-status-dot-muted';
 }
 
@@ -215,7 +215,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
                     <span className="truncate text-[11px] font-medium text-foreground">{agent.label}</span>
                   </div>
                   {agent.pending_count > 0 ? (
-                    <div className="mt-1 pl-3.5 text-[10px] text-amber-400/90">{agent.pending_count} pending</div>
+                    <div className="mt-1 pl-3.5 text-[10px] text-warning/90">{agent.pending_count} pending</div>
                   ) : (
                     <div className="mt-1 truncate pl-3.5 text-[10px] text-subtle">{agent.detail}</div>
                   )}
@@ -261,7 +261,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
             key={`${msg.role}-${i}`}
             className={`max-w-full rounded-2xl px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
               msg.role === 'user'
-                ? 'ml-6 border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-violet-50'
+                ? 'ml-6 border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-lavender'
                 : 'mr-2 border glass-divider glass-inset-surface text-foreground'
             }`}
           >
@@ -270,8 +270,8 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
         ))}
 
         {pending.length > 0 ? (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 backdrop-blur-sm">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 p-2.5 backdrop-blur-sm">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-warning">
               Awaiting confirmation
             </p>
             {pending.map((a) => (
@@ -280,7 +280,7 @@ export default function ZyraRail({ collapsed: controlledCollapsed, onCollapsedCh
                 <button
                   type="button"
                   onClick={() => confirmAction(a.id)}
-                  className="shrink-0 rounded-lg bg-amber-600 px-2 py-0.5 font-medium text-white transition hover:bg-amber-500"
+                  className="shrink-0 rounded-lg bg-warning px-2 py-0.5 font-medium text-white transition hover:bg-warning"
                 >
                   Confirm
                 </button>

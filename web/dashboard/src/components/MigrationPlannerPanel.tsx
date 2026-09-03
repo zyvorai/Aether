@@ -192,7 +192,7 @@ export default function MigrationPlannerPanel() {
               Analyzing migration path…
             </div>
           ) : null}
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
         </div>
 
         {plan ? (
@@ -212,7 +212,7 @@ export default function MigrationPlannerPanel() {
               </div>
               <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-subtle">Confidence</div>
-                <div className="mt-2 text-lg font-semibold text-emerald-300">{confidence}%</div>
+                <div className="mt-2 text-lg font-semibold text-success">{confidence}%</div>
               </div>
               <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
                 <div className="text-[10px] uppercase tracking-wider text-subtle">Cost impact</div>
@@ -242,12 +242,12 @@ export default function MigrationPlannerPanel() {
             </div>
 
             {plan.advice.reasons.length > 0 ? (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-200">
+              <div className="rounded-2xl border border-success/20 bg-success/5 p-4">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-success">
                   <CheckCircle2 className="h-4 w-4" />
                   Reasons
                 </div>
-                <ul className="space-y-1 text-sm text-emerald-100/90">
+                <ul className="space-y-1 text-sm text-success/90">
                   {plan.advice.reasons.map((r) => (
                     <li key={r}>✓ {r}</li>
                   ))}
@@ -256,12 +256,12 @@ export default function MigrationPlannerPanel() {
             ) : null}
 
             {plan.advice.warnings.length > 0 ? (
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-amber-200">
+              <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-warning">
                   <AlertTriangle className="h-4 w-4" />
                   Warnings
                 </div>
-                <ul className="space-y-1 text-sm text-amber-100/90">
+                <ul className="space-y-1 text-sm text-warning/90">
                   {plan.advice.warnings.map((w) => (
                     <li key={w}>{w}</li>
                   ))}
@@ -277,7 +277,7 @@ export default function MigrationPlannerPanel() {
               <span>Blast radius {formatPercent(plan.blast_radius_score, 0)}</span>
               <span>Rollback risk {formatPercent(plan.rollback_probability, 0)}</span>
               {plan.auto_eligible ? (
-                <span className="inline-flex items-center gap-1 text-emerald-400">
+                <span className="inline-flex items-center gap-1 text-success">
                   <ArrowRight className="h-3.5 w-3.5" />
                   Auto-eligible
                 </span>

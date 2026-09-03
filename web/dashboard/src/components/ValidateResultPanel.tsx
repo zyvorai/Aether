@@ -27,7 +27,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
           {validate.errors.length > 0 && (
             <ul className="mt-2 space-y-1">
               {validate.errors.map((e, i) => (
-                <li key={i} className="text-sm text-red-400">
+                <li key={i} className="text-sm text-danger">
                   - {e}
                 </li>
               ))}
@@ -48,7 +48,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
           {policy.violations.length > 0 && (
             <ul className="mt-2 space-y-1">
               {policy.violations.map((v, i) => (
-                <li key={i} className="text-sm text-red-400">
+                <li key={i} className="text-sm text-danger">
                   - [{v.policy}] {v.message}
                 </li>
               ))}
@@ -57,7 +57,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
           {policy.warnings.length > 0 && (
             <ul className="mt-2 space-y-1">
               {policy.warnings.map((w, i) => (
-                <li key={i} className="text-sm text-amber-400">
+                <li key={i} className="text-sm text-warning">
                   - {w.message}
                 </li>
               ))}

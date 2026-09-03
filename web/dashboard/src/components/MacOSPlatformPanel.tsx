@@ -92,7 +92,7 @@ export default function MacOSPlatformPanel() {
         </div>}
     ><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="tray-sparkline-panel">
-          <div className="font-mono text-2xl text-emerald-300">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
+          <div className="font-mono text-2xl text-success">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
           <div className="text-xs text-subtle">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="dock-badge-panel">
@@ -117,7 +117,7 @@ export default function MacOSPlatformPanel() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-            <Sparkles className="h-4 w-4 text-violet-400" />
+            <Sparkles className="h-4 w-4 text-lavender" />
             Live Activity (Lab)
           </h3>
           <ul className="space-y-1 text-sm text-muted" data-testid="live-activity-panel">
@@ -131,7 +131,7 @@ export default function MacOSPlatformPanel() {
 
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-            <Search className="h-4 w-4 text-cyan-400" />
+            <Search className="h-4 w-4 text-primary" />
             Spotlight index
           </h3>
           <ul className="max-h-32 space-y-1 overflow-auto text-sm text-muted" data-testid="spotlight-index-panel">
@@ -145,7 +145,7 @@ export default function MacOSPlatformPanel() {
 
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-            <Bell className="h-4 w-4 text-amber-400" />
+            <Bell className="h-4 w-4 text-warning" />
             Shortcuts (Lab)
           </h3>
           <ul className="space-y-1 text-sm text-muted">
@@ -159,7 +159,7 @@ export default function MacOSPlatformPanel() {
 
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-            <Link2 className="h-4 w-4 text-blue-400" />
+            <Link2 className="h-4 w-4 text-primary" />
             Universal links
           </h3>
           <ul className="space-y-1 text-sm text-muted" data-testid="universal-links-panel">

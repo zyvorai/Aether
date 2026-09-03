@@ -77,14 +77,14 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             key={est.provider}
             className={`rounded-xl border p-4 ${
               est.provider === cheapest
-                ? 'border-emerald-500/30 bg-emerald-500/5'
+                ? 'border-success/30 bg-success/5'
                 : 'glass-divider glass'
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <span className="font-medium text-foreground">{est.provider}</span>
               {est.provider === cheapest && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
                   Cheapest
                 </span>
               )}
@@ -104,7 +104,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
               </div>
               <div className="flex justify-between gap-4 font-medium">
                 <dt className="text-muted">Total / month</dt>
-                <dd className={est.provider === cheapest ? 'text-emerald-400' : 'text-foreground'}>
+                <dd className={est.provider === cheapest ? 'text-success' : 'text-foreground'}>
                   {formatUSD(est.total_monthly)}
                 </dd>
               </div>

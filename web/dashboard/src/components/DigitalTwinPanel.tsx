@@ -46,7 +46,7 @@ export default function DigitalTwinPanel() {
       testId="digital-twin-panel"
       title="Digital Twin"
       subtitle="What-if simulation — project capacity, cost, and risk before you change production."
-      icon={<FlaskConical className="h-5 w-5 text-violet-400" />}
+      icon={<FlaskConical className="h-5 w-5 text-lavender" />}
       actions={
         <button
           type="button"
@@ -105,7 +105,7 @@ export default function DigitalTwinPanel() {
 
       {report ? (
         <div className="space-y-4">
-          <p className="text-sm text-violet-200/90">Scenario: {report.scenario}</p>
+          <p className="text-sm text-lavender/90">Scenario: {report.scenario}</p>
           <div className="grid gap-4 lg:grid-cols-2">
             <TwinSnapshotCard title="Baseline" snapshot={report.baseline} />
             <TwinSnapshotCard title="Projected" snapshot={report.projected} highlight />
@@ -145,7 +145,7 @@ function TwinSnapshotCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${highlight ? 'border-violet-500/30 bg-violet-500/5' : 'glass-divider glass'}`}
+      className={`rounded-2xl border p-4 ${highlight ? 'border-lavender/30 bg-lavender/5' : 'glass-divider glass'}`}
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-subtle">{title}</p>
       <dl className="grid grid-cols-2 gap-3 text-sm">

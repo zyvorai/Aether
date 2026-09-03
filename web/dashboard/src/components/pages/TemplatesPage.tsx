@@ -352,7 +352,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
           <div className="glass p-4">
             <h4 className="text-xs uppercase tracking-wider text-subtle mb-2">Preview</h4>
-            <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap overflow-auto max-h-48">
+            <pre className="text-xs text-success font-mono whitespace-pre-wrap overflow-auto max-h-48">
               {specPreview(generatedSpec)}
             </pre>
           </div>

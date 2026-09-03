@@ -72,7 +72,7 @@ export default function IntentStudioPanel() {
       testId="intent-studio-panel"
       title="Intent Studio"
       subtitle="What matters? Aether builds the intent block — no YAML editing required."
-      icon={<Sparkles className="h-5 w-5 text-violet-400" />}
+      icon={<Sparkles className="h-5 w-5 text-lavender" />}
     >
       <label className="mb-4 block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-subtle">Workload name</span>
@@ -96,7 +96,7 @@ export default function IntentStudioPanel() {
                   onClick={() => toggle(goal.id)}
                   className={`rounded-full border px-4 py-2 text-sm transition ${
                     active
-                      ? 'border-violet-500/50 bg-violet-500/15 text-violet-100'
+                      ? 'border-lavender/50 bg-lavender/15 text-lavender'
                       : 'glass-divider glass text-muted hover:border-primary/30'
                   }`}
                   data-testid={`intent-goal-${goal.id}`}
@@ -129,14 +129,14 @@ export default function IntentStudioPanel() {
             })();
           }}
           disabled={generating}
-          className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-60"
+          className="rounded-xl bg-lavender px-4 py-2.5 text-sm font-medium text-white hover:bg-lavender disabled:opacity-60"
           data-testid="intent-generate-button"
         >
           {generating ? 'Generating…' : 'Generate Intent'}
         </button>
 
         {pipelineSummary ? (
-          <p className="mt-3 text-xs text-violet-200/90" data-testid="intent-pipeline-summary">
+          <p className="mt-3 text-xs text-lavender/90" data-testid="intent-pipeline-summary">
             Pipeline: {pipelineSummary}
           </p>
         ) : null}

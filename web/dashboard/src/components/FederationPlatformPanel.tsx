@@ -98,13 +98,13 @@ export default function FederationPlatformPanel() {
       testId="federation-platform-panel"
       title="Federation Platform"
       subtitle="Multi-cluster mesh, arbitrage, geo placement, and guards"
-      icon={<Network className="h-5 w-5 text-teal-400" />}
+      icon={<Network className="h-5 w-5 text-mistblue" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void runFederationExecute()}
             disabled={executing}
-            className="rounded-xl border border-teal-500/30 bg-teal-500/10 px-3 py-2 text-xs text-teal-200 disabled:opacity-60"
+            className="rounded-xl border border-mistblue/30 bg-mistblue/10 px-3 py-2 text-xs text-mistblue disabled:opacity-60"
             data-testid="federation-execute-dry-run"
           >
             Dry-run federation sync
@@ -125,7 +125,7 @@ export default function FederationPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-mistblue/40 bg-mistblue/10 text-mistblue' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -149,7 +149,7 @@ export default function FederationPlatformPanel() {
 
       {tab === 'arbitrage' ? (
         <div data-testid="cost-arbitrage-panel">
-          <p className="mb-3 text-sm text-emerald-300">
+          <p className="mb-3 text-sm text-success">
             Potential savings {formatUSD(arbitrage?.total_savings_usd ?? 0)}/mo
           </p>
           <ul className="space-y-2">
@@ -208,7 +208,7 @@ export default function FederationPlatformPanel() {
             type="button"
             onClick={() => void applyPacketwolfGuard()}
             disabled={executing}
-            className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            className="mb-4 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning"
           >
             Apply placement guard (dry-run)
           </button>

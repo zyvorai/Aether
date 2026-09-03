@@ -298,8 +298,8 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
           {verify.tampered_events.length > 0 && (
             <div className="mt-4 space-y-2">
               {verify.tampered_events.map((event) => (
-                <div key={event.id} className="rounded-xl bg-red-500/5 border border-red-500/15 px-4 py-3 text-sm">
-                  <div className="font-medium text-red-300">
+                <div key={event.id} className="rounded-xl bg-danger/5 border border-danger/15 px-4 py-3 text-sm">
+                  <div className="font-medium text-danger">
                     {event.action} on {event.workload}
                   </div>
                   <div className="mt-1 text-xs text-subtle">{formatTimestamp(event.timestamp)}</div>

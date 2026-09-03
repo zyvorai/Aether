@@ -19,12 +19,12 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
   const tone = healthTone(app.status);
   const border =
     tone === 'healthy'
-      ? 'border-emerald-500/30 hover:border-emerald-500/50'
+      ? 'border-success/30 hover:border-success/50'
       : tone === 'critical'
-        ? 'border-red-500/40 hover:border-red-500/60'
+        ? 'border-danger/40 hover:border-danger/60'
         : tone === 'stopped'
           ? 'glass-divider hover:border-primary/30'
-          : 'border-amber-500/30 hover:border-amber-500/50';
+          : 'border-warning/30 hover:border-warning/50';
 
   const statusVariant =
     tone === 'healthy' ? 'green' : tone === 'critical' ? 'red' : tone === 'stopped' ? 'muted' : 'yellow';
@@ -90,7 +90,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           </button>
         )}
         {tone !== 'healthy' && (
-          <span className="inline-flex items-center gap-1 text-xs text-amber-400 ml-auto">
+          <span className="inline-flex items-center gap-1 text-xs text-warning ml-auto">
             <Shield size={12} /> Needs fix
           </span>
         )}

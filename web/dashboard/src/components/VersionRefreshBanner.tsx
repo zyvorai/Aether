@@ -59,7 +59,7 @@ export default function VersionRefreshBanner() {
   return (
     <div
       role="status"
-      className="relative border-b border-amber-800/50 bg-amber-950/40 px-4 py-2 pr-10 text-center text-sm text-amber-100"
+      className="relative border-b border-warning/50 bg-warning/40 px-4 py-2 pr-10 text-center text-sm text-warning"
     >
       <RefreshCw className="inline-block w-4 h-4 mr-2 -mt-0.5" aria-hidden />
       A new dashboard build is available on the server.{' '}
@@ -70,13 +70,13 @@ export default function VersionRefreshBanner() {
       >
         Reload to update
       </button>
-      <span className="ml-2 hidden sm:inline text-xs text-amber-300/80 font-mono">
+      <span className="ml-2 hidden sm:inline text-xs text-warning/80 font-mono">
         server {remoteBuild.slice(0, 19)} · local {localBuild.slice(0, 19)}
       </span>
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-amber-300/80 hover:text-foreground"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-warning/80 hover:text-foreground"
         aria-label="Dismiss update notice"
       >
         <X className="h-4 w-4" />

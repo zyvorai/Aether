@@ -68,13 +68,13 @@ export default function SecurityCopilotPanel() {
       testId="security-copilot-panel"
       title="Security Copilot"
       subtitle="Least-privilege policy drafts generated from live threat intelligence."
-      icon={<Shield className="h-5 w-5 text-red-400" />}
+      icon={<Shield className="h-5 w-5 text-danger" />}
       actions={<div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void remediate(true)}
             disabled={remediating || !(report?.suggestions.length ?? 0)}
-            className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200 hover:border-red-400/50 disabled:opacity-60"
+            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger hover:border-danger/50 disabled:opacity-60"
             data-testid="security-remediate-dry-run"
           >
             Dry-run remediate

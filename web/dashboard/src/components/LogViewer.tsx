@@ -129,9 +129,9 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
 
   const getLineColor = (line: string) => {
     const lower = line.toLowerCase();
-    if (lower.includes('error') || lower.includes('fatal') || lower.includes('panic')) return 'text-red-400';
-    if (lower.includes('warn')) return 'text-orange-400';
-    if (lower.includes('info')) return 'text-green-400';
+    if (lower.includes('error') || lower.includes('fatal') || lower.includes('panic')) return 'text-danger';
+    if (lower.includes('warn')) return 'text-warning';
+    if (lower.includes('info')) return 'text-success';
     if (lower.includes('debug') || lower.includes('trace')) return 'text-subtle';
     return 'text-muted';
   };
@@ -186,7 +186,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
         <button
           type="button"
           onClick={() => setPrevious(!previous)}
-          className={`glass-tab tab-chip ${previous ? 'glass-tab-active tab-chip-active !border-amber-500/30 !bg-amber-500/10 !text-amber-300' : ''}`}
+          className={`glass-tab tab-chip ${previous ? 'glass-tab-active tab-chip-active !border-warning/30 !bg-warning/10 !text-warning' : ''}`}
           data-testid="log-previous-toggle"
           title="Show logs from the previous container instance"
         >
@@ -195,7 +195,7 @@ export default function LogViewer({ workloadName, logsPath, containers = [], sta
         <button
           type="button"
           onClick={() => setFollowing(!following)}
-          className={`glass-tab tab-chip ${following ? 'glass-tab-active tab-chip-active !border-emerald-500/30 !bg-emerald-500/10 !text-emerald-300' : ''}`}
+          className={`glass-tab tab-chip ${following ? 'glass-tab-active tab-chip-active !border-success/30 !bg-success/10 !text-success' : ''}`}
         >
           {following ? 'Following' : 'Follow'}
         </button>

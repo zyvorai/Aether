@@ -50,7 +50,7 @@ export default function DestructiveConfirmDialog({
         placeholder={resourceName}
         onChange={(e) => setTyped(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-full rounded-lg border border-rule-strong bg-surface px-3 py-2 font-mono text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
+        className="w-full rounded-lg border border-rule-strong bg-surface px-3 py-2 font-mono text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
       />
       <div className="mt-5 flex justify-end gap-2.5">
         <button
@@ -64,7 +64,7 @@ export default function DestructiveConfirmDialog({
           type="button"
           onClick={commit}
           disabled={!matches}
-          className="rounded-full bg-red-600 px-4 py-1.5 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-red-500"
+          className="rounded-full bg-danger px-4 py-1.5 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-danger"
         >
           {confirmLabel}
         </button>

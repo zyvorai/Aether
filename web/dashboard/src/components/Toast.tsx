@@ -60,13 +60,13 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
 
   const borderBg =
     item.type === 'success'
-      ? 'border-emerald-500/30 glass-drawer'
+      ? 'border-success/30 glass-drawer'
       : item.type === 'error'
-        ? 'border-red-500/30 glass-drawer'
+        ? 'border-danger/30 glass-drawer'
         : 'border-primary/30 glass-drawer';
 
   const iconColor =
-    item.type === 'success' ? 'text-emerald-500' : item.type === 'error' ? 'text-red-500' : 'text-primary';
+    item.type === 'success' ? 'text-success' : item.type === 'error' ? 'text-danger' : 'text-primary';
 
   return (
     <div

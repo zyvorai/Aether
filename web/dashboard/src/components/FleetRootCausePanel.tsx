@@ -43,7 +43,7 @@ export default function FleetRootCausePanel() {
       label="AI Root Cause Analysis"
       title="Fleet incident correlation"
       subtitle="Batch diagnosis across unhealthy workloads with evidence and recommendations."
-      icon={<Stethoscope className="h-5 w-5 text-violet-300" />}
+      icon={<Stethoscope className="h-5 w-5 text-lavender" />}
       actions={
         <button
           type="button"
@@ -63,7 +63,7 @@ export default function FleetRootCausePanel() {
       ) : null}
 
       {!loading && report && report.diagnoses.length === 0 ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-6 text-center text-sm text-emerald-200">
+        <div className="rounded-2xl border border-success/20 bg-success/5 px-4 py-6 text-center text-sm text-success">
           No unhealthy workloads detected in the last fleet scan ({report.scanned} scanned).
         </div>
       ) : null}
@@ -96,8 +96,8 @@ export default function FleetRootCausePanel() {
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-subtle">Likely cause</div>
-                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-amber-100">
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-warning">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
                     {row.likely_cause}
                   </div>
                 </div>

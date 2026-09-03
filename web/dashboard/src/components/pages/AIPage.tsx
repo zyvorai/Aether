@@ -89,14 +89,14 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
         <ul className="mt-3 space-y-1 text-xs text-muted">
           {score.reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
-              <span className="text-emerald-400 shrink-0">+</span>
+              <span className="text-success shrink-0">+</span>
               <span>{r}</span>
             </li>
           ))}
         </ul>
       )}
       {score.warnings.length > 0 && (
-        <ul className="mt-2 space-y-1 text-xs text-amber-400/90">
+        <ul className="mt-2 space-y-1 text-xs text-warning/90">
           {score.warnings.map((w, i) => (
             <li key={i} className="flex gap-2">
               <span className="shrink-0">!</span>
@@ -210,7 +210,7 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
                 <span className="font-medium text-foreground">{rec.title}</span>
               </div>
               <p className="text-muted text-xs">{rec.description}</p>
-              <p className="text-emerald-400 text-xs mt-1">Est. savings: {rec.estimated_savings_pct.toFixed(0)}%</p>
+              <p className="text-success text-xs mt-1">Est. savings: {rec.estimated_savings_pct.toFixed(0)}%</p>
             </div>
           ))}
         </div>
@@ -249,7 +249,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
         <div className="space-y-2">
           <h4 className="text-xs font-medium uppercase tracking-wider text-subtle">Anomalies</h4>
           {data.anomalies.map((a, i) => (
-            <div key={i} className="text-sm text-amber-400/90">{a.description}</div>
+            <div key={i} className="text-sm text-warning/90">{a.description}</div>
           ))}
         </div>
       )}
@@ -560,8 +560,8 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-500/10 rounded-xl">
-                <TrendingUp className="text-blue-400" size={20} />
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <TrendingUp className="text-primary" size={20} />
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-foreground">Scaling Advice</h3>
@@ -592,7 +592,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="ai-optimize-panel">
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
-              <Target className="text-purple-400" size={20} />
+              <Target className="text-lavender" size={20} />
               <h3 className="font-semibold text-foreground">Intent Optimizer</h3>
             </div>
             <WorkloadSelect
@@ -605,7 +605,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               onClick={() => void handleIntentOptimize()}
               disabled={intentLoading || !selectedWorkload}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-medium disabled:opacity-60 text-white"
+              className="w-full py-3 bg-lavender hover:bg-lavender rounded-xl font-medium disabled:opacity-60 text-white"
             >
               {intentLoading ? 'Optimizing…' : 'Optimize Intent'}
             </button>
@@ -619,7 +619,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
-              <Cpu className="text-emerald-400" size={20} />
+              <Cpu className="text-success" size={20} />
               <h3 className="font-semibold text-foreground">Resource Right-Sizer</h3>
             </div>
             <WorkloadSelect
@@ -632,7 +632,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               onClick={() => void handleRightSize()}
               disabled={resizeLoading || !selectedWorkload}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-medium disabled:opacity-60 text-white"
+              className="w-full py-3 bg-success hover:bg-success rounded-xl font-medium disabled:opacity-60 text-white"
             >
               {resizeLoading ? 'Analyzing…' : 'Analyze Resources'}
             </button>
@@ -688,7 +688,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <section className="glass p-6 sm:p-8 mb-8">
         <div className="glass" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
-            <Cpu className="text-cyan-400" size={22} />
+            <Cpu className="text-primary" size={22} />
             <h3 className="font-semibold text-xl text-foreground">Workload Profiler & Analysis</h3>
           </div>
 
@@ -726,7 +726,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           {profilerResults && (
             <div className="mt-8 pt-6 glass-divider-t/80">
-              <h4 className="text-sm font-medium text-cyan-400 mb-4">
+              <h4 className="text-sm font-medium text-primary mb-4">
                 Profile: {profilerWorkload}
               </h4>
               <ProfileResultPanel data={profilerResults} />
@@ -735,7 +735,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           {analyzeResults && (
             <div className="mt-8 pt-6 glass-divider-t/80">
-              <h4 className="text-sm font-medium text-cyan-400 mb-4">
+              <h4 className="text-sm font-medium text-primary mb-4">
                 Log analysis: {profilerWorkload}
               </h4>
               <AnalyzeResultPanel data={analyzeResults} workloadName={profilerWorkload ?? ''} />

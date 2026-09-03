@@ -137,13 +137,13 @@ export default function FinOpsPlatformPanel() {
       testId="finops-platform-panel"
       title="FinOps Platform v2"
       subtitle="Chargeback, spot/RI planning, anomalies, unit economics, multi-cloud compare, trends"
-      icon={<DollarSign className="h-5 w-5 text-emerald-400" />}
+      icon={<DollarSign className="h-5 w-5 text-success" />}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => void executeFinOps(true)}
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200"
+            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success"
             data-testid="finops-execute-dry-run"
           >
             Agent dry-run
@@ -151,7 +151,7 @@ export default function FinOpsPlatformPanel() {
           <button
             type="button"
             onClick={() => void checkBudget()}
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning"
             data-testid="finops-budget-webhook"
           >
             Budget check
@@ -169,7 +169,7 @@ export default function FinOpsPlatformPanel() {
     >
       {budget ? (
         <p
-          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-amber-500/40 text-amber-200' : 'glass-divider text-muted'}`}
+          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-warning/40 text-warning' : 'glass-divider text-muted'}`}
           data-testid="finops-budget-status"
         >
           {budget.message}
@@ -183,7 +183,7 @@ export default function FinOpsPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'glass-divider text-muted'
+              tab === t.id ? 'border-success/40 bg-success/10 text-success' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -194,14 +194,14 @@ export default function FinOpsPlatformPanel() {
       {tab === 'trends' ? (
         <div data-testid="finops-trends-panel" className="space-y-3">
           <div className="flex items-center gap-2 text-sm text-muted">
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <TrendingUp className="h-4 w-4 text-success" />
             Forecast: {formatUSD(trends?.forecast_next_month_usd ?? 0)}/mo · trend {trends?.trend_direction ?? '—'}
           </div>
           <div className="flex h-24 items-end gap-1">
             {(trends?.points ?? []).map((p) => (
               <div
                 key={p.label}
-                className={`flex-1 rounded-t ${p.forecast ? 'bg-emerald-500/30' : 'bg-emerald-500/60'}`}
+                className={`flex-1 rounded-t ${p.forecast ? 'bg-success/30' : 'bg-success/60'}`}
                 style={{ height: `${Math.max(8, Math.min(100, p.monthly_usd / 50))}%` }}
                 title={`${p.label}: ${formatUSD(p.monthly_usd)}`}
               />
@@ -229,7 +229,7 @@ export default function FinOpsPlatformPanel() {
 
       {tab === 'spot' ? (
         <div data-testid="finops-spot-panel">
-          <p className="mb-2 text-sm text-emerald-300">{spot?.eligible_count ?? 0} spot-eligible workload(s)</p>
+          <p className="mb-2 text-sm text-success">{spot?.eligible_count ?? 0} spot-eligible workload(s)</p>
           <ul className="space-y-2 text-xs text-muted">
             {(spot?.entries ?? []).slice(0, 5).map((e) => (
               <li key={e.workload} className="rounded border glass-divider px-2 py-1">
@@ -243,7 +243,7 @@ export default function FinOpsPlatformPanel() {
 
       {tab === 'reserved' ? (
         <div data-testid="finops-reserved-panel" className="text-sm">
-          <p className="text-emerald-300">Fleet RI savings potential: {formatUSD(reserved?.fleet_reserved_savings_usd ?? 0)}/mo</p>
+          <p className="text-success">Fleet RI savings potential: {formatUSD(reserved?.fleet_reserved_savings_usd ?? 0)}/mo</p>
           <ul className="mt-2 space-y-1 text-xs text-muted">
             {(reserved?.recommendations ?? []).slice(0, 4).map((r) => (
               <li key={r.workload}>{r.recommendation}</li>
@@ -255,7 +255,7 @@ export default function FinOpsPlatformPanel() {
       {tab === 'anomalies' ? (
         <div data-testid="finops-anomalies-panel">
           {anomalies?.alert ? (
-            <p className="text-sm text-amber-300">Spend alert: fleet {anomalies.fleet_delta_pct.toFixed(1)}% vs baseline</p>
+            <p className="text-sm text-warning">Spend alert: fleet {anomalies.fleet_delta_pct.toFixed(1)}% vs baseline</p>
           ) : (
             <p className="text-sm text-subtle">No cost anomalies detected.</p>
           )}
@@ -270,7 +270,7 @@ export default function FinOpsPlatformPanel() {
 
       {tab === 'multicloud' ? (
         <div data-testid="finops-multicloud-panel" className="space-y-2 text-sm">
-          <p className="text-emerald-300">
+          <p className="text-success">
             Recommended: {multicloud?.recommended_provider ?? '—'} (save {(multicloud?.savings_vs_worst_pct ?? 0).toFixed(0)}% vs worst)
           </p>
           {(multicloud?.rows ?? []).map((r) => (
@@ -284,7 +284,7 @@ export default function FinOpsPlatformPanel() {
 
       {tab === 'carbon' ? (
         <div data-testid="finops-carbon-panel" className="flex items-start gap-2 text-sm text-muted">
-          <Leaf className="mt-0.5 h-4 w-4 text-emerald-500" />
+          <Leaf className="mt-0.5 h-4 w-4 text-success" />
           <div>
             <p>{carbon?.entries?.[0] ? `${carbon.entries[0].carbon_kg_monthly.toFixed(1)} kg CO₂/mo (${carbon.entries[0].region})` : '—'}</p>
             <p className="text-xs">{carbon?.hint}</p>

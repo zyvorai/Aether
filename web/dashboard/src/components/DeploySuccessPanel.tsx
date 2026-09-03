@@ -20,10 +20,10 @@ const linkClass =
 export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }: DeploySuccessPanelProps) {
   return (
     <div data-testid="deploy-success-panel" className="glass-alert-success shrink-0">
-      <p className="text-sm font-medium text-emerald-300">
+      <p className="text-sm font-medium text-success">
         Deployed &quot;{name}&quot; successfully
       </p>
-      <p className="mt-1 text-xs text-emerald-400/90">Rollout status: {status}</p>
+      <p className="mt-1 text-xs text-success/90">Rollout status: {status}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"

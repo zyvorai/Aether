@@ -67,7 +67,7 @@ export default function LiveLabsPanel() {
     <GlassSection
       title="Live Labs & Reference Cluster"
       subtitle="Era N — kubeconfig gates, kind fixtures, CI smoke, and post-deploy verify"
-      icon={<Server className="h-5 w-5 text-sky-400" />}
+      icon={<Server className="h-5 w-5 text-primary" />}
       testId="live-labs-panel"
       actions={
         <button type="button" onClick={() => void load()} className="btn-secondary text-xs">
@@ -104,10 +104,10 @@ export default function LiveLabsPanel() {
             {overview.kubeconfig_available ? 'ready' : 'missing'}
           </p>
           <p>
-            Make target: <code className="text-sky-300">{runner.make_target}</code>
+            Make target: <code className="text-primary">{runner.make_target}</code>
           </p>
           <p>
-            Script: <code className="text-sky-300">{runner.script}</code>
+            Script: <code className="text-primary">{runner.script}</code>
           </p>
           <p className="text-muted">{runner.hint}</p>
           {smoke ? (
@@ -128,10 +128,10 @@ export default function LiveLabsPanel() {
             Kubernetes lab specs: {k8sSpecs} · Confidential specs: {confidentialSpecs}
           </p>
           <p className="text-muted">
-            Kind fixture: <code className="text-sky-300">scripts/kind-playwright-fixture.sh</code>
+            Kind fixture: <code className="text-primary">scripts/kind-playwright-fixture.sh</code>
           </p>
           <p className="text-muted">
-            Post-deploy: <code className="text-sky-300">scripts/post-deploy-verify.sh</code>
+            Post-deploy: <code className="text-primary">scripts/post-deploy-verify.sh</code>
           </p>
         </div>
       ) : null}

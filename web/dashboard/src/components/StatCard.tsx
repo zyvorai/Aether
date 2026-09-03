@@ -17,11 +17,11 @@ interface StatCardProps {
 const accentMap: Record<StatCardProps['color'], string> = {
   primary: 'text-primary',
   orange: 'text-primary',
-  green: 'text-emerald-500',
-  red: 'text-red-500',
-  blue: 'text-sky-500',
-  purple: 'text-violet-500',
-  yellow: 'text-amber-500',
+  green: 'text-success',
+  red: 'text-danger',
+  blue: 'text-primary',
+  purple: 'text-lavender',
+  yellow: 'text-warning',
 };
 
 export default function StatCard({ title, value, color, icon, isEmpty, compact }: StatCardProps) {

@@ -141,7 +141,7 @@ export default function WorkloadDesignerPanel() {
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', name }))}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500"
+                className="inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm font-medium text-white hover:bg-success"
               >
                 <Rocket className="h-4 w-4" />
                 One-click deploy

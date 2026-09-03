@@ -14,21 +14,21 @@ export interface RibbonItem {
 
 const valueTone: Record<RibbonTone, string> = {
   white: 'text-foreground',
-  emerald: 'text-emerald-300',
-  amber: 'text-amber-200',
-  violet: 'text-violet-200',
-  sky: 'text-sky-200',
-  red: 'text-red-300',
+  emerald: 'text-success',
+  amber: 'text-warning',
+  violet: 'text-lavender',
+  sky: 'text-primary',
+  red: 'text-danger',
   aether: 'text-primary',
 };
 
 const hoverTone: Record<RibbonTone, string> = {
   white: 'hover:bg-white/[0.03]',
-  emerald: 'hover:bg-emerald-500/5',
-  amber: 'hover:bg-amber-500/5',
-  violet: 'hover:bg-violet-500/5',
-  sky: 'hover:bg-sky-500/5',
-  red: 'hover:bg-red-500/5',
+  emerald: 'hover:bg-success/5',
+  amber: 'hover:bg-warning/5',
+  violet: 'hover:bg-lavender/5',
+  sky: 'hover:bg-primary/5',
+  red: 'hover:bg-danger/5',
   aether: 'hover:bg-primary/5',
 };
 

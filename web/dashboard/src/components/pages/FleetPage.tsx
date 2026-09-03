@@ -431,7 +431,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           ) : placementPlan ? (
             <div>
               {placementPlan.anomaly_signals_configured ? (
-                <p className="text-xs text-cyan-300 mb-2" data-testid="placement-anomaly-hint">
+                <p className="text-xs text-primary mb-2" data-testid="placement-anomaly-hint">
                   PacketWolf anomalies considered ({placementPlan.total_anomalies ?? 0} signals)
                   {placementPlan.recommended_cluster ? ` · recommended: ${placementPlan.recommended_cluster}` : ''}
                 </p>
@@ -492,7 +492,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
 
       {summary?.error && (
-        <div className="glass-alert-warn mb-4 text-sm text-amber-200">
+        <div className="glass-alert-warn mb-4 text-sm text-warning">
           Kubeconfig inventory: {summary.error}
         </div>
       )}
@@ -550,7 +550,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
             <button
               type="button"
               onClick={() => void loadAllPods()}
-              className="rounded-xl border border-purple-500/30 bg-purple-950/20 px-3 py-1.5 text-xs text-purple-200 hover:bg-purple-950/40"
+              className="rounded-xl border border-lavender/30 bg-lavender/20 px-3 py-1.5 text-xs text-lavender hover:bg-lavender/40"
             >
               Expand all &amp; load pods
             </button>
@@ -589,7 +589,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-purple-300 hover:text-purple-200 text-xs shrink-0"
+                        className="inline-flex items-center gap-1 text-lavender hover:text-lavender text-xs shrink-0"
                       >
                         Namespace <ExternalLink size={12} />
                       </a>
@@ -620,7 +620,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                                   href={hubbleWorkloadUrl(base, ns, pod.name)}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-purple-300 hover:text-purple-200 text-xs"
+                                  className="inline-flex items-center gap-1 text-lavender hover:text-lavender text-xs"
                                   data-testid={`hubble-pod-${pod.name}`}
                                 >
                                   Pod flows <ExternalLink size={12} />
@@ -645,16 +645,16 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>
         {packetwolfStatus?.configured ? (
-          <div className="mb-4 rounded-xl border border-cyan-800/40 bg-cyan-950/20 px-4 py-3 text-sm" data-testid="packetwolf-live-card">
+          <div className="mb-4 rounded-xl border border-primary/40 bg-primary/20 px-4 py-3 text-sm" data-testid="packetwolf-live-card">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-cyan-200">PacketWolf bridge</span>
+              <span className="font-medium text-primary">PacketWolf bridge</span>
               <Badge text={packetwolfStatus.reachable ? 'live' : 'offline'} variant={packetwolfStatus.reachable ? 'green' : 'yellow'} />
               {packetwolfStatus.version ? <span className="text-xs text-muted">v{packetwolfStatus.version}</span> : null}
             </div>
             {packetwolfFlows ? (
               <pre className="mt-2 text-xs text-muted overflow-auto">{JSON.stringify(packetwolfFlows, null, 2)}</pre>
             ) : null}
-            {packetwolfStatus.hint ? <p className="mt-2 text-xs text-amber-300">{packetwolfStatus.hint}</p> : null}
+            {packetwolfStatus.hint ? <p className="mt-2 text-xs text-warning">{packetwolfStatus.hint}</p> : null}
           </div>
         ) : null}
         <div className="flex flex-wrap gap-3">
@@ -683,7 +683,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.hubble_ui_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-purple-700/50 bg-purple-950/30 px-4 py-2 text-sm text-purple-200 hover:bg-purple-950/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-lavender/50 bg-lavender/30 px-4 py-2 text-sm text-lavender hover:bg-lavender/50"
             >
               Hubble UI <ExternalLink size={14} />
             </a>
@@ -697,7 +697,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-700/50 bg-cyan-950/30 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-950/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/30 px-4 py-2 text-sm text-primary hover:bg-primary/50"
             >
               PacketWolf <ExternalLink size={14} />
             </a>

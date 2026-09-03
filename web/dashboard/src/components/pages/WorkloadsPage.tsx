@@ -1042,21 +1042,21 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <div className="text-[10px] uppercase tracking-wider text-subtle">Total</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">{workloads.length}</div>
         </button>
-        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-emerald-500/5">
+        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-success/5">
           <div className="text-[10px] uppercase tracking-wider text-subtle">Running</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-emerald-300">{runningCount}</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-success">{runningCount}</div>
         </button>
-        <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-amber-500/5">
+        <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-warning/5">
           <div className="text-[10px] uppercase tracking-wider text-subtle">Stopped</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-amber-200">{stoppedCount}</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-warning">{stoppedCount}</div>
         </button>
-        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-violet-500/5">
+        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-lavender/5">
           <div className="text-[10px] uppercase tracking-wider text-subtle">Aether</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-violet-200">{aetherManagedCount}</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-lavender">{aetherManagedCount}</div>
         </button>
-        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-sky-500/5">
+        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-primary/5">
           <div className="text-[10px] uppercase tracking-wider text-subtle">Discovered</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-sky-200">{clusterDiscoveredCount}</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-primary">{clusterDiscoveredCount}</div>
         </button>
         <div className="glass-inset-surface px-3 py-3">
           <div className="text-[10px] uppercase tracking-wider text-subtle">Namespaces</div>
@@ -1067,9 +1067,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
           <span className="text-sm text-muted">{selectedNames.size} selected</span>
-          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
-          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
-          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500">Delete all</button>
+          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-success text-white hover:bg-success">Start all</button>
+          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-warning text-white hover:bg-warning">Stop all</button>
+          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-danger text-white hover:bg-danger">Delete all</button>
           <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-muted hover:text-foreground">Clear</button>
         </div>
       )}
@@ -1319,7 +1319,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 ))}
               </div>
               {migrateStrategy === 'confidential-blue-green' && (
-                <p className="text-xs text-amber-400/90 mt-2">
+                <p className="text-xs text-warning/90 mt-2">
                   Encrypted migration: deploy target, re-attest launch digest, then cutover. Requires TEE-capable nodes.
                 </p>
               )}
@@ -1329,13 +1329,13 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                     Channel: {confidentialMigrationPlan.encrypted_migration_uri}
                   </p>
                   {confidentialMigrationPlan.blockers.length > 0 ? (
-                    <ul className="text-red-300/90">
+                    <ul className="text-danger/90">
                       {confidentialMigrationPlan.blockers.map((b) => (
                         <li key={b}>{b}</li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-emerald-400/90">Ready for confidential cutover</p>
+                    <p className="text-success/90">Ready for confidential cutover</p>
                   )}
                 </div>
               )}
@@ -1348,7 +1348,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               </ul>
             )}
             {migrateAdvice.warnings.length > 0 && (
-              <ul className="text-xs text-amber-400/90 space-y-1">
+              <ul className="text-xs text-warning/90 space-y-1">
                 {migrateAdvice.warnings.map((w, i) => (
                   <li key={i}>! {w}</li>
                 ))}
@@ -1367,8 +1367,8 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 data-testid="migrate-result"
                 className={`text-sm rounded-lg border px-3 py-2 ${
                   migrateResult.toLowerCase().includes('failed')
-                    ? 'border-red-500/30 bg-red-500/5 text-red-300'
-                    : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
+                    ? 'border-danger/30 bg-danger/5 text-danger'
+                    : 'border-success/30 bg-success/5 text-success'
                 }`}
               >
                 {migrateResult}
@@ -1417,13 +1417,13 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             submitTestId="workloads-deploy-submit"
             placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
             header={
-              <div className="shrink-0 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-3">
+              <div className="shrink-0 rounded-xl border border-lavender/20 bg-lavender/5 p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-medium text-purple-300">Confidential assist</h3>
+                  <h3 className="text-sm font-medium text-lavender">Confidential assist</h3>
                   <button
                     type="button"
                     onClick={() => setDeployYaml(mergeConfidentialIntoYaml(deployYaml, deployConfidential))}
-                    className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-200 hover:bg-purple-500/20"
+                    className="rounded-lg border border-lavender/30 bg-lavender/10 px-3 py-1.5 text-xs font-medium text-lavender hover:bg-lavender/20"
                   >
                     Apply to YAML
                   </button>

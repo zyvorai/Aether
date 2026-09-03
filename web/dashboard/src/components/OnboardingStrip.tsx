@@ -82,7 +82,7 @@ export default function OnboardingStrip({
   if (dismissed && allComplete) {
     return (
       <div
-        className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-sm text-emerald-300"
+        className="mb-6 flex items-center gap-2 rounded-xl border border-success/30 bg-success/5 px-4 py-2 text-sm text-success"
         data-testid="onboarding-complete-chip"
       >
         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
@@ -113,7 +113,7 @@ export default function OnboardingStrip({
               onClick={step.onClick}
               className={`tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 flex w-full items-start gap-3 text-left ${
                 step.done
-                  ? 'border-emerald-500/30 !bg-emerald-500/[0.06]'
+                  ? 'border-success/30 !bg-success/[0.06]'
                   : ''
               }`}
             >
@@ -121,7 +121,7 @@ export default function OnboardingStrip({
                 {index + 1}
               </span>
               {step.done ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" aria-hidden />
               ) : (
                 <Circle className="h-4 w-4 shrink-0 mt-0.5 text-subtle" aria-hidden />
               )}

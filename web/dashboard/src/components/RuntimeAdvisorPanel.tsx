@@ -31,7 +31,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
         <ul className="mt-3 space-y-1 text-xs text-muted">
           {score.reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
-              <span className="text-emerald-400 shrink-0">✓</span>
+              <span className="text-success shrink-0">✓</span>
               <span>{r}</span>
             </li>
           ))}

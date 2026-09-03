@@ -115,9 +115,9 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
         </button>
       }
     >
-      {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
+      {error && <p className="mt-3 text-xs text-danger">{error}</p>}
       {appliedMessage && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-300">
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-success">
           <CheckCircle2 size={14} />
           {appliedMessage}
         </p>
@@ -125,9 +125,9 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
 
       {report && (
         <div className="mt-4 space-y-3">
-          <div className="glass-drawer border-violet-500/20 p-3">
+          <div className="glass-drawer border-lavender/20 p-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-xs uppercase tracking-wide text-violet-300/80">{report.health_level}</span>
+              <span className="text-xs uppercase tracking-wide text-lavender/80">{report.health_level}</span>
               <span className="text-sm text-foreground">{report.summary}</span>
             </div>
             {report.evidence.slice(0, 4).map((line) => (
@@ -144,14 +144,14 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
                 return (
                   <div
                     key={`${rec.title}-${rec.action}`}
-                    className="rounded-lg border border-amber-500/20 bg-amber-950/15 p-3"
+                    className="rounded-lg border border-warning/20 bg-warning/15 p-3"
                     data-testid={`ai-troubleshoot-rec-${rec.action}`}
                   >
                     <div className="flex items-start gap-2">
-                      <Wrench size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                      <Wrench size={14} className="text-warning shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-amber-100">{rec.title}</p>
-                        <p className="text-xs text-amber-200/70 mt-0.5">{rec.summary}</p>
+                        <p className="text-sm font-medium text-warning">{rec.title}</p>
+                        <p className="text-xs text-warning/70 mt-0.5">{rec.summary}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {applyable && (
                             <button

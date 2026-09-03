@@ -70,17 +70,17 @@ export function getRuntimeBg(runtime: string): string {
 
 export function getSeverityColor(severity: string): string {
   const s = severity.toUpperCase();
-  if (s === 'CRITICAL' || s === 'ERROR') return 'bg-red-500/10 text-red-400 border-red-500/20';
-  if (s === 'WARNING' || s === 'WARN') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-  if (s === 'INFO') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+  if (s === 'CRITICAL' || s === 'ERROR') return 'bg-danger/10 text-danger border-danger/20';
+  if (s === 'WARNING' || s === 'WARN') return 'bg-warning/10 text-warning border-warning/20';
+  if (s === 'INFO') return 'bg-primary/10 text-primary border-primary/20';
   return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
 }
 
 export function getHealthColor(health: string): string {
   const h = health.toLowerCase();
-  if (h === 'healthy') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-  if (h === 'degraded') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-  if (h === 'unhealthy') return 'bg-red-500/10 text-red-400 border-red-500/20';
+  if (h === 'healthy') return 'bg-success/10 text-success border-success/20';
+  if (h === 'degraded') return 'bg-warning/10 text-warning border-warning/20';
+  if (h === 'unhealthy') return 'bg-danger/10 text-danger border-danger/20';
   return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
 }
 
