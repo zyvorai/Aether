@@ -4,6 +4,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import GlobalNav from './layout/GlobalNav/GlobalNav';
+import AetherSidebar, { loadSidebarCollapsed, saveSidebarCollapsed } from './layout/AetherSidebar/AetherSidebar';
 import Breadcrumb from './Breadcrumb';
 import ZyraRail, { ZyraRailToggle } from './ZyraRail';
 import ZyraContextBar from './ZyraContextBar';
@@ -59,12 +60,23 @@ export default function DashboardShell({
   const isZyraView = currentView === 'zyra' || currentView === 'copilot';
   const [zyraCollapsed, setZyraCollapsed] = useState(() => !isZyraView);
   const [mobileZyraOpen, setMobileZyraOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => loadSidebarCollapsed());
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Reclaim horizontal space on every view except the Zyra workspace, where the
   // rail IS the primary surface.
   useEffect(() => {
     setZyraCollapsed(!isZyraView);
   }, [currentView, isZyraView]);
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [currentView]);
+
+  const handleSidebarCollapsedChange = (collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+    saveSidebarCollapsed(collapsed);
+  };
 
   return (
     <div className={shellClass}>
@@ -81,6 +93,7 @@ export default function DashboardShell({
         onLogout={onLogout}
         onSearchClick={onOpenCommandPalette}
         onOpenHelp={onOpenHelp}
+        onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         sseConnected={sseConnected}
       />
       <ZyraContextBar refreshKey={refreshKey} />
@@ -88,6 +101,12 @@ export default function DashboardShell({
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
       <div className="flex min-h-0 flex-1">
+        <AetherSidebar
+          currentView={currentView}
+          onNavigate={onNavigate}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={handleSidebarCollapsedChange}
+        />
         <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:py-6">
           <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
           {children}
@@ -105,6 +124,26 @@ export default function DashboardShell({
           />
           <div className="absolute inset-y-0 right-0 flex w-full max-w-md">
             <ZyraRail collapsed={false} onCollapsedChange={() => setMobileZyraOpen(false)} />
+          </div>
+        </div>
+      ) : null}
+      {mobileSidebarOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="glass-modal-backdrop absolute inset-0"
+            aria-label="Close navigation"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 flex">
+            <AetherSidebar
+              currentView={currentView}
+              onNavigate={onNavigate}
+              collapsed={false}
+              onCollapsedChange={() => {}}
+              mobile
+              onNavigateMobile={() => setMobileSidebarOpen(false)}
+            />
           </div>
         </div>
       ) : null}
