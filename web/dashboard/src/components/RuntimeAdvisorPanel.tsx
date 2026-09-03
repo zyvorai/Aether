@@ -28,7 +28,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
       </div>
       <BarChart label="Overall score" percent={score.total_score * 100} />
       {(score.reasons ?? []).length > 0 ? (
-        <ul className="mt-3 space-y-1 text-xs text-ink-2">
+        <ul className="mt-3 space-y-1 text-xs text-muted">
           {score.reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
               <span className="text-emerald-400 shrink-0">✓</span>

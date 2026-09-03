@@ -197,7 +197,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Shield className="w-5 h-5 text-brand" />
-          <h2 className="text-lg font-semibold text-ink">Create RBAC API key</h2>
+          <h2 className="text-lg font-semibold text-foreground">Create RBAC API key</h2>
         </div>
         {canAdmin ? (
         <div className="grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_auto] gap-3" data-testid="rbac-create-form">
@@ -226,7 +226,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           </button>
         </div>
         ) : (
-          <p className="text-sm text-ink-2">Only admin users can create or revoke API keys.</p>
+          <p className="text-sm text-muted">Only admin users can create or revoke API keys.</p>
         )}
         <Link to={viewToPath('audit')} className="mt-3 inline-flex text-xs text-brand hover:underline">
           View audit trail →
@@ -257,13 +257,13 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => setRevokeName(entry.name)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-red-500/15 hover:text-red-300"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
                   >
                     <Trash2 size={13} />
                     Revoke
                   </button>
                 ) : (
-                  <span className="flex-1 py-1.5 text-center text-[11px] text-ink-3">Read-only</span>
+                  <span className="flex-1 py-1.5 text-center text-[11px] text-subtle">Read-only</span>
                 )
               }
             />
@@ -283,7 +283,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
       >
         {created && (
           <div className="space-y-4" data-testid="rbac-created-key">
-            <p className="text-sm text-ink-2">This plaintext key is only returned once. Store it before closing.</p>
+            <p className="text-sm text-muted">This plaintext key is only returned once. Store it before closing.</p>
             <div className="glass-code-block-body px-4 py-3 font-mono text-sm text-brand break-all">
               {created.key}
             </div>
@@ -295,7 +295,7 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
                 setKeyCopied(true);
                 setTimeout(() => setKeyCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-1.5 text-xs text-ink-2 hover:border-brand/40"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40"
             >
               <Copy size={14} />
               {keyCopied ? 'Copied' : 'Copy key'}
@@ -307,11 +307,11 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <Modal isOpen={revokeName !== null} onClose={() => setRevokeName(null)} title="Revoke API key">
         <div data-testid="rbac-revoke-modal" className="space-y-4">
-          <p className="text-sm text-ink-2">
-            Revoke access for <span className="text-ink font-medium">{revokeName}</span>?
+          <p className="text-sm text-muted">
+            Revoke access for <span className="text-foreground font-medium">{revokeName}</span>?
           </p>
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-ink-2 glass-inset-hover">
+            <button type="button" onClick={() => setRevokeName(null)} className="rounded-lg px-4 py-2 text-sm text-muted glass-inset-hover">
               Cancel
             </button>
             <button type="button" onClick={() => void handleRevoke()} className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-medium text-white">

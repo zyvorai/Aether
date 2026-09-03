@@ -423,7 +423,7 @@ function AetherDashboard() {
 
   if (authBootstrapping) {
     return (
-      <div className="app-shell min-h-screen flex flex-col items-center justify-center text-ink-2">
+      <div className="app-shell min-h-screen flex flex-col items-center justify-center text-muted">
         <div className="w-10 h-10 rounded-xl border border-brand/30 bg-brand/10 mb-4 animate-pulse" aria-hidden />
         <p className="text-sm">Connecting to Aether…</p>
       </div>

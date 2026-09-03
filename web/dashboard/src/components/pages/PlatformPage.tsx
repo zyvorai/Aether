@@ -253,30 +253,30 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass" data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
             <Server className="text-brand" size={20} />
-            <h2 className="text-lg font-semibold text-ink">Runtime</h2>
+            <h2 className="text-lg font-semibold text-foreground">Runtime</h2>
           </div>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-3">API version</dt>
-              <dd className="text-ink font-mono">{server?.version ?? platform?.version ?? '—'}</dd>
+              <dt className="text-subtle">API version</dt>
+              <dd className="text-foreground font-mono">{server?.version ?? platform?.version ?? '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">HA mode</dt>
+              <dt className="text-subtle">HA mode</dt>
               <dd><Badge text={server?.ha_mode ?? platform?.haMode ?? 'single'} variant="blue" /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">System ready</dt>
+              <dt className="text-subtle">System ready</dt>
               <dd>
                 <Badge text={systemReady ? 'ready' : 'degraded'} variant={systemReady ? 'green' : 'red'} />
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">State backend</dt>
-              <dd className="text-ink">{platform?.persistence ?? '—'}</dd>
+              <dt className="text-subtle">State backend</dt>
+              <dd className="text-foreground">{platform?.persistence ?? '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">Embedded UI build</dt>
-              <dd className="text-ink-2 font-mono text-xs">{server?.embedded_ui_build ?? '—'}</dd>
+              <dt className="text-subtle">Embedded UI build</dt>
+              <dd className="text-muted font-mono text-xs">{server?.embedded_ui_build ?? '—'}</dd>
             </div>
           </dl>
         </div>
@@ -284,11 +284,11 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="text-emerald-400" size={20} />
-            <h2 className="text-lg font-semibold text-ink">Policy & integrations</h2>
+            <h2 className="text-lg font-semibold text-foreground">Policy & integrations</h2>
           </div>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
-              <dt className="text-ink-3">OPA</dt>
+              <dt className="text-subtle">OPA</dt>
               <dd>
                 <Badge
                   text={platform?.opa?.configured ? (platform.opa.enforce ? 'enforce' : 'advisory') : 'off'}
@@ -297,12 +297,12 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">Remote backup</dt>
-              <dd className="text-ink">{integrations.backup_remote_configured ? 'configured' : 'not set'}</dd>
+              <dt className="text-subtle">Remote backup</dt>
+              <dd className="text-foreground">{integrations.backup_remote_configured ? 'configured' : 'not set'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">Audit webhook</dt>
-              <dd className="text-ink">{integrations.audit_webhook_configured ? 'configured' : 'not set'}</dd>
+              <dt className="text-subtle">Audit webhook</dt>
+              <dd className="text-foreground">{integrations.audit_webhook_configured ? 'configured' : 'not set'}</dd>
             </div>
           </dl>
           {!platform?.opa?.configured && (
@@ -365,10 +365,10 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
           >
             Events feed →
           </Link>
-          <p className="mt-4 text-xs text-ink-3">
-            Env: <code className="text-ink-2">AETHER_BACKUP_REMOTE_URL</code>,{' '}
-            <code className="text-ink-2">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
-            <code className="text-ink-2">AETHER_OPA_URL</code>
+          <p className="mt-4 text-xs text-subtle">
+            Env: <code className="text-muted">AETHER_BACKUP_REMOTE_URL</code>,{' '}
+            <code className="text-muted">AETHER_AUDIT_WEBHOOK_URL</code>,{' '}
+            <code className="text-muted">AETHER_OPA_URL</code>
           </p>
         </div>
         </div>
@@ -383,7 +383,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass">
         <div className="flex items-center gap-3 mb-4">
           <Network className="text-purple-400" size={20} />
-          <h2 className="text-lg font-semibold text-ink">Kubernetes / Cilium</h2>
+          <h2 className="text-lg font-semibold text-foreground">Kubernetes / Cilium</h2>
           {cilium && (
             <Badge
               text={cilium.cni === 'cilium' ? 'Cilium' : cilium.cni}
@@ -394,23 +394,23 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         {cilium ? (
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-3">Cluster</dt>
-              <dd className="text-ink font-mono text-xs">{cilium.cluster}</dd>
+              <dt className="text-subtle">Cluster</dt>
+              <dd className="text-foreground font-mono text-xs">{cilium.cluster}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">Egress mode</dt>
+              <dt className="text-subtle">Egress mode</dt>
               <dd><Badge text={cilium.egress_mode} variant={cilium.egress_mode === 'strict' ? 'yellow' : 'blue'} /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">Cilium agent</dt>
+              <dt className="text-subtle">Cilium agent</dt>
               <dd><Badge text={cilium.cilium_daemonset_ready ? 'ready' : 'not ready'} variant={cilium.cilium_daemonset_ready ? 'green' : 'red'} /></dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-3">metrics-server</dt>
+              <dt className="text-subtle">metrics-server</dt>
               <dd><Badge text={cilium.metrics_server ? 'available' : 'missing'} variant={cilium.metrics_server ? 'green' : 'muted'} /></dd>
             </div>
             <div className="flex justify-between items-center">
-              <dt className="text-ink-3">Connectivity check</dt>
+              <dt className="text-subtle">Connectivity check</dt>
               <dd className="flex items-center gap-2">
                 <Badge
                   text={cilium.connectivity_check ?? 'unknown'}
@@ -437,22 +437,22 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             </div>
             {cilium.last_checked_at && (
               <div className="flex justify-between">
-                <dt className="text-ink-3">Last checked</dt>
-                <dd className="text-ink-2 text-xs font-mono">{cilium.last_checked_at}</dd>
+                <dt className="text-subtle">Last checked</dt>
+                <dd className="text-muted text-xs font-mono">{cilium.last_checked_at}</dd>
               </div>
             )}
             {cilium.connectivity_detail && (
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-3 shrink-0">Detail</dt>
-                <dd className="text-ink-2 text-xs text-right">{cilium.connectivity_detail}</dd>
+                <dt className="text-subtle shrink-0">Detail</dt>
+                <dd className="text-muted text-xs text-right">{cilium.connectivity_detail}</dd>
               </div>
             )}
             <div>
-              <dt className="text-ink-3 mb-2">Bootstrap policies</dt>
+              <dt className="text-subtle mb-2">Bootstrap policies</dt>
               <dd className="space-y-1">
                 {cilium.managed_policies.map((policy) => (
                   <div key={policy.name} className="flex items-center justify-between rounded-lg border glass-divider px-3 py-2">
-                    <span className="font-mono text-xs text-ink-2">{policy.name}</span>
+                    <span className="font-mono text-xs text-muted">{policy.name}</span>
                     <Badge text={policy.exists ? 'applied' : 'missing'} variant={policy.exists ? 'green' : 'red'} />
                   </div>
                 ))}
@@ -469,11 +469,11 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             )}
           </dl>
         ) : (
-          <p className="text-sm text-ink-3">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
+          <p className="text-sm text-subtle">Cilium status unavailable — ensure kubeconfig is reachable from the API server.</p>
         )}
-        <p className="mt-4 text-xs text-ink-3">
+        <p className="mt-4 text-xs text-subtle">
           Browse Cilium policies on the Cluster Browser <strong>Network</strong> tab. Hubble UI is auto-discovered when installed, or set{' '}
-          <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code>.
+          <code className="text-muted">AETHER_HUBBLE_UI_URL</code>.
         </p>
       </div>
       </section>
@@ -487,7 +487,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass" data-testid="platform-observability-panel">
         <div className="flex items-center gap-3 mb-4">
           <Database className="text-blue-400" size={20} />
-          <h2 className="text-lg font-semibold text-ink">Observability links</h2>
+          <h2 className="text-lg font-semibold text-foreground">Observability links</h2>
         </div>
         <div className="flex flex-wrap gap-3">
           {integrations.grafana_url ? (
@@ -496,7 +496,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                 href={integrations.grafana_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-foreground glass-inset-hover"
               >
                 Grafana <ExternalLink size={14} />
               </a>
@@ -510,20 +510,20 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
                   Open Aether dashboard <ExternalLink size={14} />
                 </a>
               ) : integrations.prometheus_url ? (
-                <span className="text-sm text-ink-3 self-center">
+                <span className="text-sm text-subtle self-center">
                   Set <code>AETHER_GRAFANA_DASHBOARD_UID</code> and run <code>scripts/import-grafana-dashboard.sh</code>
                 </span>
               ) : null}
             </>
           ) : (
-            <span className="text-sm text-ink-3">Set <code>AETHER_GRAFANA_URL</code> for Grafana link</span>
+            <span className="text-sm text-subtle">Set <code>AETHER_GRAFANA_URL</code> for Grafana link</span>
           )}
           {integrations.prometheus_url ? (
             <a
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-foreground glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -531,7 +531,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             <a
               href="/metrics"
               data-testid="platform-metrics-link"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-foreground glass-inset-hover"
             >
               In-app metrics <ExternalLink size={14} />
             </a>
@@ -557,17 +557,17 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
             </a>
           )}
           {!integrations.hubble_ui_url && (
-            <span className="text-sm text-ink-3 self-center">
-              Set <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code> for Hubble
+            <span className="text-sm text-subtle self-center">
+              Set <code className="text-muted">AETHER_HUBBLE_UI_URL</code> for Hubble
             </span>
           )}
         </div>
-        <p className="mt-4 text-xs text-ink-3">
+        <p className="mt-4 text-xs text-subtle">
           Multi-cluster inventory: open{' '}
           <a href="/fleet" className="text-brand hover:underline">
             Fleet Overview
           </a>
-          . Set <code className="text-ink-2">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
+          . Set <code className="text-muted">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.
         </p>
       </div>
       </section>

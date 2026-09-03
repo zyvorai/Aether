@@ -304,12 +304,12 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
               <div className="glass flex flex-wrap items-center gap-4">
                 <Brain className="text-brand shrink-0" size={22} />
                 <div>
-                  <p className="text-sm text-ink-2">Fleet risk score</p>
-                  <p className="text-2xl font-semibold text-ink">
+                  <p className="text-sm text-muted">Fleet risk score</p>
+                  <p className="text-2xl font-semibold text-foreground">
                     {formatPercent(predictions.fleet_risk_score, 1)}
                   </p>
                 </div>
-                <p className="text-xs text-ink-3 ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
+                <p className="text-xs text-subtle ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
               </div>
               {predictions.predictions.length === 0 ? (
                 <EmptyState icon={<Inbox size={40} />} title="No predictions" description="No workloads in state store yet." />
@@ -332,28 +332,28 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <Link
                           to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
-                          className="font-medium text-ink hover:text-brand"
+                          className="font-medium text-foreground hover:text-brand"
                         >
                           {row.workload}
                         </Link>
                         <Link
                           to={pathWithQuery(viewToPath('events'), { workload: row.workload })}
-                          className="text-xs text-ink-3 hover:text-brand"
+                          className="text-xs text-subtle hover:text-brand"
                         >
                           Events →
                         </Link>
                         <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
                       </div>
-                      <p className="text-xs text-ink-3 mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
+                      <p className="text-xs text-subtle mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
                       {row.predictions.length > 0 && (
                         <ul className="space-y-2 text-sm">
                           {row.predictions.map((sig, i) => (
                             <li key={`${sig.kind}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="text-ink">{sig.kind}</span>
-                                <span className="text-xs text-ink-3">{sig.horizon}</span>
+                                <span className="text-foreground">{sig.kind}</span>
+                                <span className="text-xs text-subtle">{sig.horizon}</span>
                               </div>
-                              <p className="text-xs text-ink-2 mt-1">{sig.reason}</p>
+                              <p className="text-xs text-muted mt-1">{sig.reason}</p>
                               <p className="text-xs text-brand mt-1">{formatPercent(sig.probability, 0)} probability</p>
                             </li>
                           ))}
@@ -365,7 +365,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
               )}
             </>
           ) : (
-            <p className="text-sm text-ink-3">Predictions unavailable.</p>
+            <p className="text-sm text-subtle">Predictions unavailable.</p>
           )}
         </div>
       )}
@@ -390,7 +390,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: t.workload })}
-                    className="font-medium text-ink hover:text-brand"
+                    className="font-medium text-foreground hover:text-brand"
                   >
                     {t.workload}
                   </Link>
@@ -408,8 +408,8 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                     Alerts →
                   </Link>
                 </div>
-                <p className="text-sm text-ink-2">{t.reason}</p>
-                <p className="text-xs text-ink-3 mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
+                <p className="text-sm text-muted">{t.reason}</p>
+                <p className="text-xs text-subtle mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
               </div>
             ))
           ) : (
@@ -423,7 +423,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
           {cost ? (
             <>
               <div className="glass">
-                <p className="text-sm text-ink-2">Total potential savings</p>
+                <p className="text-sm text-muted">Total potential savings</p>
                 <p className="text-2xl font-semibold text-emerald-400">
                   {cost.total_potential_savings_pct.toFixed(1)}%
                 </p>
@@ -448,24 +448,24 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Link
                         to={pathWithQuery(viewToPath('workloads'), { workload: rec.workload })}
-                        className="font-medium text-ink hover:text-brand"
+                        className="font-medium text-foreground hover:text-brand"
                       >
                         {rec.workload}
                       </Link>
                       <Badge text={`${rec.savings_pct.toFixed(0)}% savings`} variant="green" />
                       <Badge text={rec.risk} variant={riskVariant(rec.risk)} />
                     </div>
-                    <p className="text-sm text-ink-2">
+                    <p className="text-sm text-muted">
                       {rec.current_runtime} → {rec.suggested_runtime}
                     </p>
-                    <p className="text-xs text-ink-2 mt-1">{rec.reason}</p>
+                    <p className="text-xs text-muted mt-1">{rec.reason}</p>
                     <p className="text-xs text-emerald-400 mt-2">{formatUSD(rec.savings_monthly_usd)}/mo estimated</p>
                   </div>
                 ))
               )}
             </>
           ) : (
-            <p className="text-sm text-ink-3">Cost optimization unavailable.</p>
+            <p className="text-sm text-subtle">Cost optimization unavailable.</p>
           )}
         </div>
       )}
@@ -503,19 +503,19 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
-                    className="font-medium text-ink hover:text-brand"
+                    className="font-medium text-foreground hover:text-brand"
                   >
                     {row.workload}
                   </Link>
                   {row.auto_eligible && <Badge text="auto-eligible" variant="green" />}
                   <Badge text={`${row.improvement_pct.toFixed(0)}% improvement`} variant="blue" />
                 </div>
-                <p className="text-sm text-ink-2">
+                <p className="text-sm text-muted">
                   {row.current_runtime} → {row.recommended_runtime}
                 </p>
-                <p className="text-xs text-ink-3 mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
+                <p className="text-xs text-subtle mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
                 {row.reasons.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-xs text-ink-2">
+                  <ul className="mt-2 space-y-1 text-xs text-muted">
                     {row.reasons.map((r) => (
                       <li key={r}>• {r}</li>
                     ))}
@@ -545,7 +545,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
             </Link>
           </div>
           <div className="glass space-y-3">
-            <p className="text-sm text-ink-2">
+            <p className="text-sm text-muted">
               POST workload YAML to rank clusters and runtimes for global placement.
             </p>
             <textarea
@@ -570,7 +570,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
               {placeResults.map((rec, i) => (
                 <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="font-medium text-ink">{rec.cluster ?? 'default cluster'}</span>
+                    <span className="font-medium text-foreground">{rec.cluster ?? 'default cluster'}</span>
                     <Badge text={rec.runtime} variant="blue" />
                     <Badge text={`score ${rec.score.toFixed(2)}`} variant={i === 0 ? 'green' : 'muted'} />
                     {rec.cluster && (
@@ -582,13 +582,13 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
                       </Link>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-ink-2 mb-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted mb-2">
                     <span>Latency {rec.latency_score.toFixed(2)}</span>
                     <span>Cost {rec.cost_score.toFixed(2)}</span>
                     <span>GPU {rec.gpu_available ? 'available' : 'none'}</span>
                   </div>
                   {rec.reasons.length > 0 && (
-                    <ul className="text-xs text-ink-3 space-y-1">
+                    <ul className="text-xs text-subtle space-y-1">
                       {rec.reasons.map((r) => (
                         <li key={r}>• {r}</li>
                       ))}

@@ -206,7 +206,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   function GitOpsFileCell({ filePath }: { filePath: string }) {
     const workloadName = workloadNameFromGitOpsPath(filePath);
     if (!workloadName) {
-      return <span className="font-mono text-xs text-ink-2">{filePath}</span>;
+      return <span className="font-mono text-xs text-muted">{filePath}</span>;
     }
     return (
       <button
@@ -367,35 +367,35 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
           <GitBranch className="w-5 h-5 text-brand" />
-          <h2 className="text-lg font-semibold text-ink">GitOps reconciliation</h2>
+          <h2 className="text-lg font-semibold text-foreground">GitOps reconciliation</h2>
           {data?.configured !== false && <Badge text="CONFIGURED" variant="green" />}
           {data?.configured === false && <Badge text="NOT CONFIGURED" variant="muted" />}
         </div>
         {loading ? (
-          <p className="text-sm text-ink-3">Loading gitops status…</p>
+          <p className="text-sm text-subtle">Loading gitops status…</p>
         ) : data?.configured === false ? (
           <div className="space-y-4">
-            <p className="text-sm text-ink-2 leading-relaxed">
+            <p className="text-sm text-muted leading-relaxed">
               {data.hint ?? 'GitOps is not configured on this server.'}
             </p>
             <form onSubmit={(e) => void initGitOps(e)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
               <div className="sm:col-span-2">
-                <label className="block text-xs text-ink-3 mb-1">Repository URL</label>
+                <label className="block text-xs text-subtle mb-1">Repository URL</label>
                 <input
                   type="url"
                   value={initRepo}
                   onChange={(e) => setInitRepo(e.target.value)}
                   placeholder="https://github.com/org/aether-workloads.git"
-                  className="glass-input text-ink"
+                  className="glass-input text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-xs text-ink-3 mb-1">Branch</label>
+                <label className="block text-xs text-subtle mb-1">Branch</label>
                 <input
                   type="text"
                   value={initBranch}
                   onChange={(e) => setInitBranch(e.target.value)}
-                  className="glass-input text-ink"
+                  className="glass-input text-foreground"
                 />
               </div>
               <div className="flex items-end">
@@ -408,13 +408,13 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 </button>
               </div>
             </form>
-            {initMessage && <p className="text-sm text-ink-2">{initMessage}</p>}
+            {initMessage && <p className="text-sm text-muted">{initMessage}</p>}
           </div>
         ) : (
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Repository</dt>
-              <dd className="text-ink break-all">
+              <dt className="text-xs uppercase tracking-wider text-subtle mb-1">Repository</dt>
+              <dd className="text-foreground break-all">
                 {data?.repo_url && /^https?:\/\//i.test(data.repo_url) ? (
                   <a
                     href={data.repo_url}
@@ -432,18 +432,18 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Branch</dt>
-              <dd className="text-ink">{data?.branch ?? '—'}</dd>
+              <dt className="text-xs uppercase tracking-wider text-subtle mb-1">Branch</dt>
+              <dd className="text-foreground">{data?.branch ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Last sync</dt>
-              <dd className="text-ink">
+              <dt className="text-xs uppercase tracking-wider text-subtle mb-1">Last sync</dt>
+              <dd className="text-foreground">
                 {data?.last_sync ? formatTimestamp(data.last_sync) : '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-ink-3 mb-1">Status</dt>
-              <dd className="text-ink">
+              <dt className="text-xs uppercase tracking-wider text-subtle mb-1">Status</dt>
+              <dd className="text-foreground">
                 {typeof data?.status === 'string'
                   ? data.status
                   : data?.status
@@ -485,13 +485,13 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {syncResult && (
         <div className="glass" data-testid="gitops-sync-result">
-          <h3 className="text-sm font-semibold text-ink mb-3">Last sync result</h3>
-          <p className="text-sm text-ink-2 mb-3">{parsedSync.summary}</p>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Last sync result</h3>
+          <p className="text-sm text-muted mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
             <div className="mb-4 glass-table-shell overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">Confidential</th>
@@ -530,13 +530,13 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-ink-2">
+                      <td className="py-2 pr-4 font-mono text-xs text-muted">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
                       <td className="py-2 pr-4">
                         <Badge text={confidentialLabel} variant={confidentialVariant} />
                       </td>
-                      <td className="py-2 font-mono text-xs text-ink-3 truncate max-w-[12rem]" title={c.commit}>
+                      <td className="py-2 font-mono text-xs text-subtle truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>
@@ -549,7 +549,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
             <div className="mb-4 glass-table-shell overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle">
                   Confidential compliance
                 </h4>
                 <button
@@ -563,7 +563,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
               </div>
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2 pr-4">GitOps issues</th>
@@ -575,7 +575,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     .filter((row) => row.confidential_enabled)
                     .map((row) => (
                       <tr key={row.file_path} className="glass-table-row align-top">
-                        <td className="py-2 pr-4 text-ink">
+                        <td className="py-2 pr-4 text-foreground">
                           {row.workload ? (
                             <button
                               type="button"
@@ -596,7 +596,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                             '—'
                           )}
                         </td>
-                        <td className="py-2 pr-4 font-mono text-xs text-ink-2">{row.file_path}</td>
+                        <td className="py-2 pr-4 font-mono text-xs text-muted">{row.file_path}</td>
                         <td className="py-2 pr-4 text-xs text-amber-200/90">
                           {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
                         </td>
@@ -621,8 +621,8 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 .filter(([key]) => key !== 'changes' && key !== 'confidential_compliance')
                 .map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <dt className="text-ink-3 shrink-0">{key}:</dt>
-                    <dd className="text-ink-2 break-all">
+                    <dt className="text-subtle shrink-0">{key}:</dt>
+                    <dd className="text-muted break-all">
                       {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                     </dd>
                   </div>
@@ -636,7 +636,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
         <div data-testid="gitops-sync-confirm">
-        <p className="text-sm text-ink-2 mb-4">
+        <p className="text-sm text-muted mb-4">
           Pull from <span className="font-mono text-brand">{data?.repo_url ?? 'repository'}</span> and apply
           detected YAML changes. Review the diff preview below before syncing.
         </p>
@@ -645,16 +645,16 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           data-testid="gitops-diff-preview"
         >
           {previewLoading ? (
-            <p className="text-sm text-ink-3">Loading pending changes…</p>
+            <p className="text-sm text-subtle">Loading pending changes…</p>
           ) : previewError ? (
             <p className="text-sm text-red-400">{previewError}</p>
           ) : previewChanges.length === 0 ? (
-            <p className="text-sm text-ink-3">No YAML changes detected in the latest commit.</p>
+            <p className="text-sm text-subtle">No YAML changes detected in the latest commit.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-ink-3">
+                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
                     <th className="py-2 pr-4">Change</th>
                     <th className="py-2 pr-4">File</th>
                     <th className="py-2">Commit</th>
@@ -675,10 +675,10 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                           }
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-ink-2">
+                      <td className="py-2 pr-4 font-mono text-xs text-muted">
                         <GitOpsFileCell filePath={c.file_path} />
                       </td>
-                      <td className="py-2 font-mono text-xs text-ink-3 truncate max-w-[12rem]" title={c.commit}>
+                      <td className="py-2 font-mono text-xs text-subtle truncate max-w-[12rem]" title={c.commit}>
                         {c.commit.slice(0, 12)}
                       </td>
                     </tr>

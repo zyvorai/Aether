@@ -77,7 +77,7 @@ export default function AutonomousPlacementPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -85,23 +85,23 @@ export default function AutonomousPlacementPanel() {
         </div>}
     ><div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-ink">{status?.workloads.length ?? 0}</div>
-          <div className="text-xs text-ink-3">Tracked workloads</div>
+          <div className="text-2xl font-semibold text-foreground">{status?.workloads.length ?? 0}</div>
+          <div className="text-xs text-subtle">Tracked workloads</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-emerald-300">{candidates.length}</div>
-          <div className="text-xs text-ink-3">Migration candidates</div>
+          <div className="text-xs text-subtle">Migration candidates</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-violet-300">
             {status?.workloads.filter((w) => w.auto_eligible).length ?? 0}
           </div>
-          <div className="text-xs text-ink-3">Auto-eligible</div>
+          <div className="text-xs text-subtle">Auto-eligible</div>
         </div>
       </div>
 
       {!candidates.length ? (
-        <p className="text-sm text-ink-3">Fleet placement is optimal — no runtime shifts recommended.</p>
+        <p className="text-sm text-subtle">Fleet placement is optimal — no runtime shifts recommended.</p>
       ) : (
         <ul className="space-y-3">
           {candidates.slice(0, 8).map((row) => (
@@ -119,12 +119,12 @@ export default function AutonomousPlacementPanel() {
                   </Link>
                   {row.auto_eligible ? <Badge text="auto-eligible" variant="green" /> : null}
                 </div>
-                <p className="mt-1 text-sm text-ink-2">
+                <p className="mt-1 text-sm text-muted">
                   {row.current_runtime} → {row.recommended_runtime} · +{row.improvement_pct.toFixed(0)}% improvement
                 </p>
-                <p className="mt-1 text-xs text-ink-3">{row.reasons[0] ?? 'Scoring engine recommendation'}</p>
+                <p className="mt-1 text-xs text-subtle">{row.reasons[0] ?? 'Scoring engine recommendation'}</p>
               </div>
-              <div className="text-right text-sm text-ink-2">
+              <div className="text-right text-sm text-muted">
                 {formatPercent(row.confidence, 0)} conf.
               </div>
             </li>

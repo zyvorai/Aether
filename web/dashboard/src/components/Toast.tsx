@@ -75,12 +75,12 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
       }`}
     >
       <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
-      <p className="flex-1 text-sm text-ink">{item.message}</p>
+      <p className="flex-1 text-sm text-foreground">{item.message}</p>
       <button
         type="button"
         onClick={() => onDismiss(item.id)}
         aria-label="Dismiss notification"
-        className="shrink-0 rounded p-0.5 text-ink-3 transition-colors hover:text-ink-2"
+        className="shrink-0 rounded p-0.5 text-subtle transition-colors hover:text-muted"
       >
         <X className="h-4 w-4" />
       </button>

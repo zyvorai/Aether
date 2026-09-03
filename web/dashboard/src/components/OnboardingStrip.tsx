@@ -117,30 +117,30 @@ export default function OnboardingStrip({
                   : ''
               }`}
             >
-              <span className="mt-0.5 shrink-0 text-xs font-mono text-ink-3">
+              <span className="mt-0.5 shrink-0 text-xs font-mono text-subtle">
                 {index + 1}
               </span>
               {step.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
               ) : (
-                <Circle className="h-4 w-4 shrink-0 mt-0.5 text-ink-3" aria-hidden />
+                <Circle className="h-4 w-4 shrink-0 mt-0.5 text-subtle" aria-hidden />
               )}
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-ink">
+                <span className="block text-sm font-medium text-foreground">
                   {step.label}
                 </span>
-                <span className="block text-xs mt-1 text-ink-3">
+                <span className="block text-xs mt-1 text-subtle">
                   {step.description}
                 </span>
               </span>
               {step.id === 'validate' ? (
-                <ClipboardCheck className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
+                <ClipboardCheck className="hidden sm:block h-4 w-4 shrink-0 text-subtle" aria-hidden />
               ) : null}
               {step.id === 'deploy' ? (
-                <Rocket className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
+                <Rocket className="hidden sm:block h-4 w-4 shrink-0 text-subtle" aria-hidden />
               ) : null}
               {step.id === 'health' ? (
-                <HeartPulse className="hidden sm:block h-4 w-4 shrink-0 text-ink-3" aria-hidden />
+                <HeartPulse className="hidden sm:block h-4 w-4 shrink-0 text-subtle" aria-hidden />
               ) : null}
             </button>
           </li>

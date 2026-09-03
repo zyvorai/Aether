@@ -51,7 +51,7 @@ function severityTone(severity: string): string {
   const s = severity.toLowerCase();
   if (s === 'critical' || s === 'high') return 'border-red-500/30 bg-red-500/10 text-red-200';
   if (s === 'medium') return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
-  return 'glass text-ink-2';
+  return 'glass text-muted';
 }
 
 function contextualSubtitle(issueCount: number, fleetHealth: number): string {
@@ -130,9 +130,9 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
             <Sparkles className="h-4 w-4 text-brand" aria-hidden />
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">Command Center</p>
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{briefing.greeting}</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="max-w-2xl text-sm leading-relaxed text-ink-2">
+            <p className="max-w-2xl text-sm leading-relaxed text-muted">
               {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
             </p>
             {clusterContext ? (
@@ -146,7 +146,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
         </div>
         <div className="live-intelligence-badge">
           <span className="live-intelligence-dot" />
-          <span className="text-xs font-medium text-ink">Live Intelligence</span>
+          <span className="text-xs font-medium text-foreground">Live Intelligence</span>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           value={
             <>
               {formatUSD(briefing.potential_savings_usd)}
-              <span className="ml-1 text-sm font-normal text-ink-3">/mo</span>
+              <span className="ml-1 text-sm font-normal text-subtle">/mo</span>
             </>
           }
           icon={<DollarSign className="h-3.5 w-3.5" />}
@@ -228,7 +228,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           <button
             type="button"
             onClick={() => onNavigate('fabric')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 hover:text-ink"
+            className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 hover:text-foreground"
           >
             Open Fabric
             <ArrowRight className="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
       {briefing.issues.length > 0 ? (
         <div className="mt-8 space-y-3">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-3">Active signals</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-subtle">Active signals</h3>
           <div className="grid gap-2 lg:grid-cols-2">
             {briefing.issues.slice(0, 4).map((issue, i) => (
               <div

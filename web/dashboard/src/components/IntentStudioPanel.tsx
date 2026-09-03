@@ -75,7 +75,7 @@ export default function IntentStudioPanel() {
       icon={<Sparkles className="h-5 w-5 text-violet-400" />}
     >
       <label className="mb-4 block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-ink-3">Workload name</span>
+          <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-subtle">Workload name</span>
           <input
             value={workloadName}
             onChange={(e) => setWorkloadName(e.target.value)}
@@ -85,7 +85,7 @@ export default function IntentStudioPanel() {
         </label>
 
         <div className="mb-6">
-          <span className="mb-3 block text-xs font-medium uppercase tracking-wider text-ink-3">What matters?</span>
+          <span className="mb-3 block text-xs font-medium uppercase tracking-wider text-subtle">What matters?</span>
           <div className="flex flex-wrap gap-2">
             {GOALS.map((goal) => {
               const active = selected.has(goal.id);
@@ -97,7 +97,7 @@ export default function IntentStudioPanel() {
                   className={`rounded-full border px-4 py-2 text-sm transition ${
                     active
                       ? 'border-violet-500/50 bg-violet-500/15 text-violet-100'
-                      : 'glass-divider glass text-ink-2 hover:border-brand/30'
+                      : 'glass-divider glass text-muted hover:border-brand/30'
                   }`}
                   data-testid={`intent-goal-${goal.id}`}
                 >
@@ -142,7 +142,7 @@ export default function IntentStudioPanel() {
         ) : null}
 
         {generatedYaml ? (
-          <pre className="glass-code-block-body mt-6 text-xs text-ink-2" data-testid="intent-generated-yaml">
+          <pre className="glass-code-block-body mt-6 text-xs text-muted" data-testid="intent-generated-yaml">
             {generatedYaml}
           </pre>
         ) : null}

@@ -55,7 +55,7 @@ export function getRuntimeColor(runtime: string): string {
   if (r.includes('kube') || r.includes('k8s')) return 'text-sage';
   if (r.includes('metal')) return 'text-brand';
   if (r.includes('docker')) return 'text-mistblue';
-  return 'text-ink-3';
+  return 'text-subtle';
 }
 
 export function getRuntimeBg(runtime: string): string {
@@ -65,7 +65,7 @@ export function getRuntimeBg(runtime: string): string {
   if (r.includes('kube') || r.includes('k8s')) return 'bg-sage/10 text-sage border-sage/20';
   if (r.includes('metal')) return 'bg-brand-wash text-brand border-brand-wash';
   if (r.includes('docker')) return 'bg-mistblue/10 text-mistblue border-mistblue/20';
-  return 'bg-hover text-ink-3 border-rule';
+  return 'bg-hover text-subtle border-rule';
 }
 
 export function getSeverityColor(severity: string): string {

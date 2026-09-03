@@ -296,7 +296,7 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 type="button"
                 data-testid="events-clear-filters"
                 onClick={clearFilters}
-                className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:text-brand hover:border-brand/40"
+                className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:text-brand hover:border-brand/40"
               >
                 Clear filters
               </button>
@@ -319,9 +319,9 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <Badge text={ev.category} variant="muted" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-ink">{ev.title}</div>
-                  <div className="text-xs text-ink-2 mt-1">{ev.message}</div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-ink-3 flex-wrap">
+                  <div className="text-sm font-medium text-foreground">{ev.title}</div>
+                  <div className="text-xs text-muted mt-1">{ev.message}</div>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-subtle flex-wrap">
                     <span>{formatTimestamp(ev.timestamp)}</span>
                     {ev.workload ? (
                       <span>

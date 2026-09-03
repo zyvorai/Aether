@@ -23,10 +23,10 @@ interface GlassSectionProps {
 }
 
 const labelClass: Record<GlassAccent, string> = {
-  blue: 'text-ink-3',
-  purple: 'text-ink-3',
+  blue: 'text-subtle',
+  purple: 'text-subtle',
   red: 'text-danger',
-  neutral: 'text-ink-3',
+  neutral: 'text-subtle',
 };
 
 /** Aurora flat section — legacy name kept for panel call sites. */

@@ -37,15 +37,15 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       <button type="button" onClick={onOpen} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-base font-semibold text-ink truncate">{applicationLabel(app)}</h3>
-            <p className="text-xs text-ink-3 mt-0.5">
+            <h3 className="text-base font-semibold text-foreground truncate">{applicationLabel(app)}</h3>
+            <p className="text-xs text-subtle mt-0.5">
               {workspaceLabel(app.namespace)}
               {app.cluster ? ` · ${app.cluster}` : ''}
             </p>
           </div>
           <Badge text={app.status} variant={statusVariant} />
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-ink-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
           <div className="flex items-center gap-1.5">
             <Layers size={14} className="text-brand shrink-0" />
             <span className="truncate">{app.kind ?? 'Application'}</span>
@@ -67,7 +67,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         <button
           type="button"
           onClick={onLogs}
-          className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
+          className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-muted"
         >
           <FileText size={12} /> Logs
         </button>
@@ -75,7 +75,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onScale}
-            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-muted"
           >
             <Layers size={12} /> Scale
           </button>
@@ -84,7 +84,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
           <button
             type="button"
             onClick={onRestart}
-            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-ink-2"
+            className="inline-flex items-center gap-1 quick-link-chip px-2.5 py-1.5 text-xs text-muted"
           >
             <RefreshCw size={12} /> Restart
           </button>

@@ -81,11 +81,11 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
     <div className="space-y-4" data-testid="policy-check-result">
       <div className="flex items-center gap-3">
         <Badge text={result.passed ? 'PASSED' : 'FAILED'} variant={result.passed ? 'green' : 'red'} />
-        <span className="text-sm text-ink-2">{result.policies_evaluated} policies evaluated</span>
+        <span className="text-sm text-muted">{result.policies_evaluated} policies evaluated</span>
       </div>
       {result.violations.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-ink-2 mb-2 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
             <AlertCircle size={16} className="text-red-400" />
             Violations ({result.violations.length})
           </h4>
@@ -93,11 +93,11 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
             {result.violations.map((v, i) => (
               <div key={i} className="bg-red-500/5 border border-red-500/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-ink text-sm">{v.policy}</span>
+                  <span className="font-medium text-foreground text-sm">{v.policy}</span>
                   <SeverityBadge severity={v.severity} />
                 </div>
-                <div className="text-sm text-ink-2">{v.message}</div>
-                <div className="flex gap-4 text-xs text-ink-3 mt-1">
+                <div className="text-sm text-muted">{v.message}</div>
+                <div className="flex gap-4 text-xs text-subtle mt-1">
                   <span>Rule: {v.rule}</span>
                   <span>Field: {v.field}</span>
                 </div>
@@ -108,15 +108,15 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
       {result.warnings.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-ink-2 mb-2 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-400" />
             Warnings ({result.warnings.length})
           </h4>
           <div className="space-y-2">
             {result.warnings.map((w, i) => (
               <div key={i} className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
-                <div className="font-medium text-ink text-sm mb-1">{w.policy}</div>
-                <div className="text-sm text-ink-2">{w.message}</div>
+                <div className="font-medium text-foreground text-sm mb-1">{w.policy}</div>
+                <div className="text-sm text-muted">{w.message}</div>
                 <div className="text-xs text-amber-400 mt-1">{w.suggestion}</div>
               </div>
             ))}
@@ -242,7 +242,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
       {!opaProbeLoading && !opaProbeFailed && !opaConfigured ? (
         <div
           data-testid="policy-opa-setup-banner"
-          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass/60 px-4 py-3 text-sm text-ink-2"
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border glass-divider/80 glass/60 px-4 py-3 text-sm text-muted"
         >
           <span>OPA is not configured — built-in policy check works below; enable OPA admission on Platform &amp; HA.</span>
           <button
@@ -265,14 +265,14 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {opaConfigured && (
         <div className="glass mb-6">
-          <h2 className="text-lg font-semibold text-ink mb-2 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
             <ShieldCheck size={20} className="text-brand" />
             OPA admission (live)
           </h2>
-          <p className="text-sm text-ink-3 mb-4">
+          <p className="text-sm text-subtle mb-4">
             Evaluates Kubernetes manifest JSON against the OPA server configured via{' '}
-            <code className="text-ink-2">AETHER_OPA_URL</code>. With{' '}
-            <code className="text-ink-2">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
+            <code className="text-muted">AETHER_OPA_URL</code>. With{' '}
+            <code className="text-muted">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
           </p>
           <textarea
             value={opaManifest}
@@ -294,7 +294,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
             <div className="mt-4" data-testid="policy-opa-result">
               <Badge text={opaResult.allowed ? 'ALLOWED' : 'DENIED'} variant={opaResult.allowed ? 'green' : 'red'} />
               {opaResult.denials.length > 0 && (
-                <ul className="mt-3 space-y-2 text-sm text-ink-2">
+                <ul className="mt-3 space-y-2 text-sm text-muted">
                   {opaResult.denials.map((d) => (
                     <li key={d} className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
                       {d}

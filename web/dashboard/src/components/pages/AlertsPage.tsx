@@ -278,7 +278,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <Radio className="text-brand" size={20} />
-              <h2 className="text-lg font-semibold text-ink">Notification channels</h2>
+              <h2 className="text-lg font-semibold text-foreground">Notification channels</h2>
             </div>
             <button
               type="button"
@@ -290,7 +290,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             </button>
           </div>
           {channels.length === 0 && !showAddChannel && (
-            <p className="text-sm text-ink-3 mb-4">
+            <p className="text-sm text-subtle mb-4">
               No channels configured.{' '}
               <Link to={viewToPath('platform')} className="text-brand hover:underline">
                 Configure audit webhooks on Platform →
@@ -355,22 +355,22 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   className="glass px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-ink">{ch.name}</span>
+                    <span className="font-medium text-foreground">{ch.name}</span>
                     <div className="flex items-center gap-2">
                       <Badge text={ch.enabled ? 'enabled' : 'disabled'} variant={ch.enabled ? 'green' : 'muted'} />
                       <button
                         type="button"
                         onClick={() => void handleDeleteChannel(ch.name)}
                         disabled={channelDeleting === ch.name}
-                        className="p-1.5 text-ink-3 hover:text-red-400 rounded"
+                        className="p-1.5 text-subtle hover:text-red-400 rounded"
                         title="Remove channel"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-ink-2 mt-1 capitalize">{ch.channel_type}</p>
-                  <p className="text-xs text-ink-3 mt-1">
+                  <p className="text-sm text-muted mt-1 capitalize">{ch.channel_type}</p>
+                  <p className="text-xs text-subtle mt-1">
                     Min severity: {ch.min_severity}
                     {ch.categories.length > 0 ? ` · categories: ${ch.categories.join(', ')}` : ''}
                   </p>
@@ -384,14 +384,14 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <BellRing className="text-amber-400" size={20} />
-              <h2 className="text-lg font-semibold text-ink">Alert rules</h2>
+              <h2 className="text-lg font-semibold text-foreground">Alert rules</h2>
             </div>
             <Link to={viewToPath('events')} className="text-xs text-brand hover:underline" data-testid="alerts-rules-events-link">
               Events feed →
             </Link>
           </div>
           {rules.length === 0 ? (
-            <p className="text-sm text-ink-3">
+            <p className="text-sm text-subtle">
               {workloadFocus
                 ? `No alert rules mention "${workloadFocus}". Check the events feed for delivery history.`
                 : 'No alert rules configured.'}
@@ -404,7 +404,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   className="glass px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-medium text-ink">{rule.name}</span>
+                    <span className="font-medium text-foreground">{rule.name}</span>
                     <div className="flex items-center gap-2 flex-wrap">
                       {rule.workload ? (
                         <Link
@@ -418,8 +418,8 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       <Badge text={rule.enabled ? 'on' : 'off'} variant={rule.enabled ? 'green' : 'muted'} />
                     </div>
                   </div>
-                  <p className="text-sm text-ink-2 mt-1">{rule.condition}</p>
-                  <p className="text-xs text-ink-3 mt-1">
+                  <p className="text-sm text-muted mt-1">{rule.condition}</p>
+                  <p className="text-xs text-subtle mt-1">
                     Severity {rule.severity} · cooldown {rule.cooldown_seconds}s
                     {rule.last_triggered ? ` · last: ${rule.last_triggered}` : ''}
                   </p>
@@ -433,10 +433,10 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass mt-6">
         <div className="flex items-center gap-3 mb-4">
           <Send className="text-blue-400" size={20} />
-          <h2 className="text-lg font-semibold text-ink">Test webhook</h2>
+          <h2 className="text-lg font-semibold text-foreground">Test webhook</h2>
         </div>
-        <p className="text-sm text-ink-3 mb-4">
-          Emits a test event through the selected channel (same as <code className="text-ink-2">aether webhook test</code>).
+        <p className="text-sm text-subtle mb-4">
+          Emits a test event through the selected channel (same as <code className="text-muted">aether webhook test</code>).
         </p>
         <div className="flex flex-wrap gap-3 items-center">
           <select
@@ -464,7 +464,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-ink">Webhook retry queue</h2>
+          <h2 className="text-lg font-semibold text-foreground">Webhook retry queue</h2>
           <button
             type="button"
             data-testid="alerts-flush-queue"
@@ -476,7 +476,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </button>
         </div>
         {queue.length === 0 ? (
-          <p className="text-sm text-ink-3">No pending webhook deliveries.</p>
+          <p className="text-sm text-subtle">No pending webhook deliveries.</p>
         ) : (
           <CardGrid columns="compact">
             {queue.map((item, i) => (
@@ -489,7 +489,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 titleTooltip={item.url}
                 subtitle={`${item.method} · next ${item.next_attempt_at.slice(0, 19)}`}
                 body={
-                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                  <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                     Attempts {item.attempts}/{item.max_attempts}
                   </span>
                 }

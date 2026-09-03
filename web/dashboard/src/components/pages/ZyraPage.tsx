@@ -229,7 +229,7 @@ function ZyraPage() {
             <Bot className="h-4 w-4 text-aether-ai" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-ink">AI Ops Zyra</h2>
+            <h2 className="text-sm font-semibold text-foreground">AI Ops Zyra</h2>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
               Infrastructure agent
             </p>
@@ -243,13 +243,13 @@ function ZyraPage() {
                 setSessionId(null);
                 setPending([]);
               }}
-              className="rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 transition hover:border-brand/30 hover:text-ink"
+              className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted transition hover:border-brand/30 hover:text-foreground"
             >
               Clear chat
             </button>
           )}
           {messages.length === 0 && (
-            <span className="text-xs text-ink-3">Natural language control plane</span>
+            <span className="text-xs text-subtle">Natural language control plane</span>
           )}
           <Link
             to={viewToPath('intelligence')}
@@ -300,7 +300,7 @@ function ZyraPage() {
           {messages.length === 0 && (
             <div className="rounded-2xl border border-primary/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
-              <p className="text-sm text-ink-2">
+              <p className="text-sm text-muted">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2" data-testid="copilot-suggestions">
@@ -329,7 +329,7 @@ function ZyraPage() {
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
                 msg.role === 'user'
                   ? 'ml-auto border border-primary/20 bg-gradient-to-br from-primary/20 to-primary/80/15 text-violet-50'
-                  : 'border glass-divider glass-inset-surface text-ink'
+                  : 'border glass-divider glass-inset-surface text-foreground'
               }`}
             >
               {msg.content}
@@ -352,7 +352,7 @@ function ZyraPage() {
                 ) : null}
               </div>
               {pending.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-ink-2">
+                <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs text-muted">
                   <span>{a.description}</span>
                   <button
                     type="button"
@@ -367,7 +367,7 @@ function ZyraPage() {
           )}
 
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-ink-3">
+            <div className="flex items-center gap-2 text-xs text-subtle">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
               Zyra is thinking…
             </div>
@@ -391,7 +391,7 @@ function ZyraPage() {
             placeholder="Ask Aether anything…"
             aria-label="Message Zyra"
             data-testid="copilot-input"
-            className="glass-input min-w-0 flex-1 text-ink outline-none transition focus:border-primary/45 focus:ring-1 focus:ring-aether-ai/20"
+            className="glass-input min-w-0 flex-1 text-foreground outline-none transition focus:border-primary/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button

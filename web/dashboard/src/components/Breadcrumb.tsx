@@ -49,19 +49,19 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
         <button
           type="button"
           onClick={() => onNavigate('overview')}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] text-ink-2 transition hover:bg-white/[0.04] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-white/[0.04] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
         >
           <Home className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           <span className="hidden sm:inline">Home</span>
         </button>
         {explicitParent ? (
           <>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden />
             <button
               type="button"
               data-testid="breadcrumb-parent"
               onClick={() => onNavigate(explicitParent.view)}
-              className="truncate rounded-lg px-2 py-1 text-[13px] text-ink-2 transition hover:bg-white/[0.04] hover:text-ink"
+              className="truncate rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-white/[0.04] hover:text-foreground"
             >
               {explicitParent.label}
             </button>
@@ -69,17 +69,17 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
         ) : null}
         {groupLabel ? (
           <>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
-            <span data-testid="breadcrumb-group" className="truncate px-2 py-1 text-[13px] text-ink-3">
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden />
+            <span data-testid="breadcrumb-group" className="truncate px-2 py-1 text-[13px] text-subtle">
               {groupLabel}
             </span>
           </>
         ) : null}
-        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
-        <span className="truncate px-2 py-1 text-[13px] font-medium text-ink">{label}</span>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden />
+        <span className="truncate px-2 py-1 text-[13px] font-medium text-foreground">{label}</span>
         {workload ? (
           <>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-subtle" aria-hidden />
             <button
               type="button"
               data-testid="breadcrumb-workload"

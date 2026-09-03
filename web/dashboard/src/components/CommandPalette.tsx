@@ -1181,7 +1181,7 @@ export default function CommandPalette({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-rule px-4 py-4">
-          <span className="mr-2 font-mono text-sm text-ink-3">{'>'}</span>
+          <span className="mr-2 font-mono text-sm text-subtle">{'>'}</span>
           <input
             ref={inputRef}
             type="text"
@@ -1190,15 +1190,15 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
-            className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+            className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-subtle"
             autoComplete="off"
           />
-          <kbd className="rounded border border-rule px-1.5 py-0.5 text-xs text-ink-3">ESC</kbd>
+          <kbd className="rounded border border-rule px-1.5 py-0.5 text-xs text-subtle">ESC</kbd>
         </div>
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-sm text-ink-3">
+            <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-sm text-subtle">
               No results found
             </div>
           ) : (
@@ -1208,7 +1208,7 @@ export default function CommandPalette({
               return (
                 <div key={cmd.id}>
                   {showCategory ? (
-                    <div className="px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-ink-3">
+                    <div className="px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-subtle">
                       {categoryLabels[cmd.category]}
                     </div>
                   ) : null}
@@ -1219,12 +1219,12 @@ export default function CommandPalette({
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
                     className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
-                      i === selectedIndex ? 'bg-brand-wash text-brand' : 'text-ink-2 hover:bg-hover'
+                      i === selectedIndex ? 'bg-brand-wash text-brand' : 'text-muted hover:bg-hover'
                     }`}
                   >
                     <span className="flex-1 truncate">{cmd.label}</span>
-                    {cmd.view ? <span className="shrink-0 text-xs text-ink-3">Navigate</span> : null}
-                    {cmd.workloadTab ? <span className="shrink-0 text-xs text-ink-3">{cmd.workloadTab}</span> : null}
+                    {cmd.view ? <span className="shrink-0 text-xs text-subtle">Navigate</span> : null}
+                    {cmd.workloadTab ? <span className="shrink-0 text-xs text-subtle">{cmd.workloadTab}</span> : null}
                   </button>
                 </div>
               );
@@ -1232,7 +1232,7 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule px-4 py-3 text-xs text-ink-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule px-4 py-3 text-xs text-subtle">
           <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
           <span>↑↓ navigate</span>
           <span>Enter select</span>

@@ -110,14 +110,14 @@ export default function SelfHealingPanel() {
             type="button"
             onClick={() => void runRemediation(true)}
             disabled={executing}
-            className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40 disabled:opacity-60"
+            className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40 disabled:opacity-60"
           >
             Dry-run remediation
           </button>
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -127,24 +127,24 @@ export default function SelfHealingPanel() {
     >
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-ink">{preview?.would_execute.length ?? 0}</div>
-          <div className="text-xs text-ink-3">Would execute</div>
+          <div className="text-2xl font-semibold text-foreground">{preview?.would_execute.length ?? 0}</div>
+          <div className="text-xs text-subtle">Would execute</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <div className="text-2xl font-semibold text-amber-200">{preview?.would_skip.length ?? 0}</div>
-          <div className="text-xs text-ink-3">Blocked by policy</div>
+          <div className="text-xs text-subtle">Blocked by policy</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-ink">{remediation?.actions.length ?? 0}</div>
-          <div className="text-xs text-ink-3">Remediation actions queued</div>
+          <div className="text-2xl font-semibold text-foreground">{remediation?.actions.length ?? 0}</div>
+          <div className="text-xs text-subtle">Remediation actions queued</div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">Healer preview</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-subtle">Healer preview</p>
           {!preview?.would_execute.length && !preview?.would_skip.length ? (
-            <p className="text-sm text-ink-3">No pending healing actions.</p>
+            <p className="text-sm text-subtle">No pending healing actions.</p>
           ) : (
             <ul className="space-y-2">
               {preview?.would_execute.map((line) => (
@@ -154,7 +154,7 @@ export default function SelfHealingPanel() {
                 </li>
               ))}
               {preview?.would_skip.map((line) => (
-                <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+                <li key={line} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
                   {line}
                 </li>
               ))}
@@ -163,19 +163,19 @@ export default function SelfHealingPanel() {
         </div>
 
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">Remediation plan</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-subtle">Remediation plan</p>
           {!remediation?.actions.length ? (
-            <p className="text-sm text-ink-3">No anomaly or drift remediation queued.</p>
+            <p className="text-sm text-subtle">No anomaly or drift remediation queued.</p>
           ) : (
             <ul className="space-y-2">
               {remediation.actions.slice(0, 6).map((action) => (
                 <li key={`${action.action_type}-${action.target}`} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-ink">{action.action_type}</span>
+                    <span className="font-medium text-foreground">{action.action_type}</span>
                     <Badge text={action.target} variant="muted" />
                     {action.auto_safe ? <Badge text="auto-safe" variant="green" /> : null}
                   </div>
-                  <p className="mt-1 text-xs text-ink-3">{action.reason}</p>
+                  <p className="mt-1 text-xs text-subtle">{action.reason}</p>
                 </li>
               ))}
             </ul>

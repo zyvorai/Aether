@@ -19,7 +19,7 @@ export default function HubPageToc({ items }: HubPageTocProps) {
       aria-label="On this page"
       className="glass-toolbar sticky top-0 z-10 flex flex-wrap gap-2"
     >
-      <span className="text-xs font-medium uppercase tracking-wider text-ink-3">On this page</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-subtle">On this page</span>
       {items.map((item) => (
         <a
           key={item.id}

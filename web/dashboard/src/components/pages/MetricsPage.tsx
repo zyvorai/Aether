@@ -202,7 +202,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
       {!prometheusUrl && !summary?.prometheus_configured ? (
         <div
           data-testid="metrics-prom-setup-banner"
-          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-2"
+          className="glass-context-banner mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted"
         >
           <span>Prometheus is not linked — set Prometheus URL on Platform &amp; HA for live query explorer and external links.</span>
           <button
@@ -240,13 +240,13 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
               <dl className="space-y-2 text-sm">
                 {runtimeEntries.map(([runtime, count]) => (
                   <div key={runtime} className="flex justify-between">
-                    <dt className="text-ink-2">{runtime}</dt>
-                    <dd className="text-ink font-mono">{Math.round(count)}</dd>
+                    <dt className="text-muted">{runtime}</dt>
+                    <dd className="text-foreground font-mono">{Math.round(count)}</dd>
                   </div>
                 ))}
               </dl>
             ) : (
-              <p className="text-sm text-ink-3">No running workload gauges reported yet.</p>
+              <p className="text-sm text-subtle">No running workload gauges reported yet.</p>
             )}
           </div>
           <div className="glass">
@@ -254,51 +254,51 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             {summary.cluster_metrics ? (
               <dl className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">Scope</dt>
-                  <dd className="text-ink">{summary.cluster_metrics.scope}</dd>
+                  <dt className="text-muted">Scope</dt>
+                  <dd className="text-foreground">{summary.cluster_metrics.scope}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">Pods measured</dt>
-                  <dd className="text-ink">{summary.cluster_metrics.pod_count}</dd>
+                  <dt className="text-muted">Pods measured</dt>
+                  <dd className="text-foreground">{summary.cluster_metrics.pod_count}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">Memory</dt>
-                  <dd className="text-ink">{summary.cluster_metrics.total_memory_mib} Mi</dd>
+                  <dt className="text-muted">Memory</dt>
+                  <dd className="text-foreground">{summary.cluster_metrics.total_memory_mib} Mi</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-ink-3 mb-4">Pass <code>cluster=</code> to <code>/api/observability/summary</code> for cluster metrics.</p>
+              <p className="text-sm text-subtle mb-4">Pass <code>cluster=</code> to <code>/api/observability/summary</code> for cluster metrics.</p>
             )}
             {summary.cilium ? (
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">CNI</dt>
-                  <dd className="text-ink">{summary.cilium.cni}</dd>
+                  <dt className="text-muted">CNI</dt>
+                  <dd className="text-foreground">{summary.cilium.cni}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">Egress mode</dt>
-                  <dd className="text-ink">{summary.cilium.egress_mode}</dd>
+                  <dt className="text-muted">Egress mode</dt>
+                  <dd className="text-foreground">{summary.cilium.egress_mode}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">metrics-server</dt>
-                  <dd className="text-ink">{summary.cilium.metrics_server ? 'ok' : 'missing'}</dd>
+                  <dt className="text-muted">metrics-server</dt>
+                  <dd className="text-foreground">{summary.cilium.metrics_server ? 'ok' : 'missing'}</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-sm text-ink-3">Cilium status unavailable from active cluster.</p>
+              <p className="text-sm text-subtle">Cilium status unavailable from active cluster.</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { tab: 'network' }))}
-                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-ink-2 hover:border-brand/40 hover:text-brand"
+                className="rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40 hover:text-brand"
                 data-testid="metrics-cluster-browser-link"
               >
                 Open cluster browser (network)
               </button>
             </div>
             {summary.prometheus_configured && (
-              <p className="mt-3 text-xs text-ink-3">
+              <p className="mt-3 text-xs text-subtle">
                 Prometheus linked — whitelisted queries via <code>/api/observability/prometheus/query</code>
               </p>
             )}
@@ -310,7 +310,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
       {chargeback && (
         <div className="glass mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-lg font-semibold text-ink">Chargeback (showback)</h2>
+            <h2 className="text-lg font-semibold text-foreground">Chargeback (showback)</h2>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -359,7 +359,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 type="button"
                 data-testid="metrics-chargeback-export"
                 onClick={downloadChargebackCsv}
-                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-ink-2 hover:border-brand/40"
+                className="inline-flex items-center gap-1.5 rounded-xl border glass-divider px-3 py-1.5 text-xs text-muted hover:border-brand/40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -367,14 +367,14 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             ) : null}
             </div>
           </div>
-          <p className="text-sm text-ink-2 mb-4">
+          <p className="text-sm text-muted mb-4">
             {chargeback.pricingSource} pricing · {chargeback.region} · fleet ${chargeback.totalMonthlyUsd.toFixed(2)}/mo
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
             <div className="glass-table-shell overflow-x-auto">
-              <table className="w-full text-sm text-left text-ink-2">
-                <thead className="text-xs uppercase text-ink-3 glass-divider-b">
+              <table className="w-full text-sm text-left text-muted">
+                <thead className="text-xs uppercase text-subtle glass-divider-b">
                   <tr>
                     <th className="py-2 pr-4">Workload</th>
                     <th className="py-2 pr-4">Owner</th>
@@ -405,14 +405,14 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
               </table>
             </div>
           ) : (
-            <p className="text-sm text-ink-3">No deployed workloads with readable specs for chargeback.</p>
+            <p className="text-sm text-subtle">No deployed workloads with readable specs for chargeback.</p>
           )}
         </div>
       )}
 
       {(grafanaUrl || prometheusUrl) && (
         <div className="glass mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
-          <p className="text-sm text-ink-2">External observability stack linked to this API.</p>
+          <p className="text-sm text-muted">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
             {grafanaUrl && (
               <a
@@ -429,7 +429,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 href={prometheusUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
+                className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-foreground glass-inset-hover"
               >
                 Prometheus <ExternalLink size={14} />
               </a>
@@ -440,15 +440,15 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {summary?.prometheus_configured && (
         <div className="glass mb-6">
-          <h2 className="text-lg font-semibold text-ink mb-3">Prometheus query explorer</h2>
-          <p className="text-sm text-ink-3 mb-4">Instant queries via the whitelisted API proxy.</p>
+          <h2 className="text-lg font-semibold text-foreground mb-3">Prometheus query explorer</h2>
+          <p className="text-sm text-subtle mb-4">Instant queries via the whitelisted API proxy.</p>
           <form onSubmit={(e) => void runPromQuery(e)} className="flex flex-wrap gap-3 mb-4" data-testid="metrics-prometheus-query">
             <input
               type="text"
               value={promQuery}
               onChange={(e) => setPromQuery(e.target.value)}
               placeholder="e.g. aether_workloads_running or up"
-              className="flex-1 min-w-[200px] glass-input font-mono text-ink"
+              className="flex-1 min-w-[200px] glass-input font-mono text-foreground"
             />
             <button
               type="submit"
@@ -467,14 +467,14 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass">
         <div className="flex items-center justify-between mb-4">
           <h2 className="panel-title">Prometheus metrics</h2>
-          <span className="text-xs text-ink-3">{lineCount} metric lines</span>
+          <span className="text-xs text-subtle">{lineCount} metric lines</span>
         </div>
         <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
       </div>
 
       {search.trim() ? (
         <footer
-          className="mt-6 flex flex-wrap gap-3 text-xs text-ink-3"
+          className="mt-6 flex flex-wrap gap-3 text-xs text-subtle"
           data-testid="metrics-scoped-footer"
         >
           <span>Scoped links for {search.trim()}:</span>

@@ -171,7 +171,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {canMutate && (
         <div className="glass mb-6">
-          <h3 className="text-sm font-semibold text-ink mb-3">Add SLA target</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Add SLA target</h3>
           <form onSubmit={(e) => void handleAddSla(e)} className="flex flex-wrap gap-3" data-testid="sla-add-form">
             <input
               type="text"
@@ -230,7 +230,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
             const sla = slaData[w.name];
             return (
               <div key={w.name} className="glass">
-                <h2 className="text-lg font-semibold text-ink mb-4">
+                <h2 className="text-lg font-semibold text-foreground mb-4">
                   <Link
                     to={pathWithQuery(viewToPath('workloads'), { workload: w.name })}
                     className="hover:text-brand"
@@ -241,30 +241,30 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                 {sla ? (
                   <dl className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <dt className="text-ink-2">Uptime target</dt>
+                      <dt className="text-muted">Uptime target</dt>
                       <dd className="text-emerald-400 font-medium">{sla.uptime_target_pct}%</dd>
                     </div>
                     {sla.max_latency_ms !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-ink-2">Max latency</dt>
-                        <dd className="text-ink">{sla.max_latency_ms}ms</dd>
+                        <dt className="text-muted">Max latency</dt>
+                        <dd className="text-foreground">{sla.max_latency_ms}ms</dd>
                       </div>
                     )}
                     {sla.max_error_rate_pct !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-ink-2">Max error rate</dt>
-                        <dd className="text-ink">{sla.max_error_rate_pct}%</dd>
+                        <dt className="text-muted">Max error rate</dt>
+                        <dd className="text-foreground">{sla.max_error_rate_pct}%</dd>
                       </div>
                     )}
                     {sla.max_restarts_per_day !== null && (
                       <div className="flex justify-between">
-                        <dt className="text-ink-2">Max restarts/day</dt>
-                        <dd className="text-ink">{sla.max_restarts_per_day}</dd>
+                        <dt className="text-muted">Max restarts/day</dt>
+                        <dd className="text-foreground">{sla.max_restarts_per_day}</dd>
                       </div>
                     )}
                   </dl>
                 ) : (
-                  <p className="text-sm text-ink-3">No SLA configured</p>
+                  <p className="text-sm text-subtle">No SLA configured</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-3 text-xs">
                   <Link

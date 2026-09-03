@@ -90,7 +90,7 @@ export default function AgentStatusDock() {
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="glass border border-border shadow-card mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-ink-2 transition hover:border-brand/30 hover:text-blue-200"
+        className="glass border border-border shadow-card mb-2 ml-auto block rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-muted transition hover:border-brand/30 hover:text-blue-200"
       >
         {collapsed ? 'Show agents' : 'Hide agents'}
       </button>
@@ -107,10 +107,10 @@ export default function AgentStatusDock() {
               >
                 <div className="flex items-center gap-2">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${agentStatusDot(agent.status)}`} />
-                  <Icon className="h-3.5 w-3.5 text-ink-2" />
-                  <span className="truncate text-xs font-medium text-ink">{agent.label}</span>
+                  <Icon className="h-3.5 w-3.5 text-muted" />
+                  <span className="truncate text-xs font-medium text-foreground">{agent.label}</span>
                 </div>
-                <div className="mt-1 truncate pl-3.5 text-[11px] text-ink-3">{agent.detail}</div>
+                <div className="mt-1 truncate pl-3.5 text-[11px] text-subtle">{agent.detail}</div>
               </button>
             );
           })}

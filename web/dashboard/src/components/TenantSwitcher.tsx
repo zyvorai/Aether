@@ -28,7 +28,7 @@ export default function TenantSwitcher() {
   if (tenants.length === 0) return null;
 
   return (
-    <label className="hidden items-center gap-2 text-xs text-ink-2 md:flex" data-testid="navbar-tenant-switcher">
+    <label className="hidden items-center gap-2 text-xs text-muted md:flex" data-testid="navbar-tenant-switcher">
       <Building2 className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
       <span className="sr-only">Active tenant</span>
       <select
@@ -38,7 +38,7 @@ export default function TenantSwitcher() {
           setActiveTenantId(next || null);
           setActive(next);
         }}
-        className="max-w-[9rem] truncate rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-1 text-xs text-ink"
+        className="max-w-[9rem] truncate rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-2 py-1 text-xs text-foreground"
         data-testid="navbar-tenant-select"
       >
         <option value="">All tenants</option>

@@ -322,7 +322,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               data-testid="health-clear-filter"
               onClick={() => setStatusFilter('all')}
-              className="rounded-lg border glass-divider px-3 py-2 text-xs text-ink-2 hover:text-brand"
+              className="rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:text-brand"
             >
               Clear filter
             </button>
@@ -355,7 +355,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <RuntimeBadge runtime={w.runtime} />
                       <Badge text={w.circuit ?? 'unknown'} variant={getCircuitVariant(w.circuit ?? 'unknown')} />
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{w.restart_count} restarts</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">{w.restart_count} restarts</span>
                     </div>
                   }
                 />
@@ -365,7 +365,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           {selected && (
             <div className="glass" data-testid="health-detail-panel">
-              <h3 className="text-lg font-semibold text-ink mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Health detail:{' '}
                 <button
                   type="button"
@@ -379,25 +379,25 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div className="glass py-3">
-                  <div className="text-xs text-ink-3 mb-1">Total checks</div>
-                  <div className="text-lg font-semibold text-ink">{selected.history.total_checks}</div>
+                  <div className="text-xs text-subtle mb-1">Total checks</div>
+                  <div className="text-lg font-semibold text-foreground">{selected.history.total_checks}</div>
                 </div>
                 <div className="glass py-3">
-                  <div className="text-xs text-ink-3 mb-1">Ready checks</div>
+                  <div className="text-xs text-subtle mb-1">Ready checks</div>
                   <div className="text-lg font-semibold text-emerald-400">{selected.history.ready_checks}</div>
                 </div>
                 <div className="glass py-3">
-                  <div className="text-xs text-ink-3 mb-1">Uptime</div>
-                  <div className="text-lg font-semibold text-ink">{selected.history.uptime_percent.toFixed(2)}%</div>
+                  <div className="text-xs text-subtle mb-1">Uptime</div>
+                  <div className="text-lg font-semibold text-foreground">{selected.history.uptime_percent.toFixed(2)}%</div>
                 </div>
                 <div className="glass py-3">
-                  <div className="text-xs text-ink-3 mb-1">Last state</div>
-                  <div className="text-lg font-semibold text-ink">{selected.history.last_state}</div>
+                  <div className="text-xs text-subtle mb-1">Last state</div>
+                  <div className="text-lg font-semibold text-foreground">{selected.history.last_state}</div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm text-ink-2">
+              <div className="flex flex-wrap gap-4 text-sm text-muted">
                 <span>
-                  Runtime: <span className="text-ink">{selected.workload.runtime}</span>
+                  Runtime: <span className="text-foreground">{selected.workload.runtime}</span>
                 </span>
                 <span>
                   Circuit: <Badge text={selected.workload.circuit} variant={getCircuitVariant(selected.workload.circuit)} />
@@ -413,7 +413,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                 )}
                 {canMutate && (
                   <div className="flex flex-wrap items-center gap-2" data-testid="health-rolling-update">
-                    <label className="text-xs text-ink-3" htmlFor="rolling-replicas">
+                    <label className="text-xs text-subtle" htmlFor="rolling-replicas">
                       Rolling update replicas
                     </label>
                     <input
@@ -435,7 +435,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                     </button>
                   </div>
                 )}
-                {rollingMsg ? <span className="text-xs text-ink-2">{rollingMsg}</span> : null}
+                {rollingMsg ? <span className="text-xs text-muted">{rollingMsg}</span> : null}
                 <Link
                   to={pathWithQuery(viewToPath('events'), { workload: selected.workload.name })}
                   className="text-xs text-brand hover:underline"
@@ -481,10 +481,10 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                   SLA compliance →
                 </Link>
                 <span>
-                  Last restart count: <span className="text-ink">{selected.history.last_restart_count}</span>
+                  Last restart count: <span className="text-foreground">{selected.history.last_restart_count}</span>
                 </span>
                 <span>
-                  Current restarts: <span className="text-ink">{selected.workload.restart_count}</span>
+                  Current restarts: <span className="text-foreground">{selected.workload.restart_count}</span>
                 </span>
               </div>
             </div>

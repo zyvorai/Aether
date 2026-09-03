@@ -46,12 +46,12 @@ export default function ZyraPromptLibrary() {
   return (
     <div className="grid gap-6 lg:grid-cols-2" data-testid="zyra-prompt-library">
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-ink">Prompt Library</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Prompt Library</h3>
         <div className="space-y-2">
           {prompts.map((p) => (
             <div key={p.id} className="rounded-xl border border-white/10 p-3">
-              <p className="text-sm font-medium text-ink">{p.title}</p>
-              <p className="mt-1 text-xs text-ink-3">{p.body}</p>
+              <p className="text-sm font-medium text-foreground">{p.title}</p>
+              <p className="mt-1 text-xs text-subtle">{p.body}</p>
               <button type="button" className="btn-secondary mt-2 text-xs" onClick={() => runPrompt(p.body)}>
                 <Play className="mr-1 inline h-3 w-3" />
                 Run with Zyra
@@ -61,15 +61,15 @@ export default function ZyraPromptLibrary() {
         </div>
       </div>
       <div>
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Store className="h-4 w-4" />
           Agent Marketplace
         </h3>
         <div className="space-y-2">
           {marketplace.map((a) => (
             <div key={a.id} className="rounded-xl border border-white/10 p-3">
-              <p className="text-sm font-medium text-ink">{a.name}</p>
-              <p className="mt-1 text-xs text-ink-3">{a.description}</p>
+              <p className="text-sm font-medium text-foreground">{a.name}</p>
+              <p className="mt-1 text-xs text-subtle">{a.description}</p>
               {a.installed ? (
                 <span className="mt-2 inline-block text-xs text-emerald-400">Installed</span>
               ) : (

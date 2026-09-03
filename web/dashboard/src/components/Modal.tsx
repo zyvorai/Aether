@@ -93,12 +93,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         }`}
       >
         <div className="flex shrink-0 items-center justify-between glass-divider-b px-6 py-4">
-          <h2 className="text-lg font-semibold text-ink">{title}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="quick-link-chip p-2 text-ink-2 transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+            className="quick-link-chip p-2 text-muted transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
           >
             <X className="h-5 w-5" />
           </button>

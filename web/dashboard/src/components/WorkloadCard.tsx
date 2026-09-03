@@ -88,8 +88,8 @@ export default function WorkloadCard({
             } ${running ? 'platform-pulse' : ''}`}
           />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-ink">{shortName}</div>
-            <div className="mt-0.5 truncate text-[11px] text-ink-3">
+            <div className="truncate text-sm font-medium text-foreground">{shortName}</div>
+            <div className="mt-0.5 truncate text-[11px] text-subtle">
               {[workload.kind, locationLabel || null].filter(Boolean).join(' · ') || workload.runtime}
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function WorkloadCard({
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
           <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent">
-            <KindIcon size={18} className="text-ink-2 transition group-hover:text-brand" />
+            <KindIcon size={18} className="text-muted transition group-hover:text-brand" />
             {running ? (
               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-emerald-400 platform-pulse" />
             ) : null}
@@ -124,17 +124,17 @@ export default function WorkloadCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <button type="button" onClick={() => onOpen('overview')} className="min-w-0 flex-1 text-left">
-                <h3 className="truncate text-base font-semibold tracking-tight text-ink transition group-hover:text-brand">
+                <h3 className="truncate text-base font-semibold tracking-tight text-foreground transition group-hover:text-brand">
                   {shortName}
                 </h3>
-                <p className="mt-0.5 truncate text-[11px] text-ink-3" title={workload.name}>
+                <p className="mt-0.5 truncate text-[11px] text-subtle" title={workload.name}>
                   {[workload.kind, locationLabel || null].filter(Boolean).join(' · ') || 'Aether managed'}
                 </p>
               </button>
               <button
                 type="button"
                 onClick={onTogglePin}
-                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-brand' : 'text-ink-3 hover:text-ink-2'}`}
+                className={`mt-0.5 shrink-0 transition ${pinned ? 'text-brand' : 'text-subtle hover:text-muted'}`}
                 title={pinned ? 'Unpin' : 'Pin'}
                 aria-label={pinned ? `Unpin ${shortName}` : `Pin ${shortName}`}
               >
@@ -158,10 +158,10 @@ export default function WorkloadCard({
               {discovered ? 'discovered' : 'managed'}
             </span>
           </div>
-          <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2" title={workload.image}>
+          <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-muted" title={workload.image}>
             {workload.image || '—'}
           </code>
-          <div className="mt-2 text-[11px] text-ink-3">
+          <div className="mt-2 text-[11px] text-subtle">
             {workload.created_at ? formatRelativeTime(workload.created_at) : '—'}
           </div>
         </button>
@@ -170,7 +170,7 @@ export default function WorkloadCard({
           <button
             type="button"
             onClick={() => onOpen('overview')}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
             title="Info"
             data-testid={`workload-card-info-${shortName}`}
           >
@@ -181,7 +181,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('logs')}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-sky-500/15 hover:text-sky-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-sky-500/15 hover:text-sky-200"
               title="Logs"
               data-testid={`workload-card-logs-${shortName}`}
             >
@@ -193,7 +193,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('overview', true)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-emerald-500/15 hover:text-emerald-200"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-emerald-500/15 hover:text-emerald-200"
               title="Exec into pod"
               data-testid={`workload-card-shell-${shortName}`}
             >
@@ -204,7 +204,7 @@ export default function WorkloadCard({
             <button
               type="button"
               disabled
-              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-3"
+              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-subtle"
               title="Exec requires Operator or Admin role"
               data-testid={`workload-card-shell-denied-${shortName}`}
             >

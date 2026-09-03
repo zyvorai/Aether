@@ -34,8 +34,8 @@ function toast(message: string, type: 'success' | 'error') {
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2 glass-divider-b last:border-0">
-      <span className="text-xs font-medium uppercase tracking-wider text-ink-3 shrink-0">{label}</span>
-      <span className="text-sm text-ink text-right">{value}</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-subtle shrink-0">{label}</span>
+      <span className="text-sm text-foreground text-right">{value}</span>
     </div>
   );
 }
@@ -86,7 +86,7 @@ function RuntimeScoreBlock({ score, recommended }: { score: RuntimeScore; recomm
         <BarChart label="Availability" percent={score.availability_score * 100} />
       </div>
       {score.reasons.length > 0 && (
-        <ul className="mt-3 space-y-1 text-xs text-ink-2">
+        <ul className="mt-3 space-y-1 text-xs text-muted">
           {score.reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
               <span className="text-emerald-400 shrink-0">+</span>
@@ -126,7 +126,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
       </dl>
       {advice.forecast && (
         <div className="rounded-xl border glass-divider glass p-3">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Forecast</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-subtle mb-2">Forecast</h4>
           <dl className="space-y-0">
             <DetailRow label="Trend" value={advice.forecast.trend} />
             <DetailRow label="Predicted" value={advice.forecast.predicted_value.toFixed(2)} />
@@ -140,7 +140,7 @@ function ScalingAdvicePanel({ advice }: { advice: ScalingAdvice }) {
       )}
       {advice.cost_impact && (
         <div className="rounded-xl border glass-divider glass p-3">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3 mb-2">Cost impact</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-subtle mb-2">Cost impact</h4>
           <dl className="space-y-0">
             <DetailRow label="Current hourly" value={formatUSD(advice.cost_impact.current_hourly)} />
             <DetailRow label="Projected hourly" value={formatUSD(advice.cost_impact.projected_hourly)} />
@@ -202,14 +202,14 @@ function ProfileResultPanel({ data }: { data: WorkloadProfileResult }) {
       </dl>
       {data.recommendations && data.recommendations.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Recommendations</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-subtle">Recommendations</h4>
           {data.recommendations.map((rec, i) => (
             <div key={i} className="rounded-lg border glass-divider glass p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Badge text={rec.priority} variant={rec.priority === 'Critical' ? 'red' : 'blue'} />
-                <span className="font-medium text-ink">{rec.title}</span>
+                <span className="font-medium text-foreground">{rec.title}</span>
               </div>
-              <p className="text-ink-2 text-xs">{rec.description}</p>
+              <p className="text-muted text-xs">{rec.description}</p>
               <p className="text-emerald-400 text-xs mt-1">Est. savings: {rec.estimated_savings_pct.toFixed(0)}%</p>
             </div>
           ))}
@@ -239,7 +239,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       </dl>
       {data.patterns && data.patterns.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Top patterns</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-subtle">Top patterns</h4>
           {data.patterns.slice(0, 5).map((p, i) => (
             <DetailRow key={i} label={`${p.severity} (${p.count})`} value={<span className="font-mono text-xs">{p.pattern}</span>} />
           ))}
@@ -247,7 +247,7 @@ function AnalyzeResultPanel({ data, workloadName }: { data: LogAnalysisResult; w
       )}
       {data.anomalies && data.anomalies.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-ink-3">Anomalies</h4>
+          <h4 className="text-xs font-medium uppercase tracking-wider text-subtle">Anomalies</h4>
           {data.anomalies.map((a, i) => (
             <div key={i} className="text-sm text-amber-400/90">{a.description}</div>
           ))}
@@ -479,20 +479,20 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass py-4">
-            <div className="text-xs text-ink-3 uppercase tracking-wider">Workloads</div>
-            <div className="text-2xl font-semibold text-ink mt-1">{workloads.length}</div>
+            <div className="text-xs text-subtle uppercase tracking-wider">Workloads</div>
+            <div className="text-2xl font-semibold text-foreground mt-1">{workloads.length}</div>
           </div>
           <div className="glass py-4">
-            <div className="text-xs text-ink-3 uppercase tracking-wider">Running</div>
-            <div className="text-2xl font-semibold text-ink mt-1">{runningCount}</div>
+            <div className="text-xs text-subtle uppercase tracking-wider">Running</div>
+            <div className="text-2xl font-semibold text-foreground mt-1">{runningCount}</div>
           </div>
           <div className="glass py-4">
-            <div className="text-xs text-ink-3 uppercase tracking-wider">Stopped / other</div>
-            <div className="text-2xl font-semibold text-ink mt-1">{workloads.length - runningCount}</div>
+            <div className="text-xs text-subtle uppercase tracking-wider">Stopped / other</div>
+            <div className="text-2xl font-semibold text-foreground mt-1">{workloads.length - runningCount}</div>
           </div>
           <div className="glass py-4">
-            <div className="text-xs text-ink-3 uppercase tracking-wider">Last recommendation</div>
-            <div className="text-2xl font-semibold text-ink mt-1 truncate">
+            <div className="text-xs text-subtle uppercase tracking-wider">Last recommendation</div>
+            <div className="text-2xl font-semibold text-foreground mt-1 truncate">
               {recommendation?.recommended ?? '—'}
             </div>
           </div>
@@ -534,8 +534,8 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <Zap className="text-brand" size={20} />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-ink">AI Recommendation</h3>
-                <p className="text-xs text-ink-3">Get intelligent runtime suggestions</p>
+                <h3 className="font-semibold text-lg text-foreground">AI Recommendation</h3>
+                <p className="text-xs text-subtle">Get intelligent runtime suggestions</p>
                 <Link
                   to={viewToPath('intelligence')}
                   className="text-xs text-brand hover:underline"
@@ -564,8 +564,8 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <TrendingUp className="text-blue-400" size={20} />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-ink">Scaling Advice</h3>
-                <p className="text-xs text-ink-3">Horizontal scaling recommendations</p>
+                <h3 className="font-semibold text-lg text-foreground">Scaling Advice</h3>
+                <p className="text-xs text-subtle">Horizontal scaling recommendations</p>
               </div>
             </div>
             <button
@@ -593,7 +593,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <Target className="text-purple-400" size={20} />
-              <h3 className="font-semibold text-ink">Intent Optimizer</h3>
+              <h3 className="font-semibold text-foreground">Intent Optimizer</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -620,7 +620,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <Cpu className="text-emerald-400" size={20} />
-              <h3 className="font-semibold text-ink">Resource Right-Sizer</h3>
+              <h3 className="font-semibold text-foreground">Resource Right-Sizer</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -647,7 +647,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="glass">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="text-primary" size={20} />
-              <h3 className="font-semibold text-ink">Cost vs Performance</h3>
+              <h3 className="font-semibold text-foreground">Cost vs Performance</h3>
             </div>
             <WorkloadSelect
               workloads={workloads}
@@ -689,7 +689,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass" data-testid="ai-analyze-panel">
           <div className="flex items-center gap-3 mb-6">
             <Cpu className="text-cyan-400" size={22} />
-            <h3 className="font-semibold text-xl text-ink">Workload Profiler & Analysis</h3>
+            <h3 className="font-semibold text-xl text-foreground">Workload Profiler & Analysis</h3>
           </div>
 
           {workloads.length === 0 ? (
@@ -702,7 +702,7 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {workloads.slice(0, 12).map((w) => (
                 <div key={w.name} className="flex gap-2 rounded-xl border glass-divider glass p-3">
-                  <span className="flex-1 truncate text-sm text-ink-2 self-center font-mono">{w.name}</span>
+                  <span className="flex-1 truncate text-sm text-muted self-center font-mono">{w.name}</span>
                   <button
                     type="button"
                     onClick={() => void handleProfile(w.name)}

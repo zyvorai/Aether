@@ -61,8 +61,8 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
 
   return (
     <div className="dash-card" data-testid="platform-recommendations">
-      <h2 className="text-lg font-semibold text-ink mb-1">Setup recommendations</h2>
-      <p className="text-sm text-ink-3 mb-4">
+      <h2 className="text-lg font-semibold text-foreground mb-1">Setup recommendations</h2>
+      <p className="text-sm text-subtle mb-4">
         Optional improvements and remediation steps. Dismiss items you have already addressed.
       </p>
       {visible.length === 0 ? (
@@ -80,21 +80,21 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
                 {severityIcon(item.severity)}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-ink">{item.title}</p>
-                    <span className="rounded-md border glass-divider/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-ink-3">
+                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                    <span className="rounded-md border glass-divider/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-subtle">
                       {item.category}
                     </span>
                   </div>
                   {item.detail ? (
-                    <p className="mt-1 text-xs text-ink-2 leading-relaxed">{item.detail}</p>
+                    <p className="mt-1 text-xs text-muted leading-relaxed">{item.detail}</p>
                   ) : null}
-                  <p className="mt-2 text-sm text-ink leading-relaxed">{item.action}</p>
+                  <p className="mt-2 text-sm text-foreground leading-relaxed">{item.action}</p>
                 </div>
                 <button
                   type="button"
                   data-testid={`platform-rec-dismiss-${item.id}`}
                   onClick={() => handleDismiss(item.id)}
-                  className="shrink-0 rounded-lg p-1 text-ink-3 glass-inset-hover hover:text-ink-2"
+                  className="shrink-0 rounded-lg p-1 text-subtle glass-inset-hover hover:text-muted"
                   aria-label={`Dismiss ${item.title}`}
                 >
                   <X size={16} />

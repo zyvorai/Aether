@@ -128,10 +128,10 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
           <div className="glass-drawer border-violet-500/20 p-3">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-xs uppercase tracking-wide text-violet-300/80">{report.health_level}</span>
-              <span className="text-sm text-ink">{report.summary}</span>
+              <span className="text-sm text-foreground">{report.summary}</span>
             </div>
             {report.evidence.slice(0, 4).map((line) => (
-              <p key={line} className="text-xs text-ink-2 mt-1 font-mono truncate" title={line}>
+              <p key={line} className="text-xs text-muted mt-1 font-mono truncate" title={line}>
                 {line}
               </p>
             ))}
@@ -170,7 +170,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
                           <button
                             type="button"
                             onClick={() => handleNavigate(rec.action)}
-                            className="text-xs font-medium text-ink-2 hover:text-ink hover:underline"
+                            className="text-xs font-medium text-muted hover:text-foreground hover:underline"
                           >
                             {TROUBLESHOOT_ACTION_LABELS[rec.action] ?? 'View details'} →
                           </button>
@@ -184,7 +184,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
           )}
 
           {report.log_excerpt && (
-            <pre className="glass-code-block-body max-h-32 text-[10px] text-ink-2 font-mono">
+            <pre className="glass-code-block-body max-h-32 text-[10px] text-muted font-mono">
               {report.log_excerpt.slice(-1200)}
             </pre>
           )}

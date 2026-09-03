@@ -35,7 +35,7 @@ export default function IntentGitOpsDiffPanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+          className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Refresh
@@ -43,17 +43,17 @@ export default function IntentGitOpsDiffPanel() {
       }
     >
       {!report?.entries.length ? (
-        <p className="text-sm text-ink-3">No workloads with intent blocks tracked.</p>
+        <p className="text-sm text-subtle">No workloads with intent blocks tracked.</p>
       ) : (
         <ul className="space-y-3">
           {report.entries.slice(0, 6).map((entry) => (
             <li key={entry.workload} className="rounded-xl border glass-divider px-4 py-3">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="font-medium text-ink">{entry.workload}</span>
+                <span className="font-medium text-foreground">{entry.workload}</span>
                 {entry.has_drift ? <Badge text="drift" variant="yellow" /> : <Badge text="synced" variant="green" />}
               </div>
-              <p className="text-xs text-ink-2">{entry.summary}</p>
-              <pre className="mt-2 max-h-24 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-ink-2">
+              <p className="text-xs text-muted">{entry.summary}</p>
+              <pre className="mt-2 max-h-24 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-muted">
                 {entry.live_intent_yaml}
               </pre>
             </li>

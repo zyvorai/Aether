@@ -147,8 +147,8 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
   return (
     <div>
-      <p className="glass-context-banner mb-4 text-sm text-ink-3">
-        Secrets stored with <code className="text-ink-2">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
+      <p className="glass-context-banner mb-4 text-sm text-subtle">
+        Secrets stored with <code className="text-muted">VaultRef</code> are external references only — values cannot be decrypted or displayed in this UI.{' '}
         <button
           type="button"
           data-testid="secrets-rbac-link"
@@ -278,19 +278,19 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 body={
                   <>
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{s.key_count} keys</span>
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{formatTimestamp(s.updated_at)}</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">{s.key_count} keys</span>
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">{formatTimestamp(s.updated_at)}</span>
                     </div>
                     {expanded && secretDetail ? (
                       <div className="mt-3 space-y-2 rounded-lg border glass-divider glass-inset-surface p-3">
                         <div className="flex flex-wrap gap-1.5">
                           {secretDetail.keys.map((key) => (
-                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-ink-2">
+                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-muted">
                               {key}
                               <button
                                 type="button"
                                 onClick={() => void copyKeyName(key)}
-                                className="text-ink-3 hover:text-brand"
+                                className="text-subtle hover:text-brand"
                                 title="Copy key name"
                                 data-testid={`secrets-copy-key-${key}`}
                               >
@@ -299,9 +299,9 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                             </span>
                           ))}
                         </div>
-                        <p className="text-[11px] text-ink-3">Created {formatTimestamp(secretDetail.created_at)}</p>
+                        <p className="text-[11px] text-subtle">Created {formatTimestamp(secretDetail.created_at)}</p>
                         {secretDetail.rotation_policy ? (
-                          <p className="text-[11px] text-ink-2">
+                          <p className="text-[11px] text-muted">
                             Rotate every {secretDetail.rotation_policy.interval_days}d · max age {secretDetail.rotation_policy.max_age_days}d · notify {secretDetail.rotation_policy.notify_before_days}d before
                           </p>
                         ) : null}
@@ -314,7 +314,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => void handleExpand(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                     >
                       {detailLoading === s.name ? (
                         <span className="h-3 w-3 animate-spin rounded-full border-b border-brand" />
@@ -328,7 +328,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
                     >
                       <Trash2 size={13} />
                       Delete
@@ -346,7 +346,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create secret">
         <div data-testid="secrets-create-modal" className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-ink-3">Name</label>
+            <label className="mb-1 block text-xs text-subtle">Name</label>
             <input
               type="text"
               value={createName}
@@ -355,7 +355,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ink-3">Namespace</label>
+            <label className="mb-1 block text-xs text-subtle">Namespace</label>
             <input
               type="text"
               value={createNamespace}
@@ -364,7 +364,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-ink-3">Keys (KEY=value per line)</label>
+            <label className="mb-1 block text-xs text-subtle">Keys (KEY=value per line)</label>
             <textarea
               value={createKeys}
               onChange={(e) => setCreateKeys(e.target.value)}
@@ -374,7 +374,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 glass-inset-surface glass-inset-hover text-ink rounded-lg text-sm">
+          <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 glass-inset-surface glass-inset-hover text-foreground rounded-lg text-sm">
             Cancel
           </button>
           <button
@@ -390,14 +390,14 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <Modal isOpen={confirmDelete !== null} onClose={() => setConfirmDelete(null)} title="Confirm delete">
         <div data-testid="secrets-delete-confirm">
-        <p className="text-sm text-ink-2 mb-6">
+        <p className="text-sm text-muted mb-6">
           Are you sure you want to delete secret &quot;{confirmDelete}&quot;? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={() => setConfirmDelete(null)}
-            className="px-4 py-2 glass-inset-surface glass-inset-hover text-ink rounded-lg text-sm font-medium"
+            className="px-4 py-2 glass-inset-surface glass-inset-hover text-foreground rounded-lg text-sm font-medium"
           >
             Cancel
           </button>

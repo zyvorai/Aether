@@ -14,7 +14,7 @@ export default function PageLoading({ rows = 4, variant = 'skeleton', label, cla
     return (
       <div className={`flex flex-col items-center justify-center gap-3 ${className ?? 'py-16'}`}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-        {label ? <p className="text-sm text-ink-3">{label}</p> : null}
+        {label ? <p className="text-sm text-subtle">{label}</p> : null}
       </div>
     );
   }

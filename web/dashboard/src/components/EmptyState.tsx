@@ -14,10 +14,10 @@ interface EmptyStateProps {
 export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="glass-empty-state">
-      <div className="mb-3 text-ink-3">{icon}</div>
-      <h3 className="text-lg font-semibold text-ink">{title}</h3>
+      <div className="mb-3 text-subtle">{icon}</div>
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       {description && (
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-3">{description}</p>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-subtle">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
     </div>

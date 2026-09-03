@@ -125,12 +125,12 @@ export default function GraphPlatformPanel() {
             className="glass-input"
             data-testid="graph-workload-input"
           />
-          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2">
+          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}
     >{k8sImport ? (
-        <p className="mb-4 text-xs text-ink-3" data-testid="k8s-import-status">
+        <p className="mb-4 text-xs text-subtle" data-testid="k8s-import-status">
           K8s services discovered: {k8sImport.services.length} (dry-run import)
         </p>
       ) : null}
@@ -142,7 +142,7 @@ export default function GraphPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'glass-divider text-ink-2'
+              tab === t.id ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -152,10 +152,10 @@ export default function GraphPlatformPanel() {
 
       {tab === 'impact' ? (
         <div data-testid="graph-impact-panel">
-          <p className="mb-3 text-sm text-ink-2">{impact?.summary}</p>
+          <p className="mb-3 text-sm text-muted">{impact?.summary}</p>
           <ul className="space-y-1">
             {(impact?.downstream ?? []).map((w) => (
-              <li key={w} className="text-sm text-ink-2">
+              <li key={w} className="text-sm text-muted">
                 <Target className="mr-1 inline h-3 w-3" />
                 {w}
               </li>
@@ -169,7 +169,7 @@ export default function GraphPlatformPanel() {
           <p className="mb-3 text-lg font-semibold text-amber-300">
             Score {((blast?.blast_score ?? 0) * 100).toFixed(0)}/100
           </p>
-          <p className="mb-2 text-sm text-ink-2">{blast?.summary}</p>
+          <p className="mb-2 text-sm text-muted">{blast?.summary}</p>
           <ul className="space-y-1">
             {(blast?.migration_blockers ?? []).map((b) => (
               <li key={b} className="text-xs text-amber-200">
@@ -186,7 +186,7 @@ export default function GraphPlatformPanel() {
             <li key={i} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <ShieldAlert className="mr-1 inline h-3.5 w-3.5 text-red-400" />
               {p.summary}
-              <div className="mt-1 text-xs text-ink-3">{p.path.join(' → ')}</div>
+              <div className="mt-1 text-xs text-subtle">{p.path.join(' → ')}</div>
             </li>
           ))}
         </ul>
@@ -213,7 +213,7 @@ export default function GraphPlatformPanel() {
           </div>
           <ul className="space-y-2">
             {(search?.hits ?? []).map((h) => (
-              <li key={h.id} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+              <li key={h.id} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
                 {h.label} <Badge text={h.kind} variant="muted" />
               </li>
             ))}
@@ -232,7 +232,7 @@ export default function GraphPlatformPanel() {
           </button>
           <ul className="space-y-2">
             {(snapshots?.snapshots ?? []).map((s) => (
-              <li key={s.id} className="text-sm text-ink-2">
+              <li key={s.id} className="text-sm text-muted">
                 {s.label} · {s.node_count} nodes · {s.captured_at}
               </li>
             ))}
@@ -252,7 +252,7 @@ export default function GraphPlatformPanel() {
           </button>
           <ul className="space-y-2">
             {(cmdb?.items ?? []).map((item) => (
-              <li key={item.id} className="text-sm text-ink-2">
+              <li key={item.id} className="text-sm text-muted">
                 {item.name} <Badge text={item.item_type} variant="muted" />
               </li>
             ))}
@@ -263,11 +263,11 @@ export default function GraphPlatformPanel() {
       {tab === 'placement' ? (
         <ul className="space-y-2" data-testid="graph-placement-panel">
           {(placement?.entries ?? []).slice(0, 8).map((e) => (
-            <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+            <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
               #{e.startup_order} {e.workload}
               {e.recommended_cluster ? <Badge text={e.recommended_cluster} variant="green" /> : null}
               {e.co_locate_with ? (
-                <span className="ml-2 text-xs text-ink-3">co-locate with {e.co_locate_with}</span>
+                <span className="ml-2 text-xs text-subtle">co-locate with {e.co_locate_with}</span>
               ) : null}
             </li>
           ))}
@@ -280,7 +280,7 @@ export default function GraphPlatformPanel() {
             <button
               type="button"
               onClick={() => void loadExport('neo4j')}
-              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-ink-2"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-muted"
             >
               <Download className="h-3.5 w-3.5" />
               Neo4j Cypher
@@ -288,14 +288,14 @@ export default function GraphPlatformPanel() {
             <button
               type="button"
               onClick={() => void loadExport('jsonld')}
-              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-ink-2"
+              className="inline-flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-xs text-muted"
             >
               <GitBranch className="h-3.5 w-3.5" />
               JSON-LD
             </button>
           </div>
           {exportReport ? (
-            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-ink-2">
+            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
               {exportReport.payload.slice(0, 2000)}
             </pre>
           ) : null}

@@ -882,15 +882,15 @@ function ClustersPage() {
 
       {ciliumStatus && (
         <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-ink-3">CNI</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'glass-inset-surface text-ink-2'}`}>
+          <span className="text-subtle">CNI</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-emerald-900/40 text-emerald-300' : 'glass-inset-surface text-muted'}`}>
             {ciliumStatus.cni}
           </span>
-          <span className="text-ink-3">·</span>
-          <span className="text-ink-3">Egress</span>
-          <span className="text-ink">{ciliumStatus.egress_mode}</span>
-          <span className="text-ink-3">·</span>
-          <span className="text-ink-3">metrics-server</span>
+          <span className="text-subtle">·</span>
+          <span className="text-subtle">Egress</span>
+          <span className="text-foreground">{ciliumStatus.egress_mode}</span>
+          <span className="text-subtle">·</span>
+          <span className="text-subtle">metrics-server</span>
           <span className={ciliumStatus.metrics_server ? 'text-emerald-400' : 'text-amber-400'}>
             {ciliumStatus.metrics_server ? 'ok' : 'missing'}
           </span>
@@ -911,27 +911,27 @@ function ClustersPage() {
       {metricsSummary && (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-ink-3">Metrics Scope</div>
-            <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.scope}</div>
+            <div className="text-xs uppercase tracking-wider text-subtle">Metrics Scope</div>
+            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.scope}</div>
           </div>
           <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-ink-3">CPU</div>
-            <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.total_cpu_millicores}m</div>
-            <div className="mt-1 text-xs text-ink-3">{metricsSummary.pod_count} pods measured</div>
+            <div className="text-xs uppercase tracking-wider text-subtle">CPU</div>
+            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.total_cpu_millicores}m</div>
+            <div className="mt-1 text-xs text-subtle">{metricsSummary.pod_count} pods measured</div>
           </div>
           <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-ink-3">Memory</div>
-            <div className="mt-2 text-lg font-semibold text-ink">{metricsSummary.total_memory_mib} Mi</div>
-            <div className="mt-1 text-xs text-ink-3">From `kubectl top pod`</div>
+            <div className="text-xs uppercase tracking-wider text-subtle">Memory</div>
+            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.total_memory_mib} Mi</div>
+            <div className="mt-1 text-xs text-subtle">From `kubectl top pod`</div>
           </div>
         </div>
       )}
 
       {authStatus && (
-        <div className="glass px-4 py-3 text-sm text-ink-2">
-          Cluster role: <span className="text-ink">{authStatus.role}</span>
-          <span className="text-ink-3"> · </span>
-          Signed in as <span className="text-ink">{authStatus.username}</span>
+        <div className="glass px-4 py-3 text-sm text-muted">
+          Cluster role: <span className="text-foreground">{authStatus.role}</span>
+          <span className="text-subtle"> · </span>
+          Signed in as <span className="text-foreground">{authStatus.username}</span>
         </div>
       )}
 
@@ -980,7 +980,7 @@ function ClustersPage() {
             <option key={item} value={item}>{item}</option>
           ))}
         </select>
-        <div className="glass-select text-ink-2">
+        <div className="glass-select text-muted">
           {cluster || 'No cluster selected'} · {watchConnected ? 'watching live' : 'watch offline'}
         </div>
       </div>
@@ -999,7 +999,7 @@ function ClustersPage() {
             className="glass-select"
             placeholder="plural e.g. widgets"
           />
-          <label className="flex items-center gap-2 glass-select text-ink">
+          <label className="flex items-center gap-2 glass-select text-foreground">
             <input type="checkbox" checked={customNamespaced} onChange={(e) => setCustomNamespaced(e.target.checked)} />
             Namespaced resource
           </label>
@@ -1051,7 +1051,7 @@ function ClustersPage() {
                 setResourceView('cards');
                 try { localStorage.setItem('aether_clusters_view', 'cards'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
             >
               <LayoutGrid size={14} />
               Cards
@@ -1062,7 +1062,7 @@ function ClustersPage() {
                 setResourceView('table');
                 try { localStorage.setItem('aether_clusters_view', 'table'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
             >
               <List size={14} />
               Table
@@ -1083,11 +1083,11 @@ function ClustersPage() {
                     <div className="flex flex-wrap gap-1.5">
                       <Badge text={resource.status || '—'} variant="muted" />
                       {resource.detail ? (
-                        <span className="truncate rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2" title={resource.detail}>
+                        <span className="truncate rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted" title={resource.detail}>
                           {resource.detail}
                         </span>
                       ) : null}
-                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-3">
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-subtle">
                         {formatTimestamp(resource.created_at)}
                       </span>
                     </div>
@@ -1097,7 +1097,7 @@ function ClustersPage() {
                       <button
                         type="button"
                         onClick={() => openDetail(resource)}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                       >
                         Open
                       </button>
@@ -1120,14 +1120,14 @@ function ClustersPage() {
                 <table className="w-full min-w-0">
                   <thead>
                     <tr className="glass-divider-b">
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Name</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Name</th>
                       {pageTab === 'network' && (
-                        <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Kind</th>
+                        <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Kind</th>
                       )}
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Namespace</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Status</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Detail</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-ink-2 py-3 px-4">Created</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Namespace</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Status</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Detail</th>
+                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Created</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1135,7 +1135,7 @@ function ClustersPage() {
                       <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-ink hover:text-brand transition-colors">
+                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-brand transition-colors">
                               {resource.name}
                             </button>
                             {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
@@ -1150,12 +1150,12 @@ function ClustersPage() {
                           </div>
                         </td>
                         {pageTab === 'network' && (
-                          <td className="py-3 px-4 text-sm text-ink-2">{resource.kind}</td>
+                          <td className="py-3 px-4 text-sm text-muted">{resource.kind}</td>
                         )}
-                        <td className="py-3 px-4 text-sm text-ink-2">{resource.namespace}</td>
-                        <td className="py-3 px-4 text-sm text-ink">{resource.status}</td>
-                        <td className="py-3 px-4 text-sm text-ink-3">{resource.detail ?? '—'}</td>
-                        <td className="py-3 px-4 text-sm text-ink-2">{formatTimestamp(resource.created_at)}</td>
+                        <td className="py-3 px-4 text-sm text-muted">{resource.namespace}</td>
+                        <td className="py-3 px-4 text-sm text-foreground">{resource.status}</td>
+                        <td className="py-3 px-4 text-sm text-subtle">{resource.detail ?? '—'}</td>
+                        <td className="py-3 px-4 text-sm text-muted">{formatTimestamp(resource.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1264,7 +1264,7 @@ function ClustersPage() {
               {['Deployment', 'StatefulSet'].includes(selected.kind) && (
                 <>
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
-                    <span className="text-xs text-ink-3">Replicas</span>
+                    <span className="text-xs text-subtle">Replicas</span>
                     <input
                       type="number"
                       min={0}
@@ -1286,7 +1286,7 @@ function ClustersPage() {
                 <button
                   onClick={() => handleResourceAction('restart')}
                   disabled={!!actionLoading || !canMutateCluster}
-                  className="flex items-center gap-2 rounded-lg border glass-divider glass-inset-surface px-3 py-2 text-sm text-ink glass-inset-hover disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border glass-divider glass-inset-surface px-3 py-2 text-sm text-foreground glass-inset-hover disabled:opacity-50"
                 >
                   <RefreshCw size={14} />
                   {actionLoading === 'restart' ? 'Restarting...' : 'Restart'}
@@ -1305,19 +1305,19 @@ function ClustersPage() {
 
             {(detailTab === 'overview' || detailTab === 'manifest') && (
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-ink-3">Cluster</span><p className="text-ink">{selected.cluster}</p></div>
-              <div><span className="text-ink-3">Namespace</span><p className="text-ink">{selected.namespace}</p></div>
-              <div><span className="text-ink-3">Kind</span><p className="text-ink">{selected.kind}</p></div>
-              <div><span className="text-ink-3">API Version</span><p className="text-ink">{selected.api_version ?? 'unknown'}</p></div>
+              <div><span className="text-subtle">Cluster</span><p className="text-foreground">{selected.cluster}</p></div>
+              <div><span className="text-subtle">Namespace</span><p className="text-foreground">{selected.namespace}</p></div>
+              <div><span className="text-subtle">Kind</span><p className="text-foreground">{selected.kind}</p></div>
+              <div><span className="text-subtle">API Version</span><p className="text-foreground">{selected.api_version ?? 'unknown'}</p></div>
             </div>
             )}
 
             {detailTab === 'overview' && ((selected.owner_references?.length ?? 0) > 0 || (selected.owned_resources?.length ?? 0) > 0) && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Owner graph</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Owner graph</h4>
                 {(selected.owner_references?.length ?? 0) > 0 && (
                   <div className="mb-3">
-                    <p className="text-xs text-ink-3 mb-2">Owned by</p>
+                    <p className="text-xs text-subtle mb-2">Owned by</p>
                     <div className="flex flex-wrap gap-2">
                       {selected.owner_references!.map((owner) => (
                         <span
@@ -1333,7 +1333,7 @@ function ClustersPage() {
                 )}
                 {(selected.owned_resources?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs text-ink-3 mb-2">Owns</p>
+                    <p className="text-xs text-subtle mb-2">Owns</p>
                     <div className="flex flex-wrap gap-2">
                       {selected.owned_resources!.map((child) => (
                         <span
@@ -1351,23 +1351,23 @@ function ClustersPage() {
 
             {detailTab === 'overview' && healthSummary && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Health</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Health</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
                   <div>
-                    <div className="text-ink-3">Level</div>
+                    <div className="text-subtle">Level</div>
                     <div className={healthSummary.level === 'healthy' ? 'text-emerald-400' : healthSummary.level === 'degraded' ? 'text-amber-400' : 'text-red-400'}>{healthSummary.level}</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Pods</div>
-                    <div className="text-ink">{healthSummary.ready_pods}/{healthSummary.total_pods} ready</div>
+                    <div className="text-subtle">Pods</div>
+                    <div className="text-foreground">{healthSummary.ready_pods}/{healthSummary.total_pods} ready</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Warnings</div>
-                    <div className="text-ink">{healthSummary.warning_events}</div>
+                    <div className="text-subtle">Warnings</div>
+                    <div className="text-foreground">{healthSummary.warning_events}</div>
                   </div>
                   <div>
-                    <div className="text-ink-3">Summary</div>
-                    <div className="text-ink">{healthSummary.summary}</div>
+                    <div className="text-subtle">Summary</div>
+                    <div className="text-foreground">{healthSummary.summary}</div>
                   </div>
                 </div>
               </div>
@@ -1375,16 +1375,16 @@ function ClustersPage() {
 
             {detailTab === 'overview' && selected.conditions.length > 0 && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Conditions</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Conditions</h4>
                 <div className="space-y-2">
                   {selected.conditions.map((condition) => (
                     <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-ink">{condition.type_}</span>
+                        <span className="font-medium text-foreground">{condition.type_}</span>
                         <span className={condition.status === 'True' ? 'text-emerald-400' : 'text-amber-400'}>{condition.status}</span>
                       </div>
-                      {condition.reason && <div className="mt-1 text-xs text-ink-2">{condition.reason}</div>}
-                      {condition.message && <div className="mt-1 text-xs text-ink-3">{condition.message}</div>}
+                      {condition.reason && <div className="mt-1 text-xs text-muted">{condition.reason}</div>}
+                      {condition.message && <div className="mt-1 text-xs text-subtle">{condition.message}</div>}
                     </div>
                   ))}
                 </div>
@@ -1393,17 +1393,17 @@ function ClustersPage() {
 
             {detailTab === 'overview' && selected.pods.length > 0 && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Pods</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Pods</h4>
                 <div className="space-y-2">
                   {selected.pods.map((pod) => (
                     <div key={pod.name} className="grid grid-cols-5 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="col-span-2">
-                        <div className="text-ink">{pod.name}</div>
-                        <div className="text-xs text-ink-3">{pod.node ?? 'node unknown'}</div>
+                        <div className="text-foreground">{pod.name}</div>
+                        <div className="text-xs text-subtle">{pod.node ?? 'node unknown'}</div>
                       </div>
-                      <div className="text-ink-2">{pod.phase}</div>
-                      <div className="text-ink-2">{pod.ready}/{pod.total_containers} ready</div>
-                      <div className="text-ink-2">{pod.restarts} restarts</div>
+                      <div className="text-muted">{pod.phase}</div>
+                      <div className="text-muted">{pod.ready}/{pod.total_containers} ready</div>
+                      <div className="text-muted">{pod.restarts} restarts</div>
                     </div>
                   ))}
                 </div>
@@ -1412,25 +1412,25 @@ function ClustersPage() {
 
             {detailTab === 'events' && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Event correlation</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Event correlation</h4>
                 <EventCorrelationPanel events={selectedEvents} resourceName={selected.name} />
               </div>
             )}
 
             {detailTab === 'events' && selectedEvents.length > 0 && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Cluster events</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Cluster events</h4>
                 <div className="space-y-2 max-h-64 overflow-auto">
                   {selectedEvents.map((event, index) => (
                     <div key={`${event.timestamp}:${event.reason}:${index}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-ink">{event.reason}</div>
+                        <div className="text-foreground">{event.reason}</div>
                         <div className={event.type_ === 'Warning' ? 'text-amber-400 text-xs' : 'text-emerald-400 text-xs'}>
                           {event.type_}
                         </div>
                       </div>
-                      <div className="mt-1 text-xs text-ink-2">{event.message || 'No event message'}</div>
-                      <div className="mt-1 text-xs text-ink-3">{formatTimestamp(event.timestamp)}</div>
+                      <div className="mt-1 text-xs text-muted">{event.message || 'No event message'}</div>
+                      <div className="mt-1 text-xs text-subtle">{formatTimestamp(event.timestamp)}</div>
                     </div>
                   ))}
                 </div>
@@ -1439,16 +1439,16 @@ function ClustersPage() {
 
             {detailTab === 'overview' && relatedAudit.length > 0 && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Related audit trail</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Related audit trail</h4>
                 <div className="space-y-2 max-h-48 overflow-auto">
                   {relatedAudit.map((entry) => (
                     <div key={entry.id} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-ink">{String(entry.action)}</span>
-                        <span className="text-xs text-ink-3">{String(entry.result)}</span>
+                        <span className="text-foreground">{String(entry.action)}</span>
+                        <span className="text-xs text-subtle">{String(entry.result)}</span>
                       </div>
-                      <div className="mt-1 text-xs text-ink-2">{entry.message}</div>
-                      <div className="mt-1 text-xs text-ink-3 truncate" title={entry.workload}>
+                      <div className="mt-1 text-xs text-muted">{entry.message}</div>
+                      <div className="mt-1 text-xs text-subtle truncate" title={entry.workload}>
                         {entry.workload}
                       </div>
                     </div>
@@ -1459,13 +1459,13 @@ function ClustersPage() {
 
             {detailTab === 'overview' && topMetrics.length > 0 && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Metrics</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Metrics</h4>
                 <div className="space-y-2">
                   {topMetrics.map((metric) => (
                     <div key={metric.name} className="grid grid-cols-3 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
-                      <div className="text-ink">{metric.name}</div>
-                      <div className="text-ink-2">CPU {metric.cpu}</div>
-                      <div className="text-ink-2">Memory {metric.memory}</div>
+                      <div className="text-foreground">{metric.name}</div>
+                      <div className="text-muted">CPU {metric.cpu}</div>
+                      <div className="text-muted">Memory {metric.memory}</div>
                     </div>
                   ))}
                 </div>
@@ -1475,8 +1475,8 @@ function ClustersPage() {
             {detailTab === 'overview' && rollout && (
               <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-ink">Rollout</h4>
-                  <div className="text-xs text-ink-2">{rollout.status}</div>
+                  <h4 className="text-sm font-semibold text-foreground">Rollout</h4>
+                  <div className="text-xs text-muted">{rollout.status}</div>
                 </div>
                 <div className="mb-3 flex flex-wrap gap-2">
                   <button
@@ -1501,8 +1501,8 @@ function ClustersPage() {
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
-                    <span className="text-xs text-ink-3">Revision</span>
-                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-ink outline-none">
+                    <span className="text-xs text-subtle">Revision</span>
+                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
                       {rollout.history.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>
                           {entry.revision}
@@ -1512,7 +1512,7 @@ function ClustersPage() {
                     <button
                       onClick={() => handleRolloutAction('undo')}
                       disabled={!!actionLoading || !rolloutRevision}
-                      className="rounded-lg border glass-divider glass-inset-surface px-3 py-1 text-sm text-ink glass-inset-hover disabled:opacity-50"
+                      className="rounded-lg border glass-divider glass-inset-surface px-3 py-1 text-sm text-foreground glass-inset-hover disabled:opacity-50"
                     >
                       {actionLoading === 'rollout-undo' ? 'Undoing...' : 'Undo'}
                     </button>
@@ -1520,12 +1520,12 @@ function ClustersPage() {
                 </div>
                 <div className="space-y-2">
                   {rollout.history.length === 0 ? (
-                    <div className="text-sm text-ink-3">No rollout revisions reported.</div>
+                    <div className="text-sm text-subtle">No rollout revisions reported.</div>
                   ) : (
                     rollout.history.map((entry) => (
                       <div key={entry.revision} className="glass-table-row rounded-md px-3 py-2 text-sm">
-                        <div className="text-ink">Revision {entry.revision}</div>
-                        <div className="mt-1 text-xs text-ink-3">{entry.change_cause}</div>
+                        <div className="text-foreground">Revision {entry.revision}</div>
+                        <div className="mt-1 text-xs text-subtle">{entry.change_cause}</div>
                       </div>
                     ))
                   )}
@@ -1536,8 +1536,8 @@ function ClustersPage() {
             {detailTab === 'overview' && selected.kind === 'HelmRelease' && (
               <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-ink">Helm</h4>
-                  <div className="text-xs text-ink-2">{helmHistory.length} revisions</div>
+                  <h4 className="text-sm font-semibold text-foreground">Helm</h4>
+                  <div className="text-xs text-muted">{helmHistory.length} revisions</div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   <input
@@ -1547,8 +1547,8 @@ function ClustersPage() {
                     placeholder="repo/chart or chart reference"
                   />
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
-                    <span className="text-xs text-ink-3">Revision</span>
-                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-ink outline-none">
+                    <span className="text-xs text-subtle">Revision</span>
+                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
                       {helmHistory.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>{entry.revision}</option>
                       ))}
@@ -1581,7 +1581,7 @@ function ClustersPage() {
                   <button
                     onClick={() => handleHelmAction('rollback')}
                     disabled={!!actionLoading || !helmRevision}
-                    className="glass-select text-ink glass-inset-hover disabled:opacity-50"
+                    className="glass-select text-foreground glass-inset-hover disabled:opacity-50"
                   >
                     {actionLoading === 'helm-rollback' ? 'Rolling Back...' : 'Rollback'}
                   </button>
@@ -1590,11 +1590,11 @@ function ClustersPage() {
                   {helmHistory.map((entry) => (
                     <div key={entry.revision} className="glass-table-row rounded-md px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-ink">Revision {entry.revision}</span>
-                        <span className="text-ink-2">{entry.status}</span>
+                        <span className="text-foreground">Revision {entry.revision}</span>
+                        <span className="text-muted">{entry.status}</span>
                       </div>
-                      <div className="mt-1 text-xs text-ink-3">{entry.chart}{entry.app_version ? ` · ${entry.app_version}` : ''}</div>
-                      <div className="mt-1 text-xs text-ink-3">{entry.description ?? 'No description'} · {formatTimestamp(entry.updated)}</div>
+                      <div className="mt-1 text-xs text-subtle">{entry.chart}{entry.app_version ? ` · ${entry.app_version}` : ''}</div>
+                      <div className="mt-1 text-xs text-subtle">{entry.description ?? 'No description'} · {formatTimestamp(entry.updated)}</div>
                     </div>
                   ))}
                 </div>
@@ -1603,7 +1603,7 @@ function ClustersPage() {
 
             {detailTab === 'logs' && selectedLogsPath && (
               <div className="glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Logs</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Logs</h4>
                 <LogViewer workloadName={selected.name} logsPath={selectedLogsPath} />
               </div>
             )}
@@ -1611,7 +1611,7 @@ function ClustersPage() {
             {detailTab === 'terminal' && ((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
               <div className="glass-drawer p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-ink">Terminal</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Terminal</h4>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setTerminalExpanded((value) => !value)}
@@ -1619,7 +1619,7 @@ function ClustersPage() {
                     >
                       {terminalExpanded ? 'Compact' : 'Expand'}
                     </button>
-                    <div className={`text-xs ${execConnected ? 'text-emerald-400' : 'text-ink-3'}`}>
+                    <div className={`text-xs ${execConnected ? 'text-emerald-400' : 'text-subtle'}`}>
                       {execConnected ? 'connected' : 'disconnected'}
                     </div>
                   </div>
@@ -1653,7 +1653,7 @@ function ClustersPage() {
                     <button
                       onClick={disconnectExec}
                       disabled={!execConnected}
-                      className="flex-1 glass-select text-ink glass-inset-hover disabled:opacity-50"
+                      className="flex-1 glass-select text-foreground glass-inset-hover disabled:opacity-50"
                     >
                       Disconnect
                     </button>
@@ -1686,7 +1686,7 @@ function ClustersPage() {
 
             {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
               <div className="glass-drawer p-3" data-testid="clusters-port-forward-panel">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Port Forward</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Port Forward</h4>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
                   <select data-testid="clusters-port-forward-pod" value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="glass-select disabled:opacity-60">
                     {((selected.kind === 'Service') ? [selected.name] : (selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name))).map((podName) => (
@@ -1722,14 +1722,14 @@ function ClustersPage() {
                       data-testid="clusters-port-forward-stop"
                       onClick={handlePortForwardStop}
                       disabled={!portForwardSession}
-                      className="flex-1 glass-select text-ink glass-inset-hover disabled:opacity-50"
+                      className="flex-1 glass-select text-foreground glass-inset-hover disabled:opacity-50"
                     >
                       {actionLoading === 'port-forward-stop' ? 'Stopping...' : 'Stop'}
                     </button>
                   </div>
                 </div>
                 {portForwardSession && (
-                  <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-ink-2">
+                  <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-muted">
                     Active: <span className="text-emerald-300">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </div>
                 )}
@@ -1739,7 +1739,7 @@ function ClustersPage() {
             {detailTab === 'manifest' && (
             <div className="glass-drawer p-3">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-ink">Manifest</h4>
+                <h4 className="text-sm font-semibold text-foreground">Manifest</h4>
                 <button
                   onClick={handleApply}
                   disabled={!!actionLoading || selected.kind === 'HelmRelease'}
@@ -1760,7 +1760,7 @@ function ClustersPage() {
                 <CodeBlock title="Current Resource">{JSON.stringify(selected.manifest, null, 2)}</CodeBlock>
               </div>
               <div className="glass-drawer mt-3 p-3">
-                <h4 className="mb-3 text-sm font-semibold text-ink">Diff Preview</h4>
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Diff Preview</h4>
                 <pre className="max-h-80 overflow-auto text-xs">
                   {serverDiff.map((line, index) => (
                     <div
@@ -1770,7 +1770,7 @@ function ClustersPage() {
                           ? 'text-emerald-300'
                           : line.kind === 'remove'
                             ? 'text-red-300'
-                            : 'text-ink-3'
+                            : 'text-subtle'
                       }
                     >
                       {line.text}
@@ -1792,7 +1792,7 @@ function ClustersPage() {
         <div data-testid="clusters-create-modal" className="space-y-4">
           {kind === 'HelmRelease' ? (
             <>
-              <p className="text-sm text-ink-2">
+              <p className="text-sm text-muted">
                 Install a Helm release into the selected cluster and namespace.
               </p>
               <input
@@ -1818,7 +1818,7 @@ function ClustersPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-ink-2">
+              <p className="text-sm text-muted">
                 Provide a JSON manifest. Aether will apply it directly to the selected cluster.
               </p>
               <textarea

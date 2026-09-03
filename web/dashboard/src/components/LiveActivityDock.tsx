@@ -86,20 +86,20 @@ export default function LiveActivityDock() {
             <div className="flex items-center gap-2">
               <Rocket className={`h-4 w-4 ${activity.phase === 'failed' ? 'text-red-400' : 'text-brand'}`} />
               <div>
-                <div className="text-sm font-semibold text-ink">{activity.title}</div>
-                <div className="text-xs text-ink-3 truncate max-w-[220px]">{activity.subtitle}</div>
+                <div className="text-sm font-semibold text-foreground">{activity.title}</div>
+                <div className="text-xs text-subtle truncate max-w-[220px]">{activity.subtitle}</div>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setActivities((p) => p.filter((a) => a.id !== activity.id))}
-              className="text-ink-3 hover:text-ink-2"
+              className="text-subtle hover:text-muted"
               aria-label="Dismiss"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-ink-3">
+          <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-subtle">
             <span>{activity.percent}%</span>
             <span>ETA {formatEta(activity.etaSecs)}</span>
           </div>

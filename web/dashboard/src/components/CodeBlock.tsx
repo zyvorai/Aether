@@ -12,7 +12,7 @@ export default function CodeBlock({ children, title }: CodeBlockProps) {
     <div className="glass-code-block">
       {title && (
         <div className="glass-code-block-header">
-          <span className="text-xs font-medium text-ink-2 uppercase tracking-wider">
+          <span className="text-xs font-medium text-muted uppercase tracking-wider">
             {title}
           </span>
         </div>

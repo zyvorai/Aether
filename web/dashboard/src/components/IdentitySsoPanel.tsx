@@ -14,8 +14,8 @@ function ConfigRow({ label, value }: { label: string; value: string | null | und
   if (!value) return null;
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 py-2 border-b border-white/5 last:border-0">
-      <span className="text-xs text-ink-3 shrink-0">{label}</span>
-      <code className="text-xs text-ink-2 break-all text-right">{value}</code>
+      <span className="text-xs text-subtle shrink-0">{label}</span>
+      <code className="text-xs text-muted break-all text-right">{value}</code>
     </div>
   );
 }
@@ -90,7 +90,7 @@ export default function IdentitySsoPanel() {
         testId="identity-session-panel"
         title="Session"
         subtitle="JWT session cookies issued after OIDC, SAML, or LDAP login."
-        icon={<KeyRound className="h-5 w-5 text-ink-2" />}
+        icon={<KeyRound className="h-5 w-5 text-muted" />}
         actions={<StatusBadge enabled={settings.session.session_secret_configured} />}
       >
         <ConfigRow label="Cookie" value={settings.session.cookie_name} />
@@ -99,7 +99,7 @@ export default function IdentitySsoPanel() {
           value={settings.session.redis_configured ? 'enabled' : 'in-memory (single node)'}
         />
         <ConfigRow label="JWT TTL" value={`${settings.session.jwt_session_hours} hours`} />
-        <p className="mt-3 text-xs text-ink-3">{settings.session.note}</p>
+        <p className="mt-3 text-xs text-subtle">{settings.session.note}</p>
       </GlassSection>
 
       <GlassSection
@@ -127,7 +127,7 @@ export default function IdentitySsoPanel() {
           label="Role mapping"
           value={settings.oidc.role_mapping_configured ? 'AETHER_OIDC_ROLE_MAP' : 'default role only'}
         />
-        <p className="mt-3 text-xs text-ink-3">{settings.oidc.note}</p>
+        <p className="mt-3 text-xs text-subtle">{settings.oidc.note}</p>
       </GlassSection>
 
       <GlassSection
@@ -172,7 +172,7 @@ export default function IdentitySsoPanel() {
             </button>
           </div>
         ) : null}
-        <p className="mt-3 text-xs text-ink-3">{settings.saml.note}</p>
+        <p className="mt-3 text-xs text-subtle">{settings.saml.note}</p>
       </GlassSection>
 
       <GlassSection
@@ -196,7 +196,7 @@ export default function IdentitySsoPanel() {
           label="Role mapping"
           value={settings.ldap.role_mapping_configured ? 'AETHER_LDAP_ROLE_MAP' : 'default role only'}
         />
-        <p className="mt-3 text-xs text-ink-3">{settings.ldap.note}</p>
+        <p className="mt-3 text-xs text-subtle">{settings.ldap.note}</p>
       </GlassSection>
     </div>
   );

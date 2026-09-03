@@ -313,7 +313,7 @@ function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-ink-2"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-muted"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
@@ -322,7 +322,7 @@ function EditorPage() {
           <button
             type="button"
             onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-ink-2"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-muted"
           >
             <Pencil className="w-4 h-4" />
             {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
@@ -333,10 +333,10 @@ function EditorPage() {
       <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         <div className="glass space-y-6">
           <div>
-            <h3 className="text-sm font-medium text-ink-2 mb-3">Basic information</h3>
+            <h3 className="text-sm font-medium text-muted mb-3">Basic information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-ink-3 mb-1">Name</label>
+                <label className="block text-xs text-subtle mb-1">Name</label>
                 <input
                   type="text"
                   value={form.name}
@@ -345,7 +345,7 @@ function EditorPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-ink-3 mb-1">Image</label>
+                <label className="block text-xs text-subtle mb-1">Image</label>
                 <input
                   type="text"
                   value={form.image}
@@ -358,7 +358,7 @@ function EditorPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-ink-3 mb-1">Runtime</label>
+              <label className="block text-xs text-subtle mb-1">Runtime</label>
               <select
                 value={form.runtime}
                 onChange={(e) => handleChange('runtime', e.target.value)}
@@ -372,7 +372,7 @@ function EditorPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-ink-3 mb-1">Replicas</label>
+              <label className="block text-xs text-subtle mb-1">Replicas</label>
               <input
                 type="number"
                 value={form.replicas}
@@ -384,10 +384,10 @@ function EditorPage() {
 
           {(form.runtime === 'kubernetes' || form.runtime === 'kata') && (
             <div>
-              <h3 className="text-sm font-medium text-ink-2 mb-3">Kubernetes</h3>
+              <h3 className="text-sm font-medium text-muted mb-3">Kubernetes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-ink-3 mb-1">Namespace</label>
+                  <label className="block text-xs text-subtle mb-1">Namespace</label>
                   <input
                     type="text"
                     value={form.k8sNamespace}
@@ -396,7 +396,7 @@ function EditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-ink-3 mb-1">Service account</label>
+                  <label className="block text-xs text-subtle mb-1">Service account</label>
                   <input
                     type="text"
                     value={form.k8sServiceAccount}
@@ -405,7 +405,7 @@ function EditorPage() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs text-ink-3 mb-1">Node selector (key=value)</label>
+                  <label className="block text-xs text-subtle mb-1">Node selector (key=value)</label>
                   <input
                     type="text"
                     value={form.k8sNodeSelector}
@@ -415,7 +415,7 @@ function EditorPage() {
                   />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-ink-2 mt-3">
+              <label className="flex items-center gap-2 text-sm text-muted mt-3">
                 <input
                   type="checkbox"
                   checked={form.networkDenyAllIngress}
@@ -424,7 +424,7 @@ function EditorPage() {
                 />
                 Deny all ingress (network policy)
               </label>
-              <label className="flex items-center gap-2 text-sm text-ink-2 mt-3">
+              <label className="flex items-center gap-2 text-sm text-muted mt-3">
                 <input
                   type="checkbox"
                   checked={form.showAdvancedK8s}
@@ -436,7 +436,7 @@ function EditorPage() {
               {form.showAdvancedK8s && (
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border glass-divider p-4">
                   <div>
-                    <label className="block text-xs text-ink-3 mb-1">Workload kind</label>
+                    <label className="block text-xs text-subtle mb-1">Workload kind</label>
                     <select
                       value={form.k8sWorkloadKind}
                       onChange={(e) => handleChange('k8sWorkloadKind', e.target.value)}
@@ -450,7 +450,7 @@ function EditorPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-3 mb-1">PDB minAvailable</label>
+                    <label className="block text-xs text-subtle mb-1">PDB minAvailable</label>
                     <input
                       type="text"
                       value={form.k8sPdbMinAvailable}
@@ -459,7 +459,7 @@ function EditorPage() {
                       className="glass-input"
                     />
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sVpaEnabled}
@@ -468,7 +468,7 @@ function EditorPage() {
                     />
                     Vertical Pod Autoscaler (VPA)
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sKedaEnabled}
@@ -477,7 +477,7 @@ function EditorPage() {
                     />
                     KEDA ScaledObject
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sCertManagerEnabled}
@@ -486,7 +486,7 @@ function EditorPage() {
                     />
                     cert-manager Certificate (requires Ingress host)
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
                     <input
                       type="checkbox"
                       checked={form.k8sGatewayEnabled}
@@ -511,7 +511,7 @@ function EditorPage() {
                         placeholder="Gateway host"
                         className="glass-input"
                       />
-                      <label className="flex items-center gap-2 text-sm text-ink-2 md:col-span-2">
+                      <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
                         <input
                           type="checkbox"
                           checked={form.k8sGatewayProvision}
@@ -528,8 +528,8 @@ function EditorPage() {
           )}
 
           <div>
-            <h3 className="text-sm font-medium text-ink-2 mb-3">Scaling & ingress</h3>
-            <label className="flex items-center gap-2 text-sm text-ink-2 mb-3">
+            <h3 className="text-sm font-medium text-muted mb-3">Scaling & ingress</h3>
+            <label className="flex items-center gap-2 text-sm text-muted mb-3">
               <input
                 type="checkbox"
                 checked={form.scalingEnabled}
@@ -541,7 +541,7 @@ function EditorPage() {
             {form.scalingEnabled && (
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-xs text-ink-3 mb-1">Min replicas</label>
+                  <label className="block text-xs text-subtle mb-1">Min replicas</label>
                   <input
                     type="number"
                     value={form.scalingMin}
@@ -550,7 +550,7 @@ function EditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-ink-3 mb-1">Max replicas</label>
+                  <label className="block text-xs text-subtle mb-1">Max replicas</label>
                   <input
                     type="number"
                     value={form.scalingMax}
@@ -560,7 +560,7 @@ function EditorPage() {
                 </div>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm text-ink-2 mb-3">
+            <label className="flex items-center gap-2 text-sm text-muted mb-3">
               <input
                 type="checkbox"
                 checked={form.ingressEnabled}
@@ -599,10 +599,10 @@ function EditorPage() {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-ink-2 mb-3">Resources</h3>
+            <h3 className="text-sm font-medium text-muted mb-3">Resources</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-ink-3 mb-1">CPU</label>
+                <label className="block text-xs text-subtle mb-1">CPU</label>
                 <input
                   type="text"
                   value={form.cpu}
@@ -611,7 +611,7 @@ function EditorPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-ink-3 mb-1">Memory</label>
+                <label className="block text-xs text-subtle mb-1">Memory</label>
                 <input
                   type="text"
                   value={form.memory}
@@ -623,7 +623,7 @@ function EditorPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-ink-3 mb-1">Intent</label>
+            <label className="block text-xs text-subtle mb-1">Intent</label>
             <select
               value={form.intent}
               onChange={(e) => handleChange('intent', e.target.value)}
@@ -638,16 +638,16 @@ function EditorPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-ink-3 mb-1">Environment (KEY=VALUE per line)</label>
+            <label className="block text-xs text-subtle mb-1">Environment (KEY=VALUE per line)</label>
             <textarea
               value={form.env}
               onChange={(e) => handleChange('env', e.target.value)}
               rows={3}
-              className="glass-input font-mono text-ink"
+              className="glass-input font-mono text-foreground"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-ink-2">
+          <label className="flex items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               checked={form.healthCheck}
@@ -668,7 +668,7 @@ function EditorPage() {
           )}
 
           {exportPath && (
-            <p className="text-xs text-ink-3 mt-2">Helm output: <code className="text-brand/90">{exportPath}</code></p>
+            <p className="text-xs text-subtle mt-2">Helm output: <code className="text-brand/90">{exportPath}</code></p>
           )}
 
           <div className="flex flex-wrap gap-3 pt-4 glass-divider-t">
@@ -699,7 +699,7 @@ function EditorPage() {
               data-testid="editor-export-helm"
               onClick={() => void handleHelmExport()}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-ink-2 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-muted disabled:opacity-50"
             >
               {exporting ? 'Exporting…' : 'Export Helm chart'}
             </button>
@@ -711,7 +711,7 @@ function EditorPage() {
                 setResult(null);
                 setValidateResult(null);
               }}
-              className="px-5 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-ink-2"
+              className="px-5 py-2.5 border glass-divider glass-inset-hover rounded-xl text-sm text-muted"
             >
               Reset
             </button>
@@ -720,7 +720,7 @@ function EditorPage() {
 
         {showPreview && (
           <div className="glass flex min-h-0 flex-col">
-            <div className="mb-3 flex items-center gap-2 text-sm text-ink-2">
+            <div className="mb-3 flex items-center gap-2 text-sm text-muted">
               <Eye className="h-4 w-4" /> Live YAML preview
             </div>
             <div className="min-h-0 flex-1" data-testid="editor-yaml-preview">

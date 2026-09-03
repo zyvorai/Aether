@@ -77,27 +77,27 @@ export default function GitOpsCenter({
             <CheckCircle2 size={18} />
             <span className="text-sm font-medium">Synced</span>
           </div>
-          <p className="text-2xl font-semibold text-ink mt-2">{synced ? 'Yes' : outOfSync ? 'Partial' : '—'}</p>
+          <p className="text-2xl font-semibold text-foreground mt-2">{synced ? 'Yes' : outOfSync ? 'Partial' : '—'}</p>
         </div>
         <div className="glass border-amber-500/20 bg-amber-950/20 py-4">
           <div className="flex items-center gap-2 text-amber-300">
             <AlertTriangle size={18} />
             <span className="text-sm font-medium">Out of sync</span>
           </div>
-          <p className="text-2xl font-semibold text-ink mt-2">{changes.length}</p>
+          <p className="text-2xl font-semibold text-foreground mt-2">{changes.length}</p>
         </div>
         <div className="glass border-red-500/20 bg-red-950/20 py-4">
           <div className="flex items-center gap-2 text-red-300">
             <XCircle size={18} />
             <span className="text-sm font-medium">Failed</span>
           </div>
-          <p className="text-2xl font-semibold text-ink mt-2">{failed ? 1 : 0}</p>
+          <p className="text-2xl font-semibold text-foreground mt-2">{failed ? 1 : 0}</p>
         </div>
       </div>
 
       {!configured ? (
-        <p className="text-sm text-ink-3">
-          GitOps is not configured. Run <code className="text-ink-2">aether git-ops init</code> to connect a repository.
+        <p className="text-sm text-subtle">
+          GitOps is not configured. Run <code className="text-muted">aether git-ops init</code> to connect a repository.
         </p>
       ) : changes.length === 0 ? (
         <div className="flex items-center gap-2 text-sm text-emerald-300">
@@ -106,13 +106,13 @@ export default function GitOpsCenter({
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wide text-ink-3 mb-2">Pending changes</p>
+          <p className="text-xs uppercase tracking-wide text-subtle mb-2">Pending changes</p>
           {changes.slice(0, 8).map((c) => (
             <div
               key={`${c.file_path}-${c.commit}`}
               className="flex items-center justify-between gap-3 rounded-xl border glass px-3 py-2 backdrop-blur-sm"
             >
-              <span className="text-sm text-ink">{humanChange(c)}</span>
+              <span className="text-sm text-foreground">{humanChange(c)}</span>
               <Badge text={c.change_type} variant="yellow" />
             </div>
           ))}

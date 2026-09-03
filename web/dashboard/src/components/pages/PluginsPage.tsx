@@ -230,7 +230,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
 
       {discoverSummary && (
-        <div data-testid="plugins-discover-summary" className="glass mb-6 text-sm text-ink-2">
+        <div data-testid="plugins-discover-summary" className="glass mb-6 text-sm text-muted">
           {discoverSummary}
           <button
             type="button"
@@ -244,7 +244,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {canMutate && (
         <div className="glass mb-6">
-          <h3 className="text-sm font-semibold text-ink mb-2">Register plugin manifest</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Register plugin manifest</h3>
           <form onSubmit={(e) => void handleRegister(e)} className="space-y-3" data-testid="plugins-register-form">
             <textarea
               value={registerJson}
@@ -257,7 +257,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
               Register
             </button>
           </form>
-          {registerMsg && <p className="mt-2 text-xs text-ink-2">{registerMsg}</p>}
+          {registerMsg && <p className="mt-2 text-xs text-muted">{registerMsg}</p>}
         </div>
       )}
 
@@ -282,11 +282,11 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       <Badge key={c} text={c} variant="blue" />
                     ))}
                     {p.capabilities.length > 6 ? (
-                      <span className="text-[11px] text-ink-3">+{p.capabilities.length - 6}</span>
+                      <span className="text-[11px] text-subtle">+{p.capabilities.length - 6}</span>
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-[12px] text-ink-3">No declared capabilities</p>
+                  <p className="text-[12px] text-subtle">No declared capabilities</p>
                 )
               }
               footer={
@@ -294,7 +294,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => setSelectedPlugin(p)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                   >
                     <Search size={13} />
                     Inspect
@@ -303,7 +303,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => void handleRemove(p.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-red-500/15 hover:text-red-300"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-red-500/15 hover:text-red-300"
                     >
                       <Trash2 size={13} />
                       Remove
@@ -327,21 +327,21 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <div className="space-y-4" data-testid="plugins-inspect-modal">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="glass px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-ink-3">Runtime</div>
-                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.runtime_kind}</div>
+                <div className="text-xs uppercase tracking-wider text-subtle">Runtime</div>
+                <div className="mt-2 text-sm font-medium text-foreground">{selectedPlugin.runtime_kind}</div>
               </div>
               <div className="glass px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-ink-3">Version</div>
-                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.version}</div>
+                <div className="text-xs uppercase tracking-wider text-subtle">Version</div>
+                <div className="mt-2 text-sm font-medium text-foreground">{selectedPlugin.version}</div>
               </div>
               <div className="glass px-4 py-3">
-                <div className="text-xs uppercase tracking-wider text-ink-3">Capabilities</div>
-                <div className="mt-2 text-sm font-medium text-ink">{selectedPlugin.capabilities.length}</div>
+                <div className="text-xs uppercase tracking-wider text-subtle">Capabilities</div>
+                <div className="mt-2 text-sm font-medium text-foreground">{selectedPlugin.capabilities.length}</div>
               </div>
             </div>
             <div>
-              <div className="mb-2 text-sm font-medium text-ink">Command</div>
-              <code className="block glass-input text-ink-2 font-mono">
+              <div className="mb-2 text-sm font-medium text-foreground">Command</div>
+              <code className="block glass-input text-muted font-mono">
                 {selectedPlugin.command}
               </code>
             </div>

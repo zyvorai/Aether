@@ -227,7 +227,7 @@ function ComposePage() {
 
       <section className="space-y-6">
       <div>
-        <p className="text-sm text-ink-3">
+        <p className="text-sm text-subtle">
           Validate dependency order and deploy a stack. Use <code className="text-brand/90">spec_yaml</code> for inline
           workloads or <code className="text-brand/90">spec</code> for file paths on the server.
         </p>
@@ -250,12 +250,12 @@ function ComposePage() {
               <div className="mt-4 space-y-4" data-testid="compose-validate-result">
                 <div className="flex items-center gap-3">
                   <Badge text={result.valid ? 'VALID' : 'INVALID'} variant={result.valid ? 'green' : 'red'} />
-                  <span className="text-sm text-ink-2">{result.workload_count ?? 0} workloads</span>
+                  <span className="text-sm text-muted">{result.workload_count ?? 0} workloads</span>
                 </div>
                 {result.deploy_order && result.deploy_order.length > 0 ? (
                   <div>
-                    <h4 className="text-xs uppercase tracking-wider text-ink-3 mb-2">Deploy order</h4>
-                    <ol className="space-y-1 text-sm text-ink-2">
+                    <h4 className="text-xs uppercase tracking-wider text-subtle mb-2">Deploy order</h4>
+                    <ol className="space-y-1 text-sm text-muted">
                       {result.deploy_order.map((item, index) => (
                         <li key={`${item}-${index}`} className="flex items-center gap-2">
                           <span className="text-brand font-mono text-xs">{index + 1}.</span>

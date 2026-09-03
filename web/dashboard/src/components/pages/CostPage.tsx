@@ -82,7 +82,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="font-medium text-ink">{est.provider}</span>
+              <span className="font-medium text-foreground">{est.provider}</span>
               {est.provider === cheapest && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Cheapest
@@ -91,26 +91,26 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
             </div>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-3">CPU / month</dt>
-                <dd className="text-ink">{formatUSD(est.cpu_cost_monthly)}</dd>
+                <dt className="text-subtle">CPU / month</dt>
+                <dd className="text-foreground">{formatUSD(est.cpu_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-3">Memory / month</dt>
-                <dd className="text-ink">{formatUSD(est.memory_cost_monthly)}</dd>
+                <dt className="text-subtle">Memory / month</dt>
+                <dd className="text-foreground">{formatUSD(est.memory_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-3">Storage / month</dt>
-                <dd className="text-ink">{formatUSD(est.storage_cost_monthly)}</dd>
+                <dt className="text-subtle">Storage / month</dt>
+                <dd className="text-foreground">{formatUSD(est.storage_cost_monthly)}</dd>
               </div>
               <div className="flex justify-between gap-4 font-medium">
-                <dt className="text-ink-2">Total / month</dt>
-                <dd className={est.provider === cheapest ? 'text-emerald-400' : 'text-ink'}>
+                <dt className="text-muted">Total / month</dt>
+                <dd className={est.provider === cheapest ? 'text-emerald-400' : 'text-foreground'}>
                   {formatUSD(est.total_monthly)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-ink-3">Hourly</dt>
-                <dd className="text-ink-2">{formatUSD(est.total_hourly)}</dd>
+                <dt className="text-subtle">Hourly</dt>
+                <dd className="text-muted">{formatUSD(est.total_hourly)}</dd>
               </div>
             </dl>
           </div>
@@ -214,7 +214,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : chargeback ? (
         <div className="glass" data-testid="cost-fleet-chargeback">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-            <h2 className="text-lg font-semibold text-ink">Fleet chargeback</h2>
+            <h2 className="text-lg font-semibold text-foreground">Fleet chargeback</h2>
             <button
               type="button"
               data-testid="cost-fleet-metrics-link"
@@ -243,7 +243,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
               Placement scheduler →
             </Link>
           </div>
-          <p className="text-sm text-ink-2">
+          <p className="text-sm text-muted">
             {chargeback.pricingSource} · {chargeback.region} · fleet {formatUSD(chargeback.totalMonthlyUsd)}/mo
             · {chargeback.lines.length} workload line(s)
           </p>
@@ -261,7 +261,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
                   >
                     {line.workload}
                   </Link>
-                  <span className="text-ink-3">{formatUSD(line.monthlyUsd)}/mo</span>
+                  <span className="text-subtle">{formatUSD(line.monthlyUsd)}/mo</span>
                 </li>
               ))}
             </ul>

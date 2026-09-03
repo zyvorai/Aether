@@ -222,7 +222,7 @@ export default function RuntimeFabricGraph({
         <button
           type="button"
           onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
-          className="rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 hover:text-ink"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted hover:text-foreground"
           aria-label="Zoom in"
         >
           <ZoomIn className="h-4 w-4" />
@@ -230,7 +230,7 @@ export default function RuntimeFabricGraph({
         <button
           type="button"
           onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
-          className="rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 hover:text-ink"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted hover:text-foreground"
           aria-label="Zoom out"
         >
           <ZoomOut className="h-4 w-4" />
@@ -241,11 +241,11 @@ export default function RuntimeFabricGraph({
             setZoom(1);
             setPan({ x: 0, y: 0 });
           }}
-          className="rounded-lg border glass-divider px-2 py-1 text-xs text-ink-2 hover:text-ink"
+          className="rounded-lg border glass-divider px-2 py-1 text-xs text-muted hover:text-foreground"
         >
           Reset view
         </button>
-        <span className="ml-auto text-xs text-ink-3">{graph.nodes.length} nodes · live</span>
+        <span className="ml-auto text-xs text-subtle">{graph.nodes.length} nodes · live</span>
       </div>
 
       <div className="glass overflow-hidden rounded-[24px]">
@@ -333,7 +333,7 @@ export default function RuntimeFabricGraph({
 
       {selectedNode?.workload && onQuickAction ? (
         <div className="flex flex-wrap gap-2 rounded-2xl border glass-divider glass p-3" data-testid="fabric-node-actions">
-          <span className="w-full text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-3">
+          <span className="w-full text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
             Quick actions · {selectedNode.workload}
           </span>
           <button
@@ -360,7 +360,7 @@ export default function RuntimeFabricGraph({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.14em] text-ink-3">
+      <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.14em] text-subtle">
         <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-sky-400" /> Application</span>
         <span className="inline-flex items-center gap-1"><Network className="h-3 w-3 text-violet-400" /> Runtime</span>
         <span className="inline-flex items-center gap-1"><HardDrive className="h-3 w-3 text-teal-400" /> Cluster</span>

@@ -42,7 +42,7 @@ export default function Hero({ title, subtitle, badges }: HeroProps) {
               {title}
             </h1>
             {subtitle.trim() ? (
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-base">{subtitle}</p>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">{subtitle}</p>
             ) : null}
           </div>
           {badges && badges.length > 0 ? (

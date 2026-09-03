@@ -85,9 +85,6 @@
   --hover: var(--nav-hover-bg);
   --rule: var(--border);
   --rule-strong: var(--glass-border-strong);
-  --ink: var(--foreground);
-  --ink-2: var(--muted-foreground);
-  --ink-3: #86868b;
   --subtle: #86868b;
   --brand: #0071e3;
   --brand-rgb: 0 113 227;
@@ -136,7 +133,6 @@ html.dark-theme,
   --brand-rgb: 10 132 255;
   --primary-rgb: 10 132 255;
   --brand-wash: rgba(10, 132, 255, 0.16);
-  --ink-3: #8e8e93;
   --subtle: #8e8e93;
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: var(--nav-bg);

@@ -387,16 +387,16 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {activeTab === 'edge' ? (
         <div className="glass mb-6" data-testid="fleet-edge-panel">
-          <h2 className="text-lg font-semibold text-ink mb-4">Edge sites</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Edge sites</h2>
           {edgeAgents.length === 0 ? (
-            <p className="text-sm text-ink-3">No edge agents registered. Run <code className="text-ink-2">aether edge-agent</code> at remote sites.</p>
+            <p className="text-sm text-subtle">No edge agents registered. Run <code className="text-muted">aether edge-agent</code> at remote sites.</p>
           ) : (
             <div className="space-y-3">
               {edgeAgents.map((a) => (
                 <div key={a.site} className="rounded-lg border glass-divider p-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-ink">{a.site}</div>
-                    <div className="text-xs text-ink-3">{a.kube_context ?? 'default context'} · queue depth {a.queue_depth}</div>
+                    <div className="text-sm font-medium text-foreground">{a.site}</div>
+                    <div className="text-xs text-subtle">{a.kube_context ?? 'default context'} · queue depth {a.queue_depth}</div>
                   </div>
                   <Badge text={a.online ? 'online' : 'stale'} variant={a.online ? 'green' : 'yellow'} />
                 </div>
@@ -409,7 +409,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
       {activeTab === 'placement' ? (
         <div className="glass mb-6" data-testid="fleet-placement-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg font-semibold text-ink">Federation placement</h2>
+            <h2 className="text-lg font-semibold text-foreground">Federation placement</h2>
             <button
               type="button"
               data-testid="fleet-placement-run"
@@ -427,7 +427,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
             </button>
           </div>
           {!focusedWorkload ? (
-            <p className="text-sm text-ink-3">Add <code className="text-ink-2">?workload=name</code> to plan federation placement.</p>
+            <p className="text-sm text-subtle">Add <code className="text-muted">?workload=name</code> to plan federation placement.</p>
           ) : placementPlan ? (
             <div>
               {placementPlan.anomaly_signals_configured ? (
@@ -449,10 +449,10 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                     badge={<Badge text={c.reachable ? 'reachable' : 'down'} variant={c.reachable ? 'green' : 'red'} />}
                     body={
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                           Score {c.score.toFixed(1)}
                         </span>
-                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                        <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                           {c.anomaly_count ?? 0} anomalies
                         </span>
                       </div>
@@ -462,7 +462,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               </CardGrid>
             </div>
           ) : (
-            <p className="text-sm text-ink-3">Run placement plan to rank clusters for {focusedWorkload}.</p>
+            <p className="text-sm text-subtle">Run placement plan to rank clusters for {focusedWorkload}.</p>
           )}
         </div>
       ) : null}
@@ -500,7 +500,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
       <div className="glass mb-6">
         <h2 className="panel-title mb-4">Registered clusters</h2>
         {clusters.length === 0 ? (
-          <p className="text-sm text-ink-3">
+          <p className="text-sm text-subtle">
             No clusters in kubeconfig inventory. Configure kubeconfig on the API server or open{' '}
             <button type="button" onClick={() => navigate(viewToPath('clusters'))} className="text-brand hover:underline">
               Cluster Browser
@@ -523,7 +523,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                   badge={<Badge text={c.reachable ? 'reachable' : 'unreachable'} variant={c.reachable ? 'green' : 'red'} />}
                   onClick={() => navigate(pathWithQuery(viewToPath('clusters'), { cluster: c.name }))}
                   body={
-                    <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-ink-2" title={c.server ?? undefined}>
+                    <code className="block truncate rounded-lg glass-inset-surface px-2.5 py-1.5 font-mono text-[11px] text-muted" title={c.server ?? undefined}>
                       {c.server ?? '—'}
                     </code>
                   }
@@ -532,7 +532,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
             </CardGrid>
           </div>
         )}
-        <p className="mt-4 text-xs text-ink-3">
+        <p className="mt-4 text-xs text-subtle">
           Backend: {summary?.backend ?? '—'}
           {summary?.summary_note ? ` · ${summary.summary_note}` : ''}
         </p>
@@ -542,7 +542,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="panel-title">Hubble flow links</h2>
-            <p className="text-sm text-ink-3 mt-1">
+            <p className="text-sm text-subtle mt-1">
               Per-pod deep links into Hubble UI. Expand an application to see individual pod flows.
             </p>
           </div>
@@ -557,7 +557,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           )}
         </div>
         {hubbleApps.length === 0 ? (
-          <p className="text-sm text-ink-3">No Kubernetes applications with Hubble URLs discovered.</p>
+          <p className="text-sm text-subtle">No Kubernetes applications with Hubble URLs discovered.</p>
         ) : (
           <div className="space-y-2">
             {hubbleApps.map((app) => {
@@ -577,12 +577,12 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                     className="w-full flex items-center gap-3 px-4 py-3 text-left glass-inset-hover"
                   >
                     {expanded ? (
-                      <ChevronDown size={16} className="text-ink-3 shrink-0" />
+                      <ChevronDown size={16} className="text-subtle shrink-0" />
                     ) : (
-                      <ChevronRight size={16} className="text-ink-3 shrink-0" />
+                      <ChevronRight size={16} className="text-subtle shrink-0" />
                     )}
-                    <span className="font-medium text-ink flex-1">{shortName}</span>
-                    <span className="text-xs text-ink-3">{app.cluster} · {ns}</span>
+                    <span className="font-medium text-foreground flex-1">{shortName}</span>
+                    <span className="text-xs text-subtle">{app.cluster} · {ns}</span>
                     {nsHref && (
                       <a
                         href={nsHref}
@@ -598,9 +598,9 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                   {expanded && (
                     <div className="glass-divider-t px-4 py-3 glass">
                       {loadingPods ? (
-                        <p className="text-xs text-ink-3">Loading pods…</p>
+                        <p className="text-xs text-subtle">Loading pods…</p>
                       ) : pods.length === 0 ? (
-                        <p className="text-xs text-ink-3">No pods found for this application.</p>
+                        <p className="text-xs text-subtle">No pods found for this application.</p>
                       ) : (
                         <div className="space-y-2">
                           {pods.map((pod) => (
@@ -609,8 +609,8 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border glass-divider px-3 py-2"
                             >
                               <div className="min-w-0">
-                                <span className="text-sm font-mono text-ink">{pod.name}</span>
-                                <span className="text-xs text-ink-3 ml-2">
+                                <span className="text-sm font-mono text-foreground">{pod.name}</span>
+                                <span className="text-xs text-subtle ml-2">
                                   {pod.phase} · {pod.ready}/{pod.total_containers} ready
                                   {pod.restarts > 0 ? ` · ${pod.restarts} restarts` : ''}
                                 </span>
@@ -641,7 +641,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass">
         <h2 className="panel-title mb-4">Network observability</h2>
-        <p className="text-sm text-ink-3 mb-4">
+        <p className="text-sm text-subtle mb-4">
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>
         {packetwolfStatus?.configured ? (
@@ -649,10 +649,10 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium text-cyan-200">PacketWolf bridge</span>
               <Badge text={packetwolfStatus.reachable ? 'live' : 'offline'} variant={packetwolfStatus.reachable ? 'green' : 'yellow'} />
-              {packetwolfStatus.version ? <span className="text-xs text-ink-2">v{packetwolfStatus.version}</span> : null}
+              {packetwolfStatus.version ? <span className="text-xs text-muted">v{packetwolfStatus.version}</span> : null}
             </div>
             {packetwolfFlows ? (
-              <pre className="mt-2 text-xs text-ink-2 overflow-auto">{JSON.stringify(packetwolfFlows, null, 2)}</pre>
+              <pre className="mt-2 text-xs text-muted overflow-auto">{JSON.stringify(packetwolfFlows, null, 2)}</pre>
             ) : null}
             {packetwolfStatus.hint ? <p className="mt-2 text-xs text-amber-300">{packetwolfStatus.hint}</p> : null}
           </div>
@@ -673,7 +673,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               href={integrations.prometheus_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink glass-inset-hover"
+              className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-foreground glass-inset-hover"
             >
               Prometheus <ExternalLink size={14} />
             </a>
@@ -688,8 +688,8 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               Hubble UI <ExternalLink size={14} />
             </a>
           ) : (
-            <span className="text-sm text-ink-3 self-center">
-              Set <code className="text-ink-2">AETHER_HUBBLE_UI_URL</code> for Hubble
+            <span className="text-sm text-subtle self-center">
+              Set <code className="text-muted">AETHER_HUBBLE_UI_URL</code> for Hubble
             </span>
           )}
           {integrations.packetwolf_url ? (
@@ -702,14 +702,14 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
               PacketWolf <ExternalLink size={14} />
             </a>
           ) : (
-            <span className="text-sm text-ink-3 self-center">
-              Set <code className="text-ink-2">AETHER_PACKETWOLF_URL</code> for PacketWolf
+            <span className="text-sm text-subtle self-center">
+              Set <code className="text-muted">AETHER_PACKETWOLF_URL</code> for PacketWolf
             </span>
           )}
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-ink-2 glass-inset-hover"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-4 py-2 text-sm text-muted glass-inset-hover"
           >
             Platform & HA settings
           </button>

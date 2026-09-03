@@ -20,7 +20,7 @@ const R = 22;
 
 export default function DependencyGraphVisual({ nodes, edges, onNodeClick, highlightWorkload }: Props) {
   if (nodes.length === 0) {
-    return <p className="text-sm text-ink-3">No dependency nodes.</p>;
+    return <p className="text-sm text-subtle">No dependency nodes.</p>;
   }
 
   const positions = new Map<string, { x: number; y: number }>();

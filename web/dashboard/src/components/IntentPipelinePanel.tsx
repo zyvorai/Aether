@@ -113,7 +113,7 @@ export default function IntentPipelinePanel() {
           </button>
         </div>}
     ><label className="mb-6 block text-sm" data-testid="intent-nl-input">
-        <span className="mb-1 block text-xs text-ink-3">Natural language intent</span>
+        <span className="mb-1 block text-xs text-subtle">Natural language intent</span>
         <textarea
           value={nlText}
           onChange={(e) => setNlText(e.target.value)}
@@ -124,12 +124,12 @@ export default function IntentPipelinePanel() {
           type="button"
           onClick={() => void parseNl()}
           disabled={loading}
-          className="mt-2 rounded-lg border glass-divider px-3 py-1 text-xs text-ink-2 hover:border-brand/40"
+          className="mt-2 rounded-lg border glass-divider px-3 py-1 text-xs text-muted hover:border-brand/40"
         >
           Parse NL → intent block
         </button>
         {nlReport ? (
-          <pre className="mt-2 max-h-32 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-ink-2">
+          <pre className="mt-2 max-h-32 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-muted">
             {nlReport.intent_yaml}
           </pre>
         ) : null}
@@ -137,7 +137,7 @@ export default function IntentPipelinePanel() {
 
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block text-xs text-ink-3">Workload name</span>
+          <span className="mb-1 block text-xs text-subtle">Workload name</span>
           <input
             value={workloadName}
             onChange={(e) => setWorkloadName(e.target.value)}
@@ -145,7 +145,7 @@ export default function IntentPipelinePanel() {
           />
         </label>
         <div>
-          <span className="mb-2 block text-xs text-ink-3">Outcomes</span>
+          <span className="mb-2 block text-xs text-subtle">Outcomes</span>
           <div className="flex flex-wrap gap-2">
             {GOALS.map((g) => (
               <button
@@ -155,7 +155,7 @@ export default function IntentPipelinePanel() {
                 className={`rounded-full border px-3 py-1 text-xs ${
                   selected.has(g.id)
                     ? 'border-violet-500/40 bg-violet-500/10 text-violet-200'
-                    : 'glass-divider text-ink-2'
+                    : 'glass-divider text-muted'
                 }`}
               >
                 {g.label}
@@ -170,29 +170,29 @@ export default function IntentPipelinePanel() {
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
               <Sparkles className="mb-2 h-4 w-4 text-violet-400" />
-              <div className="text-lg font-semibold text-ink">{report.recommended_runtime}</div>
-              <div className="text-xs text-ink-3">Recommended runtime</div>
+              <div className="text-lg font-semibold text-foreground">{report.recommended_runtime}</div>
+              <div className="text-xs text-subtle">Recommended runtime</div>
             </div>
             <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-              <div className="text-lg font-semibold text-ink">{formatPercent(report.confidence, 0)}</div>
-              <div className="text-xs text-ink-3">Confidence</div>
+              <div className="text-lg font-semibold text-foreground">{formatPercent(report.confidence, 0)}</div>
+              <div className="text-xs text-subtle">Confidence</div>
             </div>
             <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-              <div className="text-lg font-semibold text-ink">{report.placement[0]?.cluster ?? 'local'}</div>
-              <div className="text-xs text-ink-3">Top cluster</div>
+              <div className="text-lg font-semibold text-foreground">{report.placement[0]?.cluster ?? 'local'}</div>
+              <div className="text-xs text-subtle">Top cluster</div>
             </div>
           </div>
 
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-3">Pipeline steps</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-subtle">Pipeline steps</p>
             <ol className="space-y-3">
               {report.steps.map((step) => (
                 <li key={step.phase} className="glass px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                    <span className="rounded glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-ink-2">{step.phase}</span>
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <span className="rounded glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-muted">{step.phase}</span>
                     {step.title}
                   </div>
-                  <p className="mt-1 text-sm text-ink-2">{step.detail}</p>
+                  <p className="mt-1 text-sm text-muted">{step.detail}</p>
                   <p className="mt-1 text-xs text-brand">{step.action}</p>
                 </li>
               ))}
@@ -211,7 +211,7 @@ export default function IntentPipelinePanel() {
             </Link>
           </div>
 
-          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-ink-2">
+          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
             {report.spec_yaml}
           </pre>
         </div>

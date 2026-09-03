@@ -259,10 +259,10 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
               onClick={() => setRestoreOpen(b.filename)}
               body={
                 <>
-                  {b.description ? <p className="line-clamp-2 text-[12px] text-ink-2">{b.description}</p> : null}
+                  {b.description ? <p className="line-clamp-2 text-[12px] text-muted">{b.description}</p> : null}
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">{b.workload_count} workloads</span>
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">v{b.aether_version}</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">{b.workload_count} workloads</span>
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">v{b.aether_version}</span>
                   </div>
                 </>
               }
@@ -270,7 +270,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <button
                   type="button"
                   onClick={() => setRestoreOpen(b.filename)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-emerald-500/15 hover:text-emerald-300"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-emerald-500/15 hover:text-emerald-300"
                 >
                   <RotateCcw size={13} />
                   Restore
@@ -299,7 +299,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             className="glass-input"
           />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-ink-2 glass-inset-hover">
+            <button type="button" onClick={() => setCreateOpen(false)} className="px-4 py-2 rounded-lg text-sm text-muted glass-inset-hover">
               Cancel
             </button>
             <button
@@ -316,10 +316,10 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <Modal isOpen={restoreOpen !== null} onClose={() => setRestoreOpen(null)} title="Restore backup">
         <div data-testid="backup-restore-modal">
-        <p className="text-sm text-ink-2 mb-4">
-          Restore state from <code className="text-ink-2">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
+        <p className="text-sm text-muted mb-4">
+          Restore state from <code className="text-muted">{restoreOpen}</code>. This replaces current workloads unless merge is enabled.
         </p>
-        <label className="flex items-center gap-2 text-sm text-ink-2 mb-6">
+        <label className="flex items-center gap-2 text-sm text-muted mb-6">
           <input
             type="checkbox"
             checked={restoreMerge}
@@ -329,7 +329,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
           Merge workloads not already present
         </label>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-ink-2 glass-inset-hover">
+          <button type="button" onClick={() => setRestoreOpen(null)} className="px-4 py-2 rounded-lg text-sm text-muted glass-inset-hover">
             Cancel
           </button>
           <button

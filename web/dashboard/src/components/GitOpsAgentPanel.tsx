@@ -70,7 +70,7 @@ export default function GitOpsAgentPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -83,11 +83,11 @@ export default function GitOpsAgentPanel() {
       </div>
 
       {!plan?.planned_actions.length ? (
-        <p className="text-sm text-ink-3">Loading agent plan…</p>
+        <p className="text-sm text-subtle">Loading agent plan…</p>
       ) : (
         <ul className="space-y-2">
           {plan.planned_actions.map((action) => (
-            <li key={action} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+            <li key={action} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
               <Play className="mr-1 inline h-3 w-3 text-violet-400" />
               {action}
             </li>
@@ -97,14 +97,14 @@ export default function GitOpsAgentPanel() {
 
       {prLinks.length > 0 ? (
         <div className="mt-4" data-testid="gitops-agent-pr-links">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-3">Agent pull requests</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Agent pull requests</p>
           <ul className="space-y-2">
             {prLinks.map((pr) => (
               <li key={pr.url} className="rounded-lg border glass-divider px-3 py-2 text-sm">
                 <a href={pr.url} target="_blank" rel="noreferrer" className="text-brand hover:underline">
                   {pr.title}
                 </a>
-                <span className="ml-2 text-xs text-ink-3">{pr.workload}</span>
+                <span className="ml-2 text-xs text-subtle">{pr.workload}</span>
               </li>
             ))}
           </ul>

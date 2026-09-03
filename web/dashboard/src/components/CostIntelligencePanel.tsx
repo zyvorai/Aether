@@ -106,7 +106,7 @@ export default function CostIntelligencePanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -116,22 +116,22 @@ export default function CostIntelligencePanel() {
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
           <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
           <div className="text-2xl font-semibold text-emerald-300">{formatUSD(totalSavings)}</div>
-          <div className="text-xs text-ink-3">Potential savings / mo</div>
+          <div className="text-xs text-subtle">Potential savings / mo</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-ink">
+          <div className="text-2xl font-semibold text-foreground">
             {(report?.total_potential_savings_pct ?? 0).toFixed(1)}%
           </div>
-          <div className="text-xs text-ink-3">Fleet savings potential</div>
+          <div className="text-xs text-subtle">Fleet savings potential</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4">
-          <div className="text-2xl font-semibold text-ink">{report?.recommendations.length ?? 0}</div>
-          <div className="text-xs text-ink-3">Optimization opportunities</div>
+          <div className="text-2xl font-semibold text-foreground">{report?.recommendations.length ?? 0}</div>
+          <div className="text-xs text-subtle">Optimization opportunities</div>
         </div>
       </div>
 
       {!report?.recommendations.length ? (
-        <p className="text-sm text-ink-3">No cost optimizations identified — fleet placement looks efficient.</p>
+        <p className="text-sm text-subtle">No cost optimizations identified — fleet placement looks efficient.</p>
       ) : (
         <ul className="space-y-3">
           {report.recommendations.slice(0, 5).map((rec) => (
@@ -149,8 +149,8 @@ export default function CostIntelligencePanel() {
                   </Link>
                   <Badge text={`${rec.risk} risk`} variant={riskVariant(rec.risk)} />
                 </div>
-                <p className="mt-1 text-sm text-ink-2">{rec.reason}</p>
-                <p className="mt-1 text-xs text-ink-3">
+                <p className="mt-1 text-sm text-muted">{rec.reason}</p>
+                <p className="mt-1 text-xs text-subtle">
                   {rec.current_runtime} → {rec.suggested_runtime} · save {rec.savings_pct.toFixed(0)}%
                 </p>
               </div>

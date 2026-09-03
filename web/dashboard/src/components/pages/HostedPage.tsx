@@ -214,10 +214,10 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-ink-3">Set AETHER_FEDERATION_CLUSTERS to enable multi-cluster placement.</p>
+            <p className="mt-4 text-sm text-subtle">Set AETHER_FEDERATION_CLUSTERS to enable multi-cluster placement.</p>
           )}
           {federationPlan && (
-            <p className="mt-4 text-sm text-ink-2" data-testid="hosted-federation-plan-result">
+            <p className="mt-4 text-sm text-muted" data-testid="hosted-federation-plan-result">
               Recommended: {federationPlan.recommended_cluster ?? 'none'} ({federationPlan.recommended_runtime})
             </p>
           )}
@@ -250,25 +250,25 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
       {billing && (
         <section className="glass mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 sm:p-8" data-testid="hosted-billing-panel">
           <div className="glass py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
+            <div className="flex items-center gap-2 text-sm text-subtle mb-1">
               <Users size={16} /> Tenants
             </div>
             {/* billing.tenants always has >=1 entry (a synthetic "self-hosted" line when no
                 real tenants exist, for usage metering) — using the real tenant count here
                 keeps this stat consistent with the Tenants list rendered below. */}
-            <div className="text-2xl font-semibold text-ink">{tenants.length}</div>
+            <div className="text-2xl font-semibold text-foreground">{tenants.length}</div>
           </div>
           <div className="glass py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
+            <div className="flex items-center gap-2 text-sm text-subtle mb-1">
               <Building2 size={16} /> Workloads
             </div>
-            <div className="text-2xl font-semibold text-ink">{billing.total_workloads}</div>
+            <div className="text-2xl font-semibold text-foreground">{billing.total_workloads}</div>
           </div>
           <div className="glass py-3 px-4">
-            <div className="flex items-center gap-2 text-sm text-ink-3 mb-1">
+            <div className="flex items-center gap-2 text-sm text-subtle mb-1">
               <CreditCard size={16} /> Period
             </div>
-            <div className="text-2xl font-semibold text-ink">{billing.period}</div>
+            <div className="text-2xl font-semibold text-foreground">{billing.period}</div>
           </div>
         </section>
       )}
@@ -337,7 +337,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
               subtitle={t.slug}
               badge={<Badge variant={t.active ? 'green' : 'muted'} text={t.active ? 'Active' : 'Inactive'} />}
               body={
-                <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] capitalize text-ink-2">
+                <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] capitalize text-muted">
                   Plan: {t.plan}
                 </span>
               }
@@ -345,7 +345,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <>
                   <button
                     type="button"
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                     onClick={() => {
                       setActiveTenantId(t.slug);
                       toast(`Active tenant: ${t.slug}`, 'success');
@@ -359,7 +359,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       data-testid="hosted-upgrade-button"
                       disabled={upgradingId === t.id}
                       onClick={() => void handleUpgrade(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-brand/15 hover:text-brand disabled:opacity-50"
                     >
                       {upgradingId === t.id ? '…' : 'Upgrade'}
                     </button>
@@ -369,7 +369,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       type="button"
                       data-testid="hosted-stripe-checkout-button"
                       onClick={() => void handleStripeCheckout(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                     >
                       Stripe
                     </button>
@@ -379,7 +379,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       type="button"
                       data-testid="hosted-stripe-portal-button"
                       onClick={() => void handleStripePortal(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-ink-2 transition hover:bg-white/5 hover:text-ink"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
                     >
                       Portal
                     </button>

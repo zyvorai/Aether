@@ -59,17 +59,17 @@ export default function SegmentedControl<T extends string>({
             onClick={() => onChange(item.key)}
             className={[
               'flex items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 py-1.5 text-[12.5px] transition-colors',
-              item.disabled ? 'cursor-default opacity-45 text-ink-3' : 'cursor-pointer',
+              item.disabled ? 'cursor-default opacity-45 text-subtle' : 'cursor-pointer',
               isActive
-                ? 'bg-surface-elevated text-ink font-medium shadow-ambient'
+                ? 'bg-surface-elevated text-foreground font-medium shadow-ambient'
                 : item.disabled
                   ? ''
-                  : `text-ink-2 hover:text-ink ${item.tone ?? ''}`,
+                  : `text-muted hover:text-foreground ${item.tone ?? ''}`,
             ].join(' ')}
           >
             {item.label}
             {item.count !== undefined ? (
-              <span className={`font-mono text-[11.5px] ${isActive ? 'text-ink-2' : 'text-ink-3'}`}>
+              <span className={`font-mono text-[11.5px] ${isActive ? 'text-muted' : 'text-subtle'}`}>
                 {item.count}
               </span>
             ) : null}

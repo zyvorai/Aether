@@ -665,7 +665,7 @@ function LegacyOverviewDetails({
           title="Platform inventory & events"
           description="Legacy metrics, clusters, health, and quick links — drill down from Command Center"
         />
-        {open ? <ChevronDown className="h-5 w-5 text-ink-3" /> : <ChevronRight className="h-5 w-5 text-ink-3" />}
+        {open ? <ChevronDown className="h-5 w-5 text-subtle" /> : <ChevronRight className="h-5 w-5 text-subtle" />}
       </button>
 
       {open ? (
@@ -943,8 +943,8 @@ function LegacyOverviewDetails({
                   {clusterSummary.clusters.slice(0, 6).map((cluster) => (
                     <div key={cluster.name} className="flex items-center justify-between rounded-xl border glass-divider glass px-3 py-2 text-sm backdrop-blur-sm">
                       <div>
-                        <div className="text-ink font-medium">{cluster.name}</div>
-                        <div className="text-ink-3 text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
+                        <div className="text-foreground font-medium">{cluster.name}</div>
+                        <div className="text-subtle text-xs">{cluster.version ?? cluster.server ?? 'unreachable'}</div>
                       </div>
                       <div className={cluster.reachable ? 'text-emerald-400' : 'text-amber-400'}>
                         {cluster.reachable ? 'reachable' : 'offline'}
@@ -991,9 +991,9 @@ function LegacyOverviewDetails({
                 >
                   <SeverityBadge severity={ev.severity} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-ink truncate">{ev.title}</div>
-                    <div className="text-xs text-ink-3 mt-0.5">{ev.message}</div>
-                    <div className="text-xs text-ink-3 mt-1 flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
+                    <div className="text-xs text-subtle mt-0.5">{ev.message}</div>
+                    <div className="text-xs text-subtle mt-1 flex flex-wrap items-center gap-2">
                       {formatTimestamp(ev.timestamp)}
                       {ev.workload ? (
                         <button

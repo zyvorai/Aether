@@ -145,7 +145,7 @@ export default function YamlCodeEditor({
       style={{ height: `${heightPx}px` }}
     >
       {!value && placeholder ? (
-        <div className="pointer-events-none absolute left-14 top-4 z-10 text-sm font-mono text-ink-3">
+        <div className="pointer-events-none absolute left-14 top-4 z-10 text-sm font-mono text-subtle">
           {placeholder}
         </div>
       ) : null}

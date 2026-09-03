@@ -52,7 +52,7 @@ export const AETHER_HELP_LINKS: HelpDocLink[] = [
 export default function ZyvorAbout({ className = '' }: { className?: string }) {
 
   return (
-    <div className={`space-y-5 text-sm ${'text-ink-2'} ${className}`.trim()}>
+    <div className={`space-y-5 text-sm ${'text-muted'} ${className}`.trim()}>
       <div className="flex items-start gap-4">
         <div
           className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg overflow-hidden"
@@ -65,9 +65,9 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
           <Hexagon className="w-8 h-8 text-brand" aria-hidden />
         </div>
         <div className="min-w-0 pt-0.5">
-          <h3 className={`text-lg font-semibold ${'text-ink'}`}>{AETHER_PRODUCT}</h3>
-          <p className="text-xs text-ink-3 mt-0.5">Version {AETHER_VERSION}</p>
-          <p className={`text-sm mt-2 leading-relaxed ${'text-ink-2'}`}>{AETHER_TAGLINE}</p>
+          <h3 className={`text-lg font-semibold ${'text-foreground'}`}>{AETHER_PRODUCT}</h3>
+          <p className="text-xs text-subtle mt-0.5">Version {AETHER_VERSION}</p>
+          <p className={`text-sm mt-2 leading-relaxed ${'text-muted'}`}>{AETHER_TAGLINE}</p>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
           product family — deploy workloads to Podman, Kubernetes, KubeVirt, and Metal3 from a single YAML
           specification with AI-assisted runtime selection and built-in observability.
         </p>
-        <p className="text-xs text-ink-3 leading-relaxed">
+        <p className="text-xs text-subtle leading-relaxed">
           <span style={{ color: ORANGE }} className="font-medium">
             {ZYVOR_LINE}
           </span>
@@ -96,7 +96,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
       </div>
 
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-2">Help & documentation</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle mb-2">Help & documentation</h4>
         <ul className="space-y-1.5">
           {AETHER_HELP_LINKS.map((link) => (
             <li key={link.href}>
@@ -104,7 +104,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 hover:text-brand transition-colors ${'text-ink-2'}`}
+                className={`inline-flex items-center gap-1.5 hover:text-brand transition-colors ${'text-muted'}`}
               >
                 <span>{link.label}</span>
                 <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-60" aria-hidden />
@@ -114,7 +114,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
         </ul>
       </div>
 
-      <p className={`text-center text-xs text-ink-3 pt-2 border-t ${'glass-divider/50'}`}>
+      <p className={`text-center text-xs text-subtle pt-2 border-t ${'glass-divider/50'}`}>
         {ZYVOR_COPY} {ZYVOR_BRAND}. All rights reserved.
       </p>
     </div>

@@ -12,15 +12,15 @@ interface ApplicationTopologyProps {
 function Node({ label, sub }: { label: string; sub?: string }) {
   return (
     <div className="glass px-4 py-3 text-center min-w-[140px]">
-      <div className="text-sm font-medium text-ink">{label}</div>
-      {sub && <div className="text-xs text-ink-3 mt-1">{sub}</div>}
+      <div className="text-sm font-medium text-foreground">{label}</div>
+      {sub && <div className="text-xs text-subtle mt-1">{sub}</div>}
     </div>
   );
 }
 
 function Arrow() {
   return (
-    <div className="flex flex-col items-center text-ink-3 py-1">
+    <div className="flex flex-col items-center text-subtle py-1">
       <div className="h-6 w-px bg-white/10" />
       <div className="text-xs">↓</div>
     </div>
@@ -45,7 +45,7 @@ export default function ApplicationTopology({ workload }: ApplicationTopologyPro
       <Node label="Pods" sub={`Managed by ${kind}`} />
       <Arrow />
       <Node label="Storage / Secrets" sub="PVC · ConfigMap · Secret" />
-      <p className="mt-6 text-xs text-ink-3 max-w-md text-center">
+      <p className="mt-6 text-xs text-subtle max-w-md text-center">
         This is the logical application stack. Open Cluster Browser for live Service, Ingress, and Pod objects.
       </p>
     </div>

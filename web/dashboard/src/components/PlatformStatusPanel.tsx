@@ -40,7 +40,7 @@ function toneClasses(tone: TileTone): { ring: string; dot: string; text: string 
       return {
         ring: 'glass-divider/30 glass-inset-surface',
         dot: 'glass-status-dot-muted',
-        text: 'text-ink-2',
+        text: 'text-muted',
       };
   }
 }
@@ -70,9 +70,9 @@ function StatusTile({
         </div>
         <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} title={value} />
       </div>
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-3">{label}</p>
+      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">{label}</p>
       <p className={`mt-1 text-sm font-semibold ${c.text}`}>{value}</p>
-      <p className="mt-1 text-xs leading-relaxed text-ink-3">{detail}</p>
+      <p className="mt-1 text-xs leading-relaxed text-subtle">{detail}</p>
     </div>
   );
 }
@@ -92,10 +92,10 @@ export default function PlatformStatusPanel({ platform, ready, sseConnected, loa
 
   if (!platform) {
     return (
-      <section className="glass mb-8 p-6 text-sm text-ink-2">
-        <p className="font-medium text-ink-2">Platform status unavailable</p>
+      <section className="glass mb-8 p-6 text-sm text-muted">
+        <p className="font-medium text-muted">Platform status unavailable</p>
         <p className="mt-1 text-xs leading-relaxed">
-          Could not load <code className="text-ink-2">/api/server</code>. Check that the API is running and your
+          Could not load <code className="text-muted">/api/server</code>. Check that the API is running and your
           session is valid, then refresh the page.
         </p>
       </section>

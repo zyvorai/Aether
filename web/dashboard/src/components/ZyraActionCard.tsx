@@ -21,7 +21,7 @@ export default function ZyraActionCard({ title, summary, actions = [], testId }:
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-brand">{title}</h4>
-          <p className="mt-1 text-sm text-ink-2">{summary}</p>
+          <p className="mt-1 text-sm text-muted">{summary}</p>
           {actions.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {actions.map((a) => (

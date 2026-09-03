@@ -645,7 +645,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 e.stopPropagation();
                 togglePin(w.name);
               }}
-              className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-brand' : 'text-ink-3 hover:text-ink-2'}`}
+              className={`mt-0.5 shrink-0 transition-colors ${pinned ? 'text-brand' : 'text-subtle hover:text-muted'}`}
               title={pinned ? 'Unpin workload' : 'Pin workload'}
             >
               <Star size={13} className={pinned ? 'fill-current' : ''} />
@@ -656,12 +656,12 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 e.stopPropagation();
                 openWorkloadDetail(w, 'overview');
               }}
-              className="block w-full min-w-0 truncate text-left text-ink hover:text-brand"
+              className="block w-full min-w-0 truncate text-left text-foreground hover:text-brand"
               title={w.name}
             >
               <span className="block truncate">{shortName}</span>
               {metaLabel ? (
-                <span className="mt-0.5 block truncate text-[11px] font-normal text-ink-3" title={metaLabel}>
+                <span className="mt-0.5 block truncate text-[11px] font-normal text-subtle" title={metaLabel}>
                   {metaLabel}
                 </span>
               ) : null}
@@ -681,7 +681,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       header: 'Image',
       width: 220,
       render: (w) => (
-        <code className="block truncate rounded bg-surface px-2 py-1 text-xs text-ink-2" title={w.image}>
+        <code className="block truncate rounded bg-surface px-2 py-1 text-xs text-muted" title={w.image}>
           {w.image}
         </code>
       ),
@@ -707,24 +707,24 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <div className="flex flex-nowrap items-center gap-0.5" onClick={stop}>
             {discovered ? (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Info"><Info size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Info"><Info size={14} /></button>
                 {showLogs ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Logs"><FileText size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
                 ) : null}
                 {showShell ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Exec into pod"><Terminal size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Exec into pod"><Terminal size={14} /></button>
                 ) : showShellDenied ? (
-                  <button type="button" disabled className="cursor-not-allowed rounded p-1.5 text-ink-3 opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
+                  <button type="button" disabled className="cursor-not-allowed rounded p-1.5 text-subtle opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
                 ) : null}
               </>
             ) : (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Logs"><FileText size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
                 {canMutate ? (
                   <>
-                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Start"><Play size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-ink" title="Stop"><Square size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded p-1.5 text-ink-3 hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
+                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Start"><Play size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Stop"><Square size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
                   </>
                 ) : null}
               </>
@@ -772,7 +772,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                 pinnedOnly
                   ? 'bg-brand/20 text-brand border border-brand/40'
-                  : 'glass-inset-surface text-ink-2 border glass-divider hover:text-ink'
+                  : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
               }`}
               title="Show pinned workloads only"
               data-testid="workloads-pinned-filter"
@@ -840,7 +840,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                   active
                     ? 'bg-brand/20 text-brand border border-brand/40'
-                    : 'glass-inset-surface text-ink-2 border glass-divider hover:text-ink'
+                    : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
                 }`}
               >
                 {kind === 'all' ? 'All' : kind}
@@ -853,7 +853,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
             title="Card view"
           >
             <LayoutGrid size={14} />
@@ -862,7 +862,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-brand/20 text-brand' : 'text-ink-2 hover:text-ink'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-brand/20 text-brand' : 'text-muted hover:text-foreground'}`}
             title="Table view"
           >
             <List size={14} />
@@ -893,7 +893,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
                     active
                       ? 'border-brand-wash bg-brand-wash text-brand'
-                      : 'border-rule text-ink-3 hover:text-ink-2'
+                      : 'border-rule text-subtle hover:text-muted'
                   }`}
                 >
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${categoricalDotClass(namespace)}`} aria-hidden />
@@ -1010,9 +1010,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       ) : null}
 
       {sourceFilterVal !== 'all' ? (
-        <div className="glass-context-banner mb-4 text-sm text-ink-2">
-          Showing <span className="text-ink">{filteredWorkloads.length}</span> of{' '}
-          <span className="text-ink">{workloads.length}</span> workloads
+        <div className="glass-context-banner mb-4 text-sm text-muted">
+          Showing <span className="text-foreground">{filteredWorkloads.length}</span> of{' '}
+          <span className="text-foreground">{workloads.length}</span> workloads
           {sourceFilterVal === 'aether' ? ' (Aether managed only)' : ' (Kubernetes discovered only)'}.
           {sourceFilterVal === 'aether' && clusterDiscoveredCount > 0 ? (
             <>
@@ -1039,38 +1039,38 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
 
       <section className="mb-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border glass-divider sm:grid-cols-3 xl:grid-cols-6" data-testid="workloads-stats">
         <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-white/[0.03]">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Total</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-ink">{workloads.length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Total</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">{workloads.length}</div>
         </button>
         <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-emerald-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Running</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Running</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-emerald-300">{runningCount}</div>
         </button>
         <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-amber-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Stopped</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Stopped</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-amber-200">{stoppedCount}</div>
         </button>
         <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-violet-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Aether</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Aether</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-violet-200">{aetherManagedCount}</div>
         </button>
         <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-sky-500/5">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Discovered</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Discovered</div>
           <div className="mt-0.5 text-xl font-semibold tabular-nums text-sky-200">{clusterDiscoveredCount}</div>
         </button>
         <div className="glass-inset-surface px-3 py-3">
-          <div className="text-[10px] uppercase tracking-wider text-ink-3">Namespaces</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-ink">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
+          <div className="text-[10px] uppercase tracking-wider text-subtle">Namespaces</div>
+          <div className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
         </div>
       </section>
 
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3" data-testid="workloads-bulk-bar">
-          <span className="text-sm text-ink-2">{selectedNames.size} selected</span>
+          <span className="text-sm text-muted">{selectedNames.size} selected</span>
           <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-500">Start all</button>
           <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-500">Stop all</button>
           <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500">Delete all</button>
-          <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-ink-2 hover:text-ink">Clear</button>
+          <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-muted hover:text-foreground">Clear</button>
         </div>
       )}
 
@@ -1143,7 +1143,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       ) : (
         <div data-testid="workloads-table">
           {canMutate && filteredWorkloads.some((w) => isAetherManaged(w)) ? (
-            <div className="mb-2 flex items-center gap-2 text-[11.5px] text-ink-3">
+            <div className="mb-2 flex items-center gap-2 text-[11.5px] text-subtle">
               <input
                 type="checkbox"
                 aria-label="Select all"
@@ -1203,7 +1203,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         onClose={() => setBulkConfirmDelete(false)}
         title="Confirm bulk delete"
       >
-        <p className="text-sm text-ink-2 mb-6">
+        <p className="text-sm text-muted mb-6">
           Delete {selectedNames.size} selected workload(s)? This cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
@@ -1221,7 +1221,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         onClose={() => setConfirmAction(null)}
         title={confirmAction?.type === 'delete' ? 'Confirm Delete' : 'Confirm Stop'}
       >
-        <p className="text-sm text-ink-2 mb-6">
+        <p className="text-sm text-muted mb-6">
           {confirmAction?.type === 'delete'
             ? `Are you sure you want to delete "${confirmAction.name}"?`
             : `Stop workload "${confirmAction?.name}"?`}
@@ -1257,7 +1257,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         size="wide"
       >
         <div data-testid="workloads-migrate-modal">
-        <p className="text-sm text-ink-2 mb-4">Select target runtime to load migration advice:</p>
+        <p className="text-sm text-muted mb-4">Select target runtime to load migration advice:</p>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {runtimes.map((rt) => (
             <button
@@ -1268,7 +1268,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               className={`px-4 py-3 border rounded-lg text-sm font-medium transition-colors capitalize ${
                 migrateTarget === rt
                   ? 'border-brand/50 bg-brand/10 text-brand'
-                  : 'glass-inset-surface glass-inset-hover glass-divider text-ink'
+                  : 'glass-inset-surface glass-inset-hover glass-divider text-foreground'
               }`}
             >
               {adviceLoading && migrateTarget === rt ? 'Loading advice…' : rt}
@@ -1278,34 +1278,34 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
 
         {migrateAdvice && migrateTarget && (
           <div className="glass p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-ink">
+            <h4 className="text-sm font-semibold text-foreground">
               Advice: {migrateAdvice.source_runtime} → {migrateAdvice.target_runtime}
             </h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-ink-3">Strategy</span>
-                <p className="text-ink">{migrateAdvice.recommended_strategy}</p>
+                <span className="text-subtle">Strategy</span>
+                <p className="text-foreground">{migrateAdvice.recommended_strategy}</p>
               </div>
               <div>
-                <span className="text-ink-3">Risk</span>
-                <p className="text-ink">{migrateAdvice.risk_level}</p>
+                <span className="text-subtle">Risk</span>
+                <p className="text-foreground">{migrateAdvice.risk_level}</p>
               </div>
               <div>
-                <span className="text-ink-3">Est. downtime</span>
-                <p className="text-ink">{migrateAdvice.estimated_downtime_secs}s</p>
+                <span className="text-subtle">Est. downtime</span>
+                <p className="text-foreground">{migrateAdvice.estimated_downtime_secs}s</p>
               </div>
               {migrateAdvice.timing && (
                 <div>
-                  <span className="text-ink-3">Timing</span>
-                  <p className="text-ink">{migrateAdvice.timing.recommendation}</p>
+                  <span className="text-subtle">Timing</span>
+                  <p className="text-foreground">{migrateAdvice.timing.recommendation}</p>
                 </div>
               )}
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wider text-ink-3 mb-2 block">Migration strategy</span>
+              <span className="text-xs uppercase tracking-wider text-subtle mb-2 block">Migration strategy</span>
               <div className="flex flex-wrap gap-2">
                 {(['immediate', 'blue-green', 'rolling', 'confidential-blue-green'] as const).map((s) => (
-                  <label key={s} className="inline-flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
+                  <label key={s} className="inline-flex items-center gap-2 text-sm text-muted cursor-pointer">
                     <input
                       type="radio"
                       name="migrate-strategy"
@@ -1325,7 +1325,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               )}
               {confidentialMigrationPlan && (
                 <div className="mt-3 p-3 rounded-lg glass-inset-surface border glass-divider text-xs space-y-2">
-                  <p className="text-ink-2 font-mono break-all">
+                  <p className="text-muted font-mono break-all">
                     Channel: {confidentialMigrationPlan.encrypted_migration_uri}
                   </p>
                   {confidentialMigrationPlan.blockers.length > 0 ? (
@@ -1341,7 +1341,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               )}
             </div>
             {migrateAdvice.reasons.length > 0 && (
-              <ul className="text-xs text-ink-2 space-y-1">
+              <ul className="text-xs text-muted space-y-1">
                 {migrateAdvice.reasons.map((r, i) => (
                   <li key={i}>+ {r}</li>
                 ))}

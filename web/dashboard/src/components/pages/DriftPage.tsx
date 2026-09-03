@@ -187,10 +187,10 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {fleetDrift ? (
         <section className="glass mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
-          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Tracked</div><div className="text-lg font-semibold text-ink">{fleetDrift.total_workloads}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-ink-3">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Tracked</div><div className="text-lg font-semibold text-foreground">{fleetDrift.total_workloads}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Drifted</div><div className="text-lg font-semibold text-amber-300">{fleetDrift.drifted}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Critical</div><div className="text-lg font-semibold text-red-400">{fleetDrift.critical}</div></div>
+          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Warnings</div><div className="text-lg font-semibold text-yellow-300">{fleetDrift.warning}</div></div>
         </section>
       ) : null}
 
@@ -280,10 +280,10 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : null}
 
       {bulkScan && !bulkScan.scanning ? (
-        <div data-testid="drift-bulk-summary" className="glass mb-6 text-sm text-ink-2">
+        <div data-testid="drift-bulk-summary" className="glass mb-6 text-sm text-muted">
           Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
           {bulkScan.drifted.length > 0 ? (
-            <span className="ml-2 text-ink-3">({bulkScan.drifted.join(', ')})</span>
+            <span className="ml-2 text-subtle">({bulkScan.drifted.join(', ')})</span>
           ) : null}
           <button
             type="button"
@@ -309,8 +309,8 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="glass">
-            <h2 className="text-lg font-semibold text-ink mb-1">Select workload</h2>
-            <p className="text-sm text-ink-3 mb-4">Click a workload to check for configuration drift</p>
+            <h2 className="text-lg font-semibold text-foreground mb-1">Select workload</h2>
+            <p className="text-sm text-subtle mb-4">Click a workload to check for configuration drift</p>
             <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
               {filtered.map((w) => (
                 <button
@@ -326,22 +326,22 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                         ? 'border-brand/60 ring-1 ring-aether/30 bg-brand/5 text-brand'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                          : 'glass-divider glass text-ink hover:bg-white/[0.04]'
+                          : 'glass-divider glass text-foreground hover:bg-white/[0.04]'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}
                 </button>
               ))}
               {filtered.length === 0 && (
-                <p className="text-sm text-ink-3">No workloads match your search.</p>
+                <p className="text-sm text-subtle">No workloads match your search.</p>
               )}
             </div>
           </div>
 
           <div className="glass min-h-[12rem]">
-            <h3 className="text-sm font-medium text-ink-2 uppercase tracking-wider mb-4">Drift report</h3>
+            <h3 className="text-sm font-medium text-muted uppercase tracking-wider mb-4">Drift report</h3>
             {!driftResult ? (
-              <p className="text-sm text-ink-3">Select a workload or run a bulk scan to see drift analysis.</p>
+              <p className="text-sm text-subtle">Select a workload or run a bulk scan to see drift analysis.</p>
             ) : (
               <div className="space-y-4" data-testid="drift-result-panel">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -362,22 +362,22 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
 
                 {driftResult.drifts.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-ink-2 mb-2">Drifted fields</h4>
+                    <h4 className="text-sm font-medium text-muted mb-2">Drifted fields</h4>
                     <div className="space-y-2 max-h-64 overflow-auto">
                       {driftResult.drifts.map((d, i) => (
                         <div key={i} className="glass rounded-lg p-3 border glass-divider">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-sm font-medium text-ink">{d.field}</span>
+                            <span className="text-sm font-medium text-foreground">{d.field}</span>
                             <SeverityBadge severity={d.severity} />
                             <Badge text={d.category} variant="muted" />
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
                             <div>
-                              <span className="text-ink-3">Expected: </span>
+                              <span className="text-subtle">Expected: </span>
                               <span className="text-emerald-400">{d.expected}</span>
                             </div>
                             <div>
-                              <span className="text-ink-3">Actual: </span>
+                              <span className="text-subtle">Actual: </span>
                               <span className="text-red-400">{d.actual}</span>
                             </div>
                           </div>
@@ -403,13 +403,13 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
 
                 {driftResult.reconciliation_plan.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-ink-2 mb-2">Reconciliation plan</h4>
+                    <h4 className="text-sm font-medium text-muted mb-2">Reconciliation plan</h4>
                     <div className="space-y-2">
                       {driftResult.reconciliation_plan.map((step, i) => (
                         <div key={i} className="rounded-lg border glass-divider glass p-3 text-sm">
-                          <div className="font-medium text-ink">{step.action_type}</div>
-                          <p className="text-ink-2 mt-1">{step.description}</p>
-                          <div className="flex gap-3 mt-2 text-xs text-ink-3">
+                          <div className="font-medium text-foreground">{step.action_type}</div>
+                          <p className="text-muted mt-1">{step.description}</p>
+                          <div className="flex gap-3 mt-2 text-xs text-subtle">
                             <span>Restart: {step.requires_restart ? 'yes' : 'no'}</span>
                             <span>Risk: {step.risk}</span>
                           </div>

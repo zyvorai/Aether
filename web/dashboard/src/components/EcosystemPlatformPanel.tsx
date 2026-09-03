@@ -129,7 +129,7 @@ export default function EcosystemPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -138,7 +138,7 @@ export default function EcosystemPlatformPanel() {
       }
     >
       {helmPreview ? (
-        <pre className="glass-code-block-body mb-4 max-h-24 text-xs text-ink-2">
+        <pre className="glass-code-block-body mb-4 max-h-24 text-xs text-muted">
           {helmPreview}
         </pre>
       ) : null}
@@ -150,7 +150,7 @@ export default function EcosystemPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'glass-divider text-ink-2'
+              tab === t.id ? 'border-blue-500/40 bg-blue-500/10 text-blue-200' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -159,7 +159,7 @@ export default function EcosystemPlatformPanel() {
       </div>
 
       {tab === 'saas' ? (
-        <div data-testid="ecosystem-saas-panel" className="text-sm text-ink-2">
+        <div data-testid="ecosystem-saas-panel" className="text-sm text-muted">
           <p>
             Period {saas?.billing_period ?? '—'} · {saas?.total_workloads ?? 0} workload(s) ·{' '}
             {saas?.tenants.length ?? 0} tenant(s)
@@ -169,11 +169,11 @@ export default function EcosystemPlatformPanel() {
 
       {tab === 'plugins' ? (
         <div data-testid="ecosystem-plugins-panel">
-          <div className="mb-2 flex items-center gap-2 text-sm text-ink-2">
+          <div className="mb-2 flex items-center gap-2 text-sm text-muted">
             <Store className="h-4 w-4" />
             {plugins?.entries.length ?? 0} plugin(s)
           </div>
-          <ul className="space-y-1 text-xs text-ink-2">
+          <ul className="space-y-1 text-xs text-muted">
             {(plugins?.entries ?? []).slice(0, 6).map((p) => (
               <li key={p.name}>
                 {p.name} v{p.version} {p.installed ? '· installed' : '· catalog'}
@@ -184,9 +184,9 @@ export default function EcosystemPlatformPanel() {
       ) : null}
 
       {tab === 'api' ? (
-        <div data-testid="ecosystem-public-api-panel" className="text-sm text-ink-2">
+        <div data-testid="ecosystem-public-api-panel" className="text-sm text-muted">
           <p className="mb-2">Public AI OS API {publicApi?.version ?? '—'}</p>
-          <ul className="space-y-1 text-xs font-mono text-ink-2">
+          <ul className="space-y-1 text-xs font-mono text-muted">
             {(publicApi?.routes ?? []).slice(0, 5).map((r) => (
               <li key={r.path}>
                 {r.method} {r.path}
@@ -197,7 +197,7 @@ export default function EcosystemPlatformPanel() {
       ) : null}
 
       {tab === 'sre' ? (
-        <div data-testid="ecosystem-sre-panel" className="text-sm text-ink-2">
+        <div data-testid="ecosystem-sre-panel" className="text-sm text-muted">
           <p>
             Closed loop: {sre?.closed_loop_ready ? 'ready' : 'gated'} · agents {sre?.agents_active ?? 0}
             {sre?.human_gate_required ? ' · human gate active' : ''}
@@ -206,11 +206,11 @@ export default function EcosystemPlatformPanel() {
       ) : null}
 
       {tab === 'community' ? (
-        <div data-testid="ecosystem-community-panel" className="text-sm text-ink-2">
+        <div data-testid="ecosystem-community-panel" className="text-sm text-muted">
           <p className="mb-2">
             {community?.built_in_count ?? 0} built-in + {community?.community.length ?? 0} community template(s)
           </p>
-          <ul className="text-xs text-ink-2">
+          <ul className="text-xs text-muted">
             {(community?.community ?? []).map((c) => (
               <li key={c.id}>
                 {c.title} ★{c.stars}

@@ -101,7 +101,7 @@ function ForgePage({ refreshKey }: { refreshKey?: number } = {}) {
                       subtitle="GPU node"
                       body={
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                          <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                             {gpus} GPU{gpus === '1' ? '' : 's'}
                           </span>
                         </div>

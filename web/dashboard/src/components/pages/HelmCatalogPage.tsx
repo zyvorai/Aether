@@ -134,7 +134,7 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
       <section>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
           <input
             type="search"
             value={search}
@@ -170,12 +170,12 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <Icon size={22} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-ink">{chart.name}</h3>
-                  <p className="text-xs text-ink-3">{chart.category} · v{chart.version}</p>
+                  <h3 className="font-semibold text-foreground">{chart.name}</h3>
+                  <p className="text-xs text-subtle">{chart.category} · v{chart.version}</p>
                 </div>
               </div>
-              <p className="text-sm text-ink-2 mt-3 line-clamp-2">{chart.description}</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-ink-3">
+              <p className="text-sm text-muted mt-3 line-clamp-2">{chart.description}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-subtle">
                 {chart.storage_required && <span className="rounded glass-inset-surface px-2 py-0.5">Storage</span>}
                 {chart.ha_available && <span className="rounded glass-inset-surface px-2 py-0.5">HA</span>}
                 {chart.backup_supported && <span className="rounded glass-inset-surface px-2 py-0.5">Backup</span>}
@@ -198,9 +198,9 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
       <Modal isOpen={Boolean(selected)} onClose={() => setSelected(null)} title={selected ? `Install ${selected.name}` : ''}>
         {selected && (
           <div className="space-y-4">
-            <p className="text-sm text-ink-2">{selected.description}</p>
+            <p className="text-sm text-muted">{selected.description}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block text-xs text-ink-3">
+              <label className="block text-xs text-subtle">
                 Cluster
                 <select
                   value={installCluster}
@@ -212,7 +212,7 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                   ))}
                 </select>
               </label>
-              <label className="block text-xs text-ink-3">
+              <label className="block text-xs text-subtle">
                 Namespace (workspace)
                 <input
                   value={namespace}
@@ -220,7 +220,7 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                   className="glass-input mt-1"
                 />
               </label>
-              <label className="block text-xs text-ink-3">
+              <label className="block text-xs text-subtle">
                 Release name
                 <input
                   value={releaseName}
@@ -233,7 +233,7 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
             {!showAdvancedYaml ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {formFields.map((field) => (
-                  <label key={field.key} className="block text-xs text-ink-3">
+                  <label key={field.key} className="block text-xs text-subtle">
                     {field.label}
                     {field.type === 'boolean' ? (
                       <input
@@ -261,14 +261,14 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                         className="glass-input mt-1"
                       />
                     )}
-                    {field.help && <span className="block mt-1 text-[10px] text-ink-3">{field.help}</span>}
+                    {field.help && <span className="block mt-1 text-[10px] text-subtle">{field.help}</span>}
                   </label>
                 ))}
               </div>
             ) : null}
 
             <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 text-xs text-ink-2">
+              <label className="flex items-center gap-2 text-xs text-muted">
                 <input
                   type="checkbox"
                   checked={showAdvancedYaml}
@@ -278,12 +278,12 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                 Edit raw values.yaml
               </label>
               {!showAdvancedYaml && (
-                <span className="text-[10px] text-ink-3">Generated from form above</span>
+                <span className="text-[10px] text-subtle">Generated from form above</span>
               )}
             </div>
 
             {showAdvancedYaml ? (
-              <label className="block text-xs text-ink-3">
+              <label className="block text-xs text-subtle">
                 values.yaml
                 <textarea
                   value={valuesYaml || generatedYaml}
@@ -293,11 +293,11 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                 />
               </label>
             ) : (
-              <pre className="glass-code-block-body text-[11px] text-ink-2 font-mono max-h-40 overflow-auto">
+              <pre className="glass-code-block-body text-[11px] text-muted font-mono max-h-40 overflow-auto">
                 {generatedYaml || '# No values generated'}
               </pre>
             )}
-            {installMsg && <p className="text-sm text-ink-2">{installMsg}</p>}
+            {installMsg && <p className="text-sm text-muted">{installMsg}</p>}
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setSelected(null)} className="rounded-lg border glass-divider px-4 py-2 text-sm">
                 Cancel

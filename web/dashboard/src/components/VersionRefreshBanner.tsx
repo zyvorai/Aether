@@ -66,7 +66,7 @@ export default function VersionRefreshBanner() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="underline font-medium hover:text-ink"
+        className="underline font-medium hover:text-foreground"
       >
         Reload to update
       </button>
@@ -76,7 +76,7 @@ export default function VersionRefreshBanner() {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-amber-300/80 hover:text-ink"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-amber-300/80 hover:text-foreground"
         aria-label="Dismiss update notice"
       >
         <X className="h-4 w-4" />

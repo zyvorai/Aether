@@ -143,13 +143,13 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
           utilization.map((rt) => (
             <div key={rt.runtime} className="glass">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-ink capitalize">{rt.runtime}</h2>
+                <h2 className="text-lg font-semibold text-foreground capitalize">{rt.runtime}</h2>
                 <div className="flex items-center gap-2">
                   <Badge
                     text={rt.healthy ? 'Healthy' : 'Unhealthy'}
                     variant={rt.healthy ? 'green' : 'red'}
                   />
-                  <span className="text-xs text-ink-3">{formatUSD(rt.estimated_cost_per_day)}/day</span>
+                  <span className="text-xs text-subtle">{formatUSD(rt.estimated_cost_per_day)}/day</span>
                 </div>
               </div>
 
@@ -174,7 +174,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
 
       <div className="mb-6" data-testid="scheduler-placements">
-        <h2 className="mb-4 text-lg font-semibold text-ink">Current placements</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Current placements</h2>
         {placements.length === 0 ? (
           <EmptyState icon={<Inbox size={48} />} title="No placements" description="No scheduler placement records yet" />
         ) : (
@@ -192,10 +192,10 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
                 onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: p.workload_name }))}
                 body={
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                       CPU {p.cpu_reserved}
                     </span>
-                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-ink-2">
+                    <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted">
                       Mem {p.memory_reserved_mb} MB
                     </span>
                   </div>
@@ -208,7 +208,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="glass" data-testid="scheduler-suggestions">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-ink">Optimization Suggestions</h2>
+          <h2 className="text-lg font-semibold text-foreground">Optimization Suggestions</h2>
           <div className="flex items-center gap-2">
             <Link to={viewToPath('affinity')} className="text-xs text-brand hover:underline">
               Runtime affinity →
@@ -221,7 +221,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
             data-testid="scheduler-refresh-optimize"
             onClick={() => void handleRefresh()}
             disabled={refreshing}
-            className="text-xs rounded-lg border glass-divider px-3 py-1.5 text-ink-2 hover:border-brand/40 disabled:opacity-50"
+            className="text-xs rounded-lg border glass-divider px-3 py-1.5 text-muted hover:border-brand/40 disabled:opacity-50"
           >
             {refreshing ? 'Refreshing…' : 'Refresh suggestions'}
           </button>
@@ -235,7 +235,7 @@ function SchedulerPage({ refreshKey }: { refreshKey?: number } = {}) {
               <div key={i} className="flex items-start gap-3 p-3 glass rounded-lg">
                 <Badge text={s.category} variant="blue" />
                 <div className="flex-1">
-                  <div className="text-sm text-ink">{s.message}</div>
+                  <div className="text-sm text-foreground">{s.message}</div>
                   {s.potential_saving !== null && (
                     <div className="text-xs text-emerald-400 mt-1">
                       Potential saving: {formatUSD(s.potential_saving)}/day

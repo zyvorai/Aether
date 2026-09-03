@@ -44,16 +44,16 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
-            <h2 className="text-lg font-semibold text-ink mb-2">
+            <h2 className="text-lg font-semibold text-foreground mb-2">
               Something went wrong
             </h2>
-            <p className="text-sm text-ink-2 mb-6 break-words">
+            <p className="text-sm text-muted mb-6 break-words">
               {this.state.error?.message || 'An unexpected error occurred while rendering this component.'}
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={this.handleReset}
-                className="quick-link-chip px-4 py-2 text-sm font-medium text-ink-2"
+                className="quick-link-chip px-4 py-2 text-sm font-medium text-muted"
               >
                 Try Again
               </button>

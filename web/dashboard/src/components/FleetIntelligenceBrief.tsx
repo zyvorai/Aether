@@ -43,7 +43,7 @@ export default function FleetIntelligenceBrief({ onNavigate, refreshKey = 0 }: F
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">Fleet Intelligence</p>
-          <h2 className="mt-1 text-xl font-semibold text-ink">AI-generated fleet posture</h2>
+          <h2 className="mt-1 text-xl font-semibold text-foreground">AI-generated fleet posture</h2>
         </div>
         <button
           type="button"
@@ -56,34 +56,34 @@ export default function FleetIntelligenceBrief({ onNavigate, refreshKey = 0 }: F
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <button type="button" onClick={() => onNavigate('workloads')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <Boxes className="mb-2 h-4 w-4 text-ink-3" />
-          <div className={`text-2xl font-semibold ${workloads.length === 0 ? 'text-ink-3' : 'text-ink'}`}>{workloads.length}</div>
-          <div className="text-xs text-ink-3">Workloads</div>
+          <Boxes className="mb-2 h-4 w-4 text-subtle" />
+          <div className={`text-2xl font-semibold ${workloads.length === 0 ? 'text-subtle' : 'text-foreground'}`}>{workloads.length}</div>
+          <div className="text-xs text-subtle">Workloads</div>
         </button>
         <button type="button" onClick={() => onNavigate('fleet')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
-          <Server className="mb-2 h-4 w-4 text-ink-3" />
-          <div className={`text-2xl font-semibold ${clusterCount === 0 ? 'text-ink-3' : 'text-ink'}`}>{clusterCount || '—'}</div>
-          <div className="text-xs text-ink-3">Clusters</div>
+          <Server className="mb-2 h-4 w-4 text-subtle" />
+          <div className={`text-2xl font-semibold ${clusterCount === 0 ? 'text-subtle' : 'text-foreground'}`}>{clusterCount || '—'}</div>
+          <div className="text-xs text-subtle">Clusters</div>
         </button>
         <button type="button" onClick={() => onNavigate('health')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
           <TrendingUp className="mb-2 h-4 w-4 text-emerald-400" />
-          <div className={`text-2xl font-semibold ${healthy === 0 ? 'text-ink-3' : 'text-emerald-300'}`}>{healthy}</div>
-          <div className="text-xs text-ink-3">Healthy</div>
+          <div className={`text-2xl font-semibold ${healthy === 0 ? 'text-subtle' : 'text-emerald-300'}`}>{healthy}</div>
+          <div className="text-xs text-subtle">Healthy</div>
         </button>
         <button type="button" onClick={() => onNavigate('observability')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
           <TrendingUp className="mb-2 h-4 w-4 text-amber-400" />
-          <div className={`text-2xl font-semibold ${riskCount === 0 ? 'text-ink-3' : 'text-amber-200'}`}>{riskCount}</div>
-          <div className="text-xs text-ink-3">At risk</div>
+          <div className={`text-2xl font-semibold ${riskCount === 0 ? 'text-subtle' : 'text-amber-200'}`}>{riskCount}</div>
+          <div className="text-xs text-subtle">At risk</div>
         </button>
         <button type="button" onClick={() => onNavigate('cost')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
           <DollarSign className="mb-2 h-4 w-4 text-emerald-400" />
-          <div className={`text-2xl font-semibold ${savings === 0 ? 'text-ink-3' : 'text-emerald-300'}`}>{formatUSD(savings)}</div>
-          <div className="text-xs text-ink-3">Savings/mo</div>
+          <div className={`text-2xl font-semibold ${savings === 0 ? 'text-subtle' : 'text-emerald-300'}`}>{formatUSD(savings)}</div>
+          <div className="text-xs text-subtle">Savings/mo</div>
         </button>
         <button type="button" onClick={() => onNavigate('security')} className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left">
           <Shield className="mb-2 h-4 w-4 text-red-400" />
-          <div className={`text-2xl font-semibold ${securityIssues === 0 ? 'text-ink-3' : 'text-red-300'}`}>{securityIssues}</div>
-          <div className="text-xs text-ink-3">Security issues</div>
+          <div className={`text-2xl font-semibold ${securityIssues === 0 ? 'text-subtle' : 'text-red-300'}`}>{securityIssues}</div>
+          <div className="text-xs text-subtle">Security issues</div>
         </button>
       </div>
 

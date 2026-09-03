@@ -3,7 +3,7 @@
 // https://zyvor.dev · info@zyvor.dev
 
 export function appShellClass(): string {
-  return 'app-shell min-h-screen flex flex-col bg-background text-ink';
+  return 'app-shell min-h-screen flex flex-col bg-background text-foreground';
 }
 
 export function navbarShellClass(): string {
@@ -15,5 +15,5 @@ export function dropdownSurfaceClass(): string {
 }
 
 export function dropdownItemClass(active: boolean): string {
-  return active ? 'text-brand bg-brand-wash' : 'text-ink-2 hover:text-ink hover:bg-hover';
+  return active ? 'text-brand bg-brand-wash' : 'text-muted hover:text-foreground hover:bg-hover';
 }

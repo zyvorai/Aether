@@ -32,22 +32,22 @@ export default function VolumeReplicationPanel() {
       subtitle="CSI executor readiness across persistent workloads"
       icon={<HardDrive className="h-5 w-5 text-violet-400" />}
       actions={
-        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2">
+        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       }
     >
       {!report?.entries.length ? (
-        <p className="text-sm text-ink-3">No persistent workloads in fleet.</p>
+        <p className="text-sm text-subtle">No persistent workloads in fleet.</p>
       ) : (
         <ul className="space-y-2">
           {report.entries.map((e) => (
             <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-ink">{e.workload}</span>
+                <span className="font-medium text-foreground">{e.workload}</span>
                 {e.plan_ready ? <Badge text="plan ready" variant="green" /> : <Badge text="N/A" variant="muted" />}
               </div>
-              <p className="mt-1 text-xs text-ink-2">{e.summary}</p>
+              <p className="mt-1 text-xs text-muted">{e.summary}</p>
             </li>
           ))}
         </ul>

@@ -14,7 +14,7 @@ const pillTone: Record<NonNullable<HeaderPill['tone']>, string> = {
   ok: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
   warn: 'border-amber-500/25 bg-amber-500/10 text-amber-200',
   info: 'border-sky-500/25 bg-sky-500/10 text-sky-200',
-  muted: 'border-rule bg-hover text-ink-3',
+  muted: 'border-rule bg-hover text-subtle',
 };
 
 interface PageHeaderProps {
@@ -54,9 +54,9 @@ export default function PageHeader({
                 {eyebrow}
               </div>
             ) : null}
-            <h2 className="truncate text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">{title}</h2>
+            <h2 className="truncate text-xl font-semibold tracking-[-0.02em] text-foreground sm:text-2xl">{title}</h2>
             {subtitle ? (
-              <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-ink-3">{subtitle}</p>
+              <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-subtle">{subtitle}</p>
             ) : null}
           </div>
         </div>

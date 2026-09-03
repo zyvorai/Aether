@@ -112,7 +112,7 @@ export default function FederationPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -125,7 +125,7 @@ export default function FederationPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-ink-2'
+              tab === t.id ? 'border-teal-500/40 bg-teal-500/10 text-teal-200' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -135,11 +135,11 @@ export default function FederationPlatformPanel() {
 
       {tab === 'mesh' ? (
         <div data-testid="cluster-health-mesh">
-          <p className="mb-3 text-xs text-ink-3">{mesh?.nodes.length ?? 0} clusters · {mesh?.edges.length ?? 0} peer links</p>
+          <p className="mb-3 text-xs text-subtle">{mesh?.nodes.length ?? 0} clusters · {mesh?.edges.length ?? 0} peer links</p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {(mesh?.nodes ?? []).map((n) => (
               <li key={n.id} className="rounded-lg border glass-divider px-3 py-2 text-sm">
-                <span className="font-medium text-ink">{n.label}</span>
+                <span className="font-medium text-foreground">{n.label}</span>
                 <Badge text={n.reachable ? 'up' : 'down'} variant={n.reachable ? 'green' : 'red'} />
               </li>
             ))}
@@ -154,7 +154,7 @@ export default function FederationPlatformPanel() {
           </p>
           <ul className="space-y-2">
             {(arbitrage?.entries ?? []).slice(0, 5).map((e) => (
-              <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+              <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
                 {e.workload}: {e.current_provider} → {e.suggested_provider} ({formatUSD(e.savings_usd)}/mo)
               </li>
             ))}
@@ -165,7 +165,7 @@ export default function FederationPlatformPanel() {
       {tab === 'geo' ? (
         <ul className="space-y-2" data-testid="geo-placement-panel">
           {(geo?.clusters ?? []).slice(0, 6).map((c) => (
-            <li key={c.cluster} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+            <li key={c.cluster} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
               {c.cluster} · {c.region_hint} · ~{c.estimated_rtt_ms}ms RTT
             </li>
           ))}
@@ -176,10 +176,10 @@ export default function FederationPlatformPanel() {
         <ul className="space-y-2" data-testid="cloud-accounts-panel">
           {(accounts?.accounts ?? []).map((a) => (
             <li key={a.provider} className="flex items-center gap-2 rounded-lg border glass-divider px-3 py-2 text-sm">
-              <Globe className="h-4 w-4 text-ink-2" />
-              <span className="text-ink">{a.provider}</span>
+              <Globe className="h-4 w-4 text-muted" />
+              <span className="text-foreground">{a.provider}</span>
               <Badge text={a.configured ? 'linked' : 'missing'} variant={a.configured ? 'green' : 'muted'} />
-              <span className="text-xs text-ink-3">{a.account_hint}</span>
+              <span className="text-xs text-subtle">{a.account_hint}</span>
             </li>
           ))}
         </ul>
@@ -187,7 +187,7 @@ export default function FederationPlatformPanel() {
 
       {tab === 'region' ? (
         <div data-testid="region-lock-panel">
-          <p className="mb-3 text-xs text-ink-3">
+          <p className="mb-3 text-xs text-subtle">
             Sovereign lock: {region?.sovereign_region_lock ?? 'none configured'}
           </p>
           <ul className="space-y-2">
@@ -212,12 +212,12 @@ export default function FederationPlatformPanel() {
           >
             Apply placement guard (dry-run)
           </button>
-          <p className="mb-2 text-xs text-ink-3">
+          <p className="mb-2 text-xs text-subtle">
             Blocked: {(guard?.blocked_clusters ?? []).join(', ') || 'none'}
           </p>
           <ul className="space-y-2">
             {(guard?.entries ?? []).slice(0, 6).map((e) => (
-              <li key={e.cluster} className="rounded-lg border glass-divider px-3 py-2 text-sm text-ink-2">
+              <li key={e.cluster} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
                 {e.cluster} · {e.anomaly_count} anomalies
                 {e.blocked ? <Badge text="blocked" variant="red" /> : null}
               </li>

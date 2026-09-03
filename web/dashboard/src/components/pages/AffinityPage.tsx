@@ -193,14 +193,14 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
       {tab === 'matrix' && (
         <div className="glass overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg font-semibold text-ink">Runtime compatibility matrix</h2>
+            <h2 className="text-lg font-semibold text-foreground">Runtime compatibility matrix</h2>
             <Link to={viewToPath('scheduler')} className="text-xs text-brand hover:underline" data-testid="affinity-scheduler-link">
               Placement scheduler →
             </Link>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="glass-divider-b text-xs uppercase text-ink-3">
+              <tr className="glass-divider-b text-xs uppercase text-subtle">
                 <th className="py-2 px-3 text-left">Class</th>
                 <th className="py-2 px-3 text-left">Runtime</th>
                 <th className="py-2 px-3 text-left">Compat</th>
@@ -238,7 +238,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
               Placement intelligence →
             </Link>
           </div>
-          <pre className="text-xs text-ink-2 overflow-x-auto">{JSON.stringify(stats, null, 2)}</pre>
+          <pre className="text-xs text-muted overflow-x-auto">{JSON.stringify(stats, null, 2)}</pre>
         </div>
       )}
 
@@ -258,7 +258,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
                 data-testid={classMatchesWorkload(cls) ? 'affinity-workload-highlight' : undefined}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                  <h2 className="text-lg font-semibold text-ink capitalize">
+                  <h2 className="text-lg font-semibold text-foreground capitalize">
                     {cls.replace(/-/g, ' ')}
                   </h2>
                   {top && (
@@ -278,7 +278,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
                         percent={s.composite_score * 100}
                         detail={`${s.total_deployments} deploys`}
                       />
-                      <div className="flex gap-3 text-xs text-ink-3 pl-1">
+                      <div className="flex gap-3 text-xs text-subtle pl-1">
                         <span>Confidence: {(s.confidence * 100).toFixed(0)}%</span>
                         <span>Success: {(s.success_rate * 100).toFixed(0)}%</span>
                       </div>

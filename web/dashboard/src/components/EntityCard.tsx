@@ -73,7 +73,7 @@ export default function EntityCard({
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
           {icon ? (
-            <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent text-ink-2 transition group-hover:text-brand">
+            <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent text-muted transition group-hover:text-brand">
               {icon}
               {pulse ? (
                 <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] platform-pulse ${dotTone[statusTone]}`} />
@@ -88,10 +88,10 @@ export default function EntityCard({
                 className="min-w-0 flex-1 text-left"
                 disabled={!onClick}
               >
-                <h3 className="truncate text-base font-semibold tracking-tight text-ink transition group-hover:text-brand" title={titleTooltip ?? title}>
+                <h3 className="truncate text-base font-semibold tracking-tight text-foreground transition group-hover:text-brand" title={titleTooltip ?? title}>
                   {title}
                 </h3>
-                {subtitle ? <p className="mt-0.5 truncate text-[11px] text-ink-3">{subtitle}</p> : null}
+                {subtitle ? <p className="mt-0.5 truncate text-[11px] text-subtle">{subtitle}</p> : null}
               </button>
               {badge ? <div className="shrink-0">{badge}</div> : null}
             </div>

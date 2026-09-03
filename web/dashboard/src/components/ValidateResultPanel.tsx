@@ -22,7 +22,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
             variant={validate.valid ? 'green' : 'red'}
           />
           {validate.workload_name && (
-            <p className="text-sm text-ink-2 mt-2">Workload: {validate.workload_name}</p>
+            <p className="text-sm text-muted mt-2">Workload: {validate.workload_name}</p>
           )}
           {validate.errors.length > 0 && (
             <ul className="mt-2 space-y-1">
@@ -42,7 +42,7 @@ export default function ValidateResultPanel({ validate, policy }: ValidateResult
             text={policy.passed ? 'POLICY OK' : 'POLICY FAILED'}
             variant={policy.passed ? 'green' : 'red'}
           />
-          <p className="text-xs text-ink-3 mt-1">
+          <p className="text-xs text-subtle mt-1">
             {policy.policies_evaluated} policies evaluated
           </p>
           {policy.violations.length > 0 && (

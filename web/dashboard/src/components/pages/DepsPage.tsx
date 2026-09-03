@@ -57,7 +57,7 @@ function GraphVisual({
           {nodes.map((node) => (
             <span
               key={node}
-              className={`quick-link-chip rounded-full px-3 py-1.5 text-sm text-ink ${
+              className={`quick-link-chip rounded-full px-3 py-1.5 text-sm text-foreground ${
                 highlightWorkload === node ? 'border-brand/60 ring-1 ring-aether/30' : 'glass-divider'
               }`}
               data-testid={highlightWorkload === node ? 'deps-workload-highlight' : undefined}
@@ -72,16 +72,16 @@ function GraphVisual({
               key={`${edge.from}-${edge.to}-${i}`}
               className="glass flex items-center gap-2 text-sm px-4 py-2"
             >
-              <span className="font-medium text-ink"><WorkloadNodeLink name={edge.from} /></span>
+              <span className="font-medium text-foreground"><WorkloadNodeLink name={edge.from} /></span>
               <ArrowRight size={14} className="text-brand shrink-0" />
-              <span className="text-ink-2">depends on</span>
+              <span className="text-muted">depends on</span>
               <span className="font-medium text-brand"><WorkloadNodeLink name={edge.to} /></span>
               {onRemove && (
                 <button
                   type="button"
                   disabled={removeBusy === `${edge.from}->${edge.to}`}
                   onClick={() => onRemove(edge.from, edge.to)}
-                  className="ml-auto p-1 text-ink-3 hover:text-red-400"
+                  className="ml-auto p-1 text-subtle hover:text-red-400"
                   title="Remove dependency"
                 >
                   <Trash2 size={14} />
@@ -99,13 +99,13 @@ function GraphVisual({
       <div className="space-y-2">
         {graph.startup_order.map((name, i) => (
           <div key={name} className="flex items-center gap-3">
-            {i > 0 && <ArrowRight size={14} className="text-ink-3 shrink-0 -ml-1" />}
+            {i > 0 && <ArrowRight size={14} className="text-subtle shrink-0 -ml-1" />}
             <div className="glass flex items-center gap-3 flex-1 px-4 py-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
                 {i + 1}
               </span>
               <span
-                className={`text-sm text-ink ${highlightWorkload === name ? 'text-brand font-medium' : ''}`}
+                className={`text-sm text-foreground ${highlightWorkload === name ? 'text-brand font-medium' : ''}`}
                 data-testid={highlightWorkload === name ? 'deps-workload-highlight' : undefined}
               >
                 <WorkloadNodeLink name={name} />
@@ -117,7 +117,7 @@ function GraphVisual({
     );
   }
 
-  return <p className="text-sm text-ink-3">No graph nodes to display.</p>;
+  return <p className="text-sm text-subtle">No graph nodes to display.</p>;
 }
 
 function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
@@ -284,29 +284,29 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : null}
 
       <div className="glass mb-6">
-        <h2 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Plus size={20} className="text-emerald-400" />
           Add dependency
         </h2>
         <div className="flex flex-wrap items-end gap-3" data-testid="deps-add-form">
           <div>
-            <label className="block text-xs text-ink-2 mb-1">Workload</label>
+            <label className="block text-xs text-muted mb-1">Workload</label>
             <input
               type="text"
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="e.g. web-app"
-              className="glass-input text-ink placeholder-slate-600 focus:outline-none focus:border-brand"
+              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-brand"
             />
           </div>
           <div>
-            <label className="block text-xs text-ink-2 mb-1">Depends on</label>
+            <label className="block text-xs text-muted mb-1">Depends on</label>
             <input
               type="text"
               value={addDependency}
               onChange={(e) => setAddDependency(e.target.value)}
               placeholder="e.g. database"
-              className="glass-input text-ink placeholder-slate-600 focus:outline-none focus:border-brand"
+              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-brand"
             />
           </div>
           <button
@@ -342,7 +342,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="glass lg:col-span-2" data-testid="deps-graph-panel">
-              <h2 className="text-lg font-semibold text-ink mb-4">Dependency graph</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Dependency graph</h2>
               {(graph.edges?.length ?? 0) > 0 && (graph.nodes?.length ?? 0) > 0 ? (
                 <DependencyGraphVisual
                   nodes={graph.nodes ?? []}
@@ -364,7 +364,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
             <div className="glass" data-testid="deps-issues-panel">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 className="text-lg font-semibold text-ink">Issues</h2>
+                <h2 className="text-lg font-semibold text-foreground">Issues</h2>
                 <button
                   type="button"
                   data-testid="deps-scheduler-link"
@@ -377,14 +377,14 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               {graph.issues.length === 0 ? (
                 <div className="flex items-center gap-2">
                   <Badge text="No issues" variant="green" />
-                  <span className="text-sm text-ink-2">Dependency graph is clean</span>
+                  <span className="text-sm text-muted">Dependency graph is clean</span>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {graph.issues.map((issue, i) => (
                     <div key={i} className="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
                       <Badge text="Issue" variant="red" />
-                      <span className="text-sm text-ink-2">{issue}</span>
+                      <span className="text-sm text-muted">{issue}</span>
                     </div>
                   ))}
                 </div>

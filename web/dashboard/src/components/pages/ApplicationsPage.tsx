@@ -141,7 +141,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="flex flex-wrap gap-2 items-center flex-1">
-          <span className="text-xs text-ink-3 uppercase tracking-wide mr-1">Workspace</span>
+          <span className="text-xs text-subtle uppercase tracking-wide mr-1">Workspace</span>
           {workspaces.map((ws) => (
             <button
               key={ws}
@@ -155,7 +155,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
             <input
               type="search"
               value={search}
@@ -167,7 +167,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-brand text-brand' : 'glass-divider text-ink-2'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'grid' ? 'border-brand text-brand' : 'glass-divider text-muted'}`}
             aria-label="Grid view"
           >
             <Grid3X3 size={16} />
@@ -175,7 +175,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-brand text-brand' : 'glass-divider text-ink-2'}`}
+            className={`p-2 rounded-lg border ${viewMode === 'list' ? 'border-brand text-brand' : 'glass-divider text-muted'}`}
             aria-label="List view"
           >
             <LayoutList size={16} />
@@ -215,7 +215,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="glass overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-ink-3 glass-divider-b">
+              <tr className="text-left text-xs text-subtle glass-divider-b">
                 <th className="p-3">Application</th>
                 <th className="p-3">Workspace</th>
                 <th className="p-3">Status</th>
@@ -226,15 +226,15 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
             <tbody>
               {filtered.map((app) => (
                 <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="glass-divider-b glass-inset-hover">
-                  <td className="p-3 font-medium text-ink">{app.name}</td>
-                  <td className="p-3 text-ink-2">{workspaceLabel(app.namespace)}</td>
-                  <td className="p-3 text-ink-2">{app.status}</td>
-                  <td className="p-3 text-ink-2">{app.kind ?? 'Application'}</td>
+                  <td className="p-3 font-medium text-foreground">{app.name}</td>
+                  <td className="p-3 text-muted">{workspaceLabel(app.namespace)}</td>
+                  <td className="p-3 text-muted">{app.status}</td>
+                  <td className="p-3 text-muted">{app.kind ?? 'Application'}</td>
                   <td className="p-3">
                     <button type="button" onClick={() => openApp(app)} className="text-brand text-xs hover:underline mr-3">
                       Open
                     </button>
-                    <button type="button" onClick={() => openApp(app, 'logs')} className="text-ink-2 text-xs hover:underline">
+                    <button type="button" onClick={() => openApp(app, 'logs')} className="text-muted text-xs hover:underline">
                       Logs
                     </button>
                   </td>

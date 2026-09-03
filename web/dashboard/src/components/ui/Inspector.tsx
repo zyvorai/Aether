@@ -59,14 +59,14 @@ export default function Inspector<T extends string>({
     >
       <div className="shrink-0 px-5 pt-4">
         <div className="flex items-baseline gap-2.5">
-          <div className="min-w-0 truncate font-mono text-[14px] text-ink">{title}</div>
+          <div className="min-w-0 truncate font-mono text-[14px] text-foreground">{title}</div>
           {subtitle ? <div className="shrink-0 text-[12.5px] font-medium">{subtitle}</div> : null}
           <span className="flex-1" />
           <button
             type="button"
             onClick={onClose}
             aria-label="Close inspector"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background text-ink-2 hover:text-ink"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background text-muted hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>

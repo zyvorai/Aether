@@ -10,7 +10,7 @@ interface MeterProps {
 }
 
 export default function Meter({ value, warnAt = 75, dangerAt = 90, className = '' }: MeterProps) {
-  const tone = value >= dangerAt ? 'var(--danger)' : value >= warnAt ? 'var(--warning)' : 'var(--ink-2)';
+  const tone = value >= dangerAt ? 'var(--danger)' : value >= warnAt ? 'var(--warning)' : 'var(--muted-foreground)';
   return (
     <span
       className={`inline-block h-1 w-9 rounded-full ${className}`}

@@ -86,7 +86,7 @@ export default function ProductionTrustPanel() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-ink-2">
+        <div className="flex items-center gap-2 text-sm text-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading production trust…
         </div>
@@ -94,16 +94,16 @@ export default function ProductionTrustPanel() {
 
       {!loading && tab === 'scorecard' && scorecard ? (
         <div data-testid="production-scorecard-panel">
-          <p className="text-2xl font-semibold text-ink mb-1">
+          <p className="text-2xl font-semibold text-foreground mb-1">
             {scorecard.readiness_pct.toFixed(0)}% ready
           </p>
-          <p className="text-sm text-ink-2 mb-3">
+          <p className="text-sm text-muted mb-3">
             {scorecard.production_ready ? 'Production ready' : 'Action required'} ·{' '}
             {overview?.feature_count ?? 10} trust features
           </p>
           <ul className="space-y-1 text-sm">
             {scorecard.checks.map((c) => (
-              <li key={c.label} className="flex justify-between text-ink-2">
+              <li key={c.label} className="flex justify-between text-muted">
                 <span>{c.label}</span>
                 <span className={c.ok ? 'text-emerald-400' : 'text-amber-400'}>
                   {c.ok ? 'OK' : c.severity}
@@ -115,7 +115,7 @@ export default function ProductionTrustPanel() {
       ) : null}
 
       {!loading && tab === 'auth' && auth ? (
-        <div data-testid="production-auth-panel" className="text-sm text-ink-2 space-y-2">
+        <div data-testid="production-auth-panel" className="text-sm text-muted space-y-2">
           <p>API key: {auth.api_key_configured ? 'configured' : 'not set'}</p>
           <p>OIDC: {auth.oidc_configured ? 'configured' : 'not set'}</p>
           <p>SAML: {auth.saml_available ? 'available' : 'not enabled'}</p>
@@ -123,7 +123,7 @@ export default function ProductionTrustPanel() {
       ) : null}
 
       {!loading && tab === 'ops' && hosted ? (
-        <div data-testid="production-ops-panel" className="text-sm text-ink-2 space-y-2">
+        <div data-testid="production-ops-panel" className="text-sm text-muted space-y-2">
           <p>Hosted tenants: {hosted.tenant_count}</p>
           <p>Stripe: {hosted.stripe_configured ? 'configured' : 'not set'}</p>
           <p>CI smoke jobs: {ciJobs}</p>

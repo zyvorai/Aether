@@ -74,22 +74,22 @@ export default function DataTable<T>({
   if (rows.length === 0) {
     return (
       <div className="px-6 py-16 text-center">
-        <div className="text-[17px] font-semibold tracking-[-0.01em] text-ink mb-2">{emptyTitle}</div>
-        <div className="text-[13.5px] text-ink-2">{emptyBody}</div>
+        <div className="text-[17px] font-semibold tracking-[-0.01em] text-foreground mb-2">{emptyTitle}</div>
+        <div className="text-[13.5px] text-muted">{emptyBody}</div>
       </div>
     );
   }
 
   return (
     <ResponsiveTable testId={testId}>
-      <div className="flex h-[30px] items-center border-b border-rule bg-surface pl-5 font-sans text-[11px] font-medium tracking-[0.02em] text-ink-3">
+      <div className="flex h-[30px] items-center border-b border-rule bg-surface pl-5 font-sans text-[11px] font-medium tracking-[0.02em] text-subtle">
         {columns.map((col) => (
           <button
             key={col.key}
             type="button"
             onClick={() => col.sortValue && toggleSort(col.key)}
             className={`shrink-0 truncate px-0 ${col.width ? '' : 'flex-1'} ${col.align === 'right' ? 'pr-[18px] text-right' : ''} ${
-              col.sortValue ? 'cursor-pointer hover:text-ink-2' : 'cursor-default'
+              col.sortValue ? 'cursor-pointer hover:text-muted' : 'cursor-default'
             }`}
             style={col.width ? { width: col.width } : undefined}
             disabled={!col.sortValue}
@@ -113,7 +113,7 @@ export default function DataTable<T>({
               key={id}
               onClick={() => onSelect?.(item)}
               onDoubleClick={() => onOpen?.(item)}
-              className="data-row relative flex cursor-pointer items-center border-b border-rule pl-5 font-mono text-[12.5px] text-ink-2 transition-colors hover:bg-hover"
+              className="data-row relative flex cursor-pointer items-center border-b border-rule pl-5 font-mono text-[12.5px] text-muted transition-colors hover:bg-hover"
               style={{ background: isSelected ? 'var(--selected)' : undefined }}
             >
               {(isBad || isSelected) && stripe ? (

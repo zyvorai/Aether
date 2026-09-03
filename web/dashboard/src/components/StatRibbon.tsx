@@ -13,7 +13,7 @@ export interface RibbonItem {
 }
 
 const valueTone: Record<RibbonTone, string> = {
-  white: 'text-ink',
+  white: 'text-foreground',
   emerald: 'text-emerald-300',
   amber: 'text-amber-200',
   violet: 'text-violet-200',
@@ -57,7 +57,7 @@ export default function StatRibbon({ items, columns, testId, className }: StatRi
         const tone = item.tone ?? 'white';
         const inner = (
           <>
-            <div className="text-[10px] uppercase tracking-wider text-ink-3">{item.label}</div>
+            <div className="text-[10px] uppercase tracking-wider text-subtle">{item.label}</div>
             <div className={`mt-0.5 text-xl font-semibold tabular-nums ${valueTone[tone]}`}>{item.value}</div>
           </>
         );

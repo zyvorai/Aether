@@ -159,7 +159,7 @@ export default function FinOpsPlatformPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-ink-2 hover:border-brand/40"
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-brand/40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
@@ -169,7 +169,7 @@ export default function FinOpsPlatformPanel() {
     >
       {budget ? (
         <p
-          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-amber-500/40 text-amber-200' : 'glass-divider text-ink-2'}`}
+          className={`mb-4 rounded-lg border px-3 py-2 text-xs ${budget.breached ? 'border-amber-500/40 text-amber-200' : 'glass-divider text-muted'}`}
           data-testid="finops-budget-status"
         >
           {budget.message}
@@ -183,7 +183,7 @@ export default function FinOpsPlatformPanel() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full border px-3 py-1 text-xs ${
-              tab === t.id ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'glass-divider text-ink-2'
+              tab === t.id ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'glass-divider text-muted'
             }`}
           >
             {t.label}
@@ -193,7 +193,7 @@ export default function FinOpsPlatformPanel() {
 
       {tab === 'trends' ? (
         <div data-testid="finops-trends-panel" className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-ink-2">
+          <div className="flex items-center gap-2 text-sm text-muted">
             <TrendingUp className="h-4 w-4 text-emerald-400" />
             Forecast: {formatUSD(trends?.forecast_next_month_usd ?? 0)}/mo · trend {trends?.trend_direction ?? '—'}
           </div>
@@ -211,10 +211,10 @@ export default function FinOpsPlatformPanel() {
       ) : null}
 
       {tab === 'chargeback' ? (
-        <div data-testid="finops-chargeback-panel" className="text-sm text-ink-2">
+        <div data-testid="finops-chargeback-panel" className="text-sm text-muted">
           <p>Fleet total: {formatUSD(chargeback?.total_monthly_usd ?? 0)}/mo</p>
-          <p className="text-xs text-ink-3">Unassigned: {chargeback?.unassigned_count ?? 0}</p>
-          <ul className="mt-2 space-y-1 text-xs text-ink-2">
+          <p className="text-xs text-subtle">Unassigned: {chargeback?.unassigned_count ?? 0}</p>
+          <ul className="mt-2 space-y-1 text-xs text-muted">
             {Object.entries(chargeback?.by_owner ?? {})
               .slice(0, 6)
               .map(([owner, usd]) => (
@@ -230,10 +230,10 @@ export default function FinOpsPlatformPanel() {
       {tab === 'spot' ? (
         <div data-testid="finops-spot-panel">
           <p className="mb-2 text-sm text-emerald-300">{spot?.eligible_count ?? 0} spot-eligible workload(s)</p>
-          <ul className="space-y-2 text-xs text-ink-2">
+          <ul className="space-y-2 text-xs text-muted">
             {(spot?.entries ?? []).slice(0, 5).map((e) => (
               <li key={e.workload} className="rounded border glass-divider px-2 py-1">
-                <span className="font-mono text-ink">{e.workload}</span>
+                <span className="font-mono text-foreground">{e.workload}</span>
                 {e.eligible ? ` · save ${e.savings_pct.toFixed(0)}%` : ' · not eligible'} — {e.reason}
               </li>
             ))}
@@ -244,7 +244,7 @@ export default function FinOpsPlatformPanel() {
       {tab === 'reserved' ? (
         <div data-testid="finops-reserved-panel" className="text-sm">
           <p className="text-emerald-300">Fleet RI savings potential: {formatUSD(reserved?.fleet_reserved_savings_usd ?? 0)}/mo</p>
-          <ul className="mt-2 space-y-1 text-xs text-ink-2">
+          <ul className="mt-2 space-y-1 text-xs text-muted">
             {(reserved?.recommendations ?? []).slice(0, 4).map((r) => (
               <li key={r.workload}>{r.recommendation}</li>
             ))}
@@ -257,13 +257,13 @@ export default function FinOpsPlatformPanel() {
           {anomalies?.alert ? (
             <p className="text-sm text-amber-300">Spend alert: fleet {anomalies.fleet_delta_pct.toFixed(1)}% vs baseline</p>
           ) : (
-            <p className="text-sm text-ink-3">No cost anomalies detected.</p>
+            <p className="text-sm text-subtle">No cost anomalies detected.</p>
           )}
         </div>
       ) : null}
 
       {tab === 'unit' ? (
-        <div data-testid="finops-unit-panel" className="text-sm text-ink-2">
+        <div data-testid="finops-unit-panel" className="text-sm text-muted">
           Fleet: {formatUSD(unit?.fleet_cost_per_1k_usd ?? 0)} per 1k requests
         </div>
       ) : null}
@@ -274,7 +274,7 @@ export default function FinOpsPlatformPanel() {
             Recommended: {multicloud?.recommended_provider ?? '—'} (save {(multicloud?.savings_vs_worst_pct ?? 0).toFixed(0)}% vs worst)
           </p>
           {(multicloud?.rows ?? []).map((r) => (
-            <div key={r.provider} className="flex justify-between text-xs text-ink-2">
+            <div key={r.provider} className="flex justify-between text-xs text-muted">
               <span>{r.provider}</span>
               <span>{formatUSD(r.total_monthly_usd)}</span>
             </div>
@@ -283,7 +283,7 @@ export default function FinOpsPlatformPanel() {
       ) : null}
 
       {tab === 'carbon' ? (
-        <div data-testid="finops-carbon-panel" className="flex items-start gap-2 text-sm text-ink-2">
+        <div data-testid="finops-carbon-panel" className="flex items-start gap-2 text-sm text-muted">
           <Leaf className="mt-0.5 h-4 w-4 text-emerald-500" />
           <div>
             <p>{carbon?.entries?.[0] ? `${carbon.entries[0].carbon_kg_monthly.toFixed(1)} kg CO₂/mo (${carbon.entries[0].region})` : '—'}</p>

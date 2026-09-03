@@ -29,7 +29,7 @@ export default function FilterChips({ chips, active, onSelect, testId, className
             className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
               isActive
                 ? 'border border-brand/40 bg-brand/20 text-brand'
-                : 'glass-inset-surface border glass-divider text-ink-2 hover:text-ink'
+                : 'glass-inset-surface border glass-divider text-muted hover:text-foreground'
             }`}
           >
             {chip.label}
