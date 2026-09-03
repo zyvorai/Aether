@@ -11,7 +11,7 @@ The WebUI is a **React 18 single-page application** built with TypeScript, Tailw
 - **Runtime Fabric** (`/fabric`) — live Application → Runtime → Cluster topology graph
 - **Copilot rail** — permanent Ask Aether sidebar (xl+); full-page copilot at `/copilot`
 - **REST API**: Programmatic access to all operations (43+ endpoints)
-- **Dark metallic zinc theme**: Consistent dark UI with orange accents
+- **Aurora / Apple.com theme**: Light-first paper (`#f5f5f7`) with Apple blue (`#0071e3`); dark mode ink; editorial `PageHero` + ink “Get the highlights.” bands — see `web/dashboard/docs/DESIGN.md`
 - **Responsive design**: Desktop and mobile support with collapsible menu
 - **Real-time updates**: Auto-refresh on key pages
 

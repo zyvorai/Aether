@@ -1,6 +1,8 @@
 # Using the Dashboard
 
-Aether is organized by navigation groups (sidebar, desktop nav, or CLI command groups). Use search / command palette when available.
+Aether is organized by navigation groups (GlobalNav flyouts, desktop nav, or CLI command groups). Use search / command palette when available.
+
+Visual shell: **Aurora / Apple.com** — paper backdrop, editorial page heroes (`PageHero` via `AuroraPage`), optional ink highlight bands, pill primary CTAs. Details: [DESIGN.md](../web/dashboard/docs/DESIGN.md).
 
 ## Surfaces
 
@@ -28,4 +30,3 @@ Inventory and status views are safe to explore. Mutating actions (deploy, migrat
 3. For mutating actions: confirm role gates and impact before applying.
 4. **Empty / fail:** Check service health, auth, and that required CRDs/backends for this domain are installed.
 5. **Success:** Live data loads; created/updated objects appear without error toasts.
-

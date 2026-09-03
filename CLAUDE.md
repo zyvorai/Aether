@@ -99,4 +99,6 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 ## Default Ports
 
 - API server: `5090` (configurable via `--port`)
-- Brand color: Apple blue `#0071e3` light / `#0a84ff` dark (Aurora `globals.css` — product console; zyvor-web orange is marketing-only)
+- Brand color: Apple blue `#0071e3` light / `#0a84ff` dark (Aurora — product console; zyvor-web orange is marketing-only)
+- Visual shell: Apple.com chapters — `PageHero` + `AppleHighlightsRow` ink bands; login is Store paper (see `web/dashboard/docs/DESIGN.md`)
+- Hex surfaces only in CSS/`theme.css`; run `npm run check:hex-surfaces` before build
