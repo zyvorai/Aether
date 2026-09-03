@@ -14,6 +14,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { ObservabilitySummary } from '../../types/api';
 import { SectionHeader } from '../layout/SectionHeader';
@@ -117,6 +118,32 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
     setPromQuerying(false);
     setPromResult(data ? JSON.stringify(data, null, 2) : 'Query failed or Prometheus not configured');
   }
+
+  const chargebackColumns: DataTableColumn<ChargebackReport['lines'][number]>[] = [
+    {
+      key: 'workload',
+      header: 'Workload',
+      sortValue: (line) => line.workload,
+      render: (line) => (
+        <button
+          type="button"
+          onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { workload: line.workload }))}
+          className="text-primary hover:underline"
+        >
+          {line.workload}
+        </button>
+      ),
+    },
+    { key: 'owner', header: 'Owner', sortValue: (line) => line.owner, render: (line) => line.owner },
+    { key: 'project', header: 'Project', sortValue: (line) => line.project, render: (line) => line.project },
+    {
+      key: 'monthlyUsd',
+      header: '$/mo',
+      align: 'right',
+      sortValue: (line) => line.monthlyUsd,
+      render: (line) => `$${line.monthlyUsd.toFixed(2)}`,
+    },
+  ];
 
   if (loading && !metrics && !loadFailed) {
     return <PageLoading rows={6} />;
@@ -372,38 +399,14 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
             · spot ${chargeback.totalSpotMonthlyUsd.toFixed(2)}/mo · 36-mo TCO ${chargeback.tco36MonthsUsd.toFixed(0)}
           </p>
           {chargeback.lines.length > 0 ? (
-            <div className="glass-table-shell overflow-x-auto">
-              <table className="w-full text-sm text-left text-muted">
-                <thead className="text-xs uppercase text-subtle glass-divider-b">
-                  <tr>
-                    <th className="py-2 pr-4">Workload</th>
-                    <th className="py-2 pr-4">Owner</th>
-                    <th className="py-2 pr-4">Project</th>
-                    <th className="py-2">$/mo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chargeback.lines.slice(0, 12).map((line) => (
-                    <tr key={line.workload} className="glass-divider-b/80">
-                      <td className="py-2 pr-4 font-mono text-xs">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(pathWithQuery(viewToPath('workloads'), { workload: line.workload }))
-                          }
-                          className="text-primary hover:underline"
-                        >
-                          {line.workload}
-                        </button>
-                      </td>
-                      <td className="py-2 pr-4">{line.owner}</td>
-                      <td className="py-2 pr-4">{line.project}</td>
-                      <td className="py-2">${line.monthlyUsd.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              items={chargeback.lines.slice(0, 12)}
+              columns={chargebackColumns}
+              getId={(line) => line.workload}
+              sortBySeverityDefault={false}
+              emptyTitle="No chargeback lines"
+              emptyBody="No deployed workloads with readable specs for chargeback."
+            />
           ) : (
             <p className="text-sm text-subtle">No deployed workloads with readable specs for chargeback.</p>
           )}

@@ -20,6 +20,7 @@ import Badge from '../Badge';
 import GitOpsCenter from '../GitOpsCenter';
 import GitOpsAgentPanel from '../GitOpsAgentPanel';
 import IntentGitOpsDiffPanel from '../IntentGitOpsDiffPanel';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import type { GitOpsConfidentialAudit } from '../../types/api';
 
 interface GitOpsPayload {
@@ -196,6 +197,123 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   };
 
   const parsedSync = formatSyncResult(syncResult);
+
+  const changeBadgeVariant = (changeType: string) =>
+    changeType === 'Added' ? 'green' : changeType === 'Deleted' ? 'red' : 'yellow';
+
+  const syncChangeColumns: DataTableColumn<GitOpsChangeRow>[] = [
+    {
+      key: 'change',
+      header: 'Change',
+      width: 90,
+      render: (c) => <Badge text={c.change_type} variant={changeBadgeVariant(c.change_type)} />,
+    },
+    {
+      key: 'file',
+      header: 'File',
+      render: (c) => <GitOpsFileCell filePath={c.file_path} />,
+    },
+    {
+      key: 'confidential',
+      header: 'Confidential',
+      width: 110,
+      render: (c) => {
+        const audit = parsedSync.confidentialCompliance.find((row) => row.file_path === c.file_path);
+        const label = !audit
+          ? '—'
+          : !audit.confidential_enabled
+            ? 'off'
+            : audit.gitops_issues.length > 0 || audit.sovereign_compliant === false
+              ? 'issues'
+              : 'ok';
+        const variant = label === 'ok' ? 'green' : label === 'issues' ? 'red' : 'muted';
+        return <Badge text={label} variant={variant} />;
+      },
+    },
+    {
+      key: 'commit',
+      header: 'Commit',
+      width: 110,
+      render: (c) => (
+        <span className="font-mono text-xs text-subtle truncate" title={c.commit}>
+          {c.commit.slice(0, 12)}
+        </span>
+      ),
+    },
+  ];
+
+  const previewChangeColumns: DataTableColumn<GitOpsChangeRow>[] = [
+    {
+      key: 'change',
+      header: 'Change',
+      width: 90,
+      render: (c) => <Badge text={c.change_type} variant={changeBadgeVariant(c.change_type)} />,
+    },
+    {
+      key: 'file',
+      header: 'File',
+      render: (c) => <GitOpsFileCell filePath={c.file_path} />,
+    },
+    {
+      key: 'commit',
+      header: 'Commit',
+      width: 110,
+      render: (c) => (
+        <span className="font-mono text-xs text-subtle truncate" title={c.commit}>
+          {c.commit.slice(0, 12)}
+        </span>
+      ),
+    },
+  ];
+
+  const confidentialColumns: DataTableColumn<GitOpsConfidentialAudit>[] = [
+    {
+      key: 'workload',
+      header: 'Workload',
+      render: (row) =>
+        row.workload ? (
+          <button
+            type="button"
+            onClick={() =>
+              navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload!, tab: 'trust' }))
+            }
+            className="text-primary hover:underline"
+            data-testid={`gitops-confidential-row-${row.workload}`}
+          >
+            {row.workload}
+          </button>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      key: 'file',
+      header: 'File',
+      render: (row) => <span className="font-mono text-xs text-muted">{row.file_path}</span>,
+    },
+    {
+      key: 'issues',
+      header: 'GitOps issues',
+      render: (row) => (
+        <span className="text-xs text-warning/90">
+          {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'sovereign',
+      header: 'Sovereign',
+      width: 140,
+      render: (row) => (
+        <div>
+          <Badge text={row.sovereign_compliant ? 'compliant' : 'violations'} variant={row.sovereign_compliant ? 'green' : 'red'} />
+          {row.sovereign_violations.length > 0 && (
+            <p className="mt-1 text-xs text-danger/90">{row.sovereign_violations.join('; ')}</p>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   function openWorkloadFromPath(filePath: string) {
     const name = workloadNameFromGitOpsPath(filePath);
@@ -488,67 +606,18 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <h3 className="text-sm font-semibold text-foreground mb-3">Last sync result</h3>
           <p className="text-sm text-muted mb-3">{parsedSync.summary}</p>
           {parsedSync.changes.length > 0 && (
-            <div className="mb-4 glass-table-shell overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
-                    <th className="py-2 pr-4">Change</th>
-                    <th className="py-2 pr-4">File</th>
-                    <th className="py-2 pr-4">Confidential</th>
-                    <th className="py-2">Commit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedSync.changes.map((c) => {
-                    const audit = parsedSync.confidentialCompliance.find((row) => row.file_path === c.file_path);
-                    const confidentialLabel = !audit
-                      ? '—'
-                      : !audit.confidential_enabled
-                        ? 'off'
-                        : audit.gitops_issues.length > 0 || audit.sovereign_compliant === false
-                          ? 'issues'
-                          : 'ok';
-                    const confidentialVariant =
-                      confidentialLabel === 'ok'
-                        ? 'green'
-                        : confidentialLabel === 'issues'
-                          ? 'red'
-                          : confidentialLabel === 'off'
-                            ? 'muted'
-                            : 'muted';
-                    return (
-                    <tr key={`${c.commit}-${c.file_path}`} className="glass-table-row">
-                      <td className="py-2 pr-4">
-                        <Badge
-                          text={c.change_type}
-                          variant={
-                            c.change_type === 'Added'
-                              ? 'green'
-                              : c.change_type === 'Deleted'
-                                ? 'red'
-                                : 'yellow'
-                          }
-                        />
-                      </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-muted">
-                        <GitOpsFileCell filePath={c.file_path} />
-                      </td>
-                      <td className="py-2 pr-4">
-                        <Badge text={confidentialLabel} variant={confidentialVariant} />
-                      </td>
-                      <td className="py-2 font-mono text-xs text-subtle truncate max-w-[12rem]" title={c.commit}>
-                        {c.commit.slice(0, 12)}
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="mb-4">
+              <DataTable<GitOpsChangeRow>
+                items={parsedSync.changes}
+                getId={(c) => `${c.commit}-${c.file_path}`}
+                columns={syncChangeColumns}
+                sortBySeverityDefault={false}
+              />
             </div>
           )}
           {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
-            <div className="mb-4 glass-table-shell overflow-x-auto">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-2 px-4 pt-3">
+            <div className="mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle">
                   Confidential compliance
                 </h4>
@@ -561,58 +630,12 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   Open confidential page →
                 </button>
               </div>
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
-                    <th className="py-2 pr-4">Workload</th>
-                    <th className="py-2 pr-4">File</th>
-                    <th className="py-2 pr-4">GitOps issues</th>
-                    <th className="py-2">Sovereign</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedSync.confidentialCompliance
-                    .filter((row) => row.confidential_enabled)
-                    .map((row) => (
-                      <tr key={row.file_path} className="glass-table-row align-top">
-                        <td className="py-2 pr-4 text-foreground">
-                          {row.workload ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(
-                                  pathWithQuery(viewToPath('workloads'), {
-                                    workload: row.workload!,
-                                    tab: 'trust',
-                                  }),
-                                )
-                              }
-                              className="text-primary hover:underline"
-                              data-testid={`gitops-confidential-row-${row.workload}`}
-                            >
-                              {row.workload}
-                            </button>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td className="py-2 pr-4 font-mono text-xs text-muted">{row.file_path}</td>
-                        <td className="py-2 pr-4 text-xs text-warning/90">
-                          {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
-                        </td>
-                        <td className="py-2">
-                          <Badge
-                            text={row.sovereign_compliant ? 'compliant' : 'violations'}
-                            variant={row.sovereign_compliant ? 'green' : 'red'}
-                          />
-                          {row.sovereign_violations.length > 0 && (
-                            <p className="mt-1 text-xs text-danger/90">{row.sovereign_violations.join('; ')}</p>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <DataTable<GitOpsConfidentialAudit>
+                items={parsedSync.confidentialCompliance.filter((row) => row.confidential_enabled)}
+                getId={(row) => row.file_path}
+                columns={confidentialColumns}
+                sortBySeverityDefault={false}
+              />
             </div>
           )}
           {parsedSync.details && (
@@ -651,41 +674,12 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
           ) : previewChanges.length === 0 ? (
             <p className="text-sm text-subtle">No YAML changes detected in the latest commit.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
-                    <th className="py-2 pr-4">Change</th>
-                    <th className="py-2 pr-4">File</th>
-                    <th className="py-2">Commit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewChanges.map((c) => (
-                    <tr key={`${c.commit}-${c.file_path}`} className="glass-table-row">
-                      <td className="py-2 pr-4">
-                        <Badge
-                          text={c.change_type}
-                          variant={
-                            c.change_type === 'Added'
-                              ? 'green'
-                              : c.change_type === 'Deleted'
-                                ? 'red'
-                                : 'yellow'
-                          }
-                        />
-                      </td>
-                      <td className="py-2 pr-4 font-mono text-xs text-muted">
-                        <GitOpsFileCell filePath={c.file_path} />
-                      </td>
-                      <td className="py-2 font-mono text-xs text-subtle truncate max-w-[12rem]" title={c.commit}>
-                        {c.commit.slice(0, 12)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable<GitOpsChangeRow>
+              items={previewChanges}
+              getId={(c) => `${c.commit}-${c.file_path}`}
+              columns={previewChangeColumns}
+              sortBySeverityDefault={false}
+            />
           )}
         </div>
         <div className="flex justify-end gap-3">

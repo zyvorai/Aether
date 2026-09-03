@@ -15,7 +15,7 @@ import EmptyState from '../EmptyState';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import ResponsiveTable from '../ResponsiveTable';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import CardGrid from '../CardGrid';
 import EntityCard from '../EntityCard';
 import PageTabs from '../PageTabs';
@@ -785,6 +785,36 @@ function ClustersPage() {
     );
   }
 
+  const clusterResourceColumns: DataTableColumn<ClusterBrowseItem>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (resource) => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-primary transition-colors">
+            {resource.name}
+          </button>
+          {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
+            <Link
+              to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+              className="text-xs text-primary hover:underline"
+              title="Open in workloads"
+            >
+              →
+            </Link>
+          )}
+        </div>
+      ),
+    },
+    ...(pageTab === 'network'
+      ? [{ key: 'kind', header: 'Kind', render: (resource: ClusterBrowseItem) => <span className="text-sm text-muted">{resource.kind}</span> }]
+      : []),
+    { key: 'namespace', header: 'Namespace', render: (resource) => <span className="text-sm text-muted">{resource.namespace}</span> },
+    { key: 'status', header: 'Status', render: (resource) => <span className="text-sm text-foreground">{resource.status}</span> },
+    { key: 'detail', header: 'Detail', render: (resource) => <span className="text-sm text-subtle">{resource.detail ?? '—'}</span> },
+    { key: 'created', header: 'Created', render: (resource) => <span className="text-sm text-muted">{formatTimestamp(resource.created_at)}</span> },
+  ];
+
   const workloadFocus = (searchParams.get('workload') ?? '').trim();
 
   return (
@@ -1115,53 +1145,14 @@ function ClustersPage() {
               ))}
             </CardGrid>
           ) : (
-            <div className="glass-table-shell overflow-x-auto">
-              <ResponsiveTable stickyFirstColumn>
-                <table className="w-full min-w-0">
-                  <thead>
-                    <tr className="glass-divider-b">
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Name</th>
-                      {pageTab === 'network' && (
-                        <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Kind</th>
-                      )}
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Namespace</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Status</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Detail</th>
-                      <th scope="col" className="text-left text-xs uppercase tracking-wider text-muted py-3 px-4">Created</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resources.map((resource) => (
-                      <tr key={`${resource.kind}/${resource.namespace}/${resource.name}`} className="glass-table-row glass-inset-hover transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-primary transition-colors">
-                              {resource.name}
-                            </button>
-                            {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
-                              <Link
-                                to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
-                                className="text-xs text-primary hover:underline"
-                                title="Open in workloads"
-                              >
-                                →
-                              </Link>
-                            )}
-                          </div>
-                        </td>
-                        {pageTab === 'network' && (
-                          <td className="py-3 px-4 text-sm text-muted">{resource.kind}</td>
-                        )}
-                        <td className="py-3 px-4 text-sm text-muted">{resource.namespace}</td>
-                        <td className="py-3 px-4 text-sm text-foreground">{resource.status}</td>
-                        <td className="py-3 px-4 text-sm text-subtle">{resource.detail ?? '—'}</td>
-                        <td className="py-3 px-4 text-sm text-muted">{formatTimestamp(resource.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </ResponsiveTable>
-            </div>
+            <DataTable<ClusterBrowseItem>
+              items={resources}
+              columns={clusterResourceColumns}
+              getId={(resource) => `${resource.kind}/${resource.namespace}/${resource.name}`}
+              sortBySeverityDefault={false}
+              emptyTitle="No resources found"
+              emptyBody="Try a different cluster, namespace, or resource kind."
+            />
           )}
         </div>
       )}

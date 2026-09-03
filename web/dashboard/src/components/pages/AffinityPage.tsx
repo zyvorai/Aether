@@ -15,7 +15,16 @@ import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import type { AffinityScore } from '../../types/api';
+
+interface AffinityMatrixRow {
+  class: string;
+  runtime: string;
+  compatible: boolean;
+  score: number;
+  deployments: number;
+}
 
 const WORKLOAD_CLASSES = [
   'web-service',
@@ -26,6 +35,21 @@ const WORKLOAD_CLASSES = [
   'cache',
   'batch-job',
   'worker',
+];
+
+const matrixColumns: DataTableColumn<AffinityMatrixRow>[] = [
+  { key: 'class', header: 'Class', render: (row) => row.class },
+  {
+    key: 'runtime',
+    header: 'Runtime',
+    render: (row) => (
+      <Link to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })} className="text-primary hover:underline">
+        {row.runtime}
+      </Link>
+    ),
+  },
+  { key: 'compatible', header: 'Compat', render: (row) => (row.compatible ? '✓' : '✗') },
+  { key: 'score', header: 'Score', render: (row) => `${(row.score * 100).toFixed(0)}%` },
 ];
 
 function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
@@ -42,7 +66,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
     ? (tabParam as AffinityTab)
     : 'recommend';
   const setTab = (next: AffinityTab) => setTabParam(next);
-  const [matrix, setMatrix] = useState<Array<{ class: string; runtime: string; compatible: boolean; score: number; deployments: number }>>([]);
+  const [matrix, setMatrix] = useState<AffinityMatrixRow[]>([]);
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
 
   const load = useCallback(async () => {
@@ -80,7 +104,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
     setRefreshing(true);
     await load();
     if (tab === 'matrix') {
-      const m = await apiFetchSettled<Array<{ class: string; runtime: string; compatible: boolean; score: number; deployments: number }>>('/affinity/matrix');
+      const m = await apiFetchSettled<AffinityMatrixRow[]>('/affinity/matrix');
       if (m.ok) setMatrix(m.data);
     } else if (tab === 'stats') {
       const s = await apiFetchSettled<Record<string, unknown>>('/affinity/stats');
@@ -91,7 +115,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
 
   useEffect(() => {
     if (tab === 'matrix') {
-      void apiFetchSettled<Array<{ class: string; runtime: string; compatible: boolean; score: number; deployments: number }>>('/affinity/matrix').then((m) => {
+      void apiFetchSettled<AffinityMatrixRow[]>('/affinity/matrix').then((m) => {
         if (m.ok) setMatrix(m.data);
       });
     } else if (tab === 'stats') {
@@ -198,33 +222,14 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
               Placement scheduler →
             </Link>
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="glass-divider-b text-xs uppercase text-subtle">
-                <th className="py-2 px-3 text-left">Class</th>
-                <th className="py-2 px-3 text-left">Runtime</th>
-                <th className="py-2 px-3 text-left">Compat</th>
-                <th className="py-2 px-3 text-left">Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matrix.map((row) => (
-                <tr key={`${row.class}-${row.runtime}`} className="glass-table-row">
-                  <td className="py-2 px-3">{row.class}</td>
-                  <td className="py-2 px-3">
-                    <Link
-                      to={pathWithQuery(viewToPath('ai'), { tab: 'optimize' })}
-                      className="text-primary hover:underline"
-                    >
-                      {row.runtime}
-                    </Link>
-                  </td>
-                  <td className="py-2 px-3">{row.compatible ? '✓' : '✗'}</td>
-                  <td className="py-2 px-3">{(row.score * 100).toFixed(0)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable<AffinityMatrixRow>
+            items={matrix}
+            getId={(row) => `${row.class}-${row.runtime}`}
+            emptyTitle="No compatibility data"
+            emptyBody="Runtime compatibility scores are not available."
+            sortBySeverityDefault={false}
+            columns={matrixColumns}
+          />
         </div>
       )}
 

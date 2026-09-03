@@ -14,6 +14,7 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { isK8sApplication, workspaceLabel } from '../../utils/k8sUx';
 import type { WorkloadResponse } from '../../types/api';
 import ApplicationCard from '../ApplicationCard';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import EmptyState from '../EmptyState';
@@ -90,6 +91,43 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
       return name.includes(q) || (w.namespace?.toLowerCase().includes(q) ?? false);
     });
   }, [workloads, workspace, search]);
+
+  const appColumns: DataTableColumn<WorkloadResponse>[] = [
+    {
+      key: 'name',
+      header: 'Application',
+      render: (app) => <span className="font-medium text-foreground">{app.name}</span>,
+    },
+    {
+      key: 'workspace',
+      header: 'Workspace',
+      render: (app) => <span className="text-muted">{workspaceLabel(app.namespace)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (app) => <span className="text-muted">{app.status}</span>,
+    },
+    {
+      key: 'kind',
+      header: 'Kind',
+      render: (app) => <span className="text-muted">{app.kind ?? 'Application'}</span>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (app) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <button type="button" onClick={() => openApp(app)} className="text-primary text-xs hover:underline mr-3">
+            Open
+          </button>
+          <button type="button" onClick={() => openApp(app, 'logs')} className="text-muted text-xs hover:underline">
+            Logs
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   function openApp(app: WorkloadResponse, tab: DetailTab = 'overview') {
     setSelected(app);
@@ -212,37 +250,12 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
           ))}
         </div>
       ) : (
-        <div className="glass overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-subtle glass-divider-b">
-                <th className="p-3">Application</th>
-                <th className="p-3">Workspace</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Kind</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((app) => (
-                <tr key={`${app.cluster}-${app.namespace}-${app.name}`} className="glass-divider-b glass-inset-hover">
-                  <td className="p-3 font-medium text-foreground">{app.name}</td>
-                  <td className="p-3 text-muted">{workspaceLabel(app.namespace)}</td>
-                  <td className="p-3 text-muted">{app.status}</td>
-                  <td className="p-3 text-muted">{app.kind ?? 'Application'}</td>
-                  <td className="p-3">
-                    <button type="button" onClick={() => openApp(app)} className="text-primary text-xs hover:underline mr-3">
-                      Open
-                    </button>
-                    <button type="button" onClick={() => openApp(app, 'logs')} className="text-muted text-xs hover:underline">
-                      Logs
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable<WorkloadResponse>
+          items={filtered}
+          getId={(app) => `${app.cluster ?? 'local'}-${app.namespace ?? 'default'}-${app.name}`}
+          columns={appColumns}
+          sortBySeverityDefault={false}
+        />
       )}
 
       </section>

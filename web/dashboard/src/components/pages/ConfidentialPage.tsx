@@ -15,6 +15,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import EmptyState from '../EmptyState';
 import Badge from '../Badge';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import type {
   ConfidentialFleetAnalysis,
   ConfidentialFleetRow,
@@ -209,6 +210,26 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
   }
 
   const host = caps?.host;
+
+  const imageColumns: DataTableColumn<MeasuredImageManifest>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (img) => <span className="text-foreground">{img.name}</span>,
+    },
+    {
+      key: 'digest',
+      header: 'Launch digest',
+      render: (img) => (
+        <span className="font-mono text-xs text-muted">{img.launch_digest ?? img.image_hash}</span>
+      ),
+    },
+    {
+      key: 'signed',
+      header: 'Signed',
+      render: (img) => <span className="text-xs text-subtle">{img.signed_at}</span>,
+    },
+  ];
 
   return (
     <div>
@@ -603,26 +624,14 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
               <p className="text-sm text-subtle">No measured images registered yet.</p>
             ) : (
               <div className="overflow-auto max-h-[14rem]">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-subtle glass-divider-b">
-                      <th className="pb-2 pr-3">Name</th>
-                      <th className="pb-2 pr-3">Launch digest</th>
-                      <th className="pb-2">Signed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {images.map((img) => (
-                      <tr key={img.name} className="glass-divider-b">
-                        <td className="py-2 pr-3 text-foreground">{img.name}</td>
-                        <td className="py-2 pr-3 font-mono text-xs text-muted truncate max-w-[12rem]">
-                          {img.launch_digest ?? img.image_hash}
-                        </td>
-                        <td className="py-2 text-subtle text-xs">{img.signed_at}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <DataTable<MeasuredImageManifest>
+                  items={images}
+                  columns={imageColumns}
+                  getId={(img) => img.name}
+                  sortBySeverityDefault={false}
+                  emptyTitle="No measured images"
+                  emptyBody="No measured images registered yet."
+                />
               </div>
             )}
           </div>
