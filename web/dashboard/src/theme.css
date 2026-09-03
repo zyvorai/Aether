@@ -63,14 +63,14 @@
   --text-secondary: var(--muted-foreground);
   --accent: var(--primary);
   --accent-hover: var(--primary-hover);
-  --radius-liquid: 18px;
-  --radius-liquid-lg: 20px;
+  --radius-liquid: 10px;
+  --radius-liquid-lg: 12px;
   --glass-bg: #ffffff;
   --glass-bg-elevated: #ffffff;
   --glass-bg-strong: #fbfbfd;
   --glass-border: #d2d2d7;
   --glass-border-strong: #86868b;
-  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   --glass-highlight: transparent;
   --nav-h: 44px;
   --hs-nav-h: 44px;
@@ -173,7 +173,7 @@ html.dark-theme,
   --glass-bg-strong: #1d1d1f;
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-strong: rgba(255, 255, 255, 0.22);
-  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --hs-text-subtle: #a1a1a6;
   --hs-bg-alt: #1d1d1f;
   --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.35);
