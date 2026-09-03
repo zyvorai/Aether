@@ -44,7 +44,7 @@ export default function SegmentedControl<T extends string>({
       role="tablist"
       aria-label="Filter"
       onKeyDown={onKeyDown}
-      className={`inline-flex items-center gap-0.5 rounded-[9px] border border-rule bg-page p-0.5 ${className}`}
+      className={`inline-flex items-center gap-0.5 rounded-[9px] border border-rule bg-background p-0.5 ${className}`}
     >
       {items.map((item) => {
         const isActive = item.key === value;
@@ -61,7 +61,7 @@ export default function SegmentedControl<T extends string>({
               'flex items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 py-1.5 text-[12.5px] transition-colors',
               item.disabled ? 'cursor-default opacity-45 text-ink-3' : 'cursor-pointer',
               isActive
-                ? 'bg-raised text-ink font-medium shadow-ambient'
+                ? 'bg-surface-elevated text-ink font-medium shadow-ambient'
                 : item.disabled
                   ? ''
                   : `text-ink-2 hover:text-ink ${item.tone ?? ''}`,

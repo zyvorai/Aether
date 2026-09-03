@@ -82,7 +82,7 @@ export default function DataTable<T>({
 
   return (
     <ResponsiveTable testId={testId}>
-      <div className="flex h-[30px] items-center border-b border-rule bg-sunken pl-5 font-sans text-[11px] font-medium tracking-[0.02em] text-ink-3">
+      <div className="flex h-[30px] items-center border-b border-rule bg-surface pl-5 font-sans text-[11px] font-medium tracking-[0.02em] text-ink-3">
         {columns.map((col) => (
           <button
             key={col.key}

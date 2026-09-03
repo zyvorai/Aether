@@ -151,7 +151,7 @@ function SidebarSectionBlock({
                 onMouseEnter={clearCloseTimer}
                 onMouseLeave={scheduleClose}
                 style={{ position: 'fixed', top: flyoutPos.top, left: flyoutPos.left }}
-                className="z-[70] min-w-[190px] max-h-[min(70vh,420px)] overflow-y-auto rounded-lg border border-border bg-raised py-1.5 shadow-lg"
+                className="z-[70] min-w-[190px] max-h-[min(70vh,420px)] overflow-y-auto rounded-lg border border-border bg-surface-elevated py-1.5 shadow-lg"
               >
                 <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-ink-3">{section.label}</p>
                 <ul className="px-1">
@@ -249,7 +249,7 @@ export default function AetherSidebar({
   return (
     <aside
       className={cn(
-        'flex flex-shrink-0 flex-col bg-canvas border-r border-border',
+        'flex flex-shrink-0 flex-col bg-background border-r border-border',
         mobile ? 'h-full w-72' : `hidden lg:flex ${widthClass}`,
       )}
       aria-label="Aether navigation"

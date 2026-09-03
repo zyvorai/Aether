@@ -82,24 +82,17 @@
   --hs-font-mono: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
 
   /* Backward-compat aliases used across existing dashboard classes */
-  --canvas: var(--background);
-  --page: var(--background);
-  --sunken: var(--surface);
-  --raised: var(--surface-elevated);
   --hover: var(--nav-hover-bg);
-  --selected: var(--accent-tint);
   --rule: var(--border);
   --rule-strong: var(--glass-border-strong);
   --ink: var(--foreground);
   --ink-2: var(--muted-foreground);
   --ink-3: #86868b;
+  --subtle: #86868b;
   --brand: #0071e3;
   --brand-rgb: 0 113 227;
-  --brand-ink: #ffffff;
+  --primary-rgb: 0 113 227;
   --brand-wash: #e8f1fd;
-  --red: var(--danger);
-  --amber: var(--warning);
-  --green: var(--success);
   --scrim: rgba(0, 0, 0, 0.4);
   --glass: var(--nav-bg);
   --shadow: var(--shadow-card);
@@ -141,9 +134,10 @@ html.dark-theme,
   --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.35);
   --brand: #0a84ff;
   --brand-rgb: 10 132 255;
+  --primary-rgb: 10 132 255;
   --brand-wash: rgba(10, 132, 255, 0.16);
-  --selected: rgba(10, 132, 255, 0.16);
   --ink-3: #8e8e93;
+  --subtle: #8e8e93;
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: var(--nav-bg);
   --shadow: var(--shadow-card);

@@ -8,7 +8,7 @@ interface SparkbarProps {
   className?: string;
 }
 
-export default function Sparkbar({ window: win, tone = 'var(--red)', className = '' }: SparkbarProps) {
+export default function Sparkbar({ window: win, tone = 'var(--danger)', className = '' }: SparkbarProps) {
   return (
     <span className={`inline-flex items-end gap-[2px] ${className}`} style={{ verticalAlign: '-1px' }}>
       {win.map((v, i) => (

@@ -54,7 +54,7 @@ export default function Inspector<T extends string>({
 
   return (
     <aside
-      className="animate-ac-slide flex w-full shrink-0 flex-col overflow-hidden border-l border-rule bg-raised sm:w-[45%] sm:min-w-[430px]"
+      className="animate-ac-slide flex w-full shrink-0 flex-col overflow-hidden border-l border-rule bg-surface-elevated sm:w-[45%] sm:min-w-[430px]"
       role="complementary"
     >
       <div className="shrink-0 px-5 pt-4">
@@ -66,7 +66,7 @@ export default function Inspector<T extends string>({
             type="button"
             onClick={onClose}
             aria-label="Close inspector"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-page text-ink-2 hover:text-ink"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background text-ink-2 hover:text-ink"
           >
             <X className="h-3.5 w-3.5" />
           </button>

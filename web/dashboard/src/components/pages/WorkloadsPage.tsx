@@ -681,7 +681,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       header: 'Image',
       width: 220,
       render: (w) => (
-        <code className="block truncate rounded bg-sunken px-2 py-1 text-xs text-ink-2" title={w.image}>
+        <code className="block truncate rounded bg-surface px-2 py-1 text-xs text-ink-2" title={w.image}>
           {w.image}
         </code>
       ),

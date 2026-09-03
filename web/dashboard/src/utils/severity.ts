@@ -47,8 +47,8 @@ export function severityTone(status: string | undefined | null): SeverityTone {
 }
 
 const TONE_VAR: Record<SeverityTone, string> = {
-  danger: 'var(--red)',
-  warn: 'var(--amber)',
+  danger: 'var(--danger)',
+  warn: 'var(--warning)',
   neutral: 'var(--ink-3)',
 };
 
