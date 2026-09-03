@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
-import { Eyebrow, PageTitle, TextLead } from '../ui/Typography';
+import { DisplayTitle, Eyebrow, TextLead } from '../ui/Typography';
+import AppleHighlightsRow from '../ui/AppleHighlightsRow';
 
 export type Tone = 'sky' | 'violet' | 'emerald' | 'amber' | 'pink' | 'teal' | 'rust';
 
@@ -24,18 +25,25 @@ interface PageHeroProps {
 
 export function PageHero({ eyebrow, title, description, actions, stats, className }: PageHeroProps) {
   return (
-    <section className={cn('tahoe-hero space-y-6', className)}>
+    <section className={cn('tahoe-hero apple-editorial-hero space-y-6', className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2 min-w-0 max-w-2xl">
+        <div className="space-y-2 min-w-0 max-w-3xl">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <PageTitle>{title}</PageTitle>
+          <DisplayTitle>{title}</DisplayTitle>
           {description ? <TextLead>{description}</TextLead> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2 shrink-0">{actions}</div> : null}
       </div>
       {stats?.length ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-2 border-t border-border">
-          {stats.map((stat) => <div key={stat.label} className="tahoe-stat-tile"><p className="tahoe-stat-value">{stat.value}</p><p className="tahoe-stat-label mt-1">{stat.label}</p></div>)}
+        <div className="apple-chapter-dark marketplace-chapter-ink rounded-2xl px-6 py-8">
+          <AppleHighlightsRow
+            title="Get the highlights."
+            items={stats.map((stat) => ({
+              id: String(stat.label),
+              value: String(stat.value),
+              label: stat.label,
+            }))}
+          />
         </div>
       ) : null}
     </section>

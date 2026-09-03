@@ -9,7 +9,15 @@
 */
 
 :root {
-  /* Aurora Apple neutrals */
+  /* Apple.com / AirPods aliases (same hex as --foreground / --surface / --primary) */
+  --apple-ink: #1d1d1f;
+  --apple-muted: #6e6e73;
+  --apple-paper: #f5f5f7;
+  --apple-border: #d2d2d7;
+  --apple-action: #0071e3;
+  --apple-link: #0066cc;
+  --apple-sky: #2997ff;
+  --font-hero: "SF Pro Display", "Archivo", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --background: #ffffff;
   --surface: #f5f5f7;
   --surface-elevated: #ffffff;

@@ -35,6 +35,7 @@ import { countAetherManaged } from '../../utils/workloadFilters';
 import CommandCenterBriefing from '../CommandCenterBriefing';
 import CommandCenterIntentSla from '../CommandCenterIntentSla';
 import CommandCenterNextActions from '../CommandCenterNextActions';
+import AppleHighlightsRow from '../ui/AppleHighlightsRow';
 import CommandMetricCard from '../CommandMetricCard';
 import StatCard from '../StatCard';
 import { SectionHeader } from '../layout/SectionHeader';
@@ -498,6 +499,25 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         refreshKey={refreshKey}
         clusterContext={clusterContext}
       />
+
+      {!isEmptyPlatform ? (
+        <div className="mb-8 apple-chapter-dark marketplace-chapter-ink rounded-2xl px-6 py-10" data-testid="overview-apple-highlights">
+          <AppleHighlightsRow
+            title="Get the highlights."
+            items={[
+              { id: 'workloads', value: String(workloads.length), label: 'Workloads' },
+              { id: 'healthy', value: String(healthy), label: 'Healthy' },
+              { id: 'attention', value: String(degraded), label: 'Need attention' },
+              {
+                id: 'clusters',
+                value: String(clusterSummary?.cluster_count ?? clusterContext.clusterCount ?? 0),
+                label: 'Clusters',
+              },
+            ]}
+          />
+        </div>
+      ) : null}
+
       <CommandCenterIntentSla refreshKey={refreshKey} />
       <CommandCenterNextActions onNavigate={onNavigate} refreshKey={refreshKey} />
 
