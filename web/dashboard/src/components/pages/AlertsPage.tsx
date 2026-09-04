@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 import { Link } from 'react-router';
 import { BellRing, Radio, Send, Plus, Trash2, Webhook } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -35,7 +36,10 @@ function ruleMatchesWorkload(
   );
 }
 
-function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type AlertsSection = 'channels' | 'rules' | 'test' | 'queue';
+
+export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: AlertsSection } = {}) {
+  const show = (s: AlertsSection) => !forcedSection || forcedSection === s;
   const [workloadQuery] = useQueryParam('workload', '');
   const [status, setStatus] = useState<AlertsStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -274,6 +278,7 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       <section className="glass mb-6 p-6 sm:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {show('channels') ? (
         <div className="glass">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -380,6 +385,8 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           )}
         </div>
 
+        ) : null}
+        {show('rules') ? (
         <div className="glass" data-testid="alerts-rules-panel">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -428,8 +435,10 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
             </ul>
           )}
         </div>
+        ) : null}
       </div>
 
+      {show('test') ? (
       <div className="glass mt-6">
         <div className="flex items-center gap-3 mb-4">
           <Send className="text-primary" size={20} />
@@ -462,6 +471,9 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       </div>
 
+      ) : null}
+
+      {show('queue') ? (
       <div className="glass mt-6" data-testid="alerts-webhook-queue">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold text-foreground">Webhook retry queue</h2>
@@ -498,9 +510,24 @@ function AlertsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </CardGrid>
         )}
       </div>
+      ) : null}
       </section>
     </div>
   );
 }
 
-export default withAuroraPage('alerts', AlertsPage);
+function AlertsHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'alerts-channels', title: 'Channels', description: 'Notification webhook channels.', icon: <Radio className="h-5 w-5" /> },
+        { view: 'alerts-rules', title: 'Alert rules', description: 'Configured alert rules.', icon: <BellRing className="h-5 w-5" /> },
+        { view: 'alerts-test', title: 'Test webhook', description: 'Send a test webhook event.', icon: <Send className="h-5 w-5" /> },
+        { view: 'alerts-queue', title: 'Retry queue', description: 'Webhook delivery retry queue.', icon: <Webhook className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('alerts', AlertsHubPage);
+

@@ -10,7 +10,6 @@ import { apiFetchSettled, apiPost, apiDeleteJson } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import PageToolbar from '../PageToolbar';
-import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -325,19 +324,15 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <EmptyState icon={<Inbox size={48} />} title="No dependency data" description="No dependency graph available" />
       ) : (
         <>
-          <section className="glass mb-6 p-6 sm:p-8">
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-testid="deps-stats-panel">
-            <StatCard title="Workloads" value={graph.stats.total_workloads} color="blue" />
-            <StatCard title="Edges" value={graph.stats.total_edges} color="purple" />
-            <StatCard title="Root" value={graph.stats.root_workloads} color="green" />
-            <StatCard title="Leaf" value={graph.stats.leaf_workloads} color="yellow" />
-            <StatCard title="Max depth" value={graph.stats.max_depth} color="primary" />
-            <StatCard
-              title="Cycles"
-              value={graph.stats.has_cycles ? 'Yes' : 'No'}
-              color={graph.stats.has_cycles ? 'red' : 'green'}
-            />
-          </div>
+          <section className="mb-10" data-testid="deps-stats-panel">
+            <div className="flex flex-wrap gap-x-10 gap-y-4">
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.total_workloads}</div>Workloads</div>
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.total_edges}</div>Edges</div>
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.root_workloads}</div>Root</div>
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.leaf_workloads}</div>Leaf</div>
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.max_depth}</div>Max depth</div>
+              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.has_cycles ? 'Yes' : 'No'}</div>Cycles</div>
+            </div>
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

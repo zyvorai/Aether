@@ -1,11 +1,12 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Container, LayoutGrid, List, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { Container, LayoutGrid, List, Plus, RefreshCw, Save, Trash2, Network, Server} from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery } from '../../utils/urlState';
 import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
@@ -19,7 +20,6 @@ import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import CardGrid from '../CardGrid';
 import EntityCard from '../EntityCard';
 import PageTabs from '../PageTabs';
-import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import EventCorrelationPanel from '../EventCorrelationPanel';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -90,7 +90,9 @@ function manifestContainerNames(manifest: Record<string, unknown>): string[] {
   ) as string[];
 }
 
-function ClustersPage() {
+export type ClustersTab = 'browse' | 'network';
+
+export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) {
   const navigate = useNavigate();
   const panelClass = '';
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
@@ -149,16 +151,19 @@ function ClustersPage() {
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
   const [searchParams, setSearchParams] = useSearchParams();
-  const [pageTab, setPageTab] = useState<'browse' | 'network'>(() =>
-    searchParams.get('tab') === 'network' ? 'network' : 'browse',
+  const [pageTabState, setPageTab] = useState<'browse' | 'network'>(() =>
+    forcedTab ?? (searchParams.get('tab') === 'network' ? 'network' : 'browse'),
   );
+  const pageTab: ClustersTab = forcedTab ?? pageTabState;
   const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
 
   useEffect(() => {
+    if (forcedTab) return;
     const tab = searchParams.get('tab') === 'network' ? 'network' : 'browse';
     setPageTab((current) => (current === tab ? current : tab));
-  }, [searchParams]);
+  }, [searchParams, forcedTab]);
   function setPageTabWithUrl(tab: 'browse' | 'network') {
+    if (forcedTab) return;
     setPageTab(tab);
     setSearchParams(
       (prev) => {
@@ -757,31 +762,39 @@ function ClustersPage() {
   }
 
   if (bootstrapLoading) {
-    return <PageLoading rows={6} />;
+    return (
+      <div>
+        <PageLoading rows={6} />
+      </div>
+    );
   }
 
   if (bootstrapFailed) {
     return (
-      <PageLoadError
-        title="Cluster browser unavailable"
-        description="Could not load Kubernetes cluster summary from the API."
-        onRetry={() => void loadBootstrap()}
-      />
+      <div>
+        <PageLoadError
+          title="Cluster browser unavailable"
+          description="Could not load Kubernetes cluster summary from the API."
+          onRetry={() => void loadBootstrap()}
+        />
+      </div>
     );
   }
 
   if (!summary || !summary.enabled) {
     return (
-      <EmptyState
-        icon={<Container size={48} />}
-        title="No Kubernetes contexts"
-        description="Aether could not find any kubeconfig contexts to browse. Configure cluster access on Platform & HA."
-        action={
-          <Link to={viewToPath('platform')} className="btn-primary inline-flex items-center gap-2">
-            Open Platform setup
-          </Link>
-        }
-      />
+      <div>
+        <EmptyState
+          icon={<Container size={48} />}
+          title="No Kubernetes contexts"
+          description="Aether could not find any kubeconfig contexts to browse. Configure cluster access on Platform & HA."
+          action={
+            <Link to={viewToPath('platform')} className="btn-primary inline-flex items-center gap-2">
+              Open Platform setup
+            </Link>
+          }
+        />
+      </div>
     );
   }
 
@@ -818,7 +831,8 @@ function ClustersPage() {
   const workloadFocus = (searchParams.get('workload') ?? '').trim();
 
   return (
-    <div className="space-y-6">
+    <div>
+    <div className="space-y-10">
       {workloadFocus ? (
         <WorkloadContextBanner testId="clusters-workload-context" workload={workloadFocus} description="Cluster browse context">
           <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />
@@ -888,9 +902,7 @@ function ClustersPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <section>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Clusters" value={summary.cluster_count} color="blue" />
+      <section className="flex flex-wrap gap-x-10 gap-y-2 text-sm text-muted">
         <button
           type="button"
           onClick={() =>
@@ -900,33 +912,27 @@ function ClustersPage() {
                 : viewToPath('health'),
             )
           }
-          className="text-left"
+          className="hover:text-foreground"
           data-testid="clusters-health-link"
         >
-          <StatCard title="Reachable" value={summary.healthy_clusters} color="green" />
+          Health monitor
         </button>
-        <StatCard title="Namespaces" value={namespaces.length} color="primary" />
-        <StatCard title={pageTab === 'network' ? 'Policies' : `${kind}s`} value={resources.length} color="purple" />
-      </div>
       </section>
 
       {ciliumStatus && (
-        <div className="glass-context-banner mb-6 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-subtle">CNI</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ciliumStatus.cni === 'cilium' ? 'bg-success/40 text-success' : 'glass-inset-surface text-muted'}`}>
-            {ciliumStatus.cni}
-          </span>
-          <span className="text-subtle">·</span>
-          <span className="text-subtle">Egress</span>
-          <span className="text-foreground">{ciliumStatus.egress_mode}</span>
-          <span className="text-subtle">·</span>
-          <span className="text-subtle">metrics-server</span>
+        <p className="text-sm text-muted">
+          CNI {ciliumStatus.cni}
+          <span className="text-subtle"> · </span>
+          Egress {ciliumStatus.egress_mode}
+          <span className="text-subtle"> · </span>
+          metrics-server{' '}
           <span className={ciliumStatus.metrics_server ? 'text-success' : 'text-warning'}>
             {ciliumStatus.metrics_server ? 'ok' : 'missing'}
           </span>
-        </div>
+        </p>
       )}
 
+      {!forcedTab ? (
       <div data-testid="clusters-page-tabs">
       <PageTabs
         tabs={[
@@ -937,22 +943,22 @@ function ClustersPage() {
         onChange={(tab) => setPageTabWithUrl(tab as 'browse' | 'network')}
       />
       </div>
+      ) : null}
 
       {metricsSummary && (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-subtle">Metrics Scope</div>
-            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.scope}</div>
+        <div className="flex flex-wrap gap-x-12 gap-y-4 text-sm">
+          <div>
+            <div className="text-muted">Metrics scope</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.scope}</div>
           </div>
-          <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-subtle">CPU</div>
-            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.total_cpu_millicores}m</div>
-            <div className="mt-1 text-xs text-subtle">{metricsSummary.pod_count} pods measured</div>
+          <div>
+            <div className="text-muted">CPU</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.total_cpu_millicores}m</div>
+            <div className="mt-1 text-xs text-subtle">{metricsSummary.pod_count} pods</div>
           </div>
-          <div className="glass p-4">
-            <div className="text-xs uppercase tracking-wider text-subtle">Memory</div>
-            <div className="mt-2 text-lg font-semibold text-foreground">{metricsSummary.total_memory_mib} Mi</div>
-            <div className="mt-1 text-xs text-subtle">From `kubectl top pod`</div>
+          <div>
+            <div className="text-muted">Memory</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.total_memory_mib} Mi</div>
           </div>
         </div>
       )}
@@ -1834,7 +1840,19 @@ function ClustersPage() {
         </div>
       </Modal>
     </div>
+    </div>
   );
 }
 
-export default withAuroraPage('clusters', ClustersPage);
+function ClustersHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'clusters-browse', title: 'Browse', description: 'Browse and manage Kubernetes resources.', icon: <Server className="h-5 w-5" /> },
+        { view: 'clusters-network', title: 'Network', description: 'NetworkPolicy and Cilium policies.', icon: <Network className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('clusters', ClustersHubPage);

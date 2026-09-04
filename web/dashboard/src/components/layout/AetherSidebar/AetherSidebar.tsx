@@ -32,11 +32,12 @@ export function saveSidebarCollapsed(collapsed: boolean) {
 function loadCollapsedSections(): Set<string> {
   try {
     const raw = localStorage.getItem(SECTIONS_COLLAPSED_KEY);
-    if (!raw) return new Set();
+    // Default: all sections collapsed (Apple-lite). Only expand what the user opened.
+    if (!raw) return new Set(['intelligence', 'operations', 'resources']);
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? new Set(parsed.filter((x): x is string => typeof x === 'string')) : new Set();
+    return Array.isArray(parsed) ? new Set(parsed.filter((x): x is string => typeof x === 'string')) : new Set(['intelligence', 'operations', 'resources']);
   } catch {
-    return new Set();
+    return new Set(['intelligence', 'operations', 'resources']);
   }
 }
 
@@ -78,12 +79,13 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-        active ? 'bg-primary-wash text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
+        'relative flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        active ? 'bg-primary-wash font-medium text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
         rail ? 'w-full justify-center px-1.5 py-1.5' : 'w-full',
         className,
       )}
     >
+      {active && !rail ? <span className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-primary" aria-hidden /> : null}
       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
       {rail ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
     </button>
@@ -175,7 +177,7 @@ function SidebarSectionBlock({
         type="button"
         aria-expanded={expanded}
         onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-subtle hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-subtle hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
         <span className="truncate">{section.label}</span>

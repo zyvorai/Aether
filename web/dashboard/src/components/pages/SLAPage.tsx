@@ -14,7 +14,6 @@ import PageToolbar from '../PageToolbar';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import StatCard from '../StatCard';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { WorkloadResponse, SlaTarget } from '../../types/api';
 
@@ -210,11 +209,11 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {workloads.length > 0 && (
-        <section className="glass mb-6 p-6 sm:p-8">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard title="With SLA" value={slaConfiguredCount} color="green" />
-          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left" data-testid="sla-breach-stat">
-            <StatCard title="Compliance gaps" value={complianceGapCount} color={complianceGapCount > 0 ? 'red' : 'blue'} />
+        <section className="mb-10">
+        <div className="flex flex-wrap gap-x-10 gap-y-4">
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{slaConfiguredCount}</div>With SLA</div>
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left text-sm text-muted hover:text-foreground" data-testid="sla-breach-stat">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{complianceGapCount}</div>Compliance gaps
           </Link>
         </div>
         </section>

@@ -6,11 +6,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import GlobalNav from './layout/GlobalNav/GlobalNav';
 import AetherSidebar, { loadSidebarCollapsed, saveSidebarCollapsed } from './layout/AetherSidebar/AetherSidebar';
 import Breadcrumb from './Breadcrumb';
-import ZyraRail, { ZyraRailToggle } from './ZyraRail';
-import ZyraContextBar from './ZyraContextBar';
-import AgentStatusDock from './AgentStatusDock';
+import ZyraRail from './ZyraRail';
 import CriticalIssueNotifier from './CriticalIssueNotifier';
-import LiveActivityDock from './LiveActivityDock';
 import SseReconnectBanner from './SseReconnectBanner';
 import VersionRefreshBanner from './VersionRefreshBanner';
 import ViewerBanner from './ViewerBanner';
@@ -58,16 +55,8 @@ export default function DashboardShell({
   refreshKey = 0,
 }: DashboardShellProps) {
   const isZyraView = currentView === 'zyra' || currentView === 'copilot';
-  const [zyraCollapsed, setZyraCollapsed] = useState(() => !isZyraView);
-  const [mobileZyraOpen, setMobileZyraOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => loadSidebarCollapsed());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // Reclaim horizontal space on every view except the Zyra workspace, where the
-  // rail IS the primary surface.
-  useEffect(() => {
-    setZyraCollapsed(!isZyraView);
-  }, [currentView, isZyraView]);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -96,7 +85,6 @@ export default function DashboardShell({
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         sseConnected={sseConnected}
       />
-      <ZyraContextBar refreshKey={refreshKey} />
       <ViewerBanner />
       {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
       <VersionRefreshBanner />
@@ -111,22 +99,10 @@ export default function DashboardShell({
           <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
           {children}
         </main>
-        <ZyraRail collapsed={zyraCollapsed} onCollapsedChange={setZyraCollapsed} />
+        {isZyraView ? (
+          <ZyraRail collapsed={false} onCollapsedChange={() => onNavigate('overview')} />
+        ) : null}
       </div>
-      <ZyraRailToggle onClick={() => setMobileZyraOpen(true)} />
-      {mobileZyraOpen ? (
-        <div className="fixed inset-0 z-50 xl:hidden">
-          <button
-            type="button"
-            className="glass-modal-backdrop absolute inset-0"
-            aria-label="Close Zyra"
-            onClick={() => setMobileZyraOpen(false)}
-          />
-          <div className="absolute inset-y-0 right-0 flex w-full max-w-md">
-            <ZyraRail collapsed={false} onCollapsedChange={() => setMobileZyraOpen(false)} />
-          </div>
-        </div>
-      ) : null}
       {mobileSidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
@@ -147,8 +123,6 @@ export default function DashboardShell({
           </div>
         </div>
       ) : null}
-      <LiveActivityDock />
-      <AgentStatusDock />
       <CriticalIssueNotifier refreshKey={refreshKey} />
       {commandPalette}
       {helpDialog}

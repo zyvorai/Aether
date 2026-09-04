@@ -17,8 +17,8 @@ import PageLoadError from '../PageLoadError';
 import PageTabs from '../PageTabs';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
-import GlassSection from '../GlassSection';
-import StatCard from '../StatCard';
+import { SectionHeader } from '../layout/SectionHeader';
+import SectionHubPage from '../SectionHubPage';
 import type {
   CostOptimizeReport,
   EvolutionStatus,
@@ -48,8 +48,6 @@ runtime:
     - kube
 `;
 
-type IntelTab = 'predictions' | 'threats' | 'cost' | 'evolution' | 'place';
-
 function riskVariant(level: string): 'green' | 'yellow' | 'red' | 'muted' {
   const l = level.toLowerCase();
   if (l === 'low') return 'green';
@@ -65,17 +63,20 @@ function workloadMatchesFocus(rowWorkload: string, focus: string): boolean {
   return rowWorkload.endsWith(`/${needle}`) || rowWorkload.split('/').includes(needle);
 }
 
-function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
+export type IntelTab = 'predictions' | 'threats' | 'cost' | 'evolution' | 'place';
+const INTEL_TABS: IntelTab[] = ['predictions', 'threats', 'cost', 'evolution', 'place'];
+
+export function IntelligenceStudio({ refreshKey, forcedTab }: { refreshKey?: number; forcedTab?: IntelTab } = {}) {
   const navigate = useNavigate();
-  const [tabParam, setTabParam] = useQueryParam('tab', 'predictions');
+  const [tabParam, setTabParam] = useQueryParam('tab', forcedTab ?? 'predictions');
   const [workloadQuery] = useQueryParam('workload', '');
   const workloadFocus = workloadQuery.trim() || undefined;
-  const tab: IntelTab = (
-    ['predictions', 'threats', 'cost', 'evolution', 'place'] as const
-  ).includes(tabParam as IntelTab)
-    ? (tabParam as IntelTab)
-    : 'predictions';
-  const setTab = (next: IntelTab) => setTabParam(next);
+  const tab: IntelTab = forcedTab
+    ?? (INTEL_TABS.includes(tabParam as IntelTab) ? (tabParam as IntelTab) : 'predictions');
+  const setTab = (next: IntelTab) => {
+    if (forcedTab) return;
+    setTabParam(next);
+  };
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [predictions, setPredictions] = useState<PredictionReport | null>(null);
@@ -241,48 +242,30 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="glass mb-6 p-6 sm:p-8">
-      <GlassSection
-        variant="hero"
-        accent="purple"
-        label="Intelligence"
-        title="Predictive ops"
-        subtitle="Fleet risk, threats, cost optimization, and placement intelligence"
-        className="mb-6 p-6 sm:p-8"
-        icon={<Brain className="h-5 w-5 text-aether-ai" />}
-      >
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard
-            title="Fleet risk"
-            value={predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}
-            color="purple"
-            compact
-            isEmpty={!predictions}
-          />
-          <StatCard
-            title="Threats"
-            value={threats?.threats.length ?? 0}
-            color="red"
-            compact
-            isEmpty={(threats?.threats.length ?? 0) === 0}
-          />
-          <StatCard
-            title="Cost saves"
-            value={cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}
-            color="green"
-            compact
-            isEmpty={!cost}
-          />
-          <StatCard
-            title="Evolution"
-            value={evolution?.workloads.length ?? 0}
-            color="blue"
-            compact
-            isEmpty={(evolution?.workloads.length ?? 0) === 0}
-          />
+      {!forcedTab ? (
+      <section className="mb-10 space-y-8">
+        <div className="flex flex-wrap gap-x-10 gap-y-4">
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}</div>
+            Fleet risk
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{threats?.threats.length ?? 0}</div>
+            Threats
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}</div>
+            Cost saves
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{evolution?.workloads.length ?? 0}</div>
+            Evolution
+          </div>
         </div>
-      </GlassSection>
+      </section>
+      ) : null}
 
+      {!forcedTab ? (
       <div data-testid="intelligence-tabs">
       <PageTabs
         tabs={[
@@ -296,6 +279,7 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
         onChange={(id) => setTab(id as IntelTab)}
       />
       </div>
+      ) : null}
 
       {tab === 'predictions' && (
         <div className="space-y-4 mt-4" data-testid="intelligence-predictions-panel">
@@ -600,9 +584,24 @@ function IntelligencePage({ refreshKey }: { refreshKey?: number } = {}) {
           )}
         </div>
       )}
-      </section>
     </div>
   );
 }
 
-export default withAuroraPage('intelligence', IntelligencePage);
+function IntelligenceHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'ai', title: 'AI Engine', description: 'Runtime advisor, intent studio, and optimization.', icon: <Brain className="h-5 w-5" /> },
+        { view: 'zyra', title: 'Zyra', description: 'Multi-agent infrastructure chat.', icon: <Sparkles className="h-5 w-5" /> },
+        { view: 'intel-predictions', title: 'Predictions', description: 'Fleet failure predictions.', icon: <TrendingUp className="h-5 w-5" /> },
+        { view: 'intel-threats', title: 'Threats', description: 'Threat intelligence.', icon: <AlertTriangle className="h-5 w-5" /> },
+        { view: 'intel-cost', title: 'Cost optimize', description: 'Cost optimization recommendations.', icon: <DollarSign className="h-5 w-5" /> },
+        { view: 'intel-placement', title: 'Placement', description: 'Global placement recommendations.', icon: <MapPin className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('intelligence', IntelligenceHubPage);
+

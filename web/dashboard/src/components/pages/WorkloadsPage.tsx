@@ -1,4 +1,4 @@
-import { withAuroraPage } from '../layout/AuroraPage';
+import AuroraPage from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -736,7 +736,17 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   ];
 
   return (
-    <div className="overflow-x-hidden">
+    <AuroraPage
+      view="workloads"
+      stats={[
+        { label: 'Total', value: workloads.length },
+        { label: 'Running', value: runningCount },
+        { label: 'Aether', value: aetherManagedCount },
+        { label: 'Discovered', value: clusterDiscoveredCount },
+      ]}
+      statsTestId="workloads-stats"
+    >
+    <div className="overflow-x-hidden space-y-10">
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -752,34 +762,11 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
             </select>
-            <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-kind-filter">
-              {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
-            </select>
-            <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-cluster-filter">
-              {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
-            </select>
-            <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-namespace-filter">
-              {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
-            </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-status-filter">
               <option value="all">All statuses</option>
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
             </select>
-            <button
-              type="button"
-              onClick={() => setPinnedOnly((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                pinnedOnly
-                  ? 'bg-primary/20 text-primary border border-primary/40'
-                  : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
-              }`}
-              title="Show pinned workloads only"
-              data-testid="workloads-pinned-filter"
-            >
-              <Star size={14} className={pinnedOnly ? 'fill-current' : ''} />
-              Pinned{pinnedNames.length > 0 ? ` (${pinnedNames.length})` : ''}
-            </button>
           </>
         }
         actions={
@@ -825,7 +812,10 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           className={selectedWorkload ? 'hidden min-w-0 flex-1 lg:block' : 'min-w-0 flex-1'}
           data-testid="workloads-list-column"
         >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <details className="mb-4" data-testid="workloads-more-filters">
+        <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More filters</summary>
+        <div className="mt-3 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
           {(kinds.length > 2 ? kinds : ['all']).map((kind) => {
             const count = kind === 'all'
@@ -848,26 +838,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               </button>
             );
           })}
-        </div>
-        <div className="flex items-center gap-1 rounded-xl border glass-divider p-1" data-testid="workloads-view-toggle">
-          <button
-            type="button"
-            onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
-            title="Card view"
-          >
-            <LayoutGrid size={14} />
-            Cards
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
-            title="Table view"
-          >
-            <List size={14} />
-            Table
-          </button>
         </div>
       </div>
 
@@ -903,6 +873,52 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               );
             })
           : null}
+        <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-kind-filter">
+          {kinds.map((kind) => <option key={kind} value={kind}>{kind === 'all' ? 'All kinds' : kind}</option>)}
+        </select>
+        <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-cluster-filter">
+          {clusters.map((cluster) => <option key={cluster} value={cluster}>{cluster === 'all' ? 'All clusters' : cluster}</option>)}
+        </select>
+        <select value={namespaceFilter} onChange={(e) => setNamespaceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-namespace-filter">
+          {namespaces.map((namespace) => <option key={namespace} value={namespace}>{namespace === 'all' ? 'All namespaces' : namespace}</option>)}
+        </select>
+        <button
+          type="button"
+          onClick={() => setPinnedOnly((v) => !v)}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+            pinnedOnly
+              ? 'bg-primary/20 text-primary border border-primary/40'
+              : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
+          }`}
+          title="Show pinned workloads only"
+          data-testid="workloads-pinned-filter"
+        >
+          <Star size={14} className={pinnedOnly ? 'fill-current' : ''} />
+          Pinned{pinnedNames.length > 0 ? ` (${pinnedNames.length})` : ''}
+        </button>
+      </div>
+        </div>
+      </details>
+
+      <div className="mb-4 flex items-center justify-end gap-1 rounded-xl border glass-divider p-1 w-fit ml-auto" data-testid="workloads-view-toggle">
+          <button
+            type="button"
+            onClick={() => setViewModePersist('cards')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            title="Card view"
+          >
+            <LayoutGrid size={14} />
+            Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewModePersist('table')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            title="Table view"
+          >
+            <List size={14} />
+            Table
+          </button>
       </div>
 
       {workloadParam.trim() && !selectedWorkload ? (
@@ -1037,32 +1053,23 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         </div>
       ) : null}
 
-      <section className="mb-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border glass-divider sm:grid-cols-3 xl:grid-cols-6" data-testid="workloads-stats">
-        <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-white/[0.03]">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Total</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">{workloads.length}</div>
+      <div className="mb-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted" data-testid="workloads-filter-stats">
+        <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="hover:text-foreground">
+          All
         </button>
-        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-success/5">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Running</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-success">{runningCount}</div>
+        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="hover:text-foreground">
+          Running
         </button>
-        <button type="button" onClick={() => setStatusFilter('stopped')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-warning/5">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Stopped</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-warning">{stoppedCount}</div>
+        <button type="button" onClick={() => setStatusFilter('stopped')} className="hover:text-foreground">
+          Stopped
         </button>
-        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-lavender/5">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Aether</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-lavender">{aetherManagedCount}</div>
+        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="hover:text-foreground">
+          Aether-managed
         </button>
-        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="glass-inset-surface px-3 py-3 text-left transition hover:bg-primary/5">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Discovered</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-primary">{clusterDiscoveredCount}</div>
+        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="hover:text-foreground">
+          Discovered
         </button>
-        <div className="glass-inset-surface px-3 py-3">
-          <div className="text-[10px] uppercase tracking-wider text-subtle">Namespaces</div>
-          <div className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">{namespaces.filter((namespace) => namespace !== 'all').length}</div>
-        </div>
-      </section>
+      </div>
 
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
@@ -1462,7 +1469,8 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         </div>
       </Modal>
     </div>
+    </AuroraPage>
   );
 }
 
-export default withAuroraPage('workloads', WorkloadsPage);
+export default WorkloadsPage;

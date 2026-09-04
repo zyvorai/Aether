@@ -49,7 +49,9 @@
   --radius-lg: 18px;
   --radius-xl: 24px;
   --radius-pill: 980px;
-  --section-gap: 1.5rem;
+  --section-gap: 3.5rem;
+  --chapter-gap: 3.5rem;
+  --hero-pad-block: clamp(2.5rem, 6vw, 4.5rem);
   --content-max-width: 72rem;
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
   --font-size-xs: 0.75rem;
@@ -63,7 +65,34 @@
   --leading-tight: 1.1;
   --leading-normal: 1.47;
   --leading-relaxed: 1.47;
-  --tracking-eyebrow: 0.02em;
+  --tracking-eyebrow: 0.08em;
+  --tracking-display: -0.035em;
+  --tracking-hero: -0.045em;
+
+  /* Vision Pro–style tone system: one accent per destination/category.
+     Each tone ships a solid, a tint (wash), and a glow (radial depth) —
+     used by PageHero swatches, hub-page bands, and status chips. */
+  --tone-sky: #0071e3;
+  --tone-sky-tint: rgba(0, 113, 227, 0.1);
+  --tone-sky-glow: rgba(0, 113, 227, 0.22);
+  --tone-violet: #7c3aed;
+  --tone-violet-tint: rgba(124, 58, 237, 0.1);
+  --tone-violet-glow: rgba(124, 58, 237, 0.22);
+  --tone-emerald: #248a3d;
+  --tone-emerald-tint: rgba(36, 138, 61, 0.1);
+  --tone-emerald-glow: rgba(36, 138, 61, 0.22);
+  --tone-amber: #bf7a00;
+  --tone-amber-tint: rgba(191, 122, 0, 0.12);
+  --tone-amber-glow: rgba(191, 122, 0, 0.24);
+  --tone-pink: #e11d48;
+  --tone-pink-tint: rgba(225, 29, 72, 0.1);
+  --tone-pink-glow: rgba(225, 29, 72, 0.22);
+  --tone-teal: #0d9488;
+  --tone-teal-tint: rgba(13, 148, 136, 0.1);
+  --tone-teal-glow: rgba(13, 148, 136, 0.22);
+  --tone-rust: #c2410c;
+  --tone-rust-tint: rgba(194, 65, 12, 0.1);
+  --tone-rust-glow: rgba(194, 65, 12, 0.22);
   --bg-primary: var(--background);
   --bg-secondary: var(--surface);
   --bg-card: var(--surface-elevated);
@@ -152,6 +181,29 @@ html.dark-theme,
   --scrim: rgba(0, 0, 0, 0.55);
   --glass: var(--nav-bg);
   --shadow: var(--shadow-card);
+
+  --tone-sky: #0a84ff;
+  --tone-sky-tint: rgba(10, 132, 255, 0.16);
+  --tone-sky-glow: rgba(10, 132, 255, 0.32);
+  --tone-violet: #9f6dff;
+  --tone-violet-tint: rgba(159, 109, 255, 0.16);
+  --tone-violet-glow: rgba(159, 109, 255, 0.32);
+  --tone-emerald: #30d158;
+  --tone-emerald-tint: rgba(48, 209, 88, 0.16);
+  --tone-emerald-glow: rgba(48, 209, 88, 0.32);
+  --tone-amber: #ff9f0a;
+  --tone-amber-tint: rgba(255, 159, 10, 0.18);
+  --tone-amber-glow: rgba(255, 159, 10, 0.34);
+  --tone-pink: #ff375f;
+  --tone-pink-tint: rgba(255, 55, 95, 0.16);
+  --tone-pink-glow: rgba(255, 55, 95, 0.32);
+  --tone-teal: #63d9d0;
+  --tone-teal-tint: rgba(99, 217, 208, 0.16);
+  --tone-teal-glow: rgba(99, 217, 208, 0.32);
+  --tone-rust: #ff8a4c;
+  --tone-rust-tint: rgba(255, 138, 76, 0.18);
+  --tone-rust-glow: rgba(255, 138, 76, 0.34);
+
   color-scheme: dark;
 }
 

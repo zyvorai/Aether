@@ -264,7 +264,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="glass mb-6 p-6 sm:p-8">
+        <section className="mb-10 space-y-8">
           <SectionHeader
             label="Health"
             title="Fleet status"

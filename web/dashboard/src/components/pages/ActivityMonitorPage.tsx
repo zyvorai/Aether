@@ -1,4 +1,5 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
@@ -13,7 +14,6 @@ import { useEventStream } from '../../hooks/useEventStream';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import StatCard from '../StatCard';
 import type { ClusterMetricsSummary, ClusterSummary, Event, WorkloadResponse } from '../../types/api';
 import { isK8sApplication } from '../../utils/k8sUx';
 
@@ -32,9 +32,11 @@ function parseMemoryMi(mem: string): number {
   return Number.parseInt(mem, 10) || 0;
 }
 
-function ActivityMonitorPage() {
+export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<MonitorTab>('cpu');
+  const [tabState, setTabState] = useState<MonitorTab>('cpu');
+  const tab: MonitorTab = forcedTab ?? tabState;
+  const setTab = (next: MonitorTab) => { if (!forcedTab) setTabState(next); };
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -192,20 +194,14 @@ function ActivityMonitorPage() {
         </div>
       </div>
 
-      <section className="glass mb-6 p-6 sm:p-8">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Pods" value={metrics?.pod_count ?? 0} color="blue" icon={<Activity size={18} />} />
-        <StatCard title="Applications" value={k8sApps.length} color="primary" icon={<Zap size={18} />} />
-        <StatCard title="Failing apps" value={failingApps.length} color="red" icon={<AlertTriangle size={18} />} />
-        <StatCard
-          title="Cluster CPU"
-          value={metrics ? `${metrics.total_cpu_millicores}m` : '—'}
-          color="purple"
-          icon={<Cpu size={18} />}
-        />
-      </div>
+      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics?.pod_count ?? 0}</div>Pods</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{k8sApps.length}</div>Applications</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{failingApps.length}</div>Failing apps</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics ? `${metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
       </section>
 
+      {!forcedTab ? (
       <div className="flex flex-wrap gap-2 mb-6">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
@@ -219,6 +215,7 @@ function ActivityMonitorPage() {
           </button>
         ))}
       </div>
+      ) : null}
 
       <div className="glass">
         {tab === 'cpu' && (
@@ -308,4 +305,17 @@ function ActivityMonitorPage() {
   );
 }
 
-export default withAuroraPage('activity', ActivityMonitorPage);
+function ActivityHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'activity-cpu', title: 'CPU', description: 'Top CPU pods across the fleet.', icon: <Cpu className="h-5 w-5" /> },
+        { view: 'activity-memory', title: 'Memory', description: 'Top memory consumers.', icon: <HardDrive className="h-5 w-5" /> },
+        { view: 'activity-restarts', title: 'Restarts', description: 'Pods with frequent restarts.', icon: <RefreshCw className="h-5 w-5" /> },
+        { view: 'activity-errors', title: 'Errors', description: 'Recent error events.', icon: <AlertTriangle className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('activity', ActivityHubPage);

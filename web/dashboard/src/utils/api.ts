@@ -211,6 +211,24 @@ export async function apiFetchAuthProviders(): Promise<AuthProvidersPayload | nu
   }
 }
 
+export interface HealthPayload {
+  status: string;
+  version: string;
+  hostname: string;
+  environment: string | null;
+}
+
+/** `/health` is unauthenticated and served at the root, not under `/api`. */
+export async function apiFetchHealth(): Promise<HealthPayload | null> {
+  try {
+    const res = await fetch('/health');
+    const json: ApiResponse<HealthPayload> = await res.json();
+    return json.success && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = { ...extra };
   const token = getAuthToken();

@@ -25,7 +25,10 @@ export type AuroraPageProps = {
   actions?: ReactNode;
   icon?: LucideIcon;
   accent?: Tone;
+  swatches?: { label: string; tone: Tone; active?: boolean; onSelect?: () => void }[];
   stats?: { label: string; value: string | number; tone?: Tone }[];
+  /** Optional test id for the ink highlights band. */
+  statsTestId?: string;
   className?: string;
   children: ReactNode;
 };
@@ -38,13 +41,15 @@ export default function AuroraPage({
   actions,
   icon,
   accent,
+  swatches,
   stats,
+  statsTestId,
   className,
   children,
 }: AuroraPageProps) {
   const meta = getViewMeta(view);
   return (
-    <div className={cn('space-y-8 animate-fade-up', className)} data-testid={`page-${view}`}>
+    <div className={cn('space-y-12 animate-fade-up', className)} data-testid={`page-${view}`}>
       <PageHero
         eyebrow={GROUP_EYEBROW[meta.group]}
         title={title ?? meta.label}
@@ -52,9 +57,11 @@ export default function AuroraPage({
         actions={actions}
         icon={icon}
         accent={accent}
+        swatches={swatches}
         stats={stats}
+        statsTestId={statsTestId}
       />
-      <div className="space-y-6">{children}</div>
+      <div className="space-y-12">{children}</div>
     </div>
   );
 }

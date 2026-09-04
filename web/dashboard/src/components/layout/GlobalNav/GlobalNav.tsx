@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { useTheme } from '../../../contexts/ThemeContext';
 import type { HelpTab } from '../../HelpDialog';
 import type { AppView } from '../../../types/api';
+import { apiFetchHealth, type HealthPayload } from '../../../utils/api';
 import styles from './GlobalNav.module.css';
 
 export interface GlobalNavProps {
@@ -24,6 +25,17 @@ export function GlobalNav({
   const navigate = useNavigate();
   const { resolvedTheme, toggleDarkLight } = useTheme();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [health, setHealth] = useState<HealthPayload | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void apiFetchHealth().then((payload) => {
+      if (!cancelled) setHealth(payload);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -44,11 +56,19 @@ export function GlobalNav({
           <span className={styles.markBadge}>Æ</span>
           <span className={styles.word}>aether</span>
         </button>
+        {health ? (
+          <span
+            className={`hidden sm:inline-flex ${styles.envBadge}`}
+            title={`Host: ${health.hostname}${health.environment ? ` · Environment: ${health.environment}` : ''}`}
+          >
+            {health.environment ?? health.hostname}
+          </span>
+        ) : null}
 
         <div className={styles.utils}>
           {sseConnected !== undefined ? <span className={styles.statusDot} data-connected={String(sseConnected)} title={sseConnected ? 'Live updates connected' : 'Reconnecting live updates'} /> : null}
           {onSearchClick ? <button type="button" className={styles.searchBtn} onClick={onSearchClick}><Search size={15} /><span className="hidden sm:inline">Search</span><kbd className={`hidden sm:inline ${styles.searchKbd}`}>⌘K</kbd></button> : null}
-          {onOpenHelp ? <button type="button" className={styles.icon} aria-label="Help" title="Help" onClick={() => onOpenHelp()}><CircleHelp size={16} /></button> : null}
+          {onOpenHelp ? <button type="button" className={styles.icon} aria-label="Help menu" title="Help" onClick={() => onOpenHelp()}><CircleHelp size={16} /></button> : null}
           <button type="button" className={styles.icon} onClick={toggleDarkLight} aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}>
             {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>

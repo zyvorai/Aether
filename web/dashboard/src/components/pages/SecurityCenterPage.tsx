@@ -1,11 +1,12 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Shield, AlertTriangle, Lock, KeyRound, FileCheck } from 'lucide-react';
+import { Shield, AlertTriangle, Lock, KeyRound, FileCheck, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -13,13 +14,15 @@ import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
-import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import SecurityCopilotPanel from '../SecurityCopilotPanel';
 import SecurityPlatformPanel from '../SecurityPlatformPanel';
 import type { SecretSummary, ThreatReport, SbomMetadata, SignedImageManifest, RemediationPlan } from '../../types/api';
 
-function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type SecuritySection = 'copilot' | 'platform' | 'overview' | 'sbom' | 'remediation' | 'threats';
+
+export function SecurityStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: SecuritySection } = {}) {
+  const show = (s: SecuritySection) => !forcedSection || forcedSection === s;
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const [loading, setLoading] = useState(true);
@@ -170,19 +173,21 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
         }
       />
 
+      {show('copilot') ? (
       <div className="mb-8">
         <SecurityCopilotPanel />
       </div>
+      ) : null}
 
-      <SecurityPlatformPanel />
+      {show('platform') ? <SecurityPlatformPanel /> : null}
 
-      <section className="glass mb-6 p-6 sm:p-8">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="High risk items" value={highRiskCount} color="red" icon={<AlertTriangle size={18} />} />
-        <StatCard title="Threats" value={threats?.threats.length ?? 0} color="yellow" icon={<Shield size={18} />} />
-        <StatCard title="Secrets" value={secrets.length} color="blue" icon={<KeyRound size={18} />} />
-        <StatCard title="Need rotation" value={rotationNeeded.length} color="primary" icon={<Lock size={18} />} />
-      </div>
+      {show('overview') ? (
+      <>
+      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{highRiskCount}</div>High risk</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{threats?.threats.length ?? 0}</div>Threats</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{secrets.length}</div>Secrets</div>
+        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{rotationNeeded.length}</div>Need rotation</div>
       </section>
 
       {hardening && (
@@ -191,7 +196,10 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           <pre className="text-sm text-muted whitespace-pre-wrap font-sans">{hardening}</pre>
         </div>
       )}
+      </>
+      ) : null}
 
+      {show('sbom') ? (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="glass" data-testid="security-sbom-card">
           <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -224,8 +232,9 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           )}
         </div>
       </div>
+      ) : null}
 
-      {packetwolfStatus?.configured ? (
+      {show('sbom') && packetwolfStatus?.configured ? (
         <div className="glass mb-6" data-testid="security-packetwolf-card">
           <h3 className="text-lg font-semibold text-foreground mb-2">PacketWolf</h3>
           <p className="text-sm text-muted">
@@ -234,6 +243,7 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       ) : null}
 
+      {show('remediation') ? (
       <div className="glass mb-6" data-testid="security-remediation-card">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-lg font-semibold text-foreground">Anomaly remediation</h3>
@@ -272,7 +282,9 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
         )}
       </div>
+      ) : null}
 
+      {show('threats') ? (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -340,9 +352,26 @@ function SecurityCenterPage({ refreshKey }: { refreshKey?: number } = {}) {
           ))}
         </div>
       </div>
+      ) : null}
 
     </div>
   );
 }
 
-export default withAuroraPage('security', SecurityCenterPage);
+function SecurityHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'security-overview', title: 'Overview', description: 'Risk summary and hardening plan.', icon: <Shield className="h-5 w-5" /> },
+        { view: 'security-copilot', title: 'Security copilot', description: 'AI-assisted security guidance.', icon: <ShieldAlert className="h-5 w-5" /> },
+        { view: 'security-platform', title: 'Security platform', description: 'Platform security controls.', icon: <ShieldCheck className="h-5 w-5" /> },
+        { view: 'security-sbom', title: 'SBOM & images', description: 'SBOM, signed images, PacketWolf.', icon: <FileCheck className="h-5 w-5" /> },
+        { view: 'security-remediation', title: 'Remediation', description: 'Anomaly remediation plans.', icon: <AlertTriangle className="h-5 w-5" /> },
+        { view: 'security-threats', title: 'Threats & secrets', description: 'Threat scan and secret rotation.', icon: <Lock className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('security', SecurityHubPage);
+

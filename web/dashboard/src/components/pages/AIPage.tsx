@@ -25,6 +25,7 @@ import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContext
 import PageTabs from '../PageTabs';
 import { SectionHeader } from '../layout/SectionHeader';
 import WorkloadSelect from '../WorkloadSelect';
+import SectionHubPage from '../SectionHubPage';
 import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -273,7 +274,12 @@ const STUDIO_TABS = [
   { id: 'analyze' as const, label: 'Analysis', icon: <Cpu size={16} /> },
 ];
 
-function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type AiTab = 'intent' | 'pipeline' | 'advisor' | 'designer' | 'recommend' | 'optimize' | 'analyze';
+
+const AI_TABS: AiTab[] = ['intent', 'pipeline', 'advisor', 'designer', 'recommend', 'optimize', 'analyze'];
+
+/** Single AI studio chapter — use forcedTab from hub child routes. */
+export function AIStudio({ refreshKey, forcedTab }: { refreshKey?: number; forcedTab?: AiTab } = {}) {
   const navigate = useNavigate();
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [workloadsLoading, setWorkloadsLoading] = useState(true);
@@ -282,14 +288,13 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [scalingAdvice, setScalingAdvice] = useState<ScalingAdvice | null>(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
-  type AiTab = 'intent' | 'pipeline' | 'advisor' | 'designer' | 'recommend' | 'optimize' | 'analyze';
-  const [tabParam, setTabParam] = useQueryParam('tab', 'advisor');
-  const activeTab: AiTab = (
-    ['intent', 'pipeline', 'advisor', 'designer', 'recommend', 'optimize', 'analyze'] as const
-  ).includes(tabParam as AiTab)
-    ? (tabParam as AiTab)
-    : 'advisor';
-  const setActiveTab = (next: AiTab) => setTabParam(next);
+  const [tabParam, setTabParam] = useQueryParam('tab', forcedTab ?? 'advisor');
+  const activeTab: AiTab = forcedTab
+    ?? (AI_TABS.includes(tabParam as AiTab) ? (tabParam as AiTab) : 'advisor');
+  const setActiveTab = (next: AiTab) => {
+    if (forcedTab) return;
+    setTabParam(next);
+  };
   const [workloadQuery, setWorkloadQuery] = useQueryParam('workload', '');
   const [selectedWorkload, setSelectedWorkload] = useState('');
 
@@ -471,37 +476,34 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <section className="glass mb-6 p-6 sm:p-8">
-        <SectionHeader
-          label="AI Engine"
-          title="Runtime intelligence"
-          description="Workloads, recommendations, and optimization signals"
-        />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="glass py-4">
-            <div className="text-xs text-subtle uppercase tracking-wider">Workloads</div>
-            <div className="text-2xl font-semibold text-foreground mt-1">{workloads.length}</div>
-          </div>
-          <div className="glass py-4">
-            <div className="text-xs text-subtle uppercase tracking-wider">Running</div>
-            <div className="text-2xl font-semibold text-foreground mt-1">{runningCount}</div>
-          </div>
-          <div className="glass py-4">
-            <div className="text-xs text-subtle uppercase tracking-wider">Stopped / other</div>
-            <div className="text-2xl font-semibold text-foreground mt-1">{workloads.length - runningCount}</div>
-          </div>
-          <div className="glass py-4">
-            <div className="text-xs text-subtle uppercase tracking-wider">Last recommendation</div>
-            <div className="text-2xl font-semibold text-foreground mt-1 truncate">
-              {recommendation?.recommended ?? '—'}
+      {!forcedTab ? (
+        <section className="mb-10 space-y-8">
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
+            <div className="text-sm text-muted">
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{workloads.length}</div>
+              Workloads
+            </div>
+            <div className="text-sm text-muted">
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{runningCount}</div>
+              Running
+            </div>
+            <div className="text-sm text-muted">
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{workloads.length - runningCount}</div>
+              Stopped / other
+            </div>
+            <div className="text-sm text-muted min-w-0">
+              <div className="text-2xl font-semibold text-foreground truncate">{recommendation?.recommended ?? '—'}</div>
+              Last recommendation
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <div data-testid="ai-tabs">
-        <PageTabs tabs={STUDIO_TABS} active={activeTab} onChange={setActiveTab} />
-      </div>
+      {!forcedTab ? (
+        <div data-testid="ai-tabs">
+          <PageTabs tabs={STUDIO_TABS} active={activeTab} onChange={setActiveTab} />
+        </div>
+      ) : null}
 
       {activeTab === 'intent' && (
         <section className="glass space-y-8 p-6 sm:p-8 mb-8">
@@ -748,4 +750,20 @@ function AIPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('ai', AIPage);
+function AIHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'ai-advisor', title: 'Runtime Advisor', description: 'Compare runtimes with confidence scores.', icon: <Brain className="h-5 w-5" /> },
+        { view: 'ai-designer', title: 'Workload Designer', description: 'Design workloads from intent.', icon: <Wand2 className="h-5 w-5" /> },
+        { view: 'ai-intent', title: 'Intent Studio', description: 'Shape and score workload intent.', icon: <Sparkles className="h-5 w-5" /> },
+        { view: 'ai-pipeline', title: 'Pipeline', description: 'Intent pipeline and stages.', icon: <Wand2 className="h-5 w-5" /> },
+        { view: 'ai-recommend', title: 'Advanced scoring', description: 'Deep recommendation workspace.', icon: <Zap className="h-5 w-5" /> },
+        { view: 'ai-optimize', title: 'Optimization', description: 'Resize and efficiency advice.', icon: <Target className="h-5 w-5" /> },
+        { view: 'ai-analyze', title: 'Analysis', description: 'Profile and log analysis.', icon: <Cpu className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('ai', AIHubPage);

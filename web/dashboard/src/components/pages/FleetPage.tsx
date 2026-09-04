@@ -4,7 +4,7 @@ import { withAuroraPage } from '../layout/AuroraPage';
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Globe, Network, Server, Shield } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Globe, MapPin, Network, Server } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -22,7 +22,7 @@ import EntityCard from '../EntityCard';
 import FleetIntelligenceBrief from '../FleetIntelligenceBrief';
 import MultiCloudPanel from '../MultiCloudPanel';
 import FederationPlatformPanel from '../FederationPlatformPanel';
-import StatCard from '../StatCard';
+import SectionHubPage from '../SectionHubPage';
 import { categoricalDotClass } from '../../utils/categoricalColor';
 import type {
   ClusterPodSummary,
@@ -45,7 +45,9 @@ interface ServerPayload {
   integrations?: Integrations;
 }
 
-function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type FleetTab = 'overview' | 'edge' | 'placement';
+
+export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; forcedTab?: FleetTab } = {}) {
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
@@ -57,7 +59,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [podLoading, setPodLoading] = useState<Record<string, boolean>>({});
   const [expandedApps, setExpandedApps] = useState<Set<string>>(new Set());
   const [tab, setTab] = useQueryParam('tab');
-  const activeTab = (tab || 'overview').toLowerCase();
+  const activeTab = (forcedTab || tab || 'overview').toLowerCase();
   const [packetwolfStatus, setPacketwolfStatus] = useState<PacketWolfStatus | null>(null);
   const [packetwolfFlows, setPacketwolfFlows] = useState<Record<string, unknown> | null>(null);
   const [edgeAgents, setEdgeAgents] = useState<EdgeAgentRecord[]>([]);
@@ -198,9 +200,13 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           Edge →
         </Link>
       </div>
-      <FleetIntelligenceBrief onNavigate={(view) => { navigate(viewToPath(view)); }} />
-      <MultiCloudPanel />
-      <FederationPlatformPanel />
+      {activeTab === 'overview' ? (
+        <>
+          <FleetIntelligenceBrief onNavigate={(view) => { navigate(viewToPath(view)); }} />
+          <MultiCloudPanel />
+          <FederationPlatformPanel />
+        </>
+      ) : null}
       <PageToolbar onRefresh={() => void load()} refreshing={loading} />
       {focusedWorkload ? (
         <WorkloadContextBanner testId="fleet-workload-context" workload={focusedWorkload} description="Fleet context">
@@ -371,6 +377,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
         </button>
       </div>
 
+      {!forcedTab ? (
       <div className="flex flex-wrap gap-2 mb-6" data-testid="fleet-tabs">
         {(['overview', 'edge', 'placement'] as const).map((t) => (
           <button
@@ -384,6 +391,7 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
           </button>
         ))}
       </div>
+      ) : null}
 
       {activeTab === 'edge' ? (
         <div className="glass mb-6" data-testid="fleet-edge-panel">
@@ -469,26 +477,28 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {activeTab === 'overview' ? (
       <>
-      <div className="glass mb-8 grid grid-cols-1 gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4 sm:p-8">
-        <StatCard title="Clusters" value={summary?.cluster_count ?? 0} color="blue" icon={<Globe size={16} />} compact isEmpty={(summary?.cluster_count ?? 0) === 0} />
-        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left" data-testid="fleet-healthy-stat">
-          <StatCard title="Healthy" value={summary?.healthy_clusters ?? 0} color="green" icon={<Shield size={16} />} compact isEmpty={(summary?.healthy_clusters ?? 0) === 0} />
+      <div className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
+        <div className="text-sm text-muted">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.cluster_count ?? 0}</div>
+          Clusters
+        </div>
+        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left text-sm text-muted hover:text-foreground" data-testid="fleet-healthy-stat">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.healthy_clusters ?? 0}</div>
+          Healthy
         </button>
         <button
           type="button"
           data-testid="fleet-workloads-stat"
           onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { source: 'cluster' }))}
-          className="text-left"
+          className="text-left text-sm text-muted hover:text-foreground"
         >
-          <StatCard title="Workloads" value={summary?.workload_count ?? 0} color="purple" icon={<Server size={16} />} compact isEmpty={(summary?.workload_count ?? 0) === 0} />
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.workload_count ?? 0}</div>
+          Workloads
         </button>
-        <StatCard
-          title="Backend"
-          value={summary?.connected ? 'connected' : 'offline'}
-          color={summary?.connected ? 'green' : 'red'}
-          icon={<Network size={16} />}
-          compact
-        />
+        <div className="text-sm text-muted">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.connected ? 'On' : 'Off'}</div>
+          Backend
+        </div>
       </div>
 
       {summary?.error && (
@@ -721,4 +731,17 @@ function FleetPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('fleet', FleetPage);
+function FleetHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'fleet-overview', title: 'Overview', description: 'Clusters and network observability.', icon: <Globe className="h-5 w-5" /> },
+        { view: 'fleet-edge', title: 'Edge sites', description: 'Edge fleet inventory.', icon: <Network className="h-5 w-5" /> },
+        { view: 'fleet-placement', title: 'Placement', description: 'Federation placement planning.', icon: <MapPin className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('fleet', FleetHubPage);
+

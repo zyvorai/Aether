@@ -7,51 +7,57 @@ import { ArrowRight } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { Link } from 'react-router';
-import { Card, CardBody, CardHeader } from './ui/Card';
+import type { Tone } from './layout/PageHero';
 
 export interface HubLink {
   view: AppView;
   title: string;
   description: string;
   icon: ReactNode;
+  /** Defaults to a cycling tone by position when omitted. */
+  tone?: Tone;
 }
 
 interface SectionHubPageProps {
-  title: string;
-  subtitle: string;
+  /** Optional; omit when AuroraPage already provides the page title. */
+  title?: string;
+  subtitle?: string;
   links: HubLink[];
 }
 
+/** Tone rotation for hub bands that don't specify one — kept in Apple.com/services
+ * order (one distinct color per destination), capped at DESIGN.md's ~6 rows. */
+const TONE_CYCLE: Tone[] = ['sky', 'violet', 'emerald', 'amber', 'pink', 'teal', 'rust'];
+
+/** Services-style hub — one full-width, tone-tinted band per destination. */
 export default function SectionHubPage({ title, subtitle, links }: SectionHubPageProps) {
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <p className="text-xs font-normal uppercase tracking-wide text-muted">Tools</p>
-        <h2 className="mt-1 text-lg font-semibold text-foreground">{title}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted">{subtitle}</p>
-      </CardHeader>
-      <CardBody>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {links.map((link) => (
-            <Link
-              key={link.view}
-              to={viewToPath(link.view)}
-              className="group glass glass-hover-lift block rounded-[var(--radius-liquid)] p-4 no-underline"
-            >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary-wash text-primary">
-                {link.icon}
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-medium text-foreground">{link.title}</h3>
-                  <p className="mt-1 text-sm text-muted">{link.description}</p>
-                </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted transition group-hover:text-primary" />
-              </div>
-            </Link>
-          ))}
+    <section className="apple-chapter">
+      {title || subtitle ? (
+        <div className="mb-10 max-w-2xl space-y-2">
+          {title ? <h2 className="text-2xl font-semibold tracking-[var(--tracking-display)] text-foreground sm:text-3xl">{title}</h2> : null}
+          {subtitle ? <p className="text-base text-muted">{subtitle}</p> : null}
         </div>
-      </CardBody>
-    </Card>
+      ) : null}
+      <div className="hub-band-list">
+        {links.map((link, index) => (
+          <Link
+            key={link.view}
+            to={viewToPath(link.view)}
+            data-tone={link.tone ?? TONE_CYCLE[index % TONE_CYCLE.length]}
+            className="hub-band"
+          >
+            <div className="hub-band-icon">{link.icon}</div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <h3 className="text-lg font-semibold tracking-[var(--tracking-display)] text-foreground">
+                {link.title}
+              </h3>
+              <p className="max-w-xl text-sm leading-relaxed text-muted">{link.description}</p>
+            </div>
+            <ArrowRight className="hub-band-arrow h-4 w-4 shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

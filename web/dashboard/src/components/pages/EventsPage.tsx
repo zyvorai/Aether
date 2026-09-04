@@ -12,7 +12,6 @@ import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { useBufferedValue } from '../../hooks/useBufferedValue';
 import PageToolbar from '../PageToolbar';
-import StatCard from '../StatCard';
 import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -171,16 +170,16 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="glass mb-6 p-6 sm:p-8">
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <button type="button" onClick={() => setCategory('all')} className="text-left">
-            <StatCard title="Total" value={summary.total_events} color="blue" />
+        <section className="mb-10 space-y-6">
+        <div className="flex flex-wrap gap-x-10 gap-y-4">
+          <button type="button" onClick={() => setCategory('all')} className="text-left text-sm text-muted hover:text-foreground">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.total_events}</div>Total
           </button>
-          <button type="button" onClick={() => setSeverity('warning')} className="text-left">
-            <StatCard title="Unacknowledged" value={summary.unacknowledged} color="yellow" />
+          <button type="button" onClick={() => setSeverity('warning')} className="text-left text-sm text-muted hover:text-foreground">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.unacknowledged}</div>Unacknowledged
           </button>
-          <button type="button" onClick={() => setSeverity('critical')} className="text-left">
-            <StatCard title="Critical" value={summary.critical_unacked} color="red" />
+          <button type="button" onClick={() => setSeverity('critical')} className="text-left text-sm text-muted hover:text-foreground">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.critical_unacked}</div>Critical
           </button>
           <Link
             to={

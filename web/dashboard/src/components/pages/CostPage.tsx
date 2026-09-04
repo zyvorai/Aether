@@ -1,11 +1,12 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { Inbox } from 'lucide-react';
+import { Inbox, DollarSign } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { formatUSD } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -29,7 +30,10 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type CostSection = 'intelligence' | 'finops' | 'estimate';
+
+export function CostStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: CostSection } = {}) {
+  const show = (s: CostSection) => !forcedSection || forcedSection === s;
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload');
   const [estimates, setEstimates] = useState<CostEstimate[]>([]);
@@ -143,8 +147,8 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
   return (
     <div className="space-y-6">
       {hubBanner}
-      <CostIntelligencePanel />
-      <FinOpsPlatformPanel />
+      {show('intelligence') ? <CostIntelligencePanel /> : null}
+      {show('finops') ? <FinOpsPlatformPanel /> : null}
       {workloadQuery.trim() ? (
         <WorkloadContextBanner
           testId="cost-workload-context"
@@ -204,6 +208,7 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
+      {show('estimate') ? (
       <section className="glass mb-6 space-y-6 p-6 sm:p-8">
       {chargebackLoading ? null : chargebackError ? (
         <PanelLoadError
@@ -282,8 +287,22 @@ function CostPage({ refreshKey }: { refreshKey?: number } = {}) {
       />
       </div>
       </section>
+      ) : null}
     </div>
   );
 }
 
-export default withAuroraPage('cost', CostPage);
+function CostHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'cost-intelligence', title: 'Cost intelligence', description: 'AI cost insights.', icon: <DollarSign className="h-5 w-5" /> },
+        { view: 'cost-finops', title: 'FinOps platform', description: 'FinOps controls and policies.', icon: <DollarSign className="h-5 w-5" /> },
+        { view: 'cost-estimate', title: 'Estimator', description: 'Runtime cost projections and chargeback.', icon: <DollarSign className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('cost', CostHubPage);
+

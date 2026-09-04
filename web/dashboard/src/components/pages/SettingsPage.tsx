@@ -2,118 +2,58 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import AutonomousModePanel from '../AutonomousModePanel';
 import { withAuroraPage } from '../layout/AuroraPage';
-import IdentitySsoPanel from '../IdentitySsoPanel';
-import MacOSPlatformPanel from '../MacOSPlatformPanel';
-import NavPreferencesPanel from '../NavPreferencesPanel';
 import SectionHubPage from '../SectionHubPage';
-import HubPageToc from '../HubPageToc';
-import { Link } from 'react-router';
-import { viewToPath } from '../../utils/dashboardRoutes';
 import {
-  Archive,
   Bot,
-  Container,
   KeyRound,
-  Layers,
-  Puzzle,
-  Server,
   Settings,
+  Sparkles,
+  UserCog,
 } from 'lucide-react';
-
-const TOC = [
-  { id: 'settings-identity', label: 'Identity & SSO' },
-  { id: 'settings-nav', label: 'Navigation' },
-  { id: 'settings-autonomous', label: 'Autonomous mode' },
-  { id: 'settings-macos', label: 'macOS' },
-  { id: 'settings-tools', label: 'Tools' },
-];
 
 function SettingsPage() {
   return (
-    <section className="glass">
-      <div className="mb-6 glass-context-banner" data-testid="settings-hub-context">
-        Settings hub
-        {' · '}
-        <Link to={viewToPath('platform')} className="text-primary hover:underline" data-testid="settings-context-platform-link">
-          Platform →
-        </Link>
-        {' · '}
-        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="settings-context-hosted-link">
-          Hosted SaaS →
-        </Link>
-        {' · '}
-        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="settings-context-fleet-link">
-          Fleet →
-        </Link>
-        {' · '}
-        <Link to={viewToPath('rbac')} className="text-primary hover:underline" data-testid="settings-context-rbac-link">
-          Access Control →
-        </Link>
-      </div>
-      <HubPageToc items={TOC} />
-      <div id="settings-identity"><IdentitySsoPanel /></div>
-      <div id="settings-nav"><NavPreferencesPanel /></div>
-      <div id="settings-autonomous"><AutonomousModePanel /></div>
-      <div id="settings-macos"><MacOSPlatformPanel /></div>
-      <div id="settings-tools">
-        <SectionHubPage
-          title="Settings"
-          subtitle="Platform configuration, environments, secrets, and extensions."
-          links={[
-            {
-              view: 'platform',
-              title: 'Platform & HA',
-              description: 'HA mode, TLS, OIDC, OPA, and observability setup.',
-              icon: <Server className="h-5 w-5" />,
-            },
-            {
-              view: 'envs',
-              title: 'Environments',
-              description: 'Environment tiers and configuration.',
-              icon: <Layers className="h-5 w-5" />,
-            },
-            {
-              view: 'secrets',
-              title: 'Secrets',
-              description: 'Encrypted secrets management.',
-              icon: <KeyRound className="h-5 w-5" />,
-            },
-            {
-              view: 'backups',
-              title: 'Backups',
-              description: 'Backup snapshots and restore.',
-              icon: <Archive className="h-5 w-5" />,
-            },
-            {
-              view: 'plugins',
-              title: 'Plugins',
-              description: 'Runtime plugins and extensions.',
-              icon: <Puzzle className="h-5 w-5" />,
-            },
-            {
-              view: 'clusters',
-              title: 'Cluster Browser',
-              description: 'Browse and manage Kubernetes resources.',
-              icon: <Container className="h-5 w-5" />,
-            },
-            {
-              view: 'ai-providers',
-              title: 'AI Providers',
-              description: 'Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints for Zyra.',
-              icon: <Bot className="h-5 w-5" />,
-            },
-            {
-              view: 'rbac',
-              title: 'Access Control',
-              description: 'API keys and role-based access.',
-              icon: <Settings className="h-5 w-5" />,
-            },
-          ]}
-        />
-      </div>
-    </section>
+    <SectionHubPage
+      links={[
+        {
+          view: 'settings-identity',
+          title: 'Identity & SSO',
+          description: 'Identity providers and SSO.',
+          icon: <UserCog className="h-5 w-5" />,
+        },
+        {
+          view: 'secrets',
+          title: 'Secrets',
+          description: 'Encrypted secrets management.',
+          icon: <KeyRound className="h-5 w-5" />,
+        },
+        {
+          view: 'rbac',
+          title: 'Access Control',
+          description: 'API keys and role-based access.',
+          icon: <Settings className="h-5 w-5" />,
+        },
+        {
+          view: 'ai-providers',
+          title: 'AI Providers',
+          description: 'LLM endpoints for Zyra.',
+          icon: <Bot className="h-5 w-5" />,
+        },
+        {
+          view: 'settings-nav',
+          title: 'Navigation',
+          description: 'Sidebar and navigation preferences.',
+          icon: <Settings className="h-5 w-5" />,
+        },
+        {
+          view: 'settings-autonomous',
+          title: 'Autonomous Mode',
+          description: 'Autonomous platform mode.',
+          icon: <Sparkles className="h-5 w-5" />,
+        },
+      ]}
+    />
   );
 }
 

@@ -839,12 +839,7 @@ export default function WorkloadDetail({
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'logs', label: 'Logs' },
-    ...(isKubeWorkload ? [{ id: 'topology' as const, label: 'Topology' }] : []),
-    { id: 'manifest', label: 'Manifest' },
-    { id: 'drift', label: 'Drift' },
-    { id: 'scoring', label: 'Scoring' },
-    { id: 'trust', label: 'Trust' },
-    { id: 'events', label: 'Events' },
+    { id: 'manifest', label: 'Spec' },
   ];
 
   function handleFixAction(action: FixAction) {
@@ -1700,51 +1695,15 @@ export default function WorkloadDetail({
               );
             })() : null}
 
-            <details className="mt-4" data-testid="workload-quick-links">
-              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-subtle">
-                Related pages
-              </summary>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-4" data-testid="workload-quick-links">
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Next</h4>
+              <div className="flex flex-wrap gap-2">
               {(
                 [
-                  { label: 'AI analysis', slug: 'ai', path: pathWithQuery(viewToPath('ai'), { workload: workload.name, tab: 'analyze' }) },
-                  { label: 'Scoring', slug: 'scoring', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'scoring' }) },
-                  { label: 'Drift', slug: 'drift', path: pathWithQuery(viewToPath('drift'), { workload: workload.name }) },
-                  { label: 'Audit', slug: 'audit', path: pathWithQuery(viewToPath('audit'), { workload: workload.name }) },
-                  { label: 'Events', slug: 'events', path: pathWithQuery(viewToPath('events'), { workload: workload.name }) },
-                  { label: 'Editor', slug: 'editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
-                  { label: 'Health monitor', slug: 'health', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
-                  {
-                    label: 'Ops copilot',
-                    slug: 'copilot',
-                    path: pathWithQuery(viewToPath('zyra'), {
-                      workload: workload.name,
-                      q: `Why is ${workload.name} unhealthy?`,
-                    }),
-                  },
-                  { label: 'Trust', slug: 'trust', path: pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' }) },
-                  { label: 'Confidential', slug: 'confidential', path: pathWithQuery(viewToPath('confidential'), { workload: workload.name }) },
-                  { label: 'GitOps', slug: 'gitops', path: pathWithQuery(viewToPath('gitops'), { workload: workload.name }) },
-                  { label: 'Backups', slug: 'backups', path: pathWithQuery(viewToPath('backups'), { workload: workload.name }) },
-                  { label: 'Secrets', slug: 'secrets', path: pathWithQuery(viewToPath('secrets'), { workload: workload.name }) },
-                  { label: 'Policy', slug: 'policy', path: pathWithQuery(viewToPath('policy'), { workload: workload.name }) },
-                  { label: 'OpenAPI', slug: 'openapi', path: pathWithQuery(viewToPath('openapi'), { workload: workload.name }) },
-                  { label: 'Platform', slug: 'platform', path: pathWithQuery(viewToPath('platform'), { workload: workload.name }) },
-                  { label: 'RBAC', slug: 'rbac', path: pathWithQuery(viewToPath('rbac'), { workload: workload.name }) },
-                  { label: 'Clusters', slug: 'clusters', path: pathWithQuery(viewToPath('clusters'), { workload: workload.name }) },
-                  { label: 'Metrics', slug: 'metrics', path: pathWithQuery(viewToPath('metrics'), { workload: workload.name }) },
-                  { label: 'SLA', slug: 'sla', path: pathWithQuery(viewToPath('sla'), { workload: workload.name }) },
-                  { label: 'Deps', slug: 'deps', path: pathWithQuery(viewToPath('deps'), { workload: workload.name }) },
-                  { label: 'Compose', slug: 'compose', path: pathWithQuery(viewToPath('compose'), { workload: workload.name }) },
-                  { label: 'Templates', slug: 'templates', path: pathWithQuery(viewToPath('templates'), { workload: workload.name }) },
-                  { label: 'Plugins', slug: 'plugins', path: pathWithQuery(viewToPath('plugins'), { workload: workload.name }) },
-                  { label: 'Alerts', slug: 'alerts', path: pathWithQuery(viewToPath('alerts'), { workload: workload.name }) },
-                  { label: 'Scheduler', slug: 'scheduler', path: pathWithQuery(viewToPath('scheduler'), { workload: workload.name }) },
-                  { label: 'Cost', slug: 'cost', path: pathWithQuery(viewToPath('cost'), { workload: workload.name }) },
-                  { label: 'Fleet', slug: 'fleet', path: pathWithQuery(viewToPath('fleet'), { workload: workload.name }) },
-                  { label: 'Affinity', slug: 'affinity', path: pathWithQuery(viewToPath('affinity'), { workload: workload.name }) },
-                  { label: 'Envs', slug: 'envs', path: pathWithQuery(viewToPath('envs'), { q: workload.name }) },
                   { label: 'Intelligence', slug: 'intelligence', path: pathWithQuery(viewToPath('intelligence'), { tab: 'predictions', workload: workload.name }) },
+                  { label: 'Health', slug: 'health', path: pathWithQuery(viewToPath('health'), { workload: workload.name }) },
+                  { label: 'Editor', slug: 'editor', path: pathWithQuery(viewToPath('editor'), { workload: workload.name }) },
+                  { label: 'Events', slug: 'events', path: pathWithQuery(viewToPath('events'), { workload: workload.name }) },
                 ] as const
               ).map((link) => (
                 <a
@@ -1757,7 +1716,7 @@ export default function WorkloadDetail({
                 </a>
               ))}
               </div>
-            </details>
+            </div>
 
             {isAetherManaged ? (
               <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">

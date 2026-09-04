@@ -129,13 +129,52 @@
 }
 
 .apple-editorial-hero {
-  padding-block: clamp(1rem, 3vw, 1.75rem);
+  padding-block: var(--hero-pad-block, clamp(2.5rem, 6vw, 4.5rem));
+}
+
+/* iPad Pro–style OLED dark chapter: true black with a soft spotlight glow
+   behind the hero copy. Light mode stays plain Apple Store paper — this is a
+   dark-theme-only accent, not a light-mode wash. */
+html.dark-theme .apple-editorial-hero,
+:root[data-theme='dark'] .apple-editorial-hero {
+  position: relative;
+  isolation: isolate;
+}
+html.dark-theme .apple-editorial-hero::before,
+:root[data-theme='dark'] .apple-editorial-hero::before {
+  content: '';
+  position: absolute;
+  inset: -15% -10% -40%;
+  z-index: -1;
+  background: radial-gradient(50% 55% at 50% 0%, var(--tone-glow, var(--tone-sky-glow)), transparent 72%);
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .apple-chapter-dark,
 .marketplace-chapter-ink {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--apple-ink, #1d1d1f);
   color: var(--apple-paper, #f5f5f7);
+}
+
+.apple-chapter-dark::before,
+.marketplace-chapter-ink::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background: radial-gradient(60% 80% at 18% 8%, var(--tone-glow, var(--tone-sky-glow)), transparent 70%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.apple-chapter-dark .text-eyebrow,
+.marketplace-chapter-ink .text-eyebrow {
+  color: var(--apple-paper, #f5f5f7);
+  opacity: 0.68;
 }
 
 html.dark-theme .apple-chapter-dark,
@@ -145,7 +184,7 @@ html.dark-theme .apple-chapter-dark,
 
 .apple-highlights-row { text-align: center; width: 100%; }
 .apple-highlights-kicker {
-  margin: 0 0 1.25rem;
+  margin: 0 0 2rem;
   font-family: var(--font-hero);
   font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 600;
@@ -154,7 +193,7 @@ html.dark-theme .apple-chapter-dark,
 .apple-highlights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1.5rem 2rem;
+  gap: 2rem 2.5rem;
   max-width: 980px;
   margin: 0 auto;
 }
@@ -176,6 +215,77 @@ html.dark-theme .apple-chapter-dark,
   border-radius: var(--radius-liquid);
 }
 .tahoe-empty-orb { display: none; }
+
+/* Tone binding — set once via data-tone on a wrapper, consumed by
+   .apple-chapter-dark's glow, hero swatches, and hub bands below. */
+[data-tone='sky']    { --tone-color: var(--tone-sky);    --tone-wash: var(--tone-sky-tint);    --tone-glow: var(--tone-sky-glow); }
+[data-tone='violet'] { --tone-color: var(--tone-violet); --tone-wash: var(--tone-violet-tint); --tone-glow: var(--tone-violet-glow); }
+[data-tone='emerald']{ --tone-color: var(--tone-emerald);--tone-wash: var(--tone-emerald-tint);--tone-glow: var(--tone-emerald-glow); }
+[data-tone='amber']  { --tone-color: var(--tone-amber);  --tone-wash: var(--tone-amber-tint);  --tone-glow: var(--tone-amber-glow); }
+[data-tone='pink']   { --tone-color: var(--tone-pink);   --tone-wash: var(--tone-pink-tint);   --tone-glow: var(--tone-pink-glow); }
+[data-tone='teal']   { --tone-color: var(--tone-teal);   --tone-wash: var(--tone-teal-tint);   --tone-glow: var(--tone-teal-glow); }
+[data-tone='rust']   { --tone-color: var(--tone-rust);   --tone-wash: var(--tone-rust-tint);   --tone-glow: var(--tone-rust-glow); }
+
+/* iPad-style hero swatch row — a picker/legend of tone pills under the
+   hero description on flagship pages (Overview). */
+.hero-swatch-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.hero-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem 0.4rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background: var(--tone-wash, var(--accent-tint));
+  border: 1px solid color-mix(in srgb, var(--tone-color, var(--primary)) 30%, transparent);
+}
+.hero-swatch-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone-color, var(--primary));
+  flex-shrink: 0;
+}
+
+/* Services-style hub band — one full-width row per destination, each
+   carrying its own tone wash, replacing the plain divide-y link list. */
+.hub-band-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.hub-band {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--radius-xl);
+  background: var(--tone-wash, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--tone-color, var(--border)) 22%, var(--border));
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.hub-band:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--tone-color, var(--primary)) 14%, transparent);
+  border-color: color-mix(in srgb, var(--tone-color, var(--primary)) 40%, var(--border));
+}
+.hub-band-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  color: var(--tone-color, var(--primary));
+  background: color-mix(in srgb, var(--tone-color, var(--primary)) 16%, var(--surface-elevated));
+}
+.hub-band-arrow {
+  margin-top: 0.35rem;
+  color: var(--tone-color, var(--muted-foreground));
+  transition: transform 0.18s ease;
+}
+.hub-band:hover .hub-band-arrow { transform: translateX(3px); }
 
 .focus-ring {
   @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
@@ -226,7 +336,7 @@ html.dark-theme .apple-chapter-dark,
   }
 
   .page-frame {
-    @apply px-4 py-6 sm:px-6 sm:py-8 lg:px-0;
+    @apply px-4 py-10 sm:px-6 sm:py-14 lg:px-0;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -235,6 +345,14 @@ html.dark-theme .apple-chapter-dark,
   }
   .page-frame::before { display: none; }
 
+  /* Apple chapter stack — large vertical air between one-idea sections */
+  .apple-chapter {
+    padding-block: clamp(2rem, 4vw, 3.5rem);
+  }
+  .apple-chapter + .apple-chapter {
+    border-top: 1px solid var(--border);
+  }
+
   /* Compat: old Liquid Glass class names → Aurora flat surfaces */
   .command-center-shell,
   .overview-section-shell,
@@ -242,7 +360,6 @@ html.dark-theme .apple-chapter-dark,
   .surface-panel,
   .surface-panel-soft,
   .glass-panel-card,
-  .glass-toolbar,
   .dash-card,
   .dash-card-flush,
   .glass-modal-panel,
@@ -261,7 +378,11 @@ html.dark-theme .apple-chapter-dark,
   }
 
   .glass-toolbar {
-    @apply mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    @apply mb-10 flex flex-col gap-4 px-0 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
   }
 
   .command-center-shell::before,
@@ -385,8 +506,8 @@ html.dark-theme .apple-chapter-dark,
   .toast-exit { animation: toast-slide-out 0.3s ease-in forwards; }
 
   .text-eyebrow {
-    @apply text-xs font-normal;
-    color: var(--muted-foreground);
+    @apply text-xs font-semibold uppercase;
+    color: var(--primary);
     letter-spacing: var(--tracking-eyebrow);
   }
   .text-stat-value {

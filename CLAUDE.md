@@ -54,6 +54,7 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 - **Honest apply semantics** — intelligence execute/apply endpoints (remediation, FinOps, security, capacity, evolution, federation, GitOps agent, game-day) report `skipped` with "not implemented" instead of claiming success when no mutation is wired
 - **SSE events** — API handlers emit `ServerEvent` after mutations; web dashboard receives real-time updates via `useEventStream`
 - **Health check loop** — Background tokio task runs health checks every 30s when `aether serve` is running
+- **Deployment identity** — `GET /health` (unauthenticated, root path not `/api`) returns `hostname` (auto-detected, cached) and `environment` (from `AETHER_ENVIRONMENT_NAME`, e.g. `"Lab · k3s-212"`); the dashboard shows this as a small tone-colored badge in `GlobalNav` and on `LoginGate` so a user with multiple Aether deployments bookmarked knows which one they're on
 - **KubeVirt live migration** — `kubevirt.liveMigration` spec renders `evictionStrategy: LiveMigrate` + masquerade pod networking (bridge is not migratable); `aether live-migrate <name>` creates/watches a VirtualMachineInstanceMigration; passthrough GPUs + liveMigration is rejected at validation (use `requirements.gpu.vgpuProfile` for mediated vGPU slices)
 
 ## Security Architecture

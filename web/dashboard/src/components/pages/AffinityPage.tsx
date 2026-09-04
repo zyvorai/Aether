@@ -4,8 +4,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 import { Link, useNavigate } from 'react-router';
-import { Inbox } from 'lucide-react';
+import { Grid3X3, Inbox, Link2, BarChart3 } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { apiFetchSettled } from '../../utils/api';
@@ -52,20 +53,22 @@ const matrixColumns: DataTableColumn<AffinityMatrixRow>[] = [
   { key: 'score', header: 'Score', render: (row) => `${(row.score * 100).toFixed(0)}%` },
 ];
 
-function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type AffinityTab = 'recommend' | 'matrix' | 'stats';
+
+export function AffinityStudio({ refreshKey, forcedTab }: { refreshKey?: number; forcedTab?: AffinityTab } = {}) {
   const navigate = useNavigate();
   const [affinityData, setAffinityData] = useState<Record<string, AffinityScore[]>>({});
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  type AffinityTab = 'recommend' | 'matrix' | 'stats';
-  const [tabParam, setTabParam] = useQueryParam('tab', 'recommend');
+  const [tabParam, setTabParam] = useQueryParam('tab', forcedTab ?? 'recommend');
   const [workloadQuery] = useQueryParam('workload', '');
   const workloadFocus = workloadQuery.trim() || undefined;
-  const tab: AffinityTab = (['recommend', 'matrix', 'stats'] as const).includes(tabParam as AffinityTab)
-    ? (tabParam as AffinityTab)
-    : 'recommend';
-  const setTab = (next: AffinityTab) => setTabParam(next);
+  const tab: AffinityTab = forcedTab
+    ?? ((['recommend', 'matrix', 'stats'] as const).includes(tabParam as AffinityTab)
+      ? (tabParam as AffinityTab)
+      : 'recommend');
+  const setTab = (next: AffinityTab) => { if (!forcedTab) setTabParam(next); };
   const [matrix, setMatrix] = useState<AffinityMatrixRow[]>([]);
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
 
@@ -201,6 +204,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : null}
 
       <section className="glass mb-6 p-6 sm:p-8">
+      {!forcedTab ? (
       <div className="flex gap-2 mb-6" data-testid="affinity-tabs">
         {(['recommend', 'matrix', 'stats'] as const).map((t) => (
           <button
@@ -213,6 +217,7 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
           </button>
         ))}
       </div>
+      ) : null}
 
       {tab === 'matrix' && (
         <div className="glass overflow-x-auto mb-6" data-testid="affinity-matrix-panel">
@@ -309,4 +314,17 @@ function AffinityPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('affinity', AffinityPage);
+function AffinityHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'affinity-recommend', title: 'Recommendations', description: 'Runtime affinity recommendations by class.', icon: <Link2 className="h-5 w-5" /> },
+        { view: 'affinity-matrix', title: 'Compatibility matrix', description: 'Runtime compatibility scores.', icon: <Grid3X3 className="h-5 w-5" /> },
+        { view: 'affinity-stats', title: 'Stats', description: 'Affinity placement statistics.', icon: <BarChart3 className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('affinity', AffinityHubPage);
+

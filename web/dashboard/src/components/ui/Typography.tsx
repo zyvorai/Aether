@@ -7,13 +7,13 @@ export function Eyebrow({ children, className, as: Tag = 'p', id }: TypographyPr
   return <Tag id={id} className={cn('text-eyebrow', className)}>{children}</Tag>;
 }
 export function DisplayTitle({ children, className, as: Tag = 'h1', id }: TypographyProps) {
-  return <Tag id={id} className={cn('text-display md:text-[clamp(2.5rem,5vw,4rem)] font-semibold tracking-tight leading-tight', className)}>{children}</Tag>;
+  return <Tag id={id} className={cn('text-display md:text-[clamp(2.5rem,5vw,4rem)] font-semibold leading-tight tracking-[var(--tracking-hero)]', className)}>{children}</Tag>;
 }
 export function PageTitle({ children, className, as: Tag = 'h1', id }: TypographyProps) {
-  return <Tag id={id} className={cn('text-[clamp(1.75rem,3vw,2.125rem)] font-semibold tracking-tight leading-tight', className)}>{children}</Tag>;
+  return <Tag id={id} className={cn('text-[clamp(1.75rem,3vw,2.125rem)] font-semibold leading-tight tracking-[var(--tracking-display)]', className)}>{children}</Tag>;
 }
 export function SectionTitle({ children, className, as: Tag = 'h2', id }: TypographyProps) {
-  return <Tag id={id} className={cn('text-[clamp(1.5rem,2.5vw,1.75rem)] font-semibold text-foreground tracking-tight', className)}>{children}</Tag>;
+  return <Tag id={id} className={cn('text-[clamp(1.5rem,2.5vw,1.75rem)] font-semibold text-foreground tracking-[var(--tracking-display)]', className)}>{children}</Tag>;
 }
 export function SubsectionTitle({ children, className, as: Tag = 'h3', id }: TypographyProps) {
   return <Tag id={id} className={cn('text-body-lg font-semibold text-foreground', className)}>{children}</Tag>;

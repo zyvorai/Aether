@@ -476,6 +476,11 @@ pub(crate) struct WorkloadResponse {
 pub(crate) struct HealthResponse {
     pub(crate) status: String,
     pub(crate) version: String,
+    /// Machine hostname this instance is running on — lets the dashboard show
+    /// "which machine" when a user has more than one Aether deployment bookmarked.
+    pub(crate) hostname: String,
+    /// Friendly deployment label from `AETHER_ENVIRONMENT_NAME` (e.g. "Lab · k3s-212").
+    pub(crate) environment: Option<String>,
 }
 
 /// Migration advice response
@@ -821,6 +826,8 @@ mod tests {
         let health = HealthResponse {
             status: "ok".to_string(),
             version: "1.0.0".to_string(),
+            hostname: "test-host".to_string(),
+            environment: None,
         };
         let response = ApiResponse::success(health);
         let json = serde_json::to_value(&response).unwrap();
@@ -840,6 +847,8 @@ mod tests {
         let response = HealthResponse {
             status: "ok".to_string(),
             version: "0.2.0".to_string(),
+            hostname: "test-host".to_string(),
+            environment: None,
         };
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains("\"status\":\"ok\""));
@@ -851,6 +860,8 @@ mod tests {
         let response = HealthResponse {
             status: "healthy".to_string(),
             version: "3.1.4".to_string(),
+            hostname: "test-host".to_string(),
+            environment: None,
         };
         let value = serde_json::to_value(&response).unwrap();
 
@@ -859,16 +870,20 @@ mod tests {
     }
 
     #[test]
-    fn test_health_response_contains_exactly_two_fields() {
+    fn test_health_response_contains_exactly_four_fields() {
         let response = HealthResponse {
             status: "ok".to_string(),
             version: "1.0.0".to_string(),
+            hostname: "test-host".to_string(),
+            environment: Some("Lab".to_string()),
         };
         let value = serde_json::to_value(&response).unwrap();
         let obj = value.as_object().unwrap();
-        assert_eq!(obj.len(), 2);
+        assert_eq!(obj.len(), 4);
         assert!(obj.contains_key("status"));
         assert!(obj.contains_key("version"));
+        assert!(obj.contains_key("hostname"));
+        assert!(obj.contains_key("environment"));
     }
 
     // ---------------------------------------------------------------
@@ -1455,6 +1470,8 @@ mod tests {
         let health = HealthResponse {
             status: "ok".to_string(),
             version: "0.3.0".to_string(),
+            hostname: "test-host".to_string(),
+            environment: None,
         };
         let api_resp = ApiResponse::success(health);
         let json = serde_json::to_value(&api_resp).unwrap();

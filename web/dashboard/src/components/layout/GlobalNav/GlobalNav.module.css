@@ -4,9 +4,10 @@
   z-index: 60;
   height: var(--hs-nav-h);
   background: rgba(255, 255, 255, 0.72);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(200%) blur(24px);
+  backdrop-filter: saturate(200%) blur(24px);
   border-bottom: 1px solid rgba(20, 22, 26, 0.08);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 :global(html.dark-theme) .gnav,
 :global(html[data-theme='dark']) .gnav {
@@ -26,8 +27,33 @@
   gap: var(--hs-s1);
 }
 .mark { display: flex; align-items: center; gap: 7px; color: var(--foreground); text-decoration: none; background: none; border: 0; cursor: pointer; }
-.markBadge { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--hs-radius-sm); background: var(--primary); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 11px; }
-.word { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -0.03em; }
+.markBadge {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--hs-radius-sm);
+  background: linear-gradient(155deg, var(--primary), color-mix(in srgb, var(--primary) 65%, var(--tone-violet)));
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 11px;
+}
+.word { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: var(--tracking-display, -0.03em); }
+.envBadge {
+  align-items: center;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border-radius: var(--hs-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow, 0.08em);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  cursor: default;
+}
 .utils { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .icon {
   width: 28px;

@@ -42,11 +42,18 @@ interface CommandPaletteProps {
   onOpenHelp?: (tab?: HelpTab) => void;
 }
 
-const NAV_ITEMS: CommandAction[] = DASHBOARD_VIEWS.map((v) => ({
+const NAV_ITEMS: CommandAction[] = [...DASHBOARD_VIEWS]
+  .sort((a, b) => {
+    const aHub = a.sidebar === false ? 1 : 0;
+    const bHub = b.sidebar === false ? 1 : 0;
+    if (aHub !== bHub) return aHub - bHub;
+    return a.label.localeCompare(b.label);
+  })
+  .map((v) => ({
   id: `nav-${v.view}`,
   label: v.view === 'overview' ? 'Command Center' : `Go to ${v.label}`,
   category: 'navigation' as const,
-  searchText: `${v.label} ${v.paletteLabel ?? ''} ${v.subtitle} ${v.view}`,
+  searchText: `${v.label} ${v.paletteLabel ?? ''} ${v.subtitle} ${v.view} ${v.group}`,
   view: v.view,
 }));
 

@@ -1,18 +1,18 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Download, ExternalLink } from 'lucide-react';
+import { BarChart3, Database, Download, DollarSign, ExternalLink, LineChart } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { apiFetchSettled, apiTextSettled, apiFetch } from '../../utils/api';
 import PageToolbar from '../PageToolbar';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
-import StatCard from '../StatCard';
 import CodeBlock from '../CodeBlock';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
 import { SearchQueryContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -28,7 +28,10 @@ interface ChargebackReport {
   lines: { workload: string; owner: string; project: string; monthlyUsd: number }[];
 }
 
-function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type MetricsSection = 'summary' | 'chargeback' | 'observability' | 'prometheus';
+
+export function MetricsStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: MetricsSection } = {}) {
+  const show = (s: MetricsSection) => !forcedSection || forcedSection === s;
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState('');
   const [summary, setSummary] = useState<ObservabilitySummary | null>(null);
@@ -242,22 +245,18 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       ) : null}
 
-      {summary && (
+      {show('summary') && summary && (
         <section className="glass mb-6 p-6 sm:p-8">
           <SectionHeader
             label="Observability"
             title="Platform metrics"
             description="API traffic, migrations, and cluster resource signals"
           />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard title="API requests" value={Math.round(summary.api_http_requests_total)} color="blue" />
-          <StatCard title="Migrations" value={Math.round(summary.migrations_total)} color="primary" />
-          <StatCard title="Rollbacks" value={Math.round(summary.migration_rollbacks_total)} color="red" />
-          <StatCard
-            title="Cluster CPU"
-            value={summary.cluster_metrics ? `${summary.cluster_metrics.total_cpu_millicores}m` : '—'}
-            color="green"
-          />
+        <div className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.api_http_requests_total)}</div>API requests</div>
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.migrations_total)}</div>Migrations</div>
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.migration_rollbacks_total)}</div>Rollbacks</div>
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{summary.cluster_metrics ? `${summary.cluster_metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -334,7 +333,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </section>
       )}
 
-      {chargeback && (
+      {show('chargeback') && chargeback && (
         <div className="glass mb-6" data-testid="metrics-chargeback-panel">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-lg font-semibold text-foreground">Chargeback (showback)</h2>
@@ -413,7 +412,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
 
-      {(grafanaUrl || prometheusUrl) && (
+      {show('observability') && (grafanaUrl || prometheusUrl) && (
         <div className="glass mb-6 flex flex-wrap items-center justify-between gap-4" data-testid="metrics-observability-panel">
           <p className="text-sm text-muted">External observability stack linked to this API.</p>
           <div className="flex flex-wrap gap-3">
@@ -441,7 +440,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
 
-      {summary?.prometheus_configured && (
+      {show('prometheus') && summary?.prometheus_configured && (
         <div className="glass mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-3">Prometheus query explorer</h2>
           <p className="text-sm text-subtle mb-4">Instant queries via the whitelisted API proxy.</p>
@@ -467,6 +466,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
 
+      {show('prometheus') ? (
       <div className="glass">
         <div className="flex items-center justify-between mb-4">
           <h2 className="panel-title">Prometheus metrics</h2>
@@ -474,6 +474,7 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
         <CodeBlock title="prometheus">{filteredMetrics || 'No metrics match your search.'}</CodeBlock>
       </div>
+      ) : null}
 
       {search.trim() ? (
         <footer
@@ -496,4 +497,18 @@ function MetricsPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('metrics', MetricsPage);
+function MetricsHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'metrics-summary', title: 'Platform metrics', description: 'API traffic, migrations, and cluster signals.', icon: <BarChart3 className="h-5 w-5" /> },
+        { view: 'metrics-chargeback', title: 'Chargeback', description: 'Fleet showback and cost lines.', icon: <DollarSign className="h-5 w-5" /> },
+        { view: 'metrics-observability', title: 'External links', description: 'Grafana and Prometheus shortcuts.', icon: <ExternalLink className="h-5 w-5" /> },
+        { view: 'metrics-prometheus', title: 'Prometheus', description: 'Query explorer and raw metrics.', icon: <LineChart className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('metrics', MetricsHubPage);
+

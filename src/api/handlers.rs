@@ -502,11 +502,45 @@ pub(crate) async fn serve_dashboard_spa_fallback(method: Method, uri: Uri) -> im
         .into_response()
 }
 
+/// Machine hostname this process is running on, resolved once and cached —
+/// used by the dashboard to distinguish which deployment a user is looking
+/// at when they have more than one Aether instance bookmarked.
+fn system_hostname() -> String {
+    static HOSTNAME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    HOSTNAME
+        .get_or_init(|| {
+            std::env::var("HOSTNAME")
+                .ok()
+                .filter(|h| !h.is_empty())
+                .or_else(|| {
+                    std::fs::read_to_string("/proc/sys/kernel/hostname")
+                        .ok()
+                        .map(|h| h.trim().to_string())
+                        .filter(|h| !h.is_empty())
+                })
+                .or_else(|| {
+                    std::process::Command::new("hostname")
+                        .output()
+                        .ok()
+                        .filter(|out| out.status.success())
+                        .and_then(|out| String::from_utf8(out.stdout).ok())
+                        .map(|h| h.trim().to_string())
+                        .filter(|h| !h.is_empty())
+                })
+                .unwrap_or_else(|| "unknown".to_string())
+        })
+        .clone()
+}
+
 /// GET /health - Health check endpoint
 pub(crate) async fn health_check() -> impl IntoResponse {
     let response = HealthResponse {
         status: "ok".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
+        hostname: system_hostname(),
+        environment: std::env::var("AETHER_ENVIRONMENT_NAME")
+            .ok()
+            .filter(|v| !v.is_empty()),
     };
     Json(ApiResponse::success(response))
 }

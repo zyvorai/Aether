@@ -22,16 +22,6 @@ const valueTone: Record<RibbonTone, string> = {
   aether: 'text-primary',
 };
 
-const hoverTone: Record<RibbonTone, string> = {
-  white: 'hover:bg-white/[0.03]',
-  emerald: 'hover:bg-success/5',
-  amber: 'hover:bg-warning/5',
-  violet: 'hover:bg-lavender/5',
-  sky: 'hover:bg-primary/5',
-  red: 'hover:bg-danger/5',
-  aether: 'hover:bg-primary/5',
-};
-
 interface StatRibbonProps {
   items: RibbonItem[];
   columns?: number;
@@ -39,26 +29,19 @@ interface StatRibbonProps {
   className?: string;
 }
 
-export default function StatRibbon({ items, columns, testId, className }: StatRibbonProps) {
-  const cols = columns ?? Math.min(items.length, 6);
-  const gridCols =
-    cols >= 6 ? 'sm:grid-cols-3 xl:grid-cols-6' :
-    cols === 5 ? 'sm:grid-cols-3 xl:grid-cols-5' :
-    cols === 4 ? 'sm:grid-cols-2 xl:grid-cols-4' :
-    cols === 3 ? 'sm:grid-cols-3' :
-    'sm:grid-cols-2';
-
+/** Sparse Apple-style metric row (replaces dense gap-px card strips). */
+export default function StatRibbon({ items, testId, className }: StatRibbonProps) {
   return (
     <section
-      className={`grid grid-cols-2 gap-px overflow-hidden rounded-2xl border glass-divider ${gridCols} ${className ?? ''}`}
+      className={`flex flex-wrap gap-x-10 gap-y-4 ${className ?? ''}`}
       data-testid={testId}
     >
       {items.map((item) => {
         const tone = item.tone ?? 'white';
         const inner = (
           <>
-            <div className="text-[10px] uppercase tracking-wider text-subtle">{item.label}</div>
-            <div className={`mt-0.5 text-xl font-semibold tabular-nums ${valueTone[tone]}`}>{item.value}</div>
+            <div className={`text-2xl font-semibold tabular-nums ${valueTone[tone]}`}>{item.value}</div>
+            <div className="mt-1 text-sm text-muted">{item.label}</div>
           </>
         );
         if (item.onClick) {
@@ -68,14 +51,14 @@ export default function StatRibbon({ items, columns, testId, className }: StatRi
               type="button"
               onClick={item.onClick}
               data-testid={item.testId}
-              className={`glass-inset-surface px-3 py-3 text-left transition ${hoverTone[tone]}`}
+              className="text-left transition hover:opacity-80"
             >
               {inner}
             </button>
           );
         }
         return (
-          <div key={item.label} data-testid={item.testId} className="glass-inset-surface px-3 py-3">
+          <div key={item.label} data-testid={item.testId} className="text-left">
             {inner}
           </div>
         );

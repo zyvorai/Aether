@@ -22,11 +22,13 @@ import {
 } from 'lucide-react';
 import {
   apiFetchAuthProviders,
+  apiFetchHealth,
   apiLdapLogin,
   apiLocalLogin,
   apiTryAuth,
   DEFAULT_DASHBOARD_USERNAME,
   type AuthProvidersPayload,
+  type HealthPayload,
 } from '../utils/api';
 import { ZyvorFooter } from './ZyvorBrand';
 
@@ -68,6 +70,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
   const [error, setError] = useState<string | null>(null);
   const [providers, setProviders] = useState<AuthProvidersPayload | null>(null);
   const [providersLoading, setProvidersLoading] = useState(true);
+  const [health, setHealth] = useState<HealthPayload | null>(null);
 
   const [showLdap, setShowLdap] = useState(false);
   const [ldapPassword, setLdapPassword] = useState('');
@@ -89,6 +92,9 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
         setUsername(available.local.default_username);
       }
       setProvidersLoading(false);
+    });
+    void apiFetchHealth().then((payload) => {
+      if (!cancelled) setHealth(payload);
     });
     return () => {
       cancelled = true;
@@ -184,6 +190,16 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             <div className="text-lg font-semibold tracking-tight">Aether</div>
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Universal runtime control plane</div>
           </div>
+          {health ? (
+            <span
+              data-tone="sky"
+              className="hero-swatch ml-auto"
+              title={`Host: ${health.hostname}${health.environment ? ` · Environment: ${health.environment}` : ''}`}
+            >
+              <span className="hero-swatch-dot" aria-hidden />
+              {health.environment ?? health.hostname}
+            </span>
+          ) : null}
         </div>
 
         <div className="relative z-10 my-auto max-w-2xl py-16 lg:py-20">
@@ -203,27 +219,27 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
           <div className="login-fade-in login-fade-in-d3 mt-9 grid max-w-xl gap-3 sm:grid-cols-3">
             {[
-              { icon: Layers, title: 'One specification', text: 'Portable workload intent' },
-              { icon: ShieldCheck, title: 'Policy built in', text: 'RBAC and audit trails' },
-              { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions' },
-            ].map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-xl border border-border bg-surface p-4">
-                <Icon className="h-4 w-4 text-primary" aria-hidden />
+              { icon: Layers, title: 'One specification', text: 'Portable workload intent', tone: 'sky' as const },
+              { icon: ShieldCheck, title: 'Policy built in', text: 'RBAC and audit trails', tone: 'violet' as const },
+              { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions', tone: 'teal' as const },
+            ].map(({ icon: Icon, title, text, tone }) => (
+              <div key={title} data-tone={tone} className="rounded-xl border border-border p-4" style={{ background: 'var(--tone-wash)' }}>
+                <Icon className="h-4 w-4" style={{ color: 'var(--tone-color)' }} aria-hidden />
                 <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
                 <div className="mt-1 text-xs leading-relaxed text-muted">{text}</div>
               </div>
             ))}
           </div>
 
-          <div className="login-fade-in login-fade-in-d4 mt-8 flex flex-wrap gap-2 text-xs text-muted">
+          <div className="login-fade-in login-fade-in-d4 mt-8 hero-swatch-row">
             {[
-              { icon: Container, label: 'Podman' },
-              { icon: Server, label: 'Kubernetes' },
-              { icon: Boxes, label: 'KubeVirt' },
-              { icon: Server, label: 'Metal3' },
-            ].map(({ icon: Icon, label }) => (
-              <span key={label} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5">
-                <Icon className="h-3 w-3" aria-hidden />
+              { icon: Container, label: 'Podman', tone: 'sky' as const },
+              { icon: Server, label: 'Kubernetes', tone: 'violet' as const },
+              { icon: Boxes, label: 'KubeVirt', tone: 'teal' as const },
+              { icon: Server, label: 'Metal3', tone: 'rust' as const },
+            ].map(({ icon: Icon, label, tone }) => (
+              <span key={label} data-tone={tone} className="hero-swatch">
+                <Icon className="h-3 w-3" style={{ color: 'var(--tone-color)' }} aria-hidden />
                 {label}
               </span>
             ))}

@@ -17,14 +17,14 @@ export default function HubPageToc({ items }: HubPageTocProps) {
   return (
     <nav
       aria-label="On this page"
-      className="glass-toolbar sticky top-0 z-10 flex flex-wrap gap-2"
+      className="mb-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-8 sm:gap-y-2"
     >
-      <span className="text-xs font-medium uppercase tracking-wider text-subtle">On this page</span>
+      <span className="text-xs font-medium uppercase tracking-wider text-subtle shrink-0">On this page</span>
       {items.map((item) => (
         <a
           key={item.id}
           href={`#${item.id}`}
-          className="quick-link-chip text-xs"
+          className="text-sm text-primary hover:underline"
         >
           {item.label}
         </a>

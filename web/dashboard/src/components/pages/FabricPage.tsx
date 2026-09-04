@@ -2,27 +2,17 @@ import { withAuroraPage } from '../layout/AuroraPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 
 import { Link } from 'react-router';
-import { FabricPageContent } from '../RuntimeFabricGraph';
-import DigitalTwinPanel from '../DigitalTwinPanel';
-import KnowledgeGraphPanel from '../KnowledgeGraphPanel';
-import UnifiedFabricPanel from '../UnifiedFabricPanel';
-import HubPageToc from '../HubPageToc';
+import SectionHubPage from '../SectionHubPage';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
-
-const TOC = [
-  { id: 'fabric-twin', label: 'Digital twin' },
-  { id: 'fabric-topology', label: 'Topology' },
-  { id: 'fabric-graph', label: 'Knowledge graph' },
-  { id: 'fabric-unified', label: 'Unified fabric' },
-];
+import { GitBranch, Globe, Network, Sparkles } from 'lucide-react';
 
 function FabricPage() {
   const [workload] = useQueryParam('workload');
 
   return (
-    <section className="glass">
+    <div className="space-y-12">
       {workload.trim() ? (
         <WorkloadContextBanner testId="fabric-workload-context" workload={workload} description="Fabric context">
           <WorkloadScopedCrossLinks workload={workload} prefix="fabric" showMetrics showDrift />
@@ -52,12 +42,35 @@ function FabricPage() {
           </Link>
         </WorkloadContextBanner>
       ) : null}
-      <HubPageToc items={TOC} />
-      <div id="fabric-twin"><DigitalTwinPanel /></div>
-      <div id="fabric-topology"><FabricPageContent /></div>
-      <div id="fabric-graph"><KnowledgeGraphPanel /></div>
-      <div id="fabric-unified"><UnifiedFabricPanel /></div>
-    </section>
+      <SectionHubPage
+      links={[
+          {
+            view: 'fabric-twin',
+            title: 'Digital Twin',
+            description: 'Digital twin of the runtime fabric.',
+            icon: <Sparkles className="h-5 w-5" />,
+          },
+          {
+            view: 'fabric-topology',
+            title: 'Topology',
+            description: 'Application → Runtime → Cluster → Node topology.',
+            icon: <Network className="h-5 w-5" />,
+          },
+          {
+            view: 'fabric-graph',
+            title: 'Knowledge Graph',
+            description: 'Fabric knowledge graph.',
+            icon: <GitBranch className="h-5 w-5" />,
+          },
+          {
+            view: 'fabric-unified',
+            title: 'Unified Fabric',
+            description: 'Unified fabric view.',
+            icon: <Globe className="h-5 w-5" />,
+          },
+        ]}
+      />
+    </div>
   );
 }
 

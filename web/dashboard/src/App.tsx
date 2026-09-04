@@ -72,6 +72,87 @@ import HelmCatalogPage from './components/pages/HelmCatalogPage';
 import HostedPage from './components/pages/HostedPage';
 import OpenApiPage from './components/pages/OpenApiPage';
 
+import ObsRootCausePage from './components/pages/ObsRootCausePage';
+import ObsCapacityForecastPage from './components/pages/ObsCapacityForecastPage';
+import ObsCapacityScalePage from './components/pages/ObsCapacityScalePage';
+import ObsSelfHealingPage from './components/pages/ObsSelfHealingPage';
+import ObsAutonomousSrePage from './components/pages/ObsAutonomousSrePage';
+import ObsExtensionsPage from './components/pages/ObsExtensionsPage';
+import ObsReliabilityPage from './components/pages/ObsReliabilityPage';
+import SettingsIdentityPage from './components/pages/SettingsIdentityPage';
+import SettingsNavPage from './components/pages/SettingsNavPage';
+import SettingsAutonomousPage from './components/pages/SettingsAutonomousPage';
+import SettingsMacosPage from './components/pages/SettingsMacosPage';
+import LabsLivePage from './components/pages/LabsLivePage';
+import LabsGraduationPage from './components/pages/LabsGraduationPage';
+import LabsGraphPage from './components/pages/LabsGraphPage';
+import LabsPlatformPage from './components/pages/LabsPlatformPage';
+import MigPlannerPage from './components/pages/MigPlannerPage';
+import MigPlacementPage from './components/pages/MigPlacementPage';
+import MigReplicationPage from './components/pages/MigReplicationPage';
+import MigWavesPage from './components/pages/MigWavesPage';
+import FabricTwinPage from './components/pages/FabricTwinPage';
+import FabricTopologyPage from './components/pages/FabricTopologyPage';
+import FabricGraphPage from './components/pages/FabricGraphPage';
+import FabricUnifiedPage from './components/pages/FabricUnifiedPage';
+
+import AiAdvisorPage from './components/pages/AiAdvisorPage';
+import AiDesignerPage from './components/pages/AiDesignerPage';
+import AiIntentPage from './components/pages/AiIntentPage';
+import AiPipelinePage from './components/pages/AiPipelinePage';
+import AiRecommendPage from './components/pages/AiRecommendPage';
+import AiOptimizePage from './components/pages/AiOptimizePage';
+import AiAnalyzePage from './components/pages/AiAnalyzePage';
+import IntelPredictionsPage from './components/pages/IntelPredictionsPage';
+import IntelThreatsPage from './components/pages/IntelThreatsPage';
+import IntelCostPage from './components/pages/IntelCostPage';
+import IntelEvolutionPage from './components/pages/IntelEvolutionPage';
+import IntelPlacementPage from './components/pages/IntelPlacementPage';
+import FleetOverviewPage from './components/pages/FleetOverviewPage';
+import FleetEdgePage from './components/pages/FleetEdgePage';
+import FleetPlacementPage from './components/pages/FleetPlacementPage';
+import ConfTeePage from './components/pages/ConfTeePage';
+import ConfTrustPage from './components/pages/ConfTrustPage';
+import ConfMigratePage from './components/pages/ConfMigratePage';
+import ConfWorkloadsPage from './components/pages/ConfWorkloadsPage';
+
+import ActivityCpuPage from './components/pages/ActivityCpuPage';
+import ActivityMemoryPage from './components/pages/ActivityMemoryPage';
+import ActivityRestartsPage from './components/pages/ActivityRestartsPage';
+import ActivityErrorsPage from './components/pages/ActivityErrorsPage';
+import AffinityRecommendPage from './components/pages/AffinityRecommendPage';
+import AffinityMatrixPage from './components/pages/AffinityMatrixPage';
+import AffinityStatsPage from './components/pages/AffinityStatsPage';
+import ClustersBrowsePage from './components/pages/ClustersBrowsePage';
+import ClustersNetworkPage from './components/pages/ClustersNetworkPage';
+import PlatformRecommendationsPage from './components/pages/PlatformRecommendationsPage';
+import PlatformTrustPage from './components/pages/PlatformTrustPage';
+import PlatformEcosystemPage from './components/pages/PlatformEcosystemPage';
+import PlatformRuntimePage from './components/pages/PlatformRuntimePage';
+import PlatformCiliumPage from './components/pages/PlatformCiliumPage';
+import PlatformObservabilityPage from './components/pages/PlatformObservabilityPage';
+import MetricsSummaryPage from './components/pages/MetricsSummaryPage';
+import MetricsChargebackPage from './components/pages/MetricsChargebackPage';
+import MetricsObservabilityPage from './components/pages/MetricsObservabilityPage';
+import MetricsPrometheusPage from './components/pages/MetricsPrometheusPage';
+import SecurityOverviewPage from './components/pages/SecurityOverviewPage';
+import SecurityCopilotPage from './components/pages/SecurityCopilotPage';
+import SecurityPlatformPage from './components/pages/SecurityPlatformPage';
+import SecuritySbomPage from './components/pages/SecuritySbomPage';
+import SecurityRemediationPage from './components/pages/SecurityRemediationPage';
+import SecurityThreatsPage from './components/pages/SecurityThreatsPage';
+import GitopsCenterPage from './components/pages/GitopsCenterPage';
+import GitopsAgentPage from './components/pages/GitopsAgentPage';
+import GitopsIntentPage from './components/pages/GitopsIntentPage';
+import GitopsSyncPage from './components/pages/GitopsSyncPage';
+import CostIntelligencePage from './components/pages/CostIntelligencePage';
+import CostFinopsPage from './components/pages/CostFinopsPage';
+import CostEstimatePage from './components/pages/CostEstimatePage';
+import AlertsChannelsPage from './components/pages/AlertsChannelsPage';
+import AlertsRulesPage from './components/pages/AlertsRulesPage';
+import AlertsTestPage from './components/pages/AlertsTestPage';
+import AlertsQueuePage from './components/pages/AlertsQueuePage';
+
 function AetherDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -474,33 +555,99 @@ function AetherDashboard() {
         );
       case 'clusters':
         return <ClustersPage />;
+      case 'clusters-browse':
+        return <ClustersBrowsePage />;
+      case 'clusters-network':
+        return <ClustersNetworkPage />;
       case 'fleet':
-        return <FleetPage refreshKey={refreshKey} />;
+        return <FleetPage />;
+      case 'fleet-overview':
+        return <FleetOverviewPage refreshKey={refreshKey} />;
+      case 'fleet-edge':
+        return <FleetEdgePage refreshKey={refreshKey} />;
+      case 'fleet-placement':
+        return <FleetPlacementPage refreshKey={refreshKey} />;
       case 'hosted':
         return <HostedPage refreshKey={refreshKey} />;
       case 'activity':
         return <ActivityMonitorPage />;
+      case 'activity-cpu':
+        return <ActivityCpuPage />;
+      case 'activity-memory':
+        return <ActivityMemoryPage />;
+      case 'activity-restarts':
+        return <ActivityRestartsPage />;
+      case 'activity-errors':
+        return <ActivityErrorsPage />;
       case 'security':
-        return <SecurityCenterPage refreshKey={refreshKey} />;
+        return <SecurityCenterPage />;
+      case 'security-overview':
+        return <SecurityOverviewPage refreshKey={refreshKey} />;
+      case 'security-copilot':
+        return <SecurityCopilotPage refreshKey={refreshKey} />;
+      case 'security-platform':
+        return <SecurityPlatformPage refreshKey={refreshKey} />;
+      case 'security-sbom':
+        return <SecuritySbomPage refreshKey={refreshKey} />;
+      case 'security-remediation':
+        return <SecurityRemediationPage refreshKey={refreshKey} />;
+      case 'security-threats':
+        return <SecurityThreatsPage refreshKey={refreshKey} />;
       case 'helm':
         return <HelmCatalogPage refreshKey={refreshKey} />;
       case 'compose':
         return <ComposePage />;
       case 'ai':
-        return <AIPage refreshKey={refreshKey} />;
+        return <AIPage />;
+      case 'ai-advisor':
+        return <AiAdvisorPage refreshKey={refreshKey} />;
+      case 'ai-designer':
+        return <AiDesignerPage refreshKey={refreshKey} />;
+      case 'ai-intent':
+        return <AiIntentPage refreshKey={refreshKey} />;
+      case 'ai-pipeline':
+        return <AiPipelinePage refreshKey={refreshKey} />;
+      case 'ai-recommend':
+        return <AiRecommendPage refreshKey={refreshKey} />;
+      case 'ai-optimize':
+        return <AiOptimizePage refreshKey={refreshKey} />;
+      case 'ai-analyze':
+        return <AiAnalyzePage refreshKey={refreshKey} />;
       case 'zyra':
       case 'copilot':
         return <ZyraPage />;
       case 'ai-providers':
         return <AiProvidersPage refreshKey={refreshKey} />;
       case 'cost':
-        return <CostPage refreshKey={refreshKey} />;
+        return <CostPage />;
+      case 'cost-intelligence':
+        return <CostIntelligencePage refreshKey={refreshKey} />;
+      case 'cost-finops':
+        return <CostFinopsPage refreshKey={refreshKey} />;
+      case 'cost-estimate':
+        return <CostEstimatePage refreshKey={refreshKey} />;
       case 'affinity':
-        return <AffinityPage refreshKey={refreshKey} />;
+        return <AffinityPage />;
+      case 'affinity-recommend':
+        return <AffinityRecommendPage refreshKey={refreshKey} />;
+      case 'affinity-matrix':
+        return <AffinityMatrixPage refreshKey={refreshKey} />;
+      case 'affinity-stats':
+        return <AffinityStatsPage refreshKey={refreshKey} />;
       case 'drift':
         return <DriftPage refreshKey={refreshKey} />;
       case 'intelligence':
-        return <IntelligencePage refreshKey={refreshKey} />;
+        return <IntelligencePage />;
+      case 'intel-predictions':
+        return <IntelPredictionsPage refreshKey={refreshKey} />;
+      case 'intel-threats':
+        return <IntelThreatsPage refreshKey={refreshKey} />;
+      case 'intel-cost':
+        return <IntelCostPage refreshKey={refreshKey} />;
+      case 'intel-evolution':
+        return <IntelEvolutionPage refreshKey={refreshKey} />;
+      case 'intel-placement':
+        return <IntelPlacementPage refreshKey={refreshKey} />;
       case 'policy':
         return <PolicyPage refreshKey={refreshKey} />;
       case 'scheduler':
@@ -510,9 +657,29 @@ function AetherDashboard() {
       case 'events':
         return <EventsPage refreshKey={refreshKey} />;
       case 'alerts':
-        return <AlertsPage refreshKey={refreshKey} />;
+        return <AlertsPage />;
+      case 'alerts-channels':
+        return <AlertsChannelsPage refreshKey={refreshKey} />;
+      case 'alerts-rules':
+        return <AlertsRulesPage refreshKey={refreshKey} />;
+      case 'alerts-test':
+        return <AlertsTestPage refreshKey={refreshKey} />;
+      case 'alerts-queue':
+        return <AlertsQueuePage refreshKey={refreshKey} />;
       case 'platform':
-        return <PlatformPage refreshKey={refreshKey} />;
+        return <PlatformPage />;
+      case 'platform-recommendations':
+        return <PlatformRecommendationsPage refreshKey={refreshKey} />;
+      case 'platform-trust':
+        return <PlatformTrustPage refreshKey={refreshKey} />;
+      case 'platform-ecosystem':
+        return <PlatformEcosystemPage refreshKey={refreshKey} />;
+      case 'platform-runtime':
+        return <PlatformRuntimePage refreshKey={refreshKey} />;
+      case 'platform-cilium':
+        return <PlatformCiliumPage refreshKey={refreshKey} />;
+      case 'platform-observability':
+        return <PlatformObservabilityPage refreshKey={refreshKey} />;
       case 'sla':
         return <SLAPage refreshKey={refreshKey} />;
       case 'deps':
@@ -536,13 +703,85 @@ function AetherDashboard() {
       case 'audit':
         return <AuditPage refreshKey={refreshKey} />;
       case 'metrics':
-        return <MetricsPage refreshKey={refreshKey} />;
+        return <MetricsPage />;
+      case 'metrics-summary':
+        return <MetricsSummaryPage refreshKey={refreshKey} />;
+      case 'metrics-chargeback':
+        return <MetricsChargebackPage refreshKey={refreshKey} />;
+      case 'metrics-observability':
+        return <MetricsObservabilityPage refreshKey={refreshKey} />;
+      case 'metrics-prometheus':
+        return <MetricsPrometheusPage refreshKey={refreshKey} />;
       case 'gitops':
-        return <GitOpsPage refreshKey={refreshKey} />;
+        return <GitOpsPage />;
+      case 'gitops-center':
+        return <GitopsCenterPage refreshKey={refreshKey} />;
+      case 'gitops-agent':
+        return <GitopsAgentPage refreshKey={refreshKey} />;
+      case 'gitops-intent':
+        return <GitopsIntentPage refreshKey={refreshKey} />;
+      case 'gitops-sync':
+        return <GitopsSyncPage refreshKey={refreshKey} />;
       case 'editor':
         return <EditorPage />;
       case 'confidential':
-        return <ConfidentialPage refreshKey={refreshKey} />;
+        return <ConfidentialPage />;
+      case 'conf-tee':
+        return <ConfTeePage refreshKey={refreshKey} />;
+      case 'conf-trust':
+        return <ConfTrustPage refreshKey={refreshKey} />;
+      case 'conf-migrate':
+        return <ConfMigratePage refreshKey={refreshKey} />;
+      case 'conf-workloads':
+        return <ConfWorkloadsPage refreshKey={refreshKey} />;
+      
+      case 'obs-root-cause':
+        return <ObsRootCausePage />;
+      case 'obs-capacity-forecast':
+        return <ObsCapacityForecastPage />;
+      case 'obs-capacity-scale':
+        return <ObsCapacityScalePage />;
+      case 'obs-self-healing':
+        return <ObsSelfHealingPage />;
+      case 'obs-autonomous-sre':
+        return <ObsAutonomousSrePage />;
+      case 'obs-extensions':
+        return <ObsExtensionsPage />;
+      case 'obs-reliability':
+        return <ObsReliabilityPage />;
+      case 'settings-identity':
+        return <SettingsIdentityPage />;
+      case 'settings-nav':
+        return <SettingsNavPage />;
+      case 'settings-autonomous':
+        return <SettingsAutonomousPage />;
+      case 'settings-macos':
+        return <SettingsMacosPage />;
+      case 'labs-live':
+        return <LabsLivePage />;
+      case 'labs-graduation':
+        return <LabsGraduationPage />;
+      case 'labs-graph':
+        return <LabsGraphPage />;
+      case 'labs-platform':
+        return <LabsPlatformPage />;
+      case 'mig-planner':
+        return <MigPlannerPage />;
+      case 'mig-placement':
+        return <MigPlacementPage />;
+      case 'mig-replication':
+        return <MigReplicationPage />;
+      case 'mig-waves':
+        return <MigWavesPage />;
+      case 'fabric-twin':
+        return <FabricTwinPage />;
+      case 'fabric-topology':
+        return <FabricTopologyPage />;
+      case 'fabric-graph':
+        return <FabricGraphPage />;
+      case 'fabric-unified':
+        return <FabricUnifiedPage />;
+
       case 'openapi':
         return <OpenApiPage refreshKey={refreshKey} />;
       default:

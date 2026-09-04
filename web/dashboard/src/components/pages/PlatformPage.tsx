@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 import { Link } from 'react-router';
 import { Server, Shield, Database, ExternalLink, Network } from 'lucide-react';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -40,7 +41,10 @@ interface ServerPayload {
   opa?: { configured?: boolean; enforce?: boolean };
 }
 
-function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type PlatformSection = 'recommendations' | 'trust' | 'ecosystem' | 'runtime' | 'cilium' | 'observability';
+
+export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: PlatformSection } = {}) {
+  const show = (s: PlatformSection) => !forcedSection || forcedSection === s;
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, refreshPlatform } = useServerCapabilities();
@@ -116,7 +120,7 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         refreshTestId="platform-toolbar-refresh"
       />
 
-      <div className="mb-6 glass-context-banner" data-testid="platform-hub-context">
+      <div className="mb-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted" data-testid="platform-hub-context">
         Platform
         {' · '}
         <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="platform-context-fleet-hub-link">
@@ -236,21 +240,24 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
+      {show('recommendations') ? (
       <div className="mb-6">
         <PlatformRecommendations items={recommendations} loading={recLoading} />
       </div>
+      ) : null}
 
-      <ProductionTrustPanel />
-      <EcosystemPlatformPanel />
+      {show('trust') ? <ProductionTrustPanel /> : null}
+      {show('ecosystem') ? <EcosystemPlatformPanel /> : null}
 
-      <section className="glass mb-6 p-6 sm:p-8">
+      {show('runtime') ? (
+      <section className="apple-chapter space-y-8 mb-10">
         <SectionHeader
           label="Platform"
           title="Runtime & policy"
           description="API server, HA mode, OPA, and integration status"
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass" data-testid="platform-runtime-panel">
+        <div data-testid="platform-runtime-panel">
           <div className="flex items-center gap-3 mb-4">
             <Server className="text-primary" size={20} />
             <h2 className="text-lg font-semibold text-foreground">Runtime</h2>
@@ -374,7 +381,10 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       </section>
 
-      <section className="glass mb-6 p-6 sm:p-8">
+      ) : null}
+
+      {show('cilium') ? (
+      <section className="apple-chapter space-y-8 mb-10">
         <SectionHeader
           label="Network"
           title="Kubernetes / Cilium"
@@ -478,6 +488,9 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
       </section>
 
+      ) : null}
+
+      {show('observability') ? (
       <section className="glass p-6 sm:p-8">
         <SectionHeader
           label="Observability"
@@ -571,8 +584,25 @@ function PlatformPage({ refreshKey }: { refreshKey?: number } = {}) {
         </p>
       </div>
       </section>
+      ) : null}
     </div>
   );
 }
 
-export default withAuroraPage('platform', PlatformPage);
+function PlatformHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'platform-recommendations', title: 'Recommendations', description: 'Setup and HA recommendations.', icon: <Server className="h-5 w-5" /> },
+        { view: 'platform-trust', title: 'Production trust', description: 'Trust and readiness signals.', icon: <Shield className="h-5 w-5" /> },
+        { view: 'platform-ecosystem', title: 'Ecosystem', description: 'Ecosystem integrations.', icon: <Network className="h-5 w-5" /> },
+        { view: 'platform-runtime', title: 'Runtime & policy', description: 'API server, HA, OPA, integrations.', icon: <Server className="h-5 w-5" /> },
+        { view: 'platform-cilium', title: 'Kubernetes / Cilium', description: 'CNI status and connectivity.', icon: <Network className="h-5 w-5" /> },
+        { view: 'platform-observability', title: 'Observability links', description: 'Grafana, Prometheus, Hubble, PacketWolf.', icon: <Database className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('platform', PlatformHubPage);
+

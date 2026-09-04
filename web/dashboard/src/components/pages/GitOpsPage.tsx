@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 import { Link, useNavigate } from 'react-router';
 import { GitBranch, ExternalLink } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';
@@ -88,7 +89,10 @@ function formatSyncResult(raw: string | null): {
 
 const GITOPS_SYNC_STORAGE_KEY = 'aether-gitops-last-sync';
 
-function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type GitOpsSection = 'center' | 'agent' | 'intent' | 'sync';
+
+export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: GitOpsSection } = {}) {
+  const show = (s: GitOpsSection) => !forcedSection || forcedSection === s;
   const navigate = useNavigate();
   const [workloadQuery] = useQueryParam('workload', '');
   const workloadFocus = workloadQuery.trim();
@@ -347,7 +351,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="mb-2 glass-context-banner" data-testid="gitops-hub-context">
         GitOps
         {' · '}
@@ -383,6 +387,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
         }
       />
 
+      {show('center') ? (
       <GitOpsCenter
         configured={Boolean(data?.configured)}
         repoUrl={data?.repo_url}
@@ -395,8 +400,10 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
         syncing={syncing}
       />
 
-      <GitOpsAgentPanel />
-      <IntentGitOpsDiffPanel />
+      ) : null}
+
+      {show('agent') ? <GitOpsAgentPanel /> : null}
+      {show('intent') ? <IntentGitOpsDiffPanel /> : null}
 
       {workloadFocus ? (
         <WorkloadContextBanner
@@ -480,7 +487,8 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="glass mb-6 space-y-6 p-6 sm:p-8">
+      {show('sync') ? (
+      <section className="apple-chapter space-y-8 mb-10">
 
       <div className="glass" data-testid="gitops-status-panel">
         <div className="flex items-center gap-3 mb-4">
@@ -655,6 +663,7 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
       </section>
+      ) : null}
 
 
       <Modal isOpen={syncConfirmOpen} onClose={() => setSyncConfirmOpen(false)} title="Confirm GitOps sync">
@@ -708,4 +717,18 @@ function GitOpsPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('gitops', GitOpsPage);
+function GitOpsHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'gitops-center', title: 'GitOps center', description: 'Repo status and sync controls.', icon: <GitBranch className="h-5 w-5" /> },
+        { view: 'gitops-agent', title: 'GitOps agent', description: 'Autonomous GitOps agent.', icon: <GitBranch className="h-5 w-5" /> },
+        { view: 'gitops-intent', title: 'Intent diff', description: 'Intent vs GitOps drift.', icon: <GitBranch className="h-5 w-5" /> },
+        { view: 'gitops-sync', title: 'Reconciliation', description: 'Init, sync, and change tables.', icon: <GitBranch className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('gitops', GitOpsHubPage);
+

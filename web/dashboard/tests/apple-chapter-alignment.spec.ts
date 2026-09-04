@@ -33,4 +33,22 @@ test.describe('Apple.com chapter alignment', () => {
     await expect(page.getByTestId('page-workloads')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('.apple-editorial-hero').first()).toBeVisible();
   });
+
+  test('overview hero shows the iPad-style runtime swatch row', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/');
+    await expect(page.getByTestId('global-nav')).toBeVisible({ timeout: 15_000 });
+    const swatchRow = page.locator('.hero-swatch-row').first();
+    await expect(swatchRow).toBeVisible();
+    await expect(swatchRow.locator('.hero-swatch')).toHaveCount(4);
+  });
+
+  test('hub pages render Services-style tone bands', async ({ page }) => {
+    await ensureAuthenticated(page);
+    await page.goto('/fleet');
+    await expect(page.getByTestId('page-fleet')).toBeVisible({ timeout: 15_000 });
+    const bands = page.locator('.hub-band');
+    await expect(bands.first()).toBeVisible();
+    await expect(bands.first()).toHaveAttribute('data-tone', /.+/);
+  });
 });

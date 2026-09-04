@@ -1,10 +1,11 @@
 import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
 // Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
 import { useCallback, useEffect, useState } from 'react';
-import { ExternalLink, Lock, ShieldCheck, Terminal } from 'lucide-react';
+import { ExternalLink, Lock, ShieldCheck, Terminal, ArrowRightLeft, Layers } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { apiFetchSettled, apiPost } from '../../utils/api';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -60,7 +61,10 @@ const CLI_IMAGE_COMMANDS = [
   'aether confidential image verify-digest <launch-digest>',
 ];
 
-function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
+export type ConfSection = 'tee' | 'trust' | 'migrate' | 'workloads';
+
+export function ConfidentialStudio({ refreshKey, forcedSection }: { refreshKey?: number; forcedSection?: ConfSection } = {}) {
+  const show = (s: ConfSection) => !forcedSection || forcedSection === s;
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -324,7 +328,9 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
         </WorkloadContextBanner>
       ) : null}
 
-      <section className="glass mb-6 p-6 sm:p-8">
+      <section className="apple-chapter mb-10 p-6 sm:p-8">
+      {show('tee') ? (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div
           className="glass lg:col-span-2"
@@ -389,7 +395,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
       </div>
 
       {sovereign && (sovereign.offline_attestation || sovereign.region_lock) && (
-        <div className="glass mb-6">
+        <div className="apple-chapter mb-10">
           <h2 className="text-lg font-semibold text-foreground mb-2">Sovereign mode</h2>
           <div className="flex flex-wrap gap-3 text-sm text-muted">
             {sovereign.offline_attestation && (
@@ -411,7 +417,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {kata && (
-        <div className="glass mb-6">
+        <div className="apple-chapter mb-10">
           <h2 className="text-lg font-semibold text-foreground mb-2">Kata / Confidential Containers</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge text={kata.hypervisor} variant="muted" />
@@ -428,8 +434,13 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
 
+      </>
+      ) : null}
+
+      {show('trust') ? (
+      <>
       {fleetTrust.length > 0 && (
-        <div className="glass mb-6">
+        <div className="apple-chapter mb-10">
           <h2 className="text-lg font-semibold text-foreground mb-2">Fleet trust scores</h2>
           <p className="text-sm text-subtle mb-4">
             Composite trust from attestation, network policy, and firmware exposure across confidential workloads.
@@ -471,7 +482,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
       )}
 
       {intel && intel.workloads.length > 0 && (
-        <div className="glass mb-6">
+        <div className="apple-chapter mb-10">
           <h2 className="text-lg font-semibold text-foreground mb-2">AI confidential intelligence</h2>
           <p className="text-sm text-subtle mb-3">
             Fleet trust avg {Math.round(intel.fleet_trust_avg * 100)}% · {intel.critical_count} high-risk workload(s)
@@ -501,7 +512,11 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
         </div>
       )}
 
-      <div className="glass mb-6" data-testid="confidential-migration-wizard">
+      </>
+      ) : null}
+
+      {show('migrate') ? (
+      <div className="apple-chapter mb-10" data-testid="confidential-migration-wizard">
         <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
           <Terminal className="w-5 h-5" />
           Encrypted migration (Phase 6)
@@ -512,7 +527,9 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
         </p>
         <ConfidentialMigrationWizard workloads={filteredFleet} />
       </div>
+      ) : null}
 
+      {show('workloads') ? (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <div className="glass" data-testid="confidential-fleet-panel">
           <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
@@ -755,6 +772,7 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
         </div>
       </div>
+      ) : null}
 
       </section>
 
@@ -765,4 +783,17 @@ function ConfidentialPage({ refreshKey }: { refreshKey?: number } = {}) {
   );
 }
 
-export default withAuroraPage('confidential', ConfidentialPage);
+function ConfidentialHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'conf-tee', title: 'TEE & Integration', description: 'Host TEE and Ragnarok integration.', icon: <Lock className="h-5 w-5" /> },
+        { view: 'conf-trust', title: 'Trust scores', description: 'Fleet attestation trust scores.', icon: <ShieldCheck className="h-5 w-5" /> },
+        { view: 'conf-migrate', title: 'Encrypted migration', description: 'Confidential migration wizard.', icon: <ArrowRightLeft className="h-5 w-5" /> },
+        { view: 'conf-workloads', title: 'Confidential workloads', description: 'Inventory, images, and signing.', icon: <Layers className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('confidential', ConfidentialHubPage);

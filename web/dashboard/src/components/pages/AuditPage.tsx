@@ -13,7 +13,6 @@ import { useQueryParam } from '../../utils/urlState';
 import { useBufferedValue } from '../../hooks/useBufferedValue';
 import { formatTimestamp } from '../../utils/formatters';
 import PageToolbar from '../PageToolbar';
-import StatCard from '../StatCard';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
@@ -256,25 +255,25 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
         </Link>
       </div>
 
-      <section className="glass mb-6 p-6 sm:p-8">
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left">
-          <StatCard title="Total events" value={audit.summary.total_events} color="blue" />
+      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left text-sm text-muted hover:text-foreground">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.total_events}</div>Total events
         </button>
-        <button type="button" onClick={() => setResultFilter('success')} className="text-left">
-          <StatCard title="Successes" value={audit.summary.successes} color="green" />
+        <button type="button" onClick={() => setResultFilter('success')} className="text-left text-sm text-muted hover:text-foreground">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.successes}</div>Successes
         </button>
-        <button type="button" onClick={() => setResultFilter('failure')} className="text-left">
-          <StatCard title="Failures" value={audit.summary.failures} color="red" />
+        <button type="button" onClick={() => setResultFilter('failure')} className="text-left text-sm text-muted hover:text-foreground">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.failures}</div>Failures
         </button>
-        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); }} className="text-left">
-          <StatCard title="Workloads" value={audit.summary.unique_workloads} color="purple" />
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); }} className="text-left text-sm text-muted hover:text-foreground">
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.unique_workloads}</div>Workloads
         </button>
-        {verify && <StatCard title="Verified" value={verify.verified} color="green" icon={<ShieldCheck size={18} />} />}
-        {verify && (
-          <StatCard title="Tampered" value={verify.tampered} color={verify.tampered > 0 ? 'red' : 'blue'} />
-        )}
-      </div>
+        {verify ? (
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{verify.verified}</div>Verified</div>
+        ) : null}
+        {verify ? (
+          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{verify.tampered}</div>Tampered</div>
+        ) : null}
       </section>
 
       {verify && (
