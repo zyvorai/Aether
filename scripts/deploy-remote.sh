@@ -152,6 +152,12 @@ spec:
 fi
 AETHER_API_KEY="${AETHER_API_KEY:-}"
 AETHER_LOG_FORMAT="${AETHER_LOG_FORMAT:-json}"
+# Kubernetes always injects HOSTNAME=<pod name> into every container, which
+# beats our own hostname-detection fallback chain in src/api/handlers.rs and
+# hides the actual machine (a pod name changes on every rollout). Default
+# AETHER_ENVIRONMENT_NAME to the deploy target so the dashboard's "which
+# machine" badge stays meaningful across redeploys.
+AETHER_ENVIRONMENT_NAME="${AETHER_ENVIRONMENT_NAME:-${HOST}}"
 SKIP_EXT_HEALTH="${AETHER_SKIP_EXTERNAL_HEALTH:-0}"
 
 info() { aether_ok "$*"; }
@@ -471,6 +477,8 @@ spec:
         env:
         - name: AETHER_LOG_FORMAT
           value: '${AETHER_LOG_FORMAT}'
+        - name: AETHER_ENVIRONMENT_NAME
+          value: '${AETHER_ENVIRONMENT_NAME}'
         - name: RUST_LOG
           value: info
 ${AETHER_MANIFEST_EXTRA_ENV_YAML}
