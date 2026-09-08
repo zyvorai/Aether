@@ -133,6 +133,19 @@ export default function WorkloadDetail({
   const clusterResourcePath = !isAetherManaged && workload.cluster && workload.namespace && workload.kind
     ? `/cluster/resource?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`
     : undefined;
+  // Aether-managed Kubernetes/KubeVirt workloads are real cluster resources too (a
+  // Deployment Aether created is indistinguishable from one anyone else created) — the
+  // generic cluster-resource lookup resolves real pod names via label selector instead of
+  // assuming `workload.name` IS the pod name (only true for Podman, where the container
+  // name and workload name are literally the same thing). Scoped to the exec pod-picker
+  // only — deliberately not merged into `clusterResourcePath` above, which also drives the
+  // discovered-resource manifest/replicas/events UI that hasn't been vetted for this case.
+  const execClusterResourcePath = isAetherManaged && workload.cluster && workload.namespace && workload.kind && kindSupportsShell(workload.kind)
+    ? `/cluster/resource?cluster=${encodeURIComponent(workload.cluster)}&namespace=${encodeURIComponent(workload.namespace)}&kind=${encodeURIComponent(workload.kind)}&name=${encodeURIComponent(clusterResourceName)}`
+    : undefined;
+  /** Can resolve real backing pod(s) for the exec pod-picker — discovered workloads, or
+   * Aether-managed Kubernetes/KubeVirt workloads now that they carry cluster/namespace/kind. */
+  const canResolveClusterPods = (canShellDiscovered && Boolean(clusterResourcePath)) || (canShellManaged && Boolean(execClusterResourcePath));
   const [activeTab, setActiveTab] = useState<DetailTab>(initialTab);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
@@ -293,22 +306,29 @@ export default function WorkloadDetail({
     async function resolvePods(soft: boolean) {
       if (!soft) setShellResolving(true);
       let pods: Array<{ name: string; phase: string; containers: string[] }> = [];
-      if (canShellDiscovered && workload.kind !== 'Pod' && clusterResourcePath) {
-        const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
+      // Discovered workloads resolve pods via the cluster-resource endpoint and also
+      // populate `clusterDetail` (drives the manifest/labels/replicas panels elsewhere).
+      // Aether-managed kube/kubevirt workloads resolve pods through the same endpoint
+      // (label-selector based, works regardless of who created the resource — see
+      // `execClusterResourcePath`) but deliberately skip `setClusterDetail`, since that
+      // state also feeds discovered-resource-only UI not vetted for the aether-managed case.
+      const resourcePath = canShellDiscovered ? clusterResourcePath : execClusterResourcePath;
+      if (canResolveClusterPods && workload.kind !== 'Pod' && resourcePath) {
+        const detail = await apiFetch<ClusterResourceDetail>(resourcePath);
         if (cancelled) return;
         if (detail) {
-          setClusterDetail(detail);
+          if (canShellDiscovered) setClusterDetail(detail);
           pods = (detail.pods ?? []).map((pod) => ({
             name: pod.name,
             phase: pod.phase,
             containers: pod.containers ?? [],
           }));
         }
-      } else if (canShellDiscovered && workload.kind === 'Pod' && clusterResourcePath) {
-        const detail = await apiFetch<ClusterResourceDetail>(clusterResourcePath);
+      } else if (canResolveClusterPods && workload.kind === 'Pod' && resourcePath) {
+        const detail = await apiFetch<ClusterResourceDetail>(resourcePath);
         if (cancelled) return;
         if (detail) {
-          setClusterDetail(detail);
+          if (canShellDiscovered) setClusterDetail(detail);
           const match = detail.pods.find((pod) => pod.name === clusterResourceName) ?? detail.pods[0];
           if (match) {
             pods = [{ name: match.name, phase: match.phase, containers: match.containers ?? [] }];
@@ -394,8 +414,10 @@ export default function WorkloadDetail({
   }, [
     shellOpen,
     canShellDiscovered,
+    canResolveClusterPods,
     clusterResourceName,
     clusterResourcePath,
+    execClusterResourcePath,
     workload.kind,
     workload.cluster,
     workload.namespace,
