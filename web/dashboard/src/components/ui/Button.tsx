@@ -10,7 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    'rounded-[var(--radius-pill)] text-white bg-primary border border-primary ' +
+    'rounded-[var(--radius-pill)] text-[var(--primary-foreground)] bg-primary border border-primary ' +
     'hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-accent)] ' +
     'active:translate-y-0 active:scale-[0.98] transition-all',
   secondary:

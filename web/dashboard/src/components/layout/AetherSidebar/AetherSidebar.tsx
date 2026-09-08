@@ -214,11 +214,11 @@ export default function AetherSidebar({
           onClick={() => handleNavigate('zyra')}
           title="Ask Zyra"
           className="flex w-full items-center gap-2.5 rounded-[var(--radius-lg)] px-2.5 py-2 text-left transition-colors hover:bg-hover"
-          style={{ background: 'linear-gradient(135deg, rgba(168,98,234,.16), rgba(10,132,255,.14))' }}
+          style={{ background: 'linear-gradient(135deg, rgba(168,98,234,.16), rgba(249,115,22,.14))' }}
         >
           <span
             className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-white"
-            style={{ background: 'linear-gradient(135deg, #a862ea, #0a84ff)' }}
+            style={{ background: 'linear-gradient(135deg, #a862ea, #f97316)' }}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
           </span>

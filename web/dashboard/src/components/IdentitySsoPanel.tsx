@@ -157,14 +157,14 @@ export default function IdentitySsoPanel() {
           <div className="mt-4 flex flex-wrap gap-2">
             <a
               href={settings.saml.metadata_path}
-              className="login-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
               data-testid="saml-metadata-download"
             >
               Download SP metadata
             </a>
             <button
               type="button"
-              className="login-btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
               data-testid="saml-metadata-copy"
               onClick={() => void copyToClipboard(metadataUrl)}
             >

@@ -429,7 +429,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
                 setPlacementPlan(res.success ? (res.data as FederationPlan) : null);
                 setPlacementLoading(false);
               }}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm text-white disabled:opacity-50"
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm text-[var(--primary-foreground)] disabled:opacity-50"
             >
               {placementLoading ? 'Planning…' : 'Plan for focused workload'}
             </button>

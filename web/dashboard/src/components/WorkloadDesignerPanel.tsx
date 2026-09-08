@@ -125,7 +125,7 @@ export default function WorkloadDesignerPanel() {
           type="button"
           disabled={!prompt.trim()}
           onClick={() => setSpec(generateSpec(prompt))}
-          className="mt-4 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+          className="mt-4 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] hover:bg-primary/90 disabled:opacity-50"
           data-testid="workload-designer-generate"
         >
           Generate spec

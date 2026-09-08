@@ -1365,7 +1365,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               type="button"
               onClick={() => migrateModal && migrateTarget && handleMigrate(migrateModal, migrateTarget, migrateStrategy)}
               disabled={actionLoading !== null}
-              className="w-full py-3 bg-primary hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-white"
+              className="w-full py-3 bg-primary hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-[var(--primary-foreground)]"
             >
               {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
             </button>
