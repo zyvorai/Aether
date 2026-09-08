@@ -1,15 +1,16 @@
 # Licensing model (draft)
 
-**All Zyvor product code is proprietary.** There is no open-source (Apache, MIT, LGPL, or similar) distribution of PacketWolf, Ragnarok, Aether, HyperSDK, or GuestKit. Access is by written agreement or the deploy EULA in [LICENSE](../../LICENSE).
+**Aether-core is the one exception to an otherwise all-proprietary lineup.** Since 2026 the Aether orchestration engine (CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0, open source — see [LICENSE](../../LICENSE). Everything else — PacketWolf, Ragnarok (including Aether's own confidential-computing features, implemented in `src/ragnarok/` inside the Aether repo but licensed separately), HyperSDK, and GuestKit — remains proprietary with no open-source (Apache, MIT, LGPL, or similar) distribution. Access to the proprietary products is by written agreement or the applicable EULA.
 
 ## License types
 
 | Layer | License | Products |
 |-------|---------|----------|
-| Self-hosted / binaries | Proprietary EULA | PacketWolf, Ragnarok, Aether, GuestKit, HyperSDK tooling |
-| Enterprise subscription | MSA + ELA + Order Form | Full feature set per tier |
+| Open source | Apache License 2.0 | Aether-core |
+| Self-hosted / binaries | Proprietary EULA | PacketWolf, Ragnarok (incl. Aether confidential-computing), GuestKit, HyperSDK tooling |
+| Enterprise subscription | MSA + ELA + Order Form | Full feature set per tier, incl. Aether Enterprise (confidential computing) |
 | Hosted SaaS (if offered) | Proprietary + MSA | zyvor.dev cloud |
-| Branding | Trademark policy | All product names |
+| Branding | Trademark policy | All product names, incl. "Aether"/"Zyvor" — the Apache 2.0 grant does not include trademark rights |
 | AI models / rules / automation packs | Commercial | NetPredator intelligence, remediation |
 
 Third-party libraries used in builds (e.g., Rust crates) remain subject to **their** licenses; that does not make Zyvor’s product source or binaries open source.

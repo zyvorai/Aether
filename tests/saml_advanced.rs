@@ -1,4 +1,5 @@
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
 use aether::saml_c14n::{canonicalize, EXC_C14N, INCLUSIVE_C14N};
 

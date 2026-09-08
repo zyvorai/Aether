@@ -1,6 +1,5 @@
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
-// Proprietary software — see LICENSE in the repository root.
-// https://zyvor.dev · info@zyvor.dev
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
 import { ExternalLink, Hexagon } from 'lucide-react';
 import { ZYVOR_URL, ZYVOR_BRAND, ZYVOR_COPY, ZYVOR_LINE } from './ZyvorBrand';
@@ -91,7 +90,8 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
             {ZYVOR_LINE}
           </span>
           <br />
-          Proprietary software. Redistribution and use are governed by the repository LICENSE.
+          Open source under the Apache License, Version 2.0 — see the repository LICENSE. Confidential-computing
+          (Ragnarok) features remain proprietary.
         </p>
       </div>
 

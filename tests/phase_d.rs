@@ -1,4 +1,5 @@
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
 use aether::hosted::keys::TenantKeyStore;
 use aether::hosted::metering::UsageMeter;

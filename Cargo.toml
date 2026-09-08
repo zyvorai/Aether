@@ -4,7 +4,10 @@ version = "0.3.0"
 edition = "2021"
 authors = ["ZyvorAI Labs Private Limited <ssahani@gmail.com>"]
 description = "Universal runtime control plane - One spec, three runtimes (Container, Kubernetes, KubeVirt)"
-license = "LicenseRef-Zyvor-Proprietary"
+# Apache-2.0 covers this crate except src/ragnarok/, which stays proprietary
+# (see LICENSE, NOTICE, src/ragnarok/PROPRIETARY.md — not expressible in a
+# single SPDX field since it's a per-directory exception).
+license = "Apache-2.0"
 build = "build.rs"
 
 [dependencies]

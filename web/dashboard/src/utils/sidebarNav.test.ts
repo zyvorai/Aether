@@ -1,4 +1,5 @@
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it } from 'vitest';
 import { ALL_SIDEBAR_ITEMS, SIDEBAR_PRIMARY, SIDEBAR_SECTIONS } from './sidebarNav';

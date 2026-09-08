@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "macOS native shell for Aether"
 authors = ["ZyvorAI Labs"]
 edition = "2021"
+license = "Apache-2.0"
 
 [lib]
 name = "aether_macos_lib"

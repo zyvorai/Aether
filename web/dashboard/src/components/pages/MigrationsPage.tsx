@@ -1,6 +1,7 @@
-import { withAuroraPage } from '../layout/AuroraPage';
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
+import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import SectionHubPage from '../SectionHubPage';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';

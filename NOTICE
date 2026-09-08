@@ -1,0 +1,30 @@
+Aether
+Copyright 2026 ZyvorAI Labs Private Limited
+
+This product includes software developed by ZyvorAI Labs Private Limited
+(https://zyvor.dev), licensed under the Apache License, Version 2.0 — see
+the LICENSE file for the full text and for the scope of this license
+(it does not cover `src/ragnarok/`, which remains proprietary; see
+`src/ragnarok/PROPRIETARY.md`).
+
+------------------------------------------------------------------------------
+Third-party attributions
+------------------------------------------------------------------------------
+
+This product depends on a large number of third-party open-source
+libraries (see Cargo.toml / Cargo.lock for the Rust dependency tree and
+web/dashboard/package.json / package-lock.json for the dashboard's npm
+dependency tree). The overwhelming majority are MIT, Apache-2.0, BSD-3-Clause,
+or ISC licensed, which impose no obligations beyond retaining their own
+license text.
+
+One dependency is licensed under a weak-copyleft (file-level) license and is
+called out explicitly rather than lumped in with the rest:
+
+  - `colored` (Rust crate, terminal color output) — Mozilla Public License 2.0.
+    Used unmodified as a linked dependency; MPL-2.0's file-level copyleft
+    applies only to modifications of MPL-licensed files themselves, not to
+    this project's own source, which is unaffected.
+
+No GNU GPL, LGPL, AGPL, or SSPL licensed dependencies are used anywhere in
+this project.

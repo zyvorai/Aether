@@ -1,8 +1,7 @@
-import AuroraPage from '../layout/AuroraPage';
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
-// Proprietary software — see LICENSE in the repository root.
-// https://zyvor.dev · info@zyvor.dev
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
+import AuroraPage from '../layout/AuroraPage';
 import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List } from 'lucide-react';

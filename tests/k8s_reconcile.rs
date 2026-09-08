@@ -1,3 +1,6 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
+
 //! Integration tests for Kubernetes ancillary reconcile helpers.
 
 use aether::adapters::kube_reconcile::managed_rbac_names;

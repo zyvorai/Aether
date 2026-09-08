@@ -1,8 +1,7 @@
-import { withAuroraPage } from '../layout/AuroraPage';
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
-// Proprietary software — see LICENSE in the repository root.
-// https://zyvor.dev · info@zyvor.dev
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
 
+import { withAuroraPage } from '../layout/AuroraPage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Inbox, RotateCcw, Archive } from 'lucide-react';
 import { apiFetchSettled, apiPost } from '../../utils/api';

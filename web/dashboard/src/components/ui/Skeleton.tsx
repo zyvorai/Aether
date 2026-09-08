@@ -1,3 +1,6 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
+
 import { cn } from '../../lib/cn';
 
 export function SkeletonLine({ className }: { className?: string }) {

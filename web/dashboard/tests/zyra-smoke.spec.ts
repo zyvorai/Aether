@@ -1,3 +1,6 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
+
 import { test, expect } from './fixtures';
 
 test.describe('Zyra smoke', () => {

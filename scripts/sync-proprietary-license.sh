@@ -15,8 +15,12 @@ if [ ! -f "$SOURCE_LICENSE" ]; then
 fi
 
 # Ssahani-owned repos under tt/ (exclude third-party mirrors and guestkit).
+# NOTE: Aether is deliberately NOT in this list as of 2026 — Aether-core went
+# Apache 2.0 and has its own LICENSE (see Aether/LICENSE); this script must not
+# overwrite it with the PacketWolf proprietary EULA. src/ragnarok/ within Aether
+# stays proprietary but keeps its own per-file headers (see
+# Aether/src/ragnarok/PROPRIETARY.md) rather than a copied root LICENSE.
 REPOS=(
-    Aether
     cockpit
     forge
     hyper2kvm-

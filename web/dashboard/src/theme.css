@@ -1,9 +1,8 @@
-/* Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved. */
-/* Proprietary software — see LICENSE in the repository root. */
-/* https://zyvor.dev · info@zyvor.dev */
+/* Copyright 2026 ZyvorAI Labs Private Limited */
+/* SPDX-License-Identifier: Apache-2.0 */
 
 /*
-  Aurora Apple.com visual system + Apple blue accent.
+  Aurora Apple.com visual system + Zyvor orange accent.
   Source: Aurora apps/web/globals.css + zyvor-web layout tokens
   Light-first. Dark via html.dark-theme or data-theme="dark".
 */

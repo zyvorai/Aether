@@ -272,8 +272,7 @@ aether/
 │   ├── adapters/         # Runtime adapters
 │   │   ├── podman.rs
 │   │   ├── kube.rs
-│   │   ├── kubevirt.rs
-│   │   └── metal.rs
+│   │   └── kubevirt.rs
 │   └── ui/               # TUI components
 │       ├── app.rs        # App state (incl. search/filter)
 │       ├── dashboard.rs  # Dashboard screen
@@ -447,7 +446,9 @@ Include:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same terms as the project (Proprietary (HyperSDK)).
+Aether-core is licensed under the Apache License, Version 2.0 — see [LICENSE](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
+
+`src/ragnarok/` (confidential computing) is proprietary and outside the scope of public contributions — see [src/ragnarok/PROPRIETARY.md](src/ragnarok/PROPRIETARY.md). Please don't send PRs touching that directory; contact licensing@zyvor.dev instead.
 
 ## Questions?
 

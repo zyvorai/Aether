@@ -1,9 +1,8 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: Apache-2.0
+
 import { withAuroraPage } from '../layout/AuroraPage';
 import SectionHubPage from '../SectionHubPage';
-// Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
-// Proprietary software — see LICENSE in the repository root.
-// https://zyvor.dev · info@zyvor.dev
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Inbox, DollarSign } from 'lucide-react';

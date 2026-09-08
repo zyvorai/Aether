@@ -163,4 +163,8 @@ See project docs for CI, testing, and contribution guidelines. Historical build 
 
 ## License
 
-See [LICENSE](LICENSE) or project-specific licensing files in `docs/legal/`.
+Apache License, Version 2.0 — see [LICENSE](LICENSE). This covers everything in this
+repository except `src/ragnarok/` (confidential computing: TEE attestation, sovereign
+policy, vault/KBS secret release), ZyvorAI Labs' commercial add-on, which remains
+proprietary — see [src/ragnarok/PROPRIETARY.md](src/ragnarok/PROPRIETARY.md) and
+[docs/legal/](docs/legal/) for licensing/commercial terms.
