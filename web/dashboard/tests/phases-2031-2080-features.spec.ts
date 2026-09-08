@@ -73,6 +73,7 @@ test.describe('Phases 2031–2080 features', () => {
     );
     await page.goto('/workloads?workload=web');
     await expect(page.getByTestId('workloads-context-banner')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('workloads-links-more').click();
     await page.getByTestId('workloads-context-editor-link').click();
     await expect(page).toHaveURL(/\/editor\?workload=web/, { timeout: 10_000 });
   });

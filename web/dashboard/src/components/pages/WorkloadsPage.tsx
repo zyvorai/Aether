@@ -4,10 +4,10 @@ import AuroraPage from '../layout/AuroraPage';
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useRef, type MouseEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
-import { useQueryParam, pathWithQuery } from '../../utils/urlState';
+import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,6 +26,7 @@ import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../
 import { getPinnedWorkloads, togglePinnedWorkload } from '../../utils/pinnedWorkloads';
 import { downloadTextFile, workloadsToCsv } from '../../utils/workloadCsv';
 import Badge, { RuntimeBadge } from '../Badge';
+import StatRibbon from '../StatRibbon';
 import SegmentedControl from '../ui/SegmentedControl';
 import { categoricalDotClass } from '../../utils/categoricalColor';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
@@ -736,17 +737,17 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   ];
 
   return (
-    <AuroraPage
-      view="workloads"
-      stats={[
-        { label: 'Total', value: workloads.length },
-        { label: 'Running', value: runningCount },
-        { label: 'Aether', value: aetherManagedCount },
-        { label: 'Discovered', value: clusterDiscoveredCount },
-      ]}
-      statsTestId="workloads-stats"
-    >
+    <AuroraPage view="workloads">
     <div className="overflow-x-hidden space-y-10">
+      <StatRibbon
+        testId="workloads-stats"
+        items={[
+          { label: 'Total', value: workloads.length },
+          { label: 'Running', value: runningCount, tone: 'emerald' },
+          { label: 'Aether', value: aetherManagedCount, tone: 'sky' },
+          { label: 'Discovered', value: clusterDiscoveredCount },
+        ]}
+      />
       <PageToolbar
         search={search}
         onSearchChange={setSearch}
@@ -933,95 +934,19 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             showDrift
             showGitops
             showMetrics
+            extraLinks={[
+              { label: 'Platform →', view: 'platform', testId: 'workloads-platform-link', query: { workload: workloadParam.trim() } },
+              { label: 'Clusters →', view: 'clusters', testId: 'workloads-clusters-link', query: { workload: workloadParam.trim() } },
+              { label: 'OpenAPI →', view: 'openapi', testId: 'workloads-openapi-link', query: { workload: workloadParam.trim() } },
+              { label: 'RBAC →', view: 'rbac', testId: 'workloads-rbac-link', query: { workload: workloadParam.trim() } },
+              { label: 'Policy →', view: 'policy', testId: 'workloads-context-policy-link', query: { workload: workloadParam.trim() } },
+              { label: 'Secrets →', view: 'secrets', testId: 'workloads-context-secrets-link', query: { workload: workloadParam.trim() } },
+              { label: 'Editor →', view: 'editor', testId: 'workloads-context-editor-link', query: { workload: workloadParam.trim() } },
+              { label: 'Copilot →', view: 'zyra', testId: 'workloads-context-copilot-link', query: { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` } },
+              { label: 'Compose →', view: 'compose', testId: 'workloads-context-compose-link', query: { workload: workloadParam.trim() } },
+              { label: 'Dependencies →', view: 'deps', testId: 'workloads-context-deps-link', query: { workload: workloadParam.trim() } },
+            ]}
           />
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('platform'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-platform-link"
-          >
-            Platform →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('clusters'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-clusters-link"
-          >
-            Clusters →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('openapi'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-openapi-link"
-          >
-            OpenAPI →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('rbac'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-rbac-link"
-          >
-            RBAC →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('policy'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-policy-link"
-          >
-            Policy →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('secrets'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-secrets-link"
-          >
-            Secrets →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('editor'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-editor-link"
-          >
-            Editor →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('zyra'), { workload: workloadParam.trim(), q: `Summarize ${workloadParam.trim()}` })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-copilot-link"
-          >
-            Copilot →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('compose'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-compose-link"
-          >
-            Compose →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('deps'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-deps-link"
-          >
-            Dependencies →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('gitops'), { workload: workloadParam.trim() })}
-            className="text-primary hover:underline"
-            data-testid="workloads-context-gitops-link"
-          >
-            GitOps →
-          </Link>
         </WorkloadContextBanner>
       ) : null}
 

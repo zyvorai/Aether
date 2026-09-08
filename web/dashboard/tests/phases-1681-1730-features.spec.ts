@@ -64,6 +64,7 @@ test.describe('Phases 1681–1730 features', () => {
     );
     await page.goto('/platform?workload=web');
     await expect(page.getByTestId('platform-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('platform-links-more').click();
     await page.getByTestId('platform-clusters-link').click();
     await expect(page).toHaveURL(/\/clusters\?workload=web/, { timeout: 10_000 });
   });

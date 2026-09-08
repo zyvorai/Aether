@@ -18,6 +18,7 @@ test.describe('Phases 2081–2130 features', () => {
   test('phase 2086: platform editor link', async ({ page }) => {
     await page.goto('/platform?workload=web');
     await expect(page.getByTestId('platform-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('platform-links-more').click();
     await page.getByTestId('platform-editor-link').click();
     await expect(page).toHaveURL(/\/editor\?workload=web/, { timeout: 10_000 });
   });
@@ -49,6 +50,7 @@ test.describe('Phases 2081–2130 features', () => {
     );
     await page.goto('/workloads?workload=web');
     await expect(page.getByTestId('workloads-context-banner')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('workloads-links-more').click();
     await page.getByTestId('workloads-context-gitops-link').click();
     await expect(page).toHaveURL(/\/gitops\?workload=web/, { timeout: 10_000 });
   });
@@ -82,6 +84,7 @@ test.describe('Phases 2081–2130 features', () => {
     );
     await page.goto('/drift?workload=web');
     await expect(page.getByTestId('drift-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('drift-links-more').click();
     await page.getByTestId('drift-context-openapi-link').click();
     await expect(page).toHaveURL(/\/openapi\?workload=web/, { timeout: 10_000 });
   });

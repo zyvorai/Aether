@@ -35,6 +35,18 @@ pub struct WorkloadState {
     /// release the volumes via Atlas on delete.
     #[serde(default)]
     pub atlas_volume_ids: Vec<String>,
+    /// Kubernetes namespace this workload was deployed into (kube/kubevirt runtimes only).
+    /// Populated at deploy time from `AETHER_NAMESPACE` (or the `"default"` fallback) so the
+    /// dashboard's logs/exec panel can address the right pod for Aether-managed workloads.
+    #[serde(default)]
+    pub namespace: Option<String>,
+    /// Kubeconfig context this workload was deployed into (kube/kubevirt runtimes only).
+    #[serde(default)]
+    pub cluster_context: Option<String>,
+    /// Kubernetes resource kind (Deployment/StatefulSet/.../VirtualMachine) for kube/kubevirt
+    /// runtimes; `None` for Podman/Docker, which have no such concept.
+    #[serde(default)]
+    pub k8s_kind: Option<String>,
 }
 
 impl WorkloadState {
@@ -51,7 +63,24 @@ impl WorkloadState {
             os_version: None,
             node_labels: Vec::new(),
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         }
+    }
+
+    /// Attach the resolved Kubernetes namespace/context/resource-kind this workload runs
+    /// under (kube/kubevirt runtimes only — leave unset for Podman/Docker).
+    pub fn with_cluster_info(
+        mut self,
+        namespace: Option<String>,
+        cluster_context: Option<String>,
+        k8s_kind: Option<String>,
+    ) -> Self {
+        self.namespace = namespace;
+        self.cluster_context = cluster_context;
+        self.k8s_kind = k8s_kind;
+        self
     }
 
     /// Return a copy migrated to a new runtime/instance, preserving `created_at`.
@@ -66,6 +95,9 @@ impl WorkloadState {
             os_version: self.os_version.clone(),
             node_labels: self.node_labels.clone(),
             atlas_volume_ids: self.atlas_volume_ids.clone(),
+            namespace: self.namespace.clone(),
+            cluster_context: self.cluster_context.clone(),
+            k8s_kind: self.k8s_kind.clone(),
         }
     }
 }
@@ -200,6 +232,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         }
     }
 
@@ -220,6 +255,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         }
     }
 
@@ -279,6 +317,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         };
         assert_eq!(state.name, "my-service");
         assert_eq!(state.runtime, RuntimeKind::Kubernetes);
@@ -541,6 +582,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         };
 
         let mut store = StateStore::new();

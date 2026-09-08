@@ -85,6 +85,7 @@ test.describe('Phases 2181–2230 features', () => {
 
   test('phase 2186: gitops hosted link', async ({ page }) => {
     await page.goto('/gitops?workload=web');
+    await page.getByTestId('gitops-links-more').click();
     await followTestLink(page, 'gitops-context-hosted-link', /\/hosted/);
   });
 });

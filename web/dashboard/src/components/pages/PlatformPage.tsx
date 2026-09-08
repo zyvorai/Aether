@@ -148,95 +148,20 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
             showDrift
             showGitops
             showMetrics
+            extraLinks={[
+              { label: 'Clusters →', view: 'clusters', testId: 'platform-clusters-link', query: { workload: focusedWorkload } },
+              { label: 'RBAC →', view: 'rbac', testId: 'platform-rbac-link', query: { workload: focusedWorkload } },
+              { label: 'OpenAPI →', view: 'openapi', testId: 'platform-openapi-link', query: { workload: focusedWorkload } },
+              { label: 'Zyra →', view: 'zyra', testId: 'platform-copilot-link', query: { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` } },
+              { label: 'Policy →', view: 'policy', testId: 'platform-policy-link', query: { workload: focusedWorkload } },
+              { label: 'Intelligence →', view: 'intelligence', testId: 'platform-intelligence-link', query: { workload: focusedWorkload, tab: 'predictions' } },
+              { label: 'Secrets →', view: 'secrets', testId: 'platform-secrets-link', query: { workload: focusedWorkload } },
+              { label: 'Fleet →', view: 'fleet', testId: 'platform-fleet-link', query: { workload: focusedWorkload } },
+              { label: 'Hosted SaaS →', view: 'hosted', testId: 'platform-context-hosted-link', query: {} },
+              { label: 'Editor →', view: 'editor', testId: 'platform-editor-link', query: { workload: focusedWorkload } },
+              { label: 'Dependencies →', view: 'deps', testId: 'platform-deps-link', query: { workload: focusedWorkload } },
+            ]}
           />
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('clusters'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-clusters-link"
-          >
-            Clusters →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-rbac-link"
-          >
-            RBAC →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('openapi'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-openapi-link"
-          >
-            OpenAPI →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `Platform guidance for ${focusedWorkload}` })}
-            className="text-primary hover:underline"
-            data-testid="platform-copilot-link"
-          >
-            Zyra →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-policy-link"
-          >
-            Policy →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('intelligence'), { workload: focusedWorkload, tab: 'predictions' })}
-            className="text-primary hover:underline"
-            data-testid="platform-intelligence-link"
-          >
-            Intelligence →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-secrets-link"
-          >
-            Secrets →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('fleet'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-fleet-link"
-          >
-            Fleet →
-          </Link>
-          {' · '}
-          <Link
-            to={viewToPath('hosted')}
-            className="text-primary hover:underline"
-            data-testid="platform-context-hosted-link"
-          >
-            Hosted SaaS →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-editor-link"
-          >
-            Editor →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('deps'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="platform-deps-link"
-          >
-            Dependencies →
-          </Link>
         </WorkloadContextBanner>
       ) : null}
 

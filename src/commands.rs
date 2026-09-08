@@ -3421,6 +3421,9 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
             os_version: snapshot_ws.os_version.clone(),
             node_labels: snapshot_ws.node_labels.clone(),
             atlas_volume_ids: snapshot_ws.atlas_volume_ids.clone(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         },
     );
     state.save(&StateStore::default_path())?;
@@ -6631,6 +6634,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         };
 
         store.upsert("web".to_string(), ws);
@@ -6668,6 +6674,9 @@ mod tests {
                 os_version: None,
                 node_labels: vec![],
                 atlas_volume_ids: Vec::new(),
+                namespace: None,
+                cluster_context: None,
+                k8s_kind: None,
             },
         );
         store.save(&path).unwrap();
@@ -7054,6 +7063,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         }
     }
 

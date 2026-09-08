@@ -37,6 +37,7 @@ test.describe('Phases 1831–1880 features', () => {
     );
     await page.goto('/drift?workload=web');
     await expect(page.getByTestId('drift-workload-context')).toContainText('web', { timeout: 15_000 });
+    await page.getByTestId('drift-workload-context').getByTestId('drift-links-more').click();
     await page.getByTestId('drift-workload-context').getByTestId('drift-platform-link').click();
     await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
   });

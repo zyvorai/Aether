@@ -411,79 +411,23 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
           workload={workloadFocus}
           description="GitOps context for workload"
         >
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="gitops" showDrift showAudit showMetrics />
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-platform-link"
-          >
-            Platform →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-fleet-link"
-          >
-            Fleet →
-          </Link>
-          {' · '}
-          <Link
-            to={viewToPath('hosted')}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-hosted-link"
-          >
-            Hosted SaaS →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-openapi-link"
-          >
-            OpenAPI →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-policy-link"
-          >
-            Policy →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-secrets-link"
-          >
-            Secrets →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-editor-link"
-          >
-            Editor →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-compose-link"
-          >
-            Compose →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="gitops-context-fleet-link"
-          >
-            Fleet →
-          </Link>
+          <WorkloadScopedCrossLinks
+            workload={workloadFocus}
+            prefix="gitops"
+            showDrift
+            showAudit
+            showMetrics
+            extraLinks={[
+              { label: 'Platform →', view: 'platform', testId: 'gitops-platform-link', query: { workload: workloadFocus } },
+              { label: 'Fleet →', view: 'fleet', testId: 'gitops-context-fleet-link', query: { workload: workloadFocus } },
+              { label: 'Hosted SaaS →', view: 'hosted', testId: 'gitops-context-hosted-link', query: {} },
+              { label: 'OpenAPI →', view: 'openapi', testId: 'gitops-openapi-link', query: { workload: workloadFocus } },
+              { label: 'Policy →', view: 'policy', testId: 'gitops-context-policy-link', query: { workload: workloadFocus } },
+              { label: 'Secrets →', view: 'secrets', testId: 'gitops-secrets-link', query: { workload: workloadFocus } },
+              { label: 'Editor →', view: 'editor', testId: 'gitops-context-editor-link', query: { workload: workloadFocus } },
+              { label: 'Compose →', view: 'compose', testId: 'gitops-context-compose-link', query: { workload: workloadFocus } },
+            ]}
+          />
         </WorkloadContextBanner>
       ) : null}
 

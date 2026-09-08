@@ -32,6 +32,7 @@ test.describe('Phases 1881–1930 features', () => {
     );
     await page.goto('/gitops?workload=web');
     await expect(page.getByTestId('gitops-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('gitops-workload-context').getByTestId('gitops-links-more').click();
     await page.getByTestId('gitops-workload-context').getByTestId('gitops-context-policy-link').click();
     await expect(page).toHaveURL(/\/policy\?workload=web/, { timeout: 10_000 });
   });

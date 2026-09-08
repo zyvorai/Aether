@@ -4,7 +4,7 @@ import { withAuroraPage } from '../layout/AuroraPage';
 // https://zyvor.dev · info@zyvor.dev
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { Inbox } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -15,6 +15,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import Badge, { SeverityBadge } from '../Badge';
+import StatRibbon from '../StatRibbon';
 import type { WorkloadResponse, DriftReport, DriftReconcileResult, FleetDriftSummary } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -186,12 +187,16 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
       />
 
       {fleetDrift ? (
-        <section className="glass mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 sm:p-8" data-testid="fleet-drift-summary">
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Tracked</div><div className="text-lg font-semibold text-foreground">{fleetDrift.total_workloads}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Drifted</div><div className="text-lg font-semibold text-warning">{fleetDrift.drifted}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Critical</div><div className="text-lg font-semibold text-danger">{fleetDrift.critical}</div></div>
-          <div className="glass py-3 px-4"><div className="text-xs text-subtle">Warnings</div><div className="text-lg font-semibold text-warning">{fleetDrift.warning}</div></div>
-        </section>
+        <StatRibbon
+          testId="fleet-drift-summary"
+          className="mb-6"
+          items={[
+            { label: 'Tracked', value: fleetDrift.total_workloads },
+            { label: 'Drifted', value: fleetDrift.drifted, tone: 'amber' },
+            { label: 'Critical', value: fleetDrift.critical, tone: 'red' },
+            { label: 'Warnings', value: fleetDrift.warning, tone: 'amber' },
+          ]}
+        />
       ) : null}
 
       <div className="mb-4">
@@ -219,63 +224,23 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
           openTestId="drift-open-workload"
           description="Drift context"
         >
-          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="drift" eventsCategory="drift" showGitops showAudit showMetrics />
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-platform-link"
-          >
-            Platform →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-policy-link"
-          >
-            Policy →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('compose'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-context-compose-link"
-          >
-            Compose →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('secrets'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-context-secrets-link"
-          >
-            Secrets →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('editor'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-context-editor-link"
-          >
-            Editor →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
-            className="text-primary hover:underline"
-            data-testid="drift-context-openapi-link"
-          >
-            OpenAPI →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` })}
-            className="text-primary hover:underline"
-            data-testid="drift-context-copilot-link"
-          >
-            Copilot →
-          </Link>
+          <WorkloadScopedCrossLinks
+            workload={workloadFocus}
+            prefix="drift"
+            eventsCategory="drift"
+            showGitops
+            showAudit
+            showMetrics
+            extraLinks={[
+              { label: 'Platform →', view: 'platform', testId: 'drift-platform-link', query: { workload: workloadFocus } },
+              { label: 'Policy →', view: 'policy', testId: 'drift-policy-link', query: { workload: workloadFocus } },
+              { label: 'Compose →', view: 'compose', testId: 'drift-context-compose-link', query: { workload: workloadFocus } },
+              { label: 'Secrets →', view: 'secrets', testId: 'drift-context-secrets-link', query: { workload: workloadFocus } },
+              { label: 'Editor →', view: 'editor', testId: 'drift-context-editor-link', query: { workload: workloadFocus } },
+              { label: 'OpenAPI →', view: 'openapi', testId: 'drift-context-openapi-link', query: { workload: workloadFocus } },
+              { label: 'Copilot →', view: 'zyra', testId: 'drift-context-copilot-link', query: { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` } },
+            ]}
+          />
         </WorkloadContextBanner>
       ) : null}
 

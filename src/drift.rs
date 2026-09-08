@@ -732,6 +732,9 @@ mod tests {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         }
     }
 

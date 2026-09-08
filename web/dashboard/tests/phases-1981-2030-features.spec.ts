@@ -18,6 +18,7 @@ test.describe('Phases 1981–2030 features', () => {
   test('phase 1986: platform intelligence link', async ({ page }) => {
     await page.goto('/platform?workload=web');
     await expect(page.getByTestId('platform-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('platform-links-more').click();
     await page.getByTestId('platform-intelligence-link').click();
     await expect(page).toHaveURL(/\/intelligence\?workload=web.*tab=predictions/, { timeout: 10_000 });
   });
@@ -32,6 +33,7 @@ test.describe('Phases 1981–2030 features', () => {
     );
     await page.goto('/gitops?workload=web');
     await expect(page.getByTestId('gitops-workload-context')).toContainText('web', { timeout: 10_000 });
+    await page.getByTestId('gitops-links-more').click();
     await page.getByTestId('gitops-context-editor-link').click();
     await expect(page).toHaveURL(/\/editor\?workload=web/, { timeout: 10_000 });
   });

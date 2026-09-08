@@ -120,6 +120,9 @@ fn test_state_store_operations() {
         os_version: None,
         node_labels: vec![],
         atlas_volume_ids: Vec::new(),
+        namespace: None,
+        cluster_context: None,
+        k8s_kind: None,
     };
 
     state.upsert("test-app".to_string(), workload_state);
@@ -249,6 +252,9 @@ fn test_multiple_workloads_in_state() {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         };
 
         state.upsert(format!("app-{}", i), workload_state);
@@ -340,6 +346,9 @@ fn test_backup_create_list_restore() {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         },
     );
     state.save(&state_path).unwrap();
@@ -434,6 +443,9 @@ fn test_backup_merge() {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         },
     );
     state.save(&state_path).unwrap();
@@ -458,6 +470,9 @@ fn test_backup_merge() {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         },
     );
 
@@ -1149,6 +1164,9 @@ fn test_drift_detection_full_cycle() {
         os_version: None,
         node_labels: vec![],
         atlas_volume_ids: Vec::new(),
+        namespace: None,
+        cluster_context: None,
+        k8s_kind: None,
     };
 
     let detector = DriftDetector::new();
@@ -1338,6 +1356,9 @@ fn test_resources_json_load_save_roundtrip() {
             os_version: None,
             node_labels: vec![],
             atlas_volume_ids: Vec::new(),
+            namespace: None,
+            cluster_context: None,
+            k8s_kind: None,
         },
     );
 

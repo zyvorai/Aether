@@ -983,9 +983,9 @@ pub(crate) async fn list_workloads(
                 status: format!("deployed ({})", w.runtime),
                 created_at: w.created_at.clone(),
                 source: Some("aether".to_string()),
-                cluster: None,
-                namespace: None,
-                kind: None,
+                cluster: w.cluster_context.clone(),
+                namespace: w.namespace.clone(),
+                kind: w.k8s_kind.clone(),
             }
         })
         .collect();
@@ -1165,10 +1165,35 @@ async fn deploy_workload_spec(
         Err(e) => return Err(err_internal(format!("serialize workload spec: {}", e))),
     }
 
+    let (cluster_context, namespace, k8s_kind) = match runtime_kind {
+        RuntimeKind::Kubernetes | RuntimeKind::KubeVirt => {
+            let explicit_context = std::env::var("AETHER_CONTEXT")
+                .ok()
+                .filter(|c| !c.is_empty());
+            let cluster_context = crate::kubecluster::resolve_reachable_cluster(
+                explicit_context.as_deref(),
+            )
+            .await
+            .ok();
+            let namespace = std::env::var("AETHER_NAMESPACE")
+                .ok()
+                .filter(|n| !n.is_empty())
+                .unwrap_or_else(|| "default".to_string());
+            let kind = if runtime_kind == RuntimeKind::KubeVirt {
+                "VirtualMachine".to_string()
+            } else {
+                format!("{:?}", request.spec.resolved_k8s_workload_kind())
+            };
+            (cluster_context, Some(namespace), Some(kind))
+        }
+        _ => (None, None, None),
+    };
+
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
-        WorkloadState::new(name.clone(), runtime_kind, instance, spec_path),
+        WorkloadState::new(name.clone(), runtime_kind, instance, spec_path)
+            .with_cluster_info(namespace, cluster_context, k8s_kind),
     );
 
     if let Err(e) = persist_workload_api(app_state, &state).await {
@@ -1219,9 +1244,9 @@ pub(crate) async fn get_workload(
         status: format!("deployed ({})", workload.runtime),
         created_at: workload.created_at.clone(),
         source: Some("aether".to_string()),
-        cluster: None,
-        namespace: None,
-        kind: None,
+        cluster: workload.cluster_context.clone(),
+        namespace: workload.namespace.clone(),
+        kind: workload.k8s_kind.clone(),
     };
     ok_json(response)
 }
@@ -1348,6 +1373,9 @@ pub(crate) async fn start_workload(
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
             atlas_volume_ids: workload_state.atlas_volume_ids,
+            namespace: workload_state.namespace,
+            cluster_context: workload_state.cluster_context,
+            k8s_kind: workload_state.k8s_kind,
         },
     );
 
@@ -1512,6 +1540,9 @@ pub(crate) async fn update_workload(
             os_version: workload_state.os_version,
             node_labels: workload_state.node_labels,
             atlas_volume_ids: workload_state.atlas_volume_ids,
+            namespace: workload_state.namespace,
+            cluster_context: workload_state.cluster_context,
+            k8s_kind: workload_state.k8s_kind,
         },
     );
     if let Err(e) = persist_workload_api(&app_state, &state).await {

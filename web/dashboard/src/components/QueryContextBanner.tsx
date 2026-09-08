@@ -2,10 +2,19 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
+import type { AppView } from '../types/api';
+
+export interface CrossLink {
+  label: string;
+  view: AppView;
+  testId: string;
+  query?: Record<string, string>;
+}
 
 export type WorkloadCrossLinkOptions = {
   workload: string;
@@ -15,9 +24,13 @@ export type WorkloadCrossLinkOptions = {
   showAudit?: boolean;
   showGitops?: boolean;
   showMetrics?: boolean;
+  /** Additional page-specific links beyond the standard Events/Alerts/Health/Trust set — collapsed behind a "+N more" toggle once the total exceeds the visible cap (see DESIGN.md: "collapse ... quick-link chip walls ... (≤8 links)"). */
+  extraLinks?: CrossLink[];
 };
 
-/** Scoped cross-links for workload context banners (Events / Alerts / Health / Trust + optional ops links). */
+const VISIBLE_LINK_CAP = 5;
+
+/** Scoped cross-links for workload context banners (Events / Alerts / Health / Trust + optional ops/extra links), collapsing beyond DESIGN.md's ≤8-link chip-wall cap. */
 export function WorkloadScopedCrossLinks({
   workload,
   prefix,
@@ -26,94 +39,68 @@ export function WorkloadScopedCrossLinks({
   showAudit = false,
   showGitops = false,
   showMetrics = false,
+  extraLinks = [],
 }: WorkloadCrossLinkOptions) {
+  const [expanded, setExpanded] = useState(false);
   const name = workload.trim();
   if (!name) return null;
 
-  const eventsQuery = eventsCategory
+  const eventsQuery: Record<string, string> = eventsCategory
     ? { workload: name, category: eventsCategory }
     : { workload: name };
 
+  const links: CrossLink[] = [
+    { label: 'Events →', view: 'events', testId: `${prefix}-events-link`, query: eventsQuery },
+    { label: 'Alerts →', view: 'alerts', testId: `${prefix}-alerts-link`, query: { workload: name } },
+    { label: 'Health →', view: 'health', testId: `${prefix}-health-link`, query: { workload: name } },
+    { label: 'Trust →', view: 'workloads', testId: `${prefix}-trust-link`, query: { workload: name, tab: 'trust' } },
+    ...(showDrift ? [{ label: 'Drift →', view: 'drift' as AppView, testId: `${prefix}-drift-link`, query: { workload: name } }] : []),
+    ...(showAudit ? [{ label: 'Audit →', view: 'audit' as AppView, testId: `${prefix}-audit-link`, query: { workload: name } }] : []),
+    ...(showGitops ? [{ label: 'GitOps →', view: 'gitops' as AppView, testId: `${prefix}-gitops-link`, query: { workload: name } }] : []),
+    ...(showMetrics ? [{ label: 'Metrics →', view: 'metrics' as AppView, testId: `${prefix}-metrics-link`, query: { workload: name } }] : []),
+    ...extraLinks,
+  ];
+
+  const visible = expanded ? links : links.slice(0, VISIBLE_LINK_CAP);
+  const hidden = links.length - visible.length;
+
   return (
     <>
-      {' · '}
-      <Link
-        to={pathWithQuery(viewToPath('events'), eventsQuery)}
-        className="text-primary hover:underline"
-        data-testid={`${prefix}-events-link`}
-      >
-        Events →
-      </Link>
-      {' · '}
-      <Link
-        to={pathWithQuery(viewToPath('alerts'), { workload: name })}
-        className="text-primary hover:underline"
-        data-testid={`${prefix}-alerts-link`}
-      >
-        Alerts →
-      </Link>
-      {' · '}
-      <Link
-        to={pathWithQuery(viewToPath('health'), { workload: name })}
-        className="text-primary hover:underline"
-        data-testid={`${prefix}-health-link`}
-      >
-        Health →
-      </Link>
-      {' · '}
-      <Link
-        to={pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'trust' })}
-        className="text-primary hover:underline"
-        data-testid={`${prefix}-trust-link`}
-      >
-        Trust →
-      </Link>
-      {showDrift ? (
-        <>
+      {visible.map((link) => (
+        <span key={link.testId}>
           {' · '}
           <Link
-            to={pathWithQuery(viewToPath('drift'), { workload: name })}
+            to={pathWithQuery(viewToPath(link.view), link.query ?? { workload: name })}
             className="text-primary hover:underline"
-            data-testid={`${prefix}-drift-link`}
+            data-testid={link.testId}
           >
-            Drift →
+            {link.label}
           </Link>
+        </span>
+      ))}
+      {hidden > 0 ? (
+        <>
+          {' · '}
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-0.5 text-primary hover:underline"
+            data-testid={`${prefix}-links-more`}
+          >
+            +{hidden} more <ChevronRight className="h-3 w-3" />
+          </button>
         </>
-      ) : null}
-      {showAudit ? (
+      ) : expanded && links.length > VISIBLE_LINK_CAP ? (
         <>
           {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('audit'), { workload: name })}
-            className="text-primary hover:underline"
-            data-testid={`${prefix}-audit-link`}
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="inline-flex items-center gap-0.5 text-primary hover:underline"
+            data-testid={`${prefix}-links-less`}
           >
-            Audit →
-          </Link>
-        </>
-      ) : null}
-      {showGitops ? (
-        <>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('gitops'), { workload: name })}
-            className="text-primary hover:underline"
-            data-testid={`${prefix}-gitops-link`}
-          >
-            GitOps →
-          </Link>
-        </>
-      ) : null}
-      {showMetrics ? (
-        <>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('metrics'), { workload: name })}
-            className="text-primary hover:underline"
-            data-testid={`${prefix}-metrics-link`}
-          >
-            Metrics →
-          </Link>
+            Show fewer <ChevronDown className="h-3 w-3" />
+          </button>
         </>
       ) : null}
     </>

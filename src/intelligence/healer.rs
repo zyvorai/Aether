@@ -377,6 +377,9 @@ async fn rollback_workload_internal(
             os_version: snap_ws.os_version.clone(),
             node_labels: snap_ws.node_labels.clone(),
             atlas_volume_ids: snap_ws.atlas_volume_ids.clone(),
+            namespace: snap_ws.namespace.clone(),
+            cluster_context: snap_ws.cluster_context.clone(),
+            k8s_kind: snap_ws.k8s_kind.clone(),
         },
     );
     store.save(state_path)?;
