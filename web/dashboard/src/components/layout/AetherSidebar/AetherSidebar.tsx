@@ -157,7 +157,9 @@ export default function AetherSidebar({
     <aside
       className={cn(
         'flex flex-shrink-0 flex-col',
-        mobile ? 'h-full w-72 glass' : 'hidden lg:flex w-64 m-3.5 rounded-[var(--radius-2xl)] glass-fill',
+        mobile
+          ? 'h-full w-72 glass'
+          : 'hidden lg:flex w-64 m-3.5 rounded-[var(--radius-2xl)] glass-fill sticky top-[calc(var(--nav-h)+14px)] self-start h-[calc(100dvh-var(--nav-h)-28px)]',
       )}
       aria-label="Aether navigation"
     >
