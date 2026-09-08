@@ -10,7 +10,6 @@ import {
   Container,
   Eye,
   EyeOff,
-  Hexagon,
   KeyRound,
   Layers,
   Loader2,
@@ -186,15 +185,13 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
       <section className="login-chapter login-hero text-center" aria-label="Aether">
         <div className="relative z-10 flex flex-col items-center">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl glass-fill flex items-center justify-center">
-              <Hexagon className="h-5 w-5 text-primary" strokeWidth={1.6} aria-hidden />
-            </div>
+          <a href={ZYVOR_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3" title="zyvor.dev">
+            <img src="/zyvor-logo.svg" alt="Zyvor" width={40} height={40} className="rounded-xl shrink-0" />
             <div className="text-left">
-              <div className="text-lg font-semibold tracking-tight">Aether</div>
+              <div className="text-lg font-semibold tracking-tight text-foreground">Aether</div>
               <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Universal runtime control plane</div>
             </div>
-          </div>
+          </a>
           {health ? (
             <span
               data-tone="sky"
