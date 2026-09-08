@@ -78,7 +78,7 @@ pub fn build_livelabs_overview() -> LiveLabsOverview {
     LiveLabsOverview {
         generated_at: crate::resources::now_rfc3339(),
         era: "N".into(),
-        feature_count: 10,
+        feature_count: 9,
         labs_live_enabled: labs_live_enabled(),
         kubeconfig_available: kubeconfig_available(),
         features: vec![
@@ -121,11 +121,6 @@ pub fn build_livelabs_overview() -> LiveLabsOverview {
                 142,
                 "Cluster exec E2E",
                 "/api/intelligence/livelabs/cluster-exec",
-            ),
-            feat(
-                143,
-                "Confidential lab",
-                "/api/intelligence/livelabs/confidential-lab",
             ),
             feat(144, "Live labs hub", "/api/intelligence/livelabs/overview"),
         ],
@@ -239,12 +234,6 @@ pub fn build_live_smoke_report() -> LiveSmokeReport {
             LiveSmokeStep {
                 id: "labs-e2e".into(),
                 script: "scripts/labs-e2e.sh".into(),
-                requires_kubeconfig: false,
-                requires_live_flag: false,
-            },
-            LiveSmokeStep {
-                id: "confidential".into(),
-                script: "scripts/confidential-cluster-e2e.sh".into(),
                 requires_kubeconfig: false,
                 requires_live_flag: false,
             },
@@ -453,50 +442,13 @@ pub fn build_cluster_exec_report() -> ClusterExecReport {
     }
 }
 
-// ── Phase 143: Confidential lab ─────────────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfidentialLabSpec {
-    pub name: String,
-    pub spec_path: String,
-    pub exists: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfidentialLabReport {
-    pub status: String,
-    pub generated_at: String,
-    pub script: String,
-    pub specs: Vec<ConfidentialLabSpec>,
-}
-
-pub fn build_confidential_lab_report() -> ConfidentialLabReport {
-    ConfidentialLabReport {
-        status: "ship".into(),
-        generated_at: crate::resources::now_rfc3339(),
-        script: "scripts/confidential-cluster-e2e.sh".into(),
-        specs: vec![
-            ConfidentialLabSpec {
-                name: "confidential-kata".into(),
-                spec_path: "examples/confidential-kata-workload.yaml".into(),
-                exists: repo_file_exists("examples/confidential-kata-workload.yaml"),
-            },
-            ConfidentialLabSpec {
-                name: "confidential-snp".into(),
-                spec_path: "examples/confidential-snp.yaml".into(),
-                exists: repo_file_exists("examples/confidential-snp.yaml"),
-            },
-        ],
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn overview_has_ten_features() {
-        assert_eq!(build_livelabs_overview().feature_count, 10);
+    fn overview_has_nine_features() {
+        assert_eq!(build_livelabs_overview().feature_count, 9);
         assert_eq!(build_livelabs_overview().era, "N");
     }
 

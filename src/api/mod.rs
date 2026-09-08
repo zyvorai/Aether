@@ -1657,10 +1657,6 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_intelligence_security_sbom_drift),
         )
         .route(
-            "/api/intelligence/security/confidential-fleet",
-            get(api_intelligence_security_confidential_fleet),
-        )
-        .route(
             "/api/intelligence/security/zero-trust-wizard",
             get(api_intelligence_security_zero_trust_wizard),
         )
@@ -1671,10 +1667,6 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route(
             "/api/intelligence/security/rotation-agent",
             post(api_intelligence_security_rotation_agent),
-        )
-        .route(
-            "/api/intelligence/security/image-enforcement",
-            get(api_intelligence_security_image_enforcement),
         )
         .route(
             "/api/intelligence/security/threat-hunt",
@@ -1913,10 +1905,6 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route(
             "/api/intelligence/livelabs/cluster-exec",
             get(api_intelligence_livelabs_cluster_exec),
-        )
-        .route(
-            "/api/intelligence/livelabs/confidential-lab",
-            get(api_intelligence_livelabs_confidential_lab),
         )
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/drift/:name/reconcile", post(api_drift_reconcile))

@@ -135,11 +135,11 @@ pub use labs_os::{
 };
 pub use livelabs_os::{
     build_advanced_runtime_labs_report, build_ci_pipeline_report, build_cluster_exec_report,
-    build_confidential_lab_report, build_kind_fixture_report, build_kubernetes_lab_report,
-    build_live_smoke_report, build_livelabs_overview, build_post_deploy_verify_report,
-    build_reference_runner_report, AdvancedRuntimeLabReport, CiPipelineReport, ClusterExecReport,
-    ConfidentialLabReport, KindFixtureReport, KubernetesLabReport, LiveLabsFeature,
-    LiveLabsOverview, LiveSmokeReport, PostDeployVerifyReport, ReferenceRunnerReport,
+    build_kind_fixture_report, build_kubernetes_lab_report, build_live_smoke_report,
+    build_livelabs_overview, build_post_deploy_verify_report, build_reference_runner_report,
+    AdvancedRuntimeLabReport, CiPipelineReport, ClusterExecReport, KindFixtureReport,
+    KubernetesLabReport, LiveLabsFeature, LiveLabsOverview, LiveSmokeReport,
+    PostDeployVerifyReport, ReferenceRunnerReport,
 };
 pub use macos_os::{
     build_dock_badge, build_live_activity, build_menu_extras, build_native_notifications,
@@ -187,10 +187,8 @@ pub use security::{
 };
 pub use security_os::{
     append_sovereign_audit, apply_security_policies, build_compliance_report,
-    build_confidential_fleet_dashboard, build_image_signing_enforcement,
     build_security_score_trend, build_zero_trust_wizard, detect_sbom_drift, read_sovereign_audit,
     run_secret_rotation_agent, run_threat_hunt, ComplianceReport, ComplianceReportSection,
-    ConfidentialFleetDashboardReport, ImageSigningEnforcementReport, ImageSigningEntry,
     PolicyAutoApplyReport, PolicyAutoApplyRequest, SbomDriftAlert, SbomDriftReport,
     SecretRotationAction, SecretRotationAgentReport, SecretRotationAgentRequest,
     SecurityScoreTrendPoint, SecurityScoreTrendReport, SovereignAuditEntry, SovereignAuditReport,

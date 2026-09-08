@@ -136,17 +136,6 @@ else
   bad "/api/gitops/status → ${gitops_code} (expected 200)"
 fi
 
-for p in \
-  /api/confidential/capabilities \
-  /api/confidential/fleet \
-  /api/confidential/trust-score \
-  /api/confidential/intelligence \
-  /api/confidential/kata/status \
-  /api/confidential/sovereign/status \
-  /api/confidential/images; do
-  expect_code "${p}" 200
-done
-
 section "Cross-check UX data consistency"
 # Copilot troubleshoot against first cluster workload (when present)
 python3 - "${TMP}" "${API}" <<'PY'

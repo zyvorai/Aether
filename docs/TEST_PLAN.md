@@ -1,6 +1,6 @@
 # Aether feature test plan
 
-End-to-end validation for the universal runtime control plane API, React dashboard, labs (Kubernetes / KubeVirt), confidential fabric, and Playwright UI — aligned with Zyvor platform staging workflows.
+End-to-end validation for the universal runtime control plane API, React dashboard, labs (Kubernetes / KubeVirt), and Playwright UI — aligned with Zyvor platform staging workflows.
 
 ## Quick start
 
@@ -41,7 +41,6 @@ Default API: `http://<host>:30090` (NodePort) · Auth: session cookie via mock I
 | **labs-dry** | `reference-cluster-e2e.sh` | ~1 min | Validate + dry-run KubeVirt, k8s lab specs |
 | **migration-dry-run** | `migration-dry-run-e2e.sh` | ~30 s | Demo specs validate + `--dry-run` migrate |
 | **labs-live** | SSH `k8s-labs-e2e.sh` on remote | ~3–5 min | Live nginx deploy on cluster kubeconfig |
-| **confidential** | `confidential-fabric-e2e.sh` + `confidential-cluster-e2e.sh` | ~2 min | Confidential APIs + CLI placement checks |
 | **deploy-remove** | `deploy-remove-e2e.sh` | ~2 min | API workload create → verify → delete |
 | **playwright-all** | `npm run test:e2e` (entire `tests/`) | 1–3+ hours | All dashboard Playwright specs against remote API |
 | **playwright-exec** | `cluster-exec-terminal.spec.ts` | ~5 min | Requires `AETHER_E2E_KIND=1` + kind fixture (local/CI) |
@@ -60,9 +59,9 @@ Environment:
 | `AETHER_MOCK_IDP` | Must be `1` on **server** for mock-idp Playwright specs |
 | `AETHER_PLAYWRIGHT_TIMEOUT` | Optional Playwright timeout override |
 
-Default live orchestrator tiers (`AETHER_LIVE_TIERS=all`): `api-live,smoke,deploy-remove,confidential,labs-live,playwright-all`.
+Default live orchestrator tiers (`AETHER_LIVE_TIERS=all`): `api-live,smoke,deploy-remove,labs-live,playwright-all`.
 
-Default mixed orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
+Default mixed orchestrator tiers (no preset): `smoke,labs-dry`.
 
 ## Feature matrix (API smoke)
 
@@ -94,7 +93,6 @@ Default mixed orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
 | Events / orchestrator | smoke | `GET /api/events`, `orchestrator/summary` | |
 | Backups / secrets / plugins | smoke | `GET /api/backups`, `secrets`, `plugins` | |
 | GitOps / cost / audit | smoke | `GET /api/gitops/status`, `cost/chargeback` | |
-| Confidential fleet | smoke, confidential | `GET /api/confidential/*` | |
 
 ### Ecosystem (Four Pillars)
 
@@ -109,7 +107,6 @@ Default mixed orchestrator tiers (no preset): `smoke,labs-dry,confidential`.
 | Layer | Local command | Remote | CI job |
 |-------|---------------|--------|--------|
 | Rust unit/integration | `make test` / `cargo test` | — | `test` |
-| Schema / confidential validate | `make confidential-validate` | — | `test` |
 | Labs dry-run | `scripts/labs-e2e.sh` | `labs-dry` tier | `labs-e2e` |
 | Migration dry-run | `scripts/migration-dry-run-e2e.sh` | `migration-dry-run` tier | `migration-dry-run-e2e` |
 | K8s live lab | `AETHER_LABS_LIVE=1 k8s-labs-e2e.sh` | `labs-live` tier | `k8s-live-e2e` |
@@ -145,8 +142,7 @@ cd web/dashboard && npm run test:e2e
 2. **KubeVirt GPU / SR-IOV** — hardware feature gates
 3. **LDAP / OIDC / SAML login** — IdP configured (`deploy-with-ldap.sh`, ingress SSO)
 4. **Velero DR / failover** — backup storage configured
-5. **Ragnarok composite confidential** — `RAGNAROK_API` set for fabric E2E
-6. **SSE reconnect banner** — manual per `web/dashboard/tests/README.md`
+5. **SSE reconnect banner** — manual per `web/dashboard/tests/README.md`
 
 ## CI recommendation
 
@@ -178,7 +174,6 @@ GitHub Actions: set `AETHER_STAGING_HOST` and `AETHER_REMOTE_USER` secrets for o
 | `scripts/k8s-api-smoke.sh` | Copilot / observability smoke |
 | `scripts/reference-cluster-e2e.sh` | Labs dry-run chain |
 | `scripts/remote-reference-verify.sh` | Remote labs + post-deploy |
-| `scripts/confidential-fabric-e2e.sh` | Confidential API smoke |
 | `scripts/deploy-remove-e2e.sh` | API workload lifecycle |
 | `scripts/deploy-remote.sh` | Cluster deploy |
 | `./scripts/test-zyvor-stack-remote.sh` | VMRogue + PacketWolf + Aether (delegates to sibling VMRogue) |

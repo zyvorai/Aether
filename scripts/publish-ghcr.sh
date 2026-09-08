@@ -52,7 +52,7 @@ fi
 echo "${HYPERSDK_GHCR_TOKEN}" | helm registry login ghcr.io -u ${ORG} --password-stdin
 
 mkdir -p /tmp/helm-packages
-for chart in ${CHARTS_DIR}/aether ${CHARTS_DIR}/zyvor-confidential-kata; do
+for chart in ${CHARTS_DIR}/aether; do
   helm package "\$chart" -d /tmp/helm-packages
 done
 

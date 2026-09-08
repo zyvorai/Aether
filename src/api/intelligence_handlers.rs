@@ -1195,20 +1195,6 @@ pub(crate) async fn api_intelligence_finops_trends(
     }
 }
 
-async fn confidential_workload_triples(app_state: &AppState) -> Vec<(String, Workload, String)> {
-    let store = app_state.state.read().await;
-    store
-        .list()
-        .iter()
-        .filter_map(|w| {
-            Workload::from_file(&w.spec_path)
-                .ok()
-                .filter(|s| s.confidential.as_ref().is_some_and(|c| c.enabled))
-                .map(|s| (w.name.clone(), s, w.runtime.to_string()))
-        })
-        .collect()
-}
-
 /// POST /api/intelligence/security/policy-apply
 pub(crate) async fn api_intelligence_security_policy_apply(
     AxumState(app_state): AxumState<AppState>,
@@ -1224,21 +1210,6 @@ pub(crate) async fn api_intelligence_security_policy_apply(
 /// GET /api/intelligence/security/sbom-drift
 pub(crate) async fn api_intelligence_security_sbom_drift() -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::security_os::detect_sbom_drift()).into_response()
-}
-
-/// GET /api/intelligence/security/confidential-fleet
-pub(crate) async fn api_intelligence_security_confidential_fleet(
-    AxumState(app_state): AxumState<AppState>,
-) -> impl axum::response::IntoResponse {
-    let triples = confidential_workload_triples(&app_state).await;
-    let refs: Vec<(&str, &Workload, &str)> = triples
-        .iter()
-        .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
-        .collect();
-    ok_json(
-        crate::intelligence::security_os::build_confidential_fleet_dashboard(&refs),
-    )
-    .into_response()
 }
 
 /// GET /api/intelligence/security/zero-trust-wizard
@@ -1271,15 +1242,6 @@ pub(crate) async fn api_intelligence_security_rotation_agent(
         &body,
     ))
     .into_response()
-}
-
-/// GET /api/intelligence/security/image-enforcement
-pub(crate) async fn api_intelligence_security_image_enforcement(
-    AxumState(app_state): AxumState<AppState>,
-) -> impl axum::response::IntoResponse {
-    let pairs = workload_pairs(&app_state).await;
-    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(&pairs))
-        .into_response()
 }
 
 /// POST /api/intelligence/security/threat-hunt
@@ -1811,10 +1773,4 @@ pub(crate) async fn api_intelligence_livelabs_ci_pipeline() -> impl axum::respon
 /// GET /api/intelligence/livelabs/cluster-exec
 pub(crate) async fn api_intelligence_livelabs_cluster_exec() -> impl axum::response::IntoResponse {
     ok_json(crate::intelligence::livelabs_os::build_cluster_exec_report()).into_response()
-}
-
-/// GET /api/intelligence/livelabs/confidential-lab
-pub(crate) async fn api_intelligence_livelabs_confidential_lab() -> impl axum::response::IntoResponse
-{
-    ok_json(crate::intelligence::livelabs_os::build_confidential_lab_report()).into_response()
 }

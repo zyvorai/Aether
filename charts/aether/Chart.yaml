@@ -8,7 +8,6 @@ keywords:
   - aether
   - kubernetes
   - kubevirt
-  - confidential-computing
   - runtime
 home: https://github.com/hypersdk/aether
 sources:

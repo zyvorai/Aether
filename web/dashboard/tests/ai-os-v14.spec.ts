@@ -36,11 +36,6 @@ test.describe('AI Infrastructure OS v14 — Security & Compliance', () => {
     expect(res.ok()).toBeTruthy();
   });
 
-  test('security image enforcement API', async ({ request }) => {
-    const res = await request.get('/api/intelligence/security/image-enforcement');
-    expect(res.ok()).toBeTruthy();
-  });
-
   test('security threat hunt API', async ({ request }) => {
     const res = await request.post('/api/intelligence/security/threat-hunt', {
       data: { query: 'gpu', limit: 5 },

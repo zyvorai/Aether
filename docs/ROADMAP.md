@@ -253,11 +253,9 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 |------|------|-----|
 | Policy auto-apply | `POST /api/intelligence/security/policy-apply` | Ship |
 | SBOM drift alerts | `GET /api/intelligence/security/sbom-drift` | Ship |
-| Confidential fleet dashboard | `GET /api/intelligence/security/confidential-fleet` | Ship |
 | Zero-trust rollout wizard | `GET /api/intelligence/security/zero-trust-wizard` | Ship |
 | Compliance report (Lab) | `GET /api/intelligence/security/compliance-report` | Lab |
 | Secret rotation agent | `POST /api/intelligence/security/rotation-agent` | Ship |
-| Image signing enforcement | `GET /api/intelligence/security/image-enforcement` | Ship |
 | Threat hunt mode | `POST /api/intelligence/security/threat-hunt` | Ship |
 | Sovereign audit log | `GET/POST /api/intelligence/security/sovereign-audit` | Ship |
 | Security score trend | `GET /api/intelligence/security/score-trend` | Ship |
@@ -339,7 +337,6 @@ Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI
 | Advanced runtime labs | `GET /api/intelligence/livelabs/advanced-runtime-labs` | Ship |
 | CI pipeline jobs | `GET /api/intelligence/livelabs/ci-pipeline` | Ship |
 | Cluster exec E2E | `GET /api/intelligence/livelabs/cluster-exec` | Ship |
-| Confidential lab | `GET /api/intelligence/livelabs/confidential-lab` | Ship |
 | Live labs panel | `/labs` `LiveLabsPanel` | Ship |
 
 ---

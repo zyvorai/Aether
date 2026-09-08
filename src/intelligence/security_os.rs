@@ -156,31 +156,6 @@ pub fn detect_sbom_drift() -> SbomDriftReport {
     }
 }
 
-// ── Phase 87: Confidential fleet dashboard ────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfidentialFleetDashboardReport {
-    pub generated_at: String,
-    pub workload_count: u32,
-    pub attestation_passed: u32,
-    pub catalog_verified: u32,
-    pub average_trust_score: f64,
-    pub rows: Vec<serde_json::Value>,
-}
-
-pub fn build_confidential_fleet_dashboard(
-    _workloads: &[(&str, &Workload, &str)],
-) -> ConfidentialFleetDashboardReport {
-    ConfidentialFleetDashboardReport {
-        generated_at: crate::resources::now_rfc3339(),
-        workload_count: 0,
-        attestation_passed: 0,
-        catalog_verified: 0,
-        average_trust_score: 0.0,
-        rows: vec![],
-    }
-}
-
 // ── Phase 88: Zero-trust rollout wizard ───────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -409,70 +384,6 @@ fn rotate_due_secrets(store: &mut SecretStore, dry_run: bool) -> SecretRotationA
         actions,
         rotated,
         skipped,
-    }
-}
-
-// ── Phase 91: Image signing enforcement ───────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ImageSigningEntry {
-    pub workload: String,
-    pub digest: Option<String>,
-    pub signed: bool,
-    pub blocked: bool,
-    pub reason: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ImageSigningEnforcementReport {
-    pub generated_at: String,
-    pub enforce: bool,
-    pub entries: Vec<ImageSigningEntry>,
-    pub blocked_count: u32,
-}
-
-pub fn build_image_signing_enforcement(
-    workloads: &[(Workload, WorkloadState)],
-) -> ImageSigningEnforcementReport {
-    let enforce = std::env::var("AETHER_ENFORCE_SIGNED_IMAGES")
-        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
-
-    let mut entries = Vec::new();
-    let mut blocked_count = 0u32;
-
-    for (spec, _ws) in workloads {
-        let digest = spec
-            .confidential
-            .as_ref()
-            .and_then(|c| c.image_digest.clone());
-        let signed = false;
-        let needs_signing =
-            spec.confidential.as_ref().is_some_and(|c| c.enabled) || digest.is_some();
-        let blocked = enforce && needs_signing && !signed;
-        if blocked {
-            blocked_count += 1;
-        }
-        entries.push(ImageSigningEntry {
-            workload: spec.metadata.name.clone(),
-            digest,
-            signed,
-            blocked,
-            reason: if blocked {
-                "Unsigned image blocked by AETHER_ENFORCE_SIGNED_IMAGES".into()
-            } else if needs_signing && !signed {
-                "Confidential workload should use a signed catalog image".into()
-            } else {
-                "OK".into()
-            },
-        });
-    }
-
-    ImageSigningEnforcementReport {
-        generated_at: crate::resources::now_rfc3339(),
-        enforce,
-        entries,
-        blocked_count,
     }
 }
 

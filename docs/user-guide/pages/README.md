@@ -10,7 +10,6 @@ Every route is also listed in the [complete page index](../PAGE_INDEX.md).
 |------|----------------|
 | [Runtime Affinity](intelligence/affinity.md) | Workload class affinity and runtime fit |
 | [AI Engine](intelligence/ai.md) | Intent scoring, runtime recommendations & migration planning |
-| [Confidential Computing](intelligence/confidential.md) | TEE capabilities, attestation trust scores, and Ragnarok integration |
 | [Cost Estimation](intelligence/cost.md) | Resource cost projections across runtimes |
 | [Drift Detection](intelligence/drift.md) | Configuration drift & desired-state reconciliation |
 | [Intelligence Layer](intelligence/intelligence.md) | Failure predictions, threats, cost optimization, and global placement |

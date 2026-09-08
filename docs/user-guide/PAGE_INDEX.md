@@ -27,7 +27,6 @@ Regenerate: `node scripts/user-docs/generate-page-index.mjs`
 | Drift Detection | `/drift` | Configuration drift & desired-state reconciliation | [Open](pages/intelligence/drift.md) |
 | Intelligence Layer | `/intelligence` | Failure predictions, threats, cost optimization, and global placement | [Open](pages/intelligence/intelligence.md) |
 | Policy Check | `/policy` | Validate workloads against policy rules | [Open](pages/intelligence/policy.md) |
-| Confidential Computing | `/confidential` | TEE capabilities, attestation trust scores, and Ragnarok integration | [Open](pages/intelligence/confidential.md) |
 | Security Center | `/security` | Threats, secrets, policies, and hardening | [Open](pages/intelligence/security.md) |
 
 ## Operations

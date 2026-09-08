@@ -19,8 +19,7 @@ This is the user onboarding guide — how to access the product, your first work
 6. [Observability & Cost Insight](#6-observability-cost-insight)
 7. [AI Ops & Autonomy](#7-ai-ops-autonomy)
 8. [Security, Policy & Compliance](#8-security,-policy-compliance)
-9. [Confidential Computing (Ragnarok)](#9-confidential-computing-(ragnarok))
-10. [Integrations & Extensibility](#10-integrations-extensibility)
+9. [Integrations & Extensibility](#9-integrations-extensibility)
 
 ## Getting started
 
@@ -235,26 +234,7 @@ _Encrypted secrets, enterprise SSO, RBAC, policy gates, and supply-chain evidenc
 - **Hardened Control Plane** — API key auth, CORS protection, rate limiting, input validation, atomic state locking, and hardened file permissions. — _Production-safe defaults across the whole surface._
   - **How:** Config: enable bearer auth with `AETHER_API_KEY`; rate limiting, input validation, and atomic state locking apply around `aether serve`.
 
-## 9. Confidential Computing (Ragnarok)
-
-_Run and migrate attested, measured workloads on trusted execution environments with sovereign-cloud controls._
-
-- **Measured Image Catalog** — Sign VM disk images into a verified catalog and verify a file hash or launch digest against it. — _Only known, signed images ever launch._
-  - **How:** CLI: `aether confidential image` (sign into and verify against the measured-image catalog).
-- **Attestation & Trust** — Verify TEE attestation verdicts (SEV-SNP, TDX) and gate placement on the trust result. — _Prove a workload runs on genuine confidential hardware._
-  - **How:** CLI: `aether confidential placement` (gate on the SEV-SNP/TDX verdict); Web UI: Workload detail `?tab=trust`.
-- **Tenant Isolation Check** — Validate a workload spec against tenant isolation policy before scheduling. — _Catch isolation violations before a tenant is exposed._
-  - **How:** CLI: `aether confidential placement` validates the spec against tenant-isolation policy before scheduling.
-- **GuestKit Offline Inspection** — Inspect a VM image offline in pre-launch, offline-policy, post-shutdown, or attested-repair modes. — _Assurance on a VM's contents without booting it._
-  - **How:** CLI: `aether confidential guestkit` (pre-launch / offline-policy / post-shutdown / attested-repair modes).
-- **Confidential Migration** — Plan and track encrypted, attested migration of confidential workloads (confidential blue-green). — _Move sensitive VMs between runtimes without breaking the trust chain._
-  - **How:** CLI: confidential blue-green via `aether migrate` on an attested workload; Web UI: Migrations.
-- **Sovereign Compliance Check** — Check a workload against sovereign-cloud residency and compliance constraints. — _Keep regulated workloads inside the boundaries they require._
-  - **How:** CLI: `aether confidential placement` checks the spec against sovereign residency and compliance constraints.
-
-> Confidential features require compatible TEE hardware (AMD SEV-SNP or Intel TDX) and a Kata/KubeVirt confidential runtime.
-
-## 10. Integrations & Extensibility
+## 9. Integrations & Extensibility
 
 _Slot Aether into your platform — GPU, storage, GitOps, packaging, plugins, edge fleets, and multi-tenant hosting._
 
@@ -283,7 +263,7 @@ _Slot Aether into your platform — GPU, storage, GitOps, packaging, plugins, ed
 4. **Migrate with confidence** — Move a live workload with aether migrate my-app kubevirt --strategy blue-green, with rollback on failure.
 5. **Open the dashboard** — Run aether serve and browse http://localhost:5090 for the web UI, Command Center, and Ask Zyra copilot.
 
-> **Good to know:** Aether's portability guarantees are strongest for stateless and container-image workloads: migration rebuilds the app image for the target runtime and updates workload state atomically, but persistent volume data is not automatically carried across runtimes and blue-green connection draining is capped at ~30s. Integrations are optional and mostly read-only — Forge (GPU) and Atlas (storage) are off unless configured, and the hosted multi-tenant control plane ships today as a foundation with fleet federation still maturing. Confidential computing requires compatible TEE hardware (AMD SEV-SNP / Intel TDX) and a Kata/KubeVirt confidential runtime, and several AI autonomy panels are opt-in Labs previews that depend on an external or Forge-hosted LLM.
+> **Good to know:** Aether's portability guarantees are strongest for stateless and container-image workloads: migration rebuilds the app image for the target runtime and updates workload state atomically, but persistent volume data is not automatically carried across runtimes and blue-green connection draining is capped at ~30s. Integrations are optional and mostly read-only — Forge (GPU) and Atlas (storage) are off unless configured, and the hosted multi-tenant control plane ships today as a foundation with fleet federation still maturing. Confidential computing (TEE attestation, measured images) is a separate **Ragnarok** product, not part of this open-source tree. Several AI autonomy panels are opt-in Labs previews that depend on an external or Forge-hosted LLM.
 
 ---
 _Aether is developed by ZyvorAI Labs. Contact **info@zyvor.dev** · Proprietary & Confidential._
