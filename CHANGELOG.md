@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-09
+
+### Changed
+- **Apache License 2.0 open source:** Aether-core is fully Apache-2.0. Published at https://github.com/zyvorai/Aether.
+- **Ragnarok removed from this repository:** Confidential computing (TEE attestation, measured images, sovereign policy, vault/KBS, confidential migration) lives in the separate Ragnarok product. Embedded `src/ragnarok/`, `/api/confidential/*`, and related CLI/integration call sites are gone. `aether confidential` exits with a clear separate-product message.
+
 ### Security
 - **Viewer keys can no longer open pod shells:** `/api/cluster/ws/exec` is a WebSocket upgrade over GET, and `Role::Viewer` previously allowed every GET — a read-only key could obtain an interactive shell in any pod in any namespace. `rbac::check_permission` now treats the cluster exec route as a privileged GET requiring Operator or Admin.
 - **Local key material is gitignored:** `certs/`, `keys/`, `*.pem`, and `*.key` are excluded (mock-idp fixtures excepted) so TLS and signing keys cannot be committed by accident.
@@ -537,7 +543,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory usage: 5-15MB
 - TUI refresh: 450ms for 10 workloads
 
-[0.3.0]: https://github.com/ssahani/aether/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/ssahani/aether/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/ssahani/aether/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/ssahani/aether/releases/tag/v0.1.0
+[Unreleased]: https://github.com/zyvorai/Aether/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/zyvorai/Aether/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/zyvorai/Aether/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/zyvorai/Aether/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/zyvorai/Aether/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/zyvorai/Aether/releases/tag/v0.1.0
