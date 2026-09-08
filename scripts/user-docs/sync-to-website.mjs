@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 try {
-  const envText = readFileSync(resolve(ROOT, 'scripts/customer-docs/product.env'), 'utf8')
+  const envText = readFileSync(resolve(ROOT, 'scripts/user-docs/product.env'), 'utf8')
   for (const line of envText.split('\n')) {
     const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
     if (m) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '')
   }
 } catch {}
-const CUSTOMER = resolve(ROOT, 'docs/customer')
+const CUSTOMER = resolve(ROOT, 'docs/user-guide')
 const SITE = resolve(process.argv[2] ?? resolve(ROOT, '../zyvor-web'))
 const PRODUCT = process.env.CUSTOMER_DOCS_PRODUCT || 'Aether'
 const SLUG = (process.env.CUSTOMER_DOCS_SLUG || PRODUCT).toLowerCase().replace(/\s+/g, '-')
@@ -37,12 +37,12 @@ const TOP_LEVEL_POSITION = {
 const REPO_ONLY = new RegExp(
   [
     '(\\.\\./)+(handbook|guides|architecture|admin-guide|user-guide|getting-started|developer-guide|legal|client)/',
-    `${SLUG}-customer-feature-guide`,
+    `${SLUG}-user-guide`,
     'hypercluster-customer-feature-guide',
     'hyper2kvm-customer-feature-guide',
     'guestkit-customer-feature-guide',
     'ragnarok-customer-feature-guide',
-    'aether-customer-feature-guide',
+    'aether-user-guide',
     'zyvor-fabric-customer-feature-guide',
     'hermes-customer-feature-guide',
     'hypersdk-customer-feature-guide',
@@ -67,13 +67,13 @@ function transformLinks(md) {
 
 function rewriteIndexPdfSection(md) {
   const pdfNames = [
-    `${PDF_PREFIX}-Customer-README`,
+    `${PDF_PREFIX}-User-README`,
     `${PDF_PREFIX}-Getting-Started`,
     `${PDF_PREFIX}-Page-by-Page`,
     `${PDF_PREFIX}-Admin-Basics`,
   ]
   let out = md.replace(
-    /```bash\nnode scripts\/customer-docs\/build-customer-pdfs\.mjs\n```\n\nOutput lands in \[`pdf\/`\]\(pdf\/\):/,
+    /```bash\nnode scripts\/user-docs\/build-user-pdfs\.mjs\n```\n\nOutput lands in \[`pdf\/`\]\(pdf\/\):/,
     'Prefer paper or offline reading? Download the print-ready PDFs:',
   )
   for (const name of pdfNames) {

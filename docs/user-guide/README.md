@@ -1,4 +1,4 @@
-# Aether — Customer Documentation
+# Aether — User Guide
 
 Universal runtime portability — place and move apps across Podman/K8s/KubeVirt with AI scoring and FinOps.
 
@@ -10,19 +10,19 @@ Universal runtime portability — place and move apps across Podman/K8s/KubeVirt
 | Look up any screen | [Complete page index](PAGE_INDEX.md) |
 | Deploy, auth, ports | [Admin basics](admin-basics.md) |
 | Multi-page jobs | [Common workflows](workflows.md) |
-| Capability map | [Feature Guide](../aether-customer-feature-guide.md) |
+| Capability map | [User Guide (feature map)](../aether-user-guide.md) |
 
 ## Printable PDFs
 
 ```bash
-node scripts/customer-docs/build-customer-pdfs.mjs
+node scripts/user-docs/build-user-pdfs.mjs
 ```
 
 Output lands in [`pdf/`](pdf/):
 
 | PDF | Contents |
 |-----|----------|
-| `Aether-Customer-README.pdf` | This overview |
+| `Aether-User-README.pdf` | This overview |
 | `Aether-Getting-Started.pdf` | Access, basics, workflows |
 | `Aether-Page-by-Page.pdf` | Complete page manual |
 | `Aether-Admin-Basics.pdf` | Deploy, auth, ports |

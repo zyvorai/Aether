@@ -1,4 +1,4 @@
-# Aether — Feature Guide
+# Aether — User Guide
 
 > **Universal runtime portability.**
 
@@ -6,7 +6,7 @@ Aether is a universal runtime control plane: one workload spec describes what to
 
 **3** Runtimes (Podman, K8s, KubeVirt) · **9** Migration paths · **5** Migration strategies · **65+** CLI commands · **3** Interfaces (CLI, TUI, Web)
 
-This is the customer-facing onboarding guide — how to access the product, your first workflows, and how to use every feature. A print-ready PDF of the same content sits alongside this file.
+This is the user onboarding guide — how to access the product, your first workflows, and how to use every feature. A print-ready PDF of the same content sits alongside this file.
 
 ## Contents
 

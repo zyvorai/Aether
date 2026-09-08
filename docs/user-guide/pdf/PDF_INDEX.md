@@ -2,9 +2,9 @@
 
 Generated: 2026-08-29
 
-Rebuild: `node scripts/customer-docs/build-customer-pdfs.mjs`
+Rebuild: `node scripts/user-docs/build-user-pdfs.mjs`
 
-- `Aether-Customer-README.pdf` — Customer Documentation Overview
+- `Aether-User-README.pdf` — User Guide Overview
 - `Aether-Getting-Started.pdf` — Getting Started
 - `Aether-Admin-Basics.pdf` — Admin Basics
 - `Aether-Page-by-Page.pdf` — Page-by-Page Product Manual

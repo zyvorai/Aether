@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
-const CUSTOMER = resolve(ROOT, 'docs/customer')
+const CUSTOMER = resolve(ROOT, 'docs/user-guide')
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g
 
 function walk(dir) {
