@@ -1,167 +1,338 @@
-# Aether
-
-**Universal runtime portability.**
-
-
-## 📖 Feature Guide
-
-**[Aether — Customer Feature Guide](docs/aether-customer-feature-guide.md)** — a complete, customer-facing reference covering all **70 features** across **10 areas**, grounded in the product's actual capabilities. Also available as a print-ready **[PDF](docs/aether-customer-feature-guide.pdf)**.
-
-**[Customer manual (page-by-page)](docs/customer/README.md)** — getting started, admin basics, and a guide for every product surface (PDFs under `docs/customer/pdf/`).
-
-Deploy once. Move workloads across **Podman, Kubernetes, and KubeVirt** without rewriting infrastructure. One YAML spec. Nine migration paths. Production-grade drift detection and intent-driven runtime scoring.
+<div align="center">
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  Clients     React Web UI · Interactive TUI · Rust CLI       │
-├──────────────────────────────────────────────────────────────┤
-│  Control     Intent Engine · Migration Engine · Policy Gate  │
-├──────────────────────────────────────────────────────────────┤
-│  Runtimes    Podman · Kubernetes · KubeVirt                  │
-└──────────────────────────────────────────────────────────────┘
+     █████╗ ███████╗████████╗██╗  ██╗███████╗██████╗
+    ██╔══██╗██╔════╝╚══██╔══╝██║  ██║██╔════╝██╔══██╗
+    ███████║█████╗     ██║   ███████║█████╗  ██████╔╝
+    ██╔══██║██╔══╝     ██║   ██╔══██║██╔══╝  ██╔══██╗
+    ██║  ██║███████╗   ██║   ██║  ██║███████╗██║  ██║
+    ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 ```
 
+# One YAML. Three runtimes. Zero lock-in.
+
+**Aether** is the universal runtime control plane — deploy the same workload to
+**Podman**, **Kubernetes**, and **KubeVirt**, then migrate between them like
+changing lanes on a highway.
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-orange?style=for-the-badge)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/zyvorai/Aether?style=for-the-badge&color=f97316)](https://github.com/zyvorai/Aether/releases)
+[![Rust](https://img.shields.io/badge/rust-2021-dea584?style=for-the-badge&logo=rust&logoColor=white)](Cargo.toml)
+[![Stars](https://img.shields.io/github/stars/zyvorai/Aether?style=for-the-badge&color=fbbf24)](https://github.com/zyvorai/Aether/stargazers)
+
+[Quick Start](#-quick-start) · [Why it hits different](#-why-it-hits-different) · [Migration matrix](#-migration-matrix) · [Dashboard](#-glass-dashboard) · [Docs](#-documentation) · [Contributing](#-contributing)
+
+<br/>
+
+```text
+ ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+ │   Podman     │   │  Kubernetes  │   │   KubeVirt   │
+ │  containers  │◄─►│     pods     │◄─►│     VMs      │
+ └──────▲───────┘   └──────▲───────┘   └──────▲───────┘
+        │                  │                  │
+        └────────────┬─────┴─────┬────────────┘
+                     │  AETHER   │
+                     │ one spec  │
+                     └───────────┘
+```
+
+</div>
+
 ---
 
-## Why Aether
+## ⚡ What if infrastructure stopped arguing?
 
-| Problem | Aether answer |
-|---------|---------------|
-| Same app, three different deploy paths | One YAML spec validates and deploys everywhere |
-| Runtime migrations are manual and risky | 9 runtime pairs with blue-green, rolling, rollback |
-| Teams guess which runtime fits | Intent engine scores cost, latency, reliability |
-| Config drift goes unnoticed | Drift detection + auto-reconciliation loop |
-| Ops needs one pane of glass | k9s-level web UI with SSE, command palette, log viewer |
+Most teams write the app once… then rewrite the **deploy story** three times.
 
-**Analogy:** Terraform for *where* workloads run — not just *what* they are.
+| Reality today | With Aether |
+|---------------|-------------|
+| Helm chart for K8s, Compose for Podman, YAML hell for VMs | **One** `Workload` YAML |
+| Migrations = weekends + prayer | Blue-green / rolling / live-migrate |
+| “Which runtime?” = tribal knowledge | Intent engine scores cost · latency · reliability |
+| Drift discovered in postmortems | Continuous drift + reconciliation |
+| CLI *or* UI *or* GitOps | CLI + TUI + glass web UI + API — same brain |
 
----
-
-## Platform at a Glance
-
-| Layer | What's in the repo |
-|-------|-------------------|
-| **Core** | Rust runtime control plane — `src/` |
-| **Runtimes** | Podman, K8s, KubeVirt adapters |
-| **Migration** | Immediate, blue-green, rolling — 9 combinations; KubeVirt live migration (vGPU-aware) |
-| **UI** | React dashboard (40+ pages) + interactive TUI — `web/` |
-| **Deploy** | Helm, Docker, deb/rpm packages — `helm/`, `packaging/` |
-| **Examples** | Compose stacks, demos, migration scenarios — `examples/` |
+> **Aether is Terraform for *where* workloads run — not just *what* they are.**
 
 ---
 
-## Quick Start
+## 🔥 Why it hits different
+
+<table>
+<tr>
+<td width="33%">
+
+### 🧠 Intent engine
+Tell Aether what you care about — cost, performance, reliability. It **scores** Podman / K8s / KubeVirt and picks (or recommends) the lane.
+
+</td>
+<td width="33%">
+
+### 🔁 Nine migration paths
+Every runtime pair. Immediate. Blue-green. Rolling. KubeVirt **live migration** with vGPU-aware rules.
+
+</td>
+<td width="33%">
+
+### 🪟 Glass ops UI
+macOS-glass dashboard, SSE live updates, `⌘K` command palette, logs + shell into discovered pods & VMs.
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 🛡️ Policy-grade
+RBAC (Admin / Operator / Viewer), NetworkPolicy generation, audit trail, secrets with AES-256-GCM.
+
+</td>
+<td>
+
+### 🧬 GitOps-native
+Reconcile from git. Helm charts. Drift detection that doesn’t ghost you.
+
+</td>
+<td>
+
+### ⚙️ Built in Rust
+One binary. Fast. Embeds the dashboard. Ships CLI + API + TUI together.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/ssahani/Aether.git && cd Aether
+# Clone the universe
+git clone https://github.com/zyvorai/Aether.git && cd Aether
 
-# Build the dashboard bundle the binary embeds (build.rs falls back to a stub if skipped)
+# Dashboard assets (embedded into the binary)
 (cd web/dashboard && npm ci && npm run build)
 
+# Forge the binary
 cargo build --release
 
-# First-time setup
+# Boot
 ./target/release/aether init
-
-# Deploy a workload
 ./target/release/aether run --spec examples/demo-webserver.yaml
-
-# List across all runtimes
 ./target/release/aether list --output wide
 
-# Web dashboard
+# Open the glass cockpit
 ./target/release/aether serve
 # → http://localhost:5090
 ```
 
-| Scenario | Path |
-|----------|------|
-| Install from packages | [Installation](docs/getting-started/01-Installation.md) |
-| 5-minute walkthrough | [Quick start](docs/getting-started/02-Quick-Start.md) |
-| Migration internals | [Migration guide](docs/guides/migration/MIGRATION-INTERNALS.md) |
-| Intent scoring | [Decision engine](docs/guides/decision-engine/SCORING.md) |
+<details>
+<summary><b>Or grab a release binary</b></summary>
+
+```bash
+# macOS Apple Silicon example
+curl -LO https://github.com/zyvorai/Aether/releases/download/v0.4.0/aether-macos-arm64
+chmod +x aether-macos-arm64
+./aether-macos-arm64 --help
+```
+
+See all assets on the [Releases](https://github.com/zyvorai/Aether/releases) page.
+
+</details>
+
+### The entire contract
+
+```yaml
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: demo-webserver
+requirements:
+  cpu: "500m"
+  memory: 256Mi
+runtime:
+  preferred: kube
+  allow: [kube, podman, kubevirt]
+network:
+  service: true
+  ports:
+    - containerPort: 8080
+      servicePort: 80
+```
+
+One file. Three possible homes. Aether decides — or you override.
 
 ---
 
-## Core Interfaces
+## 🧭 Migration matrix
 
-### Web UI
+Move workloads like files — except these files are **running systems**.
 
-SSE real-time updates, command palette (`⌘K`), intent debugger with radar chart, log viewer with follow mode. Discovered Kubernetes pods and KubeVirt VMs expose logs and an in-browser shell (the shell resolves the backing pod, e.g. `virt-launcher-*` for VMs, and requires an Operator or Admin key).
-
-```bash
-cd web && npm install && npm run dev
-```
-
-### CLI
+| From → To | Podman | Kubernetes | KubeVirt |
+|-----------|:------:|:----------:|:--------:|
+| **Podman** | — | ✅ | ✅ |
+| **Kubernetes** | ✅ | — | ✅ |
+| **KubeVirt** | ✅ | ✅ | ✅ live-migrate |
 
 ```bash
-aether run --spec workload.yaml --runtime kubevirt
+# Blue-green across runtimes
 aether migrate my-app --from kube --to kubevirt --strategy blue-green
-aether live-migrate my-vm            # KubeVirt node-to-node live migration
-aether policy-check --policy production
-aether orchestrate watch --interval 30
+
+# Node-to-node KubeVirt live migration
+aether live-migrate my-vm --watch-timeout 120
+
+# Let intent re-score placement
+aether score --spec workload.yaml
 ```
+
+Strategies: `immediate` · `blue-green` · `rolling` — with drain, health gates, and rollback paths.
 
 ---
 
-## Architecture
+## 🪟 Glass dashboard
+
+Not another Bootstrap admin theme.
+
+- **Zyvor orange** accent on macOS-26-style glass
+- **SSE** — mutations land in the UI without refresh spam
+- **Command palette** — `⌘K` / `Ctrl+K`
+- **Workload detail** — Overview · Logs · Drift · Scoring
+- **Discovered pods & VMs** — Logs + Shell (Operator/Admin)
+- **Intent debugger** — SVG radar for cost / performance / reliability / availability
+
+```bash
+cd web/dashboard && npm run dev
+# or: aether serve  →  :5090
+```
+
+Demo login (local): `admin` / `Admin@321`
+
+---
+
+## 🏗 Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  SURFACES                                                        │
+│  React Web UI  ·  ratatui TUI  ·  Rust CLI  ·  REST + SSE API    │
+├─────────────────────────────────────────────────────────────────┤
+│  BRAIN                                                           │
+│  Intent scoring  ·  Migration engine  ·  Policy / RBAC / Audit   │
+│  Drift · GitOps reconcile · Secrets · Health loop · Copilot/Zyra │
+├─────────────────────────────────────────────────────────────────┤
+│  ADAPTERS                                                        │
+│  Podman  ·  Docker  ·  Kubernetes  ·  KubeVirt                   │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ```mermaid
-flowchart LR
-  UI[Web + TUI] --> API[Aether API]
-  CLI[CLI] --> API
-  API --> Intent[Intent Engine]
-  API --> Mig[Migration Engine]
-  Intent --> Podman[Podman]
-  Intent --> K8s[Kubernetes]
-  Intent --> KV[KubeVirt]
-  Mig --> Podman
-  Mig --> K8s
-  Mig --> KV
+flowchart TB
+  subgraph Surfaces
+    W[Web Dashboard]
+    T[TUI]
+    C[CLI]
+  end
+  subgraph Control Plane
+    API[Axum API + SSE]
+    I[Intent Engine]
+    M[Migration Engine]
+    P[Policy · RBAC · Audit]
+  end
+  subgraph Runtimes
+    Podman
+    K8s[Kubernetes]
+    KV[KubeVirt]
+  end
+  W --> API
+  T --> API
+  C --> API
+  API --> I
+  API --> M
+  API --> P
+  I --> Podman & K8s & KV
+  M --> Podman & K8s & KV
 ```
-
-Full design: **[Architecture docs](docs/architecture/)** · **[Product overview](docs/PRODUCT.md)**
 
 ---
 
-## Documentation
+## 📦 What's in the box
 
-| Goal | Document |
-|------|----------|
-| Start here | [Docs index](docs/README.md) |
-| User journeys | [User stories](docs/USER_STORIES.md) |
-| Ecosystem position | [ECOSYSTEM.md](docs/ECOSYSTEM.md) |
-| Full page index | [index.md](docs/index.md) |
+| Path | Purpose |
+|------|---------|
+| `src/` | Control plane — CLI, API, adapters, intelligence |
+| `web/dashboard/` | React 18 + TypeScript + Tailwind glass UI |
+| `examples/` | Specs you can run today |
+| `helm/` · `packaging/` | Cluster & OS packaging |
+| `docs/` | Architecture, guides, customer manuals |
 
-## Zyvor Platform Stack
+| Interface | How |
+|-----------|-----|
+| CLI | `aether run\|migrate\|serve\|live-migrate\|…` |
+| API | `http://localhost:5090/api/*` |
+| TUI | `aether ui` |
+| Web | `aether serve` → browser |
+
+---
+
+## 📚 Documentation
+
+| Want… | Go here |
+|-------|---------|
+| Full feature map (70 features) | [Customer Feature Guide](docs/aether-customer-feature-guide.md) · [PDF](docs/aether-customer-feature-guide.pdf) |
+| Install / 5-minute start | [Installation](docs/getting-started/01-Installation.md) · [Quick Start](docs/getting-started/02-Quick-Start.md) |
+| Migration internals | [MIGRATION-INTERNALS](docs/guides/migration/MIGRATION-INTERNALS.md) |
+| Scoring / intent | [Decision engine](docs/guides/decision-engine/SCORING.md) |
+| Docs index | [docs/README.md](docs/README.md) |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
+
+---
+
+## 🌌 Zyvor constellation
+
+Aether sits in a wider private-cloud stack from [Zyvor](https://zyvor.dev):
 
 | Product | Role |
 |---------|------|
-| **hypercluster** | Bare-metal Kubernetes bootstrap |
-| **machina** | Physical hypervisor OS (libvirt/KVM) |
-| **zeus-os** | Cloud / KubeVirt control plane |
-| **hermes** | Application layer for Kubernetes |
-| **forge** | AI infrastructure on Kubernetes |
-| **hypersdk / hyper2kvm** | Multi-cloud VM migration |
-| **guestkit** | Offline VM migration assurance |
-| **packetwolf** | Kernel-native network intelligence |
-| **Aether** | Universal runtime portability |
-| **Veyron** | KubeVirt VM command center |
-| **IronWolf** | Metal3 bare-metal automation |
-| **zyvor-fabric** | systemd-native private cloud |
-
-→ [zyvor.dev](https://zyvor.dev)
+| **Aether** | Universal runtime portability ← *you are here* |
+| **Ragnarok** | Confidential computing (separate product) |
+| **hyper2kvm / HyperSDK** | Multi-cloud VM migration |
+| **GuestKit** | Offline guest inspection |
+| **PacketWolf** | Network intelligence |
+| **Haven** | Identity plane |
+| **Fabric / Fleet / Forge** | Private cloud · edge · GPU fabric |
 
 ---
 
-## Development
+## 🛠 Development
 
-See project docs for CI, testing, and contribution guidelines. Historical build summaries in the repo root are snapshots — **`docs/` and this README are authoritative.**
+```bash
+make ci          # tests + clippy + dashboard build + vitest
+cargo test
+cargo clippy --all-targets --all-features
+cd web/dashboard && npm run test && npm run check:hex-surfaces
+```
+
+We use Conventional Commits (`feat:`, `fix:`, `docs:`). PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## License
+## 📄 License
 
-Apache License, Version 2.0 — see [LICENSE](LICENSE). Confidential computing
-(Ragnarok) is a separate Zyvor product and is not included in this repository.
+**Apache License 2.0** — see [LICENSE](LICENSE).
+
+Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
+
+---
+
+<div align="center">
+
+### Stop rewriting deploys. Start moving runtimes.
+
+**[★ Star Aether](https://github.com/zyvorai/Aether)** · **[Cut a release](https://github.com/zyvorai/Aether/releases)** · **[zyvor.dev](https://zyvor.dev)**
+
+```text
+        one spec  →  any runtime  →  migrate without fear
+```
+
+<sub>Built with Rust · Glass · Intent · by ZyvorAI Labs</sub>
+
+</div>
