@@ -1399,7 +1399,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         </div>
       </Modal>
 
-      <Modal isOpen={deployModal} onClose={closeDeployModal} title="Deploy New Workload" size="yaml">
+      <Modal isOpen={deployModal} onClose={closeDeployModal} title="Deploy New Workload" size="full">
         {deploySuccess ? (
           <DeploySuccessPanel
             name={deploySuccess.name}

@@ -7,6 +7,21 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { yaml } from '@codemirror/lang-yaml';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
+
+// Classic macOS Terminal "bright ANSI" palette — keys/strings/numbers/
+// booleans/comments each get a distinct hue instead of one flat gray, so
+// the editor reads as an actual colorful terminal, not just a dark box.
+const terminalHighlightStyle = HighlightStyle.define([
+  { tag: t.propertyName, color: '#57c7ff' }, // YAML keys — bright blue
+  { tag: t.string, color: '#5af78e' }, // string values — bright green
+  { tag: [t.number, t.integer, t.float], color: '#ff6ac1' }, // numbers — magenta
+  { tag: [t.bool, t.null, t.atom, t.keyword], color: '#f3f99d' }, // true/false/null — yellow
+  { tag: t.comment, color: '#7a8f7c', fontStyle: 'italic' }, // # comments — muted green
+  { tag: [t.punctuation, t.separator, t.meta], color: '#9aedfe' }, // :, -, --- — cyan
+  { tag: t.invalid, color: '#ff5c57' },
+]);
 
 interface YamlCodeEditorProps {
   value: string;
@@ -108,6 +123,7 @@ export default function YamlCodeEditor({
         highlightActiveLineGutter(),
         history(),
         yaml(),
+        syntaxHighlighting(terminalHighlightStyle),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         editorTheme(),
         surfaceTheme(),

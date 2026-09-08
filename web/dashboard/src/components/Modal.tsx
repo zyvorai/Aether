@@ -11,7 +11,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
-  size?: 'default' | 'wide' | 'yaml';
+  size?: 'default' | 'wide' | 'yaml' | 'full';
 }
 
 const FOCUSABLE =
@@ -73,7 +73,28 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
   if (!isOpen) return null;
 
   const isYaml = size === 'yaml';
+  const isFull = size === 'full';
   const isWide = size === 'wide' || isYaml;
+
+  if (isFull) {
+    return createPortal(
+      <div className="fixed inset-0 z-50 flex animate-fade-in flex-col glass" role="dialog" aria-modal="true" aria-label={title} ref={panelRef}>
+        <div className="flex shrink-0 items-center justify-between glass-divider-b px-6 py-4">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="quick-link-chip p-2 text-muted transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">{children}</div>
+      </div>,
+      document.body,
+    );
+  }
 
   return createPortal(
     <div
