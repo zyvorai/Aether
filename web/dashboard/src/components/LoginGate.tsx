@@ -181,9 +181,10 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
   return (
     <main className="min-h-screen grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]" data-testid="login-gate">
+      <div className="ae-ambient" aria-hidden><i /><i /><i /></div>
       <section className="login-hero min-h-[320px] lg:min-h-screen px-8 py-10 sm:px-12 lg:px-16 xl:px-24 flex flex-col">
         <div className="relative z-10 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl border border-border bg-surface flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl glass-fill flex items-center justify-center">
             <Hexagon className="h-5 w-5 text-primary" strokeWidth={1.6} aria-hidden />
           </div>
           <div>
@@ -203,7 +204,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
         </div>
 
         <div className="relative z-10 my-auto max-w-2xl py-16 lg:py-20">
-          <div className="login-fade-in inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted">
+          <div className="login-fade-in glass-fill inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-muted">
             <Radio className="h-3.5 w-3.5 text-primary" aria-hidden />
             One control plane. Every runtime.
           </div>
@@ -213,7 +214,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             <span className="login-text-gradient">from one YAML spec.</span>
           </h1>
           <p className="login-fade-in login-fade-in-d2 mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-muted">
-            Orchestrate Podman, Kubernetes, KubeVirt, and Metal3 with unified lifecycle management,
+            Orchestrate Podman, Kubernetes, and KubeVirt with unified lifecycle management,
             policy, and real-time intelligence.
           </p>
 
@@ -223,7 +224,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
               { icon: ShieldCheck, title: 'Policy built in', text: 'RBAC and audit trails', tone: 'violet' as const },
               { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions', tone: 'teal' as const },
             ].map(({ icon: Icon, title, text, tone }) => (
-              <div key={title} data-tone={tone} className="rounded-xl border border-border p-4" style={{ background: 'var(--tone-wash)' }}>
+              <div key={title} data-tone={tone} className="glass-fill rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--tone-color) 14%, var(--glass-bg))' }}>
                 <Icon className="h-4 w-4" style={{ color: 'var(--tone-color)' }} aria-hidden />
                 <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
                 <div className="mt-1 text-xs leading-relaxed text-muted">{text}</div>
@@ -236,7 +237,6 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
               { icon: Container, label: 'Podman', tone: 'sky' as const },
               { icon: Server, label: 'Kubernetes', tone: 'violet' as const },
               { icon: Boxes, label: 'KubeVirt', tone: 'teal' as const },
-              { icon: Server, label: 'Metal3', tone: 'rust' as const },
             ].map(({ icon: Icon, label, tone }) => (
               <span key={label} data-tone={tone} className="hero-swatch">
                 <Icon className="h-3 w-3" style={{ color: 'var(--tone-color)' }} aria-hidden />

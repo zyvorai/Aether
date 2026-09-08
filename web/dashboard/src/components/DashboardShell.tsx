@@ -69,6 +69,7 @@ export default function DashboardShell({
 
   return (
     <div className={shellClass}>
+      <div className="ae-ambient" aria-hidden><i /><i /><i /></div>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:border focus:border-primary/30 focus:glass border border-border shadow-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary focus:shadow-lg"
@@ -85,10 +86,12 @@ export default function DashboardShell({
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         sseConnected={sseConnected}
       />
-      <ViewerBanner />
-      {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
-      <VersionRefreshBanner />
-      <div className="flex min-h-0 flex-1">
+      <div className="relative z-[1]">
+        <ViewerBanner />
+        {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
+        <VersionRefreshBanner />
+      </div>
+      <div className="relative z-[1] flex min-h-0 flex-1">
         <AetherSidebar
           currentView={currentView}
           onNavigate={onNavigate}

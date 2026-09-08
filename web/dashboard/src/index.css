@@ -89,33 +89,121 @@
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.3s; }
 
-/* ---- Apple flat surfaces (Aurora) ---- */
+/* ---- macOS 26 glass surfaces ---- */
 .glass {
   background-color: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-border) inset;
   border-radius: var(--radius-liquid);
   transition: box-shadow 0.18s ease;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  /* No backdrop-filter support: fall back to an opaque fill so text stays readable. */
+  .glass { background-color: var(--surface-elevated); }
+}
+/* Same surface as .glass but without an opinionated border-radius, for call
+   sites that need to keep an explicit Tailwind rounded-* utility (rounded-full
+   pills, etc.) — .glass's own radius would otherwise win the cascade. */
+.glass-fill {
+  background-color: var(--glass-bg);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-fill {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
 }
 .glass-elevated { background-color: var(--glass-bg-elevated); }
 .glass-strong {
   background-color: var(--glass-bg-strong);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
 }
 .glass:hover, .glass-elevated:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
 }
 .glass-hover-lift {
   transition: box-shadow 0.18s ease, transform 0.18s ease;
 }
 .glass-hover-lift:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
+  transform: translateY(-1px);
 }
 
-.tahoe-hero { background: transparent; border: none; padding: 0; }
-.tahoe-hero-shine { display: none; }
-.tahoe-icon-badge { display: none; }
-.tahoe-stat-tile { padding: 1rem 0; border: none; background: transparent; }
+/* ambient background — three blurred washes behind the whole glass shell */
+.ae-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ae-ambient i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.75;
+}
+.ae-ambient i:nth-child(1) { width: 60vw; height: 60vw; left: -15vw; top: -25vw; background: var(--hero-a); }
+.ae-ambient i:nth-child(2) { width: 45vw; height: 45vw; right: -10vw; top: -10vw; background: var(--hero-b); }
+.ae-ambient i:nth-child(3) { width: 50vw; height: 50vw; left: 30vw; bottom: -30vw; background: var(--hero-c); }
+@media (prefers-reduced-motion: reduce) {
+  .ae-ambient { opacity: 0.6; }
+}
+
+.tahoe-hero {
+  background: var(--glass-bg);
+  border-radius: var(--radius-2xl);
+  padding: clamp(2rem, 4vw, 3rem);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .tahoe-hero {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+.tahoe-hero-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), transparent 45%);
+  pointer-events: none;
+}
+.tahoe-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 85%, white), var(--primary));
+  color: #fff;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+/* Widely reused stat-tile pattern (`tahoe-stat-tile border border-border
+   bg-surface`, ~40 call sites) — own the surface here so every call site
+   picks up the glass treatment without touching each file. */
+.tahoe-stat-tile {
+  border-width: 0;
+  background-color: var(--glass-bg);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .tahoe-stat-tile {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+.tahoe-stat-tile:hover {
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
+}
 .tahoe-stat-value {
   font-size: 1.5rem;
   font-weight: 600;
@@ -130,6 +218,67 @@
 
 .apple-editorial-hero {
   padding-block: var(--hero-pad-block, clamp(2.5rem, 6vw, 4.5rem));
+}
+
+/* Feature card with an orbiting-runtime illustration — "One spec, every
+   runtime." marketing chapter (see AetherApp.jsx reference). */
+.feature-orbit-card {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 34px 36px;
+  border-radius: var(--radius-2xl);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .feature-orbit-card {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+.feature-orbit-art {
+  position: relative;
+  height: 220px;
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.feature-orbit-art .orbit {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  border: 1px dashed var(--glass-border-strong);
+}
+.feature-orbit-art .node {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+.feature-orbit-art .core {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 80%, white), var(--primary));
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--primary) 90%, transparent);
+}
+@media (max-width: 1024px) {
+  .feature-orbit-card { grid-template-columns: 1fr; }
+  .feature-orbit-art { display: none; }
 }
 
 /* iPad Pro–style OLED dark chapter: true black with a soft spotlight glow
@@ -156,8 +305,16 @@ html.dark-theme .apple-editorial-hero::before,
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: var(--apple-ink, #1d1d1f);
-  color: var(--apple-paper, #f5f5f7);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  color: var(--foreground);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .apple-chapter-dark,
+  .marketplace-chapter-ink {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
 }
 
 .apple-chapter-dark::before,
@@ -167,19 +324,14 @@ html.dark-theme .apple-editorial-hero::before,
   inset: -20%;
   z-index: -1;
   background: radial-gradient(60% 80% at 18% 8%, var(--tone-glow, var(--tone-sky-glow)), transparent 70%);
-  opacity: 0.5;
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .apple-chapter-dark .text-eyebrow,
 .marketplace-chapter-ink .text-eyebrow {
-  color: var(--apple-paper, #f5f5f7);
+  color: var(--foreground);
   opacity: 0.68;
-}
-
-html.dark-theme .apple-chapter-dark,
-:root[data-theme='dark'] .apple-chapter-dark {
-  background: #000000;
 }
 
 .apple-highlights-row { text-align: center; width: 100%; }
@@ -259,15 +411,21 @@ html.dark-theme .apple-chapter-dark,
   gap: 1.25rem;
   padding: 1.5rem 1.75rem;
   border-radius: var(--radius-xl);
-  background: var(--tone-wash, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--tone-color, var(--border)) 22%, var(--border));
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
   text-decoration: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .hub-band {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
 }
 .hub-band:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--tone-color, var(--primary)) 14%, transparent);
-  border-color: color-mix(in srgb, var(--tone-color, var(--primary)) 40%, var(--border));
+  background: var(--tone-wash, var(--glass-bg-elevated));
+  box-shadow: var(--glass-shadow), 0 0 0 1px color-mix(in srgb, var(--tone-color, var(--primary)) 40%, var(--glass-edge));
 }
 .hub-band-icon {
   display: flex;
@@ -353,7 +511,7 @@ html.dark-theme .apple-chapter-dark,
     border-top: 1px solid var(--border);
   }
 
-  /* Compat: old Liquid Glass class names → Aurora flat surfaces */
+  /* Compat: old Liquid Glass class names → now real glass again */
   .command-center-shell,
   .overview-section-shell,
   .hub-page-shell,
@@ -372,9 +530,30 @@ html.dark-theme .apple-chapter-dark,
   .glass-dropdown-surface,
   .dash-breadcrumb {
     background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
     border-radius: var(--radius-liquid);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .command-center-shell,
+    .overview-section-shell,
+    .hub-page-shell,
+    .surface-panel,
+    .surface-panel-soft,
+    .glass-panel-card,
+    .dash-card,
+    .dash-card-flush,
+    .glass-modal-panel,
+    .glass-drawer,
+    .glass-split-pane-sidebar,
+    .glass-split-pane-main,
+    .glass-table-shell,
+    .glass-code-block,
+    .glass-empty-state,
+    .glass-dropdown-surface,
+    .dash-breadcrumb {
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+    }
   }
 
   .glass-toolbar {
@@ -413,8 +592,8 @@ html.dark-theme .apple-chapter-dark,
   .glass-input,
   .glass-select {
     @apply w-full rounded-xl px-3 py-2 text-sm outline-none transition-shadow;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border);
     color: var(--foreground);
   }
   .glass-input:focus,
@@ -428,8 +607,8 @@ html.dark-theme .apple-chapter-dark,
   .glass-divider-b { border-bottom: 1px solid var(--border); }
   .glass-divider-t { border-top: 1px solid var(--border); }
   .glass-inset-surface {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-md);
   }
   .glass-tab,
@@ -449,16 +628,22 @@ html.dark-theme .apple-chapter-dark,
   .glass-alert-warn,
   .glass-alert-success {
     @apply rounded-xl border px-4 py-3 text-sm;
-    border-color: var(--border);
-    background: var(--surface);
+    border-color: var(--glass-border);
+    background: var(--glass-bg);
   }
   .glass-context-banner {
     @apply mb-6 rounded-2xl border px-4 py-3;
-    border-color: var(--border);
-    background: var(--surface);
+    border-color: var(--glass-border);
+    background: var(--glass-bg);
   }
   .glass-modal-backdrop {
     background: var(--scrim);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass-modal-backdrop {
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
   }
 
   .section-label-purple,
@@ -492,6 +677,12 @@ html.dark-theme .apple-chapter-dark,
 
   .steel-grid { background-image: none; }
   .navbar-blur { background: var(--nav-bg); }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .navbar-blur {
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+    }
+  }
   .navbar-glass-accent::after { display: none; }
 
   @keyframes toast-slide-in {
@@ -521,11 +712,11 @@ html.dark-theme .apple-chapter-dark,
     color: var(--muted-foreground);
   }
 
-  /* Aurora login — Apple Store paper (not dark mesh) */
+  /* Aurora login — macOS 26 glass over an ambient wash */
   .login-hero {
     position: relative;
     overflow: hidden;
-    background: var(--background);
+    background: transparent;
     color: var(--foreground);
   }
   .login-hero-mesh { display: none; }
@@ -535,19 +726,24 @@ html.dark-theme .apple-chapter-dark,
     -webkit-background-clip: unset;
     background-clip: unset;
   }
-  .login-panel { background: var(--apple-paper); }
+  .login-panel { background: transparent; }
   .login-glass {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow-card);
+    background: var(--glass-bg-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .login-glass {
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+    }
   }
   .login-input {
     width: 100%;
     padding: 0.65rem 0.9rem 0.65rem 2.5rem;
     border-radius: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border);
     color: var(--foreground);
     font-size: 0.875rem;
   }

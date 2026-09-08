@@ -325,7 +325,6 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         { label: 'Podman', tone: 'sky' },
         { label: 'Kubernetes', tone: 'violet' },
         { label: 'KubeVirt', tone: 'teal' },
-        { label: 'Metal3', tone: 'rust' },
       ]}
       stats={heroStats}
       statsTestId="overview-apple-highlights"
@@ -343,6 +342,10 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
           <section className="apple-chapter">
             <CommandCenterNextActions onNavigate={onNavigate} refreshKey={refreshKey} />
           </section>
+
+          <section className="apple-chapter">
+            <RuntimeOrbitFeature onDeploy={() => goFiltered('workloads', { deploy: '1' })} onOpenEditor={() => onNavigate('editor')} />
+          </section>
         </>
       ) : null}
 
@@ -359,7 +362,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
           <EmptyState
             icon={<Rocket size={48} />}
             title="Deploy your first workload"
-            description="One YAML spec. Every runtime — Podman, Kubernetes, KubeVirt, and Metal3."
+            description="One YAML spec. Every runtime — Podman, Kubernetes, and KubeVirt."
             action={
               <div className="flex flex-wrap justify-center gap-3">
                 <button
@@ -417,6 +420,53 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         eventCount={eventSummary?.total_events ?? 0}
       />
     </AuroraPage>
+  );
+}
+
+const ORBIT_RUNTIMES = [
+  { id: 'podman', label: 'Podman', short: 'Pd', color: 'var(--rt-podman)' },
+  { id: 'k8s', label: 'Kubernetes', short: 'K8', color: 'var(--rt-k8s)' },
+  { id: 'kubevirt', label: 'KubeVirt', short: 'Kv', color: 'var(--rt-kubevirt)' },
+] as const;
+
+function RuntimeOrbitFeature({ onDeploy, onOpenEditor }: { onDeploy: () => void; onOpenEditor: () => void }) {
+  return (
+    <div className="feature-orbit-card">
+      <div>
+        <h2 className="text-[34px] font-semibold tracking-[-0.035em] leading-[1.05]">One spec. Every runtime.</h2>
+        <p className="mt-3 max-w-[44ch] text-[17px] leading-[1.45] text-muted">
+          Write a single YAML spec and deploy it to Podman, Kubernetes, or KubeVirt. Move it between them later without
+          rewriting a line.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button type="button" onClick={onDeploy} className="btn-primary">
+            Deploy YAML
+          </button>
+          <button type="button" onClick={onOpenEditor} className="btn-secondary">
+            Open visual editor
+          </button>
+        </div>
+      </div>
+      <div className="feature-orbit-art" aria-hidden>
+        <div className="orbit" />
+        <div className="core">Æ</div>
+        {ORBIT_RUNTIMES.map((rt, i) => {
+          const angle = (i / ORBIT_RUNTIMES.length) * Math.PI * 2 - Math.PI / 2;
+          const x = 50 + Math.cos(angle) * 36;
+          const y = 50 + Math.sin(angle) * 36;
+          return (
+            <div
+              key={rt.id}
+              className="node"
+              style={{ left: `calc(${x}% - 22px)`, top: `calc(${y}% - 22px)`, background: rt.color }}
+              title={rt.label}
+            >
+              {rt.short}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -1,18 +1,21 @@
-# Aether Dashboard — Aurora / Apple Design System
+# Aether Dashboard — Aurora / macOS 26 Glass Design System
 
-The dashboard follows **Aurora’s Apple.com anatomy** with **Apple blue** accents from Aurora `globals.css` (not Zyvor marketing orange).
+The dashboard follows **Aurora's Apple.com anatomy** (hero, chapters, hub bands) rendered through a **macOS 26 ("Tahoe") glass surface system**: translucent floating panels (`backdrop-filter: blur(28px) saturate(180%)`) over three blurred ambient color washes, with **Apple blue** accents (not Zyvor marketing orange).
+
+This is the second time this codebase has landed on "real glass" — 11 earlier "liquid glass sweep" commits built it out fully, a September 2026 pass ("Dashboard redesign foundation") flattened it to opaque flat surfaces for a few days, and this pass reactivated it. The flat era's component structure (`AuroraPage`/`PageHero`/`GlassSection`/`SectionHubPage`) is unchanged — only the CSS backing those components (`.glass`, `.tahoe-*`, `.hub-band`, `.hero-swatch`, nav/sidebar chrome) was re-themed. If you're tempted to flatten this again, read `git log --grep="liquid glass"` first.
 
 ## Hierarchy
 
 | Layer | Class / component | Use |
 |-------|-------------------|-----|
-| Page backdrop | `app-shell`, `--background` | Full-viewport canvas (light-first paper `#f5f5f7`) |
-| Global nav | `GlobalNav` (44px sticky blur) | All destinations via top links + flyouts |
-| Page hero | `PageHero` / `AuroraPage` | Eyebrow → `DisplayTitle` → lead → actions |
-| Highlights | `AppleHighlightsRow` + `.apple-chapter-dark` | Ink “Get the highlights.” band (iPad Pro chapter) |
+| Page backdrop | `app-shell`, `.ae-ambient` (3 blurred color washes), `--background` | Full-viewport canvas; the ambient washes sit at `z-index: 0` behind a `position: relative; z-index: 1` content wrapper — see `DashboardShell.tsx` |
+| Global nav | `GlobalNav` (44px sticky, `var(--glass-blur)`) | All destinations via top links + flyouts |
+| Sidebar | `AetherSidebar` — floating inset glass panel (`m-3.5`, `--radius-2xl`), not flush to the window edge | Hubs-only primary nav, collapsible sections, pinned "Ask Zyra" |
+| Page hero | `PageHero` / `AuroraPage` (`.tahoe-hero`) | Eyebrow → `DisplayTitle` → lead → actions, now a real glass panel |
+| Highlights | `AppleHighlightsRow` + `.apple-chapter-dark` | Glass "Get the highlights." band over an ambient tone glow |
 | Chapters | `.apple-chapter`, `SectionHeader` | One idea per section; large vertical air (`--section-gap` / `space-y-12`) |
-| Surfaces | `.glass`, `Card` | Flat Apple cards only when interaction needs a container |
-| Forms | `.login-*`, `Input`, `Button` (pill / 980px) | Apple Store paper login + console controls |
+| Surfaces | `.glass`, `.glass-fill`, `Card` | Translucent blurred panels — `.glass` sets its own `border-radius`; use `.glass-fill` instead when the call site needs a different explicit `rounded-*` (see Gotchas below) |
+| Forms | `.login-*`, `Input`, `Button` (pill / 980px) | Login is now glass-over-ambient too (see Auth below) |
 
 ## Apple.com → Aether page map
 
@@ -59,13 +62,13 @@ Default local login (disable with `AETHER_DEMO_AUTH=0`):
 
 Override: `AETHER_DEMO_USER` / `AETHER_DEMO_PASSWORD`.
 
-Login (`LoginGate`) is **Apple Store paper** (white/light chapters + pill Sign in) — not a dark mesh hero.
+Login (`LoginGate`) is glass-over-ambient (`.ae-ambient` + `.login-glass`, pill Sign in) — not a dark mesh hero, and no longer the flat "Store paper" exception it was for a few days; it gets the same glass treatment as the rest of the app.
 
 ## Themes
 
 `light` | `dark` | `system` via ThemeContext.
-Dark chapters (`.apple-chapter-dark`) use ink `#1d1d1f` in light theme and pure black under `.dark-theme`.
-**iPad Pro–style dark mode**: `.dark-theme` goes true OLED black (`--background: #000000`) with vivid single-tone glows (`--tone-*-glow`, ~0.32-0.34 opacity) — `.apple-editorial-hero` (every `PageHero`) and `.login-chapter-hero` both get a radial spotlight glow behind the hero copy in dark mode only (light mode stays plain Store paper, no glow). Tone comes from `accent`/`data-tone`, defaulting to sky blue.
+Dark chapters (`.apple-chapter-dark`) are now a `--glass-bg-strong` glass panel with a tone glow in both themes (no more solid-black override) — the page's `--background` still goes true OLED black under `.dark-theme`, so glass panels read as lighter floating surfaces against it, same as the reference macOS 26 look.
+**iPad Pro–style dark mode**: `.dark-theme` goes true OLED black (`--background: #000000`) with vivid single-tone glows (`--tone-*-glow`, ~0.32-0.34 opacity) — `.apple-editorial-hero` (every `PageHero`) and `.login-chapter-hero` both get a radial spotlight glow behind the hero copy in dark mode only. Tone comes from `accent`/`data-tone`, defaulting to sky blue.
 
 ## Buttons
 
@@ -76,12 +79,19 @@ Dark chapters (`.apple-chapter-dark`) use ink `#1d1d1f` in light theme and pure 
 
 ## Conventions
 
-- Prefer `AuroraPage` + sparse chapters over Liquid Glass shells
+- Prefer `AuroraPage` + sparse chapters, now rendered as glass — don't hand-roll a one-off blur effect when `Card`/`GlassSection`/`.glass`/`.glass-fill` already gets you there
 - Pass `stats` (and optional `statsTestId`) to `AuroraPage` / `PageHero` for headline metrics
-- Overview ships hero + ink highlights + two quiet chapters (briefing, next actions); Explore disclosure holds secondary inventory
+- Overview ships hero + ink highlights + briefing + next actions + a "One spec, every runtime" feature/orbit card (`.feature-orbit-card`, `RuntimeOrbitFeature` in `OverviewPage.tsx`); Explore disclosure holds secondary inventory
 - Nav: `data-testid="global-nav"`
 - Hex surfaces stay in CSS/`theme.css` only — `npm run check:hex-surfaces` fails on `bg-[#…]` / `bg-black` in TSX
 - Semantic warning colors (amber/orange for degraded health, log WARN) are status-only—not brand
+- Runtime identity: `--rt-podman` / `--rt-k8s` / `--rt-kubevirt` alias `--tone-sky` / `--tone-violet` / `--tone-teal` — one source of truth for "Podman is sky, Kubernetes is violet, KubeVirt is teal" everywhere a runtime chip/node renders (`formatters.ts`, hero swatches, the orbit card). There is no fourth runtime — Metal3 was removed from the whole product; don't reintroduce a `--rt-metal3` token or a fourth swatch/node
+
+### Gotchas
+
+- **`.glass` vs `.glass-fill`** — `.glass` sets its own `border-radius: var(--radius-liquid)`, and because it's declared after Tailwind's utility layer in `index.css`, it wins the cascade over an explicit `rounded-*` class on the same element. If you need a pill (`rounded-full`) or a specific radius token (`rounded-[var(--radius-md)]`) on a glass surface, use `.glass-fill` (background + blur + shadow, no radius opinion) instead of `.glass`, and let your own `rounded-*` class win.
+- **`@supports` fallback** — every glass surface is wrapped in `@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))`; browsers without `backdrop-filter` support fall back to an opaque `--surface-elevated` fill instead of a translucent-but-unblurred (illegible) panel. Keep this pattern when adding new glass surfaces.
+- **Hub pages are not bespoke mocks** — `FabricPage`, `MigrationsPage`, and `SettingsPage` are `SectionHubPage` indexes (6, 4, and 6 bands respectively) into real sub-features, not the flat "3 runtime cards" / "migration row list" / "toggle rows" shown in early macOS-26 mockups. They inherit the glass look automatically via `SectionHubPage`'s `.hub-band` styling — resist the urge to replace real hub navigation with a simplified mock just because a reference design showed one.
 
 ## Verification
 

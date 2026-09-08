@@ -3,20 +3,13 @@
   top: 0;
   z-index: 60;
   height: var(--hs-nav-h);
-  background: rgba(255, 255, 255, 0.72);
-  -webkit-backdrop-filter: saturate(200%) blur(24px);
-  backdrop-filter: saturate(200%) blur(24px);
-  border-bottom: 1px solid rgba(20, 22, 26, 0.08);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-edge);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-:global(html.dark-theme) .gnav,
-:global(html[data-theme='dark']) .gnav {
-  background: rgba(29, 29, 31, 0.72);
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-.gnav[data-open='true'] { background: rgba(255, 255, 255, 0.96); border-bottom-color: transparent; }
-:global(html.dark-theme) .gnav[data-open='true'],
-:global(html[data-theme='dark']) .gnav[data-open='true'] { background: rgba(29, 29, 31, 0.96); }
+.gnav[data-open='true'] { background: var(--glass-bg-strong); border-bottom-color: transparent; }
 .gnavInner {
   max-width: var(--hs-max-width);
   height: 100%;
@@ -80,7 +73,19 @@
 .accountBtn { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 7px; background: none; border: 0; cursor: pointer; color: var(--foreground); }
 .accountBtn:hover { background: rgba(20, 22, 26, 0.05); }
 .accountAvatar { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 10px; font-weight: 600; text-transform: uppercase; }
-.accountMenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 61; min-width: 200px; padding: 4px; border-radius: 10px; background: var(--surface-elevated); border: 1px solid var(--border); box-shadow: var(--hs-e2); }
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 61;
+  min-width: 200px;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
 .accountMenuItem { display: block; width: 100%; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--foreground); text-align: left; background: none; border: 0; cursor: pointer; }
 .accountMenuItem:hover { background: rgba(20, 22, 26, 0.05); }
 .accountMenuDanger { composes: accountMenuItem; color: var(--danger); }

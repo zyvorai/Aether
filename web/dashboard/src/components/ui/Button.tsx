@@ -14,10 +14,10 @@ const variants: Record<Variant, string> = {
     'hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-accent)] ' +
     'active:translate-y-0 active:scale-[0.98] transition-all',
   secondary:
-    'rounded-[var(--radius-pill)] text-primary border border-primary bg-transparent ' +
+    'rounded-[var(--radius-pill)] glass-fill text-foreground ' +
     'hover:bg-[var(--accent-tint)] hover:-translate-y-px active:scale-[0.98] transition-all',
   ghost:
-    'rounded-[var(--radius-sm)] text-muted hover:text-foreground hover:bg-[var(--nav-hover-bg)] transition-colors',
+    'rounded-[var(--radius-sm)] text-muted hover:text-foreground hover:bg-[var(--hover)] transition-colors',
   danger:
     'rounded-[var(--radius-pill)] bg-danger/10 text-danger hover:bg-danger/15 transition-colors',
   link: 'text-primary hover:underline p-0 h-auto font-normal',

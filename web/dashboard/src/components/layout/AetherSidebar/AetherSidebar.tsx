@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Sparkles, X } from 'lucide-react';
 import type { AppView } from '../../../types/api';
 import { getViewMeta, type DashboardViewMeta } from '../../../utils/dashboardNav';
 import { SIDEBAR_PRIMARY, SIDEBAR_SECTIONS, type SidebarSection } from '../../../utils/sidebarNav';
@@ -79,13 +79,12 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'relative flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-        active ? 'bg-primary-wash font-medium text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
+        'relative flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        active ? 'glass-fill font-medium text-primary shadow-card' : 'text-muted hover:bg-hover hover:text-foreground',
         rail ? 'w-full justify-center px-1.5 py-1.5' : 'w-full',
         className,
       )}
     >
-      {active && !rail ? <span className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-primary" aria-hidden /> : null}
       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
       {rail ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
     </button>
@@ -153,7 +152,7 @@ function SidebarSectionBlock({
                 onMouseEnter={clearCloseTimer}
                 onMouseLeave={scheduleClose}
                 style={{ position: 'fixed', top: flyoutPos.top, left: flyoutPos.left }}
-                className="z-[70] min-w-[190px] max-h-[min(70vh,420px)] overflow-y-auto rounded-lg border border-border bg-surface-elevated py-1.5 shadow-lg"
+                className="glass z-[70] min-w-[190px] max-h-[min(70vh,420px)] overflow-y-auto py-1.5"
               >
                 <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-subtle">{section.label}</p>
                 <ul className="px-1">
@@ -251,8 +250,8 @@ export default function AetherSidebar({
   return (
     <aside
       className={cn(
-        'flex flex-shrink-0 flex-col bg-background border-r border-border',
-        mobile ? 'h-full w-72' : `hidden lg:flex ${widthClass}`,
+        'flex flex-shrink-0 flex-col',
+        mobile ? 'h-full w-72 glass' : `hidden lg:flex ${widthClass} m-3.5 rounded-[var(--radius-2xl)] glass-fill`,
       )}
       aria-label="Aether navigation"
     >
@@ -266,7 +265,7 @@ export default function AetherSidebar({
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter"
               aria-label="Filter navigation"
-              className="w-full min-w-0 rounded-md bg-hover py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="glass-fill w-full min-w-0 rounded-md py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
             {filter ? (
               <button
@@ -306,8 +305,33 @@ export default function AetherSidebar({
         ) : null}
       </nav>
 
-      {!mobile ? (
-        <div className="border-t border-border p-1.5">
+      <div className={cn('border-t border-border p-1.5', rail && 'flex flex-col items-center')}>
+        <button
+          type="button"
+          onClick={() => handleNavigate('zyra')}
+          title="Ask Zyra"
+          className={cn(
+            'flex items-center gap-2.5 rounded-[var(--radius-lg)] px-2.5 py-2 text-left transition-colors hover:bg-hover',
+            rail ? 'w-9 justify-center' : 'mb-1.5 w-full',
+          )}
+          style={!rail ? { background: 'linear-gradient(135deg, rgba(168,98,234,.16), rgba(10,132,255,.14))' } : undefined}
+        >
+          <span
+            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-white"
+            style={{ background: 'linear-gradient(135deg, #a862ea, #0a84ff)' }}
+          >
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          </span>
+          {!rail ? (
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold text-foreground">Ask Zyra</span>
+              <span className="block truncate text-[11px] text-subtle">AI infrastructure copilot</span>
+            </span>
+          ) : (
+            <span className="sr-only">Ask Zyra</span>
+          )}
+        </button>
+        {!mobile ? (
           <button
             type="button"
             onClick={() => onCollapsedChange(!collapsed)}
@@ -317,8 +341,8 @@ export default function AetherSidebar({
           >
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <><ChevronLeft className="h-3.5 w-3.5" /><span>Collapse</span></>}
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </aside>
   );
 }
