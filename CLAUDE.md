@@ -95,11 +95,12 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 - SSE connection indicator (green/red dot in navbar)
 - Keyboard shortcuts: `r` (refresh), `?` (command palette), `Cmd+K` (command palette)
 - Discovered pods/VMs: WorkloadDetail offers Logs plus a Shell for `Pod`, `Deployment`, `StatefulSet`, `DaemonSet`, `VirtualMachine`, and `VirtualMachineInstance`; `pickExecPodName` (`src/utils/clusterExec.ts`) resolves the backing pod before the exec WebSocket opens
+- Aether-managed kube/kubevirt workloads: same exec/shell support as discovered pods (not just Podman/Docker, where the container name and workload name are the same thing) — `WorkloadState.namespace`/`cluster_context`/`k8s_kind` are stamped at deploy time (`deploy_workload_spec` in `src/api/handlers.rs`), and `WorkloadDetail.tsx`'s `execClusterResourcePath`/`canResolveClusterPods` resolve the real backing pod via a K8s label-selector lookup (`/api/cluster/resource`) instead of assuming `workload.name` is the pod name
 - Unit tests: `npm run test` (vitest, `src/**/*.test.ts`); e2e: `npm run test:e2e`
 
 ## Default Ports
 
 - API server: `5090` (configurable via `--port`)
-- Brand color: Apple blue `#0071e3` light / `#0a84ff` dark (Aurora — product console; zyvor-web orange is marketing-only)
-- Visual shell: Apple.com chapters — `PageHero` + `AppleHighlightsRow` ink bands; login is Store paper (see `web/dashboard/docs/DESIGN.md`)
+- Brand color: Zyvor orange `#f97316` light / `#fb923c` dark — the marketing brand color is the product accent everywhere now (Apple blue was dropped)
+- Visual shell: Apple.com chapters — `PageHero` + `AppleHighlightsRow` ink bands, rendered as macOS 26 glass (translucent blur panels over ambient color washes); login is the same glass-over-ambient treatment, not a flat "Store paper" exception (see `web/dashboard/docs/DESIGN.md`)
 - Hex surfaces only in CSS/`theme.css`; run `npm run check:hex-surfaces` before build

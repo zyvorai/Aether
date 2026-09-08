@@ -11,7 +11,7 @@ The WebUI is a **React 18 single-page application** built with TypeScript, Tailw
 - **Runtime Fabric** (`/fabric`) — live Application → Runtime → Cluster topology graph
 - **Copilot rail** — permanent Ask Aether sidebar (xl+); full-page copilot at `/copilot`
 - **REST API**: Programmatic access to all operations (43+ endpoints)
-- **Aurora / Apple.com theme**: Light-first paper (`#f5f5f7`) with Apple blue (`#0071e3`); dark mode ink; editorial `PageHero` + ink “Get the highlights.” bands — see `web/dashboard/docs/DESIGN.md`
+- **Aurora / Apple.com theme**: macOS 26 glass surfaces over light-first paper (`#f5f5f7`) with Zyvor orange (`#f97316`) accents; dark mode ink; editorial `PageHero` + ink “Get the highlights.” bands — see `web/dashboard/docs/DESIGN.md`
 - **Responsive design**: Desktop and mobile support with collapsible menu
 - **Real-time updates**: Auto-refresh on key pages
 
@@ -151,6 +151,8 @@ Resources discovered directly from Kubernetes (workloads whose `source` is `clus
 - For anything other than a bare Pod, Aether fetches the resource detail and picks a **Running** related pod before connecting, so the terminal title shows the pod actually attached (for a VM this is its `virt-launcher-*` pod).
 - Opening a shell requires an **Operator** or **Admin** key. Viewer keys are rejected because the exec WebSocket is a privileged GET.
 - VM logs are virt-launcher container output, not guest-OS logs. Aether matches launcher pods on both `kubevirt.io/vm=` and `vm.kubevirt.io/name=`. For a guest console use `virtctl console <vm>`.
+
+Aether-managed Kubernetes/KubeVirt workloads (`source` is `aether`, deployed via `aether run`/the dashboard's Deploy modal) get the same real pod resolution as discovered resources — a Deployment Aether created is a real Kubernetes object like any other, so the same label-selector lookup finds its actual (generated-name) pods rather than assuming the workload name is literally the pod name. This only applies to the Kubernetes/KubeVirt runtimes; for Podman/Docker the container name and workload name are the same thing, so no resolution step is needed.
 
 ### LogViewer
 

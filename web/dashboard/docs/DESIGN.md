@@ -1,6 +1,6 @@
 # Aether Dashboard — Aurora / macOS 26 Glass Design System
 
-The dashboard follows **Aurora's Apple.com anatomy** (hero, chapters, hub bands) rendered through a **macOS 26 ("Tahoe") glass surface system**: translucent floating panels (`backdrop-filter: blur(28px) saturate(180%)`) over three blurred ambient color washes, with **Apple blue** accents (not Zyvor marketing orange).
+The dashboard follows **Aurora's Apple.com anatomy** (hero, chapters, hub bands) rendered through a **macOS 26 ("Tahoe") glass surface system**: translucent floating panels (`backdrop-filter: blur(28px) saturate(180%)`) over three blurred ambient color washes, with **Zyvor orange** accents — the marketing brand color is now the product accent everywhere, not just zyvor.dev; the Apple-blue accent this system originally shipped with (`#0071e3` / `#0a84ff`) was dropped in favor of it (`#f97316` light / `#fb923c` dark), along with the Zyvor "Z" mark replacing the old hexagon logo.
 
 This is the second time this codebase has landed on "real glass" — 11 earlier "liquid glass sweep" commits built it out fully, a September 2026 pass ("Dashboard redesign foundation") flattened it to opaque flat surfaces for a few days, and this pass reactivated it. The flat era's component structure (`AuroraPage`/`PageHero`/`GlassSection`/`SectionHubPage`) is unchanged — only the CSS backing those components (`.glass`, `.tahoe-*`, `.hub-band`, `.hero-swatch`, nav/sidebar chrome) was re-themed. If you're tempted to flatten this again, read `git log --grep="liquid glass"` first.
 
@@ -38,16 +38,17 @@ Three named apple.com pages are the concrete templates — matched by page role,
 - **Sidebar is hubs-only** — primary Overview / Workloads / Fabric; Intelligence (Intelligence + Confidential); Operate (Observability, Fleet, Clusters, Migrations); Platform (Labs, Settings). Cap each hub index at ~6 chapter rows. AI, Zyra, and Applications are hub children / Cmd+K — not peer rail items.
 - **Quiet shell** — no floating Ask Aether / agent docks; Zyra rail only on Zyra/copilot views
 - **Workload detail** — three tabs (Overview / Logs / Spec) plus ≤4 Next actions; no Related-pages chip walls
-- **No stacked stat strips** — headline numbers go only through ink `stats` (or a sparse text metric row), never a 4-up `StatCard` grid plus highlights
+- **No stacked stat strips** — headline numbers go only through ink `stats` (or a sparse text metric row via `StatRibbon.tsx`), never a 4-up `StatCard`/`.glass` tile grid plus highlights. `WorkloadsPage` and `DriftPage` both render their counts through `StatRibbon` for exactly this reason — don't reintroduce a `stats` prop on `AuroraPage` for Workloads (a Store-browse page, see the page map above) or a `.glass grid grid-cols-*` tile strip on Drift (a spec/comparison-table page)
 - Prefer list rows / tables over card grids; remove nested glass-in-glass
-- Collapse secondary navigation (quick-link chip walls) into GlobalNav / command palette or a single Explore disclosure (≤8 links)
+- Collapse secondary navigation (quick-link chip walls) into GlobalNav / command palette or a single Explore disclosure (≤8 links) — `WorkloadScopedCrossLinks` (`src/components/QueryContextBanner.tsx`) implements this concretely: it shows the first 5 workload cross-links inline and collapses the rest behind a "+N more" toggle, so a `WorkloadContextBanner` with many `extraLinks` never renders as an unbounded chip wall
 - Preserve all `data-testid` attributes when restyling
 
 ## Brand
 
-- Primary: Apple blue `#0071e3` (light) / `#0a84ff` (dark)
+- Primary: Zyvor orange `#f97316` (light) / `#fb923c` (dark) — `--primary` in `theme.css`, aliased by `--apple-action` / `--apple-link` / `--apple-sky` / `--accent-blue` for anything still named after the old Apple-blue system
 - Neutrals: Apple `#ffffff` / `#f5f5f7` / `#1d1d1f`
-- Aliases: `--apple-ink` / `--apple-paper` / `--apple-action` / `--font-hero` in `theme.css`
+- Aliases: `--apple-ink` / `--apple-paper` / `--apple-action` / `--font-hero` in `theme.css` (naming is legacy from the Apple-editorial era; values are Zyvor orange)
+- Logo: the Zyvor "Z" mark (`public/zyvor-logo.svg`, served at `/zyvor-logo.svg` — see `serve_zyvor_logo_svg` in `src/api/handlers.rs`), not the old hexagon icon
 - **Tone system** (Vision Pro–derived depth, not decorative): `--tone-{sky,violet,emerald,amber,pink,teal,rust}` each ship a solid, `-tint` wash, and `-glow` radial variant; bind with `data-tone="…"` on a wrapper (see `[data-tone]` rules in `index.css`) and consume via `var(--tone-color)` / `var(--tone-wash)` / `var(--tone-glow)`. Same `Tone` union as `PageHero`'s `accent`/`swatches`/`stats[].tone` and `SectionHubPage`'s `HubLink.tone`
 - Tracking: `--tracking-eyebrow: 0.08em` (uppercase chapter dividers), `--tracking-display: -0.035em` (section/page titles), `--tracking-hero: -0.045em` (hero display type)
 - Display: Archivo / SF Pro; body SF / system
@@ -72,8 +73,8 @@ Dark chapters (`.apple-chapter-dark`) are now a `--glass-bg-strong` glass panel 
 
 ## Buttons
 
-- Primary: pill (`--radius-pill` / ~980px), 44px min height, blue fill
-- Secondary: pill outline blue, tint wash on hover
+- Primary: pill (`--radius-pill` / ~980px), 44px min height, orange fill
+- Secondary: pill outline orange, tint wash on hover
 - Tertiary: text + tint for toolbars
 - Legacy `.btn-primary` / `.btn-secondary` mirror `Button` variants
 
@@ -92,6 +93,7 @@ Dark chapters (`.apple-chapter-dark`) are now a `--glass-bg-strong` glass panel 
 - **`.glass` vs `.glass-fill`** — `.glass` sets its own `border-radius: var(--radius-liquid)`, and because it's declared after Tailwind's utility layer in `index.css`, it wins the cascade over an explicit `rounded-*` class on the same element. If you need a pill (`rounded-full`) or a specific radius token (`rounded-[var(--radius-md)]`) on a glass surface, use `.glass-fill` (background + blur + shadow, no radius opinion) instead of `.glass`, and let your own `rounded-*` class win.
 - **`@supports` fallback** — every glass surface is wrapped in `@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))`; browsers without `backdrop-filter` support fall back to an opaque `--surface-elevated` fill instead of a translucent-but-unblurred (illegible) panel. Keep this pattern when adding new glass surfaces.
 - **Hub pages are not bespoke mocks** — `FabricPage`, `MigrationsPage`, and `SettingsPage` are `SectionHubPage` indexes (6, 4, and 6 bands respectively) into real sub-features, not the flat "3 runtime cards" / "migration row list" / "toggle rows" shown in early macOS-26 mockups. They inherit the glass look automatically via `SectionHubPage`'s `.hub-band` styling — resist the urge to replace real hub navigation with a simplified mock just because a reference design showed one.
+- **`workload.name` is not the pod name for Kubernetes/KubeVirt** — only true for Podman/Docker, where the container name and workload name are literally the same thing. `WorkloadDetail.tsx`'s exec pod-picker resolves real pod names via `/cluster/resource` (a K8s label-selector lookup, works for any Deployment/StatefulSet/VirtualMachine regardless of who created it — see `execClusterResourcePath`/`canResolveClusterPods`), gated on the workload actually carrying `cluster`/`namespace`/`kind` — which the API only populates for kube/kubevirt runtimes (`src/state.rs`'s `WorkloadState.namespace/cluster_context/k8s_kind`, stamped at deploy time in `deploy_workload_spec`). If exec silently never even attempts a connection for an Aether-managed workload, check those three fields are non-null on `GET /api/workloads/:name` before assuming the frontend is at fault.
 
 ## Verification
 
