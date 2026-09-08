@@ -1,9 +1,0 @@
-apiVersion: node.k8s.io/v1
-kind: RuntimeClass
-metadata:
-  name: kata-clh-gpu-snp
-handler: kata-clh-gpu-snp
-scheduling:
-  nodeSelector:
-    node.kubernetes.io/sev-snp: "true"
-    nvidia.com/gpu.present: "true"

@@ -36,7 +36,6 @@ import FixItPanel, { type FixAction } from './FixItPanel';
 import ApplicationTopology from './ApplicationTopology';
 import AiTroubleshootPanel from './AiTroubleshootPanel';
 import Badge, { SeverityBadge } from './Badge';
-import ConfidentialWorkloadPanel from './ConfidentialWorkloadPanel';
 import Modal from './Modal';
 import { Card } from './ui/Card';
 import type {
@@ -51,7 +50,7 @@ import type {
   WorkloadResponse,
 } from '../types/api';
 
-export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'trust' | 'topology';
+export type DetailTab = 'overview' | 'logs' | 'manifest' | 'drift' | 'scoring' | 'events' | 'topology';
 
 function toast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
@@ -1917,10 +1916,6 @@ export default function WorkloadDetail({
           </div>
         )}
 
-        {activeTab === 'trust' && (
-          <ConfidentialWorkloadPanel workloadName={workload.name} runtime={workload.runtime} />
-        )}
-
         {activeTab === 'events' && (
           <div className="text-sm">
             <div className="mb-3 flex flex-wrap gap-3 text-xs" data-testid="workload-events-cross-links">
@@ -1951,13 +1946,6 @@ export default function WorkloadDetail({
                 data-testid="workload-events-drift-link"
               >
                 Drift →
-              </Link>
-              <Link
-                to={pathWithQuery(viewToPath('workloads'), { workload: workload.name, tab: 'trust' })}
-                className="text-primary hover:underline"
-                data-testid="workload-events-trust-link"
-              >
-                Trust &amp; attestation →
               </Link>
             </div>
             {eventsLoading ? (

@@ -5040,13 +5040,6 @@ pub(crate) async fn helm_export_command(
     Ok(())
 }
 
-pub(crate) async fn confidential_command(
-    _action: ConfidentialAction,
-    _spec_path: &PathBuf,
-) -> Result<()> {
-    anyhow::bail!("Confidential computing is provided by Ragnarok (separate product), not Aether-core");
-}
-
 pub(crate) async fn sbom_command(action: crate::cli::SbomAction) -> Result<()> {
     use crate::cli::SbomAction;
     match action {

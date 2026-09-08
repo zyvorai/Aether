@@ -10,7 +10,7 @@ Universal runtime portability — place and move apps across Podman/K8s/KubeVirt
 | Look up any screen | [Complete page index](PAGE_INDEX.md) |
 | Deploy, auth, ports | [Admin basics](admin-basics.md) |
 | Multi-page jobs | [Common workflows](workflows.md) |
-| Capability map | [User Guide (feature map)](../aether-user-guide.md) |
+| Capability map | [User Guide (feature map)](aether-user-guide.md) |
 
 ## Printable PDFs
 

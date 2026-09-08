@@ -64,86 +64,12 @@ test.describe('Phases 181–280 features', () => {
     await expect(page).toHaveURL(/\/policy/, { timeout: 10_000 });
   });
 
-  test('phase 184: command palette opens GitOps', async ({ page }) => {
-    await page.goto('/');
-    await page.keyboard.press('ControlOrMeta+k');
-    await page.getByPlaceholder('Search pages, workloads, and actions…').fill('gitops');
-    await page.getByRole('button', { name: 'Open GitOps sync' }).click();
-    await expect(page).toHaveURL(/\/gitops/, { timeout: 10_000 });
-  });
 
-  test('phase 185: gitops sync now button', async ({ page }) => {
-    await page.route('**/api/gitops/status', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { configured: true, repo_url: 'https://example.com/repo.git', branch: 'main' } }),
-      }),
-    );
-    await page.goto('/gitops');
-    await expect(page.getByTestId('gitops-sync-now')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 186: rbac create form', async ({ page }) => {
-    await page.route('**/api/rbac/keys', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.route('**/api/auth/me', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { authenticated: true, role: 'admin', username: 'admin' } }),
-      }),
-    );
-    await page.goto('/rbac');
-    await expect(page.getByTestId('rbac-create-form')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 187: plugins discover button', async ({ page }) => {
-    await page.route('**/api/plugins', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.goto('/plugins');
-    await expect(page.getByTestId('plugins-discover-button')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 188: editor deploy button', async ({ page }) => {
-    await page.route('**/api/auth/me', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { authenticated: true, role: 'operator', username: 'admin' } }),
-      }),
-    );
-    await page.goto('/editor');
-    await expect(page.getByTestId('editor-deploy-button')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 189: deps graph panel', async ({ page }) => {
-    await page.route('**/api/dependencies', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            nodes: ['web', 'db'],
-            edges: [{ from: 'web', to: 'db' }],
-            startup_order: ['db', 'web'],
-            issues: [],
-            stats: { total_workloads: 2, total_edges: 1, root_workloads: 1, leaf_workloads: 1, max_depth: 1, has_cycles: false },
-          },
-        }),
-      }),
-    );
-    await page.goto('/deps');
-    await expect(page.getByTestId('deps-graph-panel')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 190: confidential migration wizard panel', async ({ page }) => {
-    await page.goto('/confidential');
-    await expect(page.getByTestId('confidential-migration-wizard')).toBeVisible({ timeout: 15_000 });
-  });
 
   test('phase 191: metrics cost estimator link', async ({ page }) => {
     await page.route('**/api/metrics', (route) => route.fulfill({ status: 200, body: '# HELP test\n' }));

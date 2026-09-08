@@ -573,12 +573,6 @@ pub(crate) enum Commands {
         chart_version: Option<String>,
     },
 
-    /// Confidential computing — measured images, attestation, trust
-    Confidential {
-        #[command(subcommand)]
-        action: ConfidentialAction,
-    },
-
     /// CycloneDX SBOM export and verify
     Sbom {
         #[command(subcommand)]
@@ -915,98 +909,6 @@ pub(crate) enum SbomAction {
 }
 
 #[derive(Subcommand)]
-pub(crate) enum ConfidentialAction {
-    /// Measured VM image catalog (sign / verify / list)
-    Image {
-        #[command(subcommand)]
-        action: ConfidentialImageAction,
-    },
-    /// Tenant isolation policy check for workload spec (--spec)
-    IsolationCheck,
-    /// Trust-aware placement advice for workload spec (--spec)
-    Placement,
-    /// Sovereign cloud compliance check for workload spec (--spec)
-    SovereignCheck,
-    /// GuestKit offline VM inspection (pre-launch, policy, repair)
-    Guestkit {
-        #[command(subcommand)]
-        action: GuestKitAction,
-    },
-    /// Confidential encrypted migration plan and status
-    Migration {
-        #[command(subcommand)]
-        action: ConfidentialMigrationAction,
-    },
-}
-
-#[derive(Subcommand)]
-pub(crate) enum ConfidentialMigrationAction {
-    /// Plan confidential migration (requires --spec)
-    Plan {
-        /// Target runtime label for plan hints (e.g. kubevirt)
-        #[arg(long, default_value = "kubevirt")]
-        target: String,
-    },
-    /// Show in-progress confidential migration status for workload (--spec name)
-    Status {
-        /// Workload name (defaults to spec metadata.name)
-        #[arg(long)]
-        name: Option<String>,
-    },
-}
-
-#[derive(Subcommand)]
-pub(crate) enum GuestKitAction {
-    /// Run offline inspection for a VM workload
-    Inspect {
-        /// Workload / VM id
-        vm_id: String,
-        /// Path to qcow2/raw image or encrypted snapshot on this host
-        #[arg(long)]
-        image: Option<PathBuf>,
-        /// Inspection mode: pre-launch, offline-policy, post-shutdown, attested-repair
-        #[arg(long, default_value = "pre-launch")]
-        mode: String,
-        /// Inline JSON policy manifest or path to policy file
-        #[arg(long)]
-        policy: Option<String>,
-    },
-    /// List prior GuestKit inspections for a workload
-    History {
-        /// Workload / VM id
-        vm_id: String,
-    },
-}
-
-#[derive(Subcommand)]
-pub(crate) enum ConfidentialImageAction {
-    /// List signed images in the local catalog
-    List,
-    /// Sign a VM disk image into the verified catalog
-    Sign {
-        /// Catalog entry name
-        name: String,
-        /// Path to qcow2/raw image on this host
-        path: PathBuf,
-        /// Signing key id (default cosign://aether)
-        #[arg(long, default_value = "cosign://aether")]
-        key: String,
-    },
-    /// Verify image file hash against catalog entry
-    Verify {
-        /// Catalog entry name
-        name: String,
-        /// Path to image file on this host
-        path: PathBuf,
-    },
-    /// Check whether a launch digest exists in the catalog
-    VerifyDigest {
-        /// Launch digest or image hash
-        digest: String,
-    },
-}
-
-#[derive(Subcommand)]
 pub(crate) enum NodeAction {
     /// Mark a node unschedulable
     Cordon {
@@ -1104,7 +1006,6 @@ impl Commands {
             Self::Plugin { .. } => "plugin",
             Self::Health { .. } => "health",
             Self::HelmExport { .. } => "helm-export",
-            Self::Confidential { .. } => "confidential",
             Self::Sbom { .. } => "sbom",
             Self::EdgeAgent { .. } => "edge-agent",
             Self::Scale { .. } => "scale",

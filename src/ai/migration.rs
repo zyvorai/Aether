@@ -277,14 +277,6 @@ impl MigrationAdvisor {
         let has_health = spec.health.is_some();
         let has_ingress = spec.ingress.as_ref().is_some_and(|i| i.enabled);
 
-        // Confidential workloads prefer KubeVirt with TEE-capable nodes
-        if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-            reasons.push(
-                "Confidential workload: recommending ConfidentialBlueGreen migration".to_string(),
-            );
-            return MigrationStrategy::ConfidentialBlueGreen;
-        }
-
         match risk_level {
             RiskLevel::Critical | RiskLevel::High => {
                 reasons.push("High risk: blue-green provides safest rollback path".to_string());
@@ -332,7 +324,6 @@ impl MigrationAdvisor {
             MigrationStrategy::BlueGreen => 0, // Zero downtime in theory
             MigrationStrategy::Rolling => 0,   // Zero downtime in theory
             MigrationStrategy::Canary => 0,    // Zero downtime (canary runs alongside stable)
-            MigrationStrategy::ConfidentialBlueGreen => 0,
         };
 
         if is_stateful {

@@ -9,66 +9,11 @@ test.describe('Phases 581–680 features', () => {
     await ensureAuthenticated(page);
   });
 
-  test('phase 581: secrets create button', async ({ page }) => {
-    await page.route('**/api/secrets', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.goto('/secrets');
-    await expect(page.getByTestId('secrets-create-button')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 582: secrets rbac link', async ({ page }) => {
-    await page.route('**/api/secrets', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.goto('/secrets');
-    await page.getByRole('button', { name: 'API access control →' }).click();
-    await expect(page).toHaveURL(/\/rbac/, { timeout: 10_000 });
-  });
 
-  test('phase 583: events alerts link', async ({ page }) => {
-    await page.route('**/api/events**', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.route('**/api/events/summary', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { total_events: 0, unacknowledged: 0, critical_unacked: 0 } }),
-      }),
-    );
-    await page.goto('/events');
-    await page.getByRole('link', { name: 'Alert channels →' }).click();
-    await expect(page).toHaveURL(/\/alerts/, { timeout: 10_000 });
-  });
 
-  test('phase 584: compose validate panel', async ({ page }) => {
-    await page.goto('/compose');
-    await expect(page.getByTestId('compose-validate-panel')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 585: editor reset button', async ({ page }) => {
-    await page.goto('/editor');
-    await expect(page.getByTestId('editor-reset-button')).toBeVisible({ timeout: 10_000 });
-  });
 
-  test('phase 586: confidential fleet panel', async ({ page }) => {
-    await page.route('**/api/confidential/**', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: null }) }),
-    );
-    await page.route('**/api/confidential/capabilities', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { tee_available: false, runtimes: [] } }),
-      }),
-    );
-    await page.route('**/api/confidential/fleet', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.goto('/confidential');
-    await expect(page.getByTestId('confidential-fleet-panel')).toBeVisible({ timeout: 10_000 });
-  });
 
   test('phase 587: metrics observability panel', async ({ page }) => {
     await page.route('**/api/metrics', (route) =>

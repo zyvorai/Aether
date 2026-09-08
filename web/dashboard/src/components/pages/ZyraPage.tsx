@@ -271,13 +271,6 @@ function ZyraPage() {
           {workloadFocus ? (
             <>
               <Link
-                to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-                className="text-xs text-primary hover:underline ml-3"
-                data-testid="zyra-trust-link"
-              >
-                Trust tab →
-              </Link>
-              <Link
                 to={pathWithQuery(viewToPath('alerts'), { workload: workloadFocus })}
                 className="text-xs text-primary hover:underline ml-3"
                 data-testid="zyra-alerts-link"

@@ -52,7 +52,6 @@ export function WorkloadScopedCrossLinks({
     { label: 'Events →', view: 'events', testId: `${prefix}-events-link`, query: eventsQuery },
     { label: 'Alerts →', view: 'alerts', testId: `${prefix}-alerts-link`, query: { workload: name } },
     { label: 'Health →', view: 'health', testId: `${prefix}-health-link`, query: { workload: name } },
-    { label: 'Trust →', view: 'workloads', testId: `${prefix}-trust-link`, query: { workload: name, tab: 'trust' } },
     ...(showDrift ? [{ label: 'Drift →', view: 'drift' as AppView, testId: `${prefix}-drift-link`, query: { workload: name } }] : []),
     ...(showAudit ? [{ label: 'Audit →', view: 'audit' as AppView, testId: `${prefix}-audit-link`, query: { workload: name } }] : []),
     ...(showGitops ? [{ label: 'GitOps →', view: 'gitops' as AppView, testId: `${prefix}-gitops-link`, query: { workload: name } }] : []),

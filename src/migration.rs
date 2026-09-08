@@ -28,8 +28,6 @@ pub enum MigrationStrategy {
     Rolling,
     /// Canary deployment (gradual traffic shift with health-gated steps)
     Canary,
-    /// Confidential blue-green: deploy target, re-attest, then cutover
-    ConfidentialBlueGreen,
 }
 
 /// Configuration for canary deployment steps
@@ -52,7 +50,6 @@ impl std::fmt::Display for MigrationStrategy {
             MigrationStrategy::BlueGreen => write!(f, "blue-green"),
             MigrationStrategy::Rolling => write!(f, "rolling"),
             MigrationStrategy::Canary => write!(f, "canary"),
-            MigrationStrategy::ConfidentialBlueGreen => write!(f, "confidential-blue-green"),
         }
     }
 }
@@ -66,11 +63,8 @@ impl std::str::FromStr for MigrationStrategy {
             "blue-green" | "bluegreen" => Ok(MigrationStrategy::BlueGreen),
             "rolling" => Ok(MigrationStrategy::Rolling),
             "canary" => Ok(MigrationStrategy::Canary),
-            "confidential-blue-green" | "confidentialbluegreen" => {
-                Ok(MigrationStrategy::ConfidentialBlueGreen)
-            }
             _ => Err(anyhow::anyhow!(
-                "Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling, canary, confidential-blue-green",
+                "Unknown migration strategy: '{}'. Valid: immediate, blue-green, rolling, canary",
                 s
             )),
         }
@@ -205,20 +199,7 @@ impl MigrationEngine {
             MigrationStrategy::BlueGreen => self.migrate_blue_green(plan).await,
             MigrationStrategy::Rolling => self.migrate_rolling(plan).await,
             MigrationStrategy::Canary => self.migrate_canary(plan).await,
-            MigrationStrategy::ConfidentialBlueGreen => {
-                self.migrate_confidential_blue_green(plan).await
-            }
         }
-    }
-
-    /// Confidential blue-green: delegates to standard blue-green (Ragnarok gates removed).
-    async fn migrate_confidential_blue_green(
-        &self,
-        plan: MigrationPlan,
-    ) -> Result<MigrationResult> {
-        tracing::info!("Using confidential blue-green migration strategy (standard blue-green path)");
-        migration_trace(&plan, "strategy", "confidential-blue-green");
-        self.migrate_blue_green(plan).await
     }
 
     /// Immediate migration strategy
@@ -1760,18 +1741,6 @@ mod tests {
             MigrationStrategy::Canary
         );
         assert_eq!(
-            "confidential-blue-green"
-                .parse::<MigrationStrategy>()
-                .unwrap(),
-            MigrationStrategy::ConfidentialBlueGreen
-        );
-        assert_eq!(
-            "confidentialbluegreen"
-                .parse::<MigrationStrategy>()
-                .unwrap(),
-            MigrationStrategy::ConfidentialBlueGreen
-        );
-        assert_eq!(
             "IMMEDIATE".parse::<MigrationStrategy>().unwrap(),
             MigrationStrategy::Immediate
         );
@@ -1784,10 +1753,6 @@ mod tests {
         assert_eq!(MigrationStrategy::BlueGreen.to_string(), "blue-green");
         assert_eq!(MigrationStrategy::Rolling.to_string(), "rolling");
         assert_eq!(MigrationStrategy::Canary.to_string(), "canary");
-        assert_eq!(
-            MigrationStrategy::ConfidentialBlueGreen.to_string(),
-            "confidential-blue-green"
-        );
     }
 
     // ---------------------------------------------------------------

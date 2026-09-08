@@ -2,9 +2,9 @@
 
 > **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
 >
-> Version **0.3.0** | License: Proprietary HyperSDK | **[Product overview](PRODUCT.md)**
+> Version **0.4.0** | License: [Apache-2.0](../LICENSE) | **[Product overview](PRODUCT.md)**
 
-[![License](https://img.shields.io/badge/license-Proprietary-red)](../LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-orange)](../LICENSE)
 
 ---
 

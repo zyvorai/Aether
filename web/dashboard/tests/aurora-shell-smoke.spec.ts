@@ -21,7 +21,6 @@ const ALL_DASHBOARD_PATHS = [
   '/drift',
   '/intelligence',
   '/policy',
-  '/confidential',
   '/clusters',
   '/fleet',
   '/hosted',

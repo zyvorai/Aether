@@ -78,14 +78,6 @@ test.describe('AI Infrastructure OS v19 — Live Labs & Reference Cluster', () =
     expect(data.apis.length).toBeGreaterThan(0);
   });
 
-  test('livelabs confidential lab API', async ({ request }) => {
-    const res = await request.get('/api/intelligence/livelabs/confidential-lab');
-    expect(res.ok()).toBeTruthy();
-    const body = await res.json();
-    const data = body.data ?? body;
-    expect(data.specs.length).toBeGreaterThan(0);
-  });
-
   test('live labs panel on labs page', async ({ page }) => {
     await page.goto('/labs');
     await expect(page.getByTestId('live-labs-panel')).toBeVisible({ timeout: 15_000 });

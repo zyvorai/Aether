@@ -286,13 +286,6 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
                   >
                     Alerts →
                   </Link>
-                  <Link
-                    to={pathWithQuery(viewToPath('workloads'), { workload: w.name, tab: 'trust' })}
-                    className="text-primary hover:underline"
-                    data-testid={`sla-trust-link-${w.name}`}
-                  >
-                    Trust →
-                  </Link>
                 </div>
               </div>
             );

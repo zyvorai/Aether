@@ -9,12 +9,6 @@ test.describe('Phases 1331–1380 features', () => {
     await ensureAuthenticated(page);
   });
 
-  test('phase 1331: overview workload context banner', async ({ page }) => {
-    await page.goto('/?workload=web');
-    await expect(page.getByTestId('overview-workload-context')).toContainText('web', { timeout: 10_000 });
-    await page.getByTestId('overview-trust-link').click();
-    await expect(page).toHaveURL(/workload=web.*tab=trust/, { timeout: 10_000 });
-  });
 
   test('phase 1341: events workload context cross-links drift', async ({ page }) => {
     await page.route('**/api/events/summary', (route) =>

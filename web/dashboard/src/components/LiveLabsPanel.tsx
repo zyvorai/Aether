@@ -37,24 +37,21 @@ export default function LiveLabsPanel() {
   const [smoke, setSmoke] = useState<LiveSmoke | null>(null);
   const [ci, setCi] = useState<CiPipeline | null>(null);
   const [k8sSpecs, setK8sSpecs] = useState(0);
-  const [confidentialSpecs, setConfidentialSpecs] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [ov, rr, ls, cp, kl, cl] = await Promise.all([
+    const [ov, rr, ls, cp, kl] = await Promise.all([
       apiFetch<LiveLabsOverview>('/intelligence/livelabs/overview'),
       apiFetch<ReferenceRunner>('/intelligence/livelabs/reference-runner'),
       apiFetch<LiveSmoke>('/intelligence/livelabs/live-smoke'),
       apiFetch<CiPipeline>('/intelligence/livelabs/ci-pipeline'),
       apiFetch<{ specs: unknown[] }>('/intelligence/livelabs/kubernetes-lab'),
-      apiFetch<{ specs: unknown[] }>('/intelligence/livelabs/confidential-lab'),
     ]);
     setOverview(ov);
     setRunner(rr);
     setSmoke(ls);
     setCi(cp);
     setK8sSpecs(kl?.specs?.length ?? 0);
-    setConfidentialSpecs(cl?.specs?.length ?? 0);
     setLoading(false);
   }, []);
 
@@ -124,7 +121,7 @@ export default function LiveLabsPanel() {
       {!loading && tab === 'fixtures' ? (
         <div data-testid="live-labs-fixtures-panel" className="text-sm text-muted space-y-2">
           <p>
-            Kubernetes lab specs: {k8sSpecs} · Confidential specs: {confidentialSpecs}
+            Kubernetes lab specs: {k8sSpecs}
           </p>
           <p className="text-muted">
             Kind fixture: <code className="text-primary">scripts/kind-playwright-fixture.sh</code>

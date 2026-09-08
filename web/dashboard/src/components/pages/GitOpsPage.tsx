@@ -21,7 +21,6 @@ import GitOpsCenter from '../GitOpsCenter';
 import GitOpsAgentPanel from '../GitOpsAgentPanel';
 import IntentGitOpsDiffPanel from '../IntentGitOpsDiffPanel';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
-import type { GitOpsConfidentialAudit } from '../../types/api';
 
 interface GitOpsPayload {
   configured?: boolean;
@@ -31,19 +30,16 @@ interface GitOpsPayload {
   last_sync?: string;
   status?: string | Record<string, unknown>;
   last_changes?: GitOpsChangeRow[];
-  last_confidential_compliance?: GitOpsConfidentialAudit[];
 }
 
 function syncSnapshotFromStatus(data: GitOpsPayload | null): string | null {
   if (!data) return null;
   const changes = data.last_changes ?? [];
-  const confidential = data.last_confidential_compliance ?? [];
-  if (changes.length === 0 && confidential.length === 0) return null;
+  if (changes.length === 0) return null;
   return JSON.stringify(
     {
       message: data.last_sync ? `Last sync ${data.last_sync}` : 'Last sync',
       changes,
-      confidential_compliance: confidential,
       status: data,
     },
     null,
@@ -61,9 +57,8 @@ function formatSyncResult(raw: string | null): {
   summary: string;
   details: Record<string, unknown> | null;
   changes: GitOpsChangeRow[];
-  confidentialCompliance: GitOpsConfidentialAudit[];
 } {
-  if (!raw) return { summary: '', details: null, changes: [], confidentialCompliance: [] };
+  if (!raw) return { summary: '', details: null, changes: [] };
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const msg =
@@ -75,14 +70,9 @@ function formatSyncResult(raw: string | null): {
     const changes = Array.isArray(parsed.changes)
       ? (parsed.changes as GitOpsChangeRow[]).filter((c) => c && typeof c.file_path === 'string')
       : [];
-    const confidentialCompliance = Array.isArray(parsed.confidential_compliance)
-      ? (parsed.confidential_compliance as GitOpsConfidentialAudit[]).filter(
-          (row) => row && typeof row.file_path === 'string',
-        )
-      : [];
-    return { summary: msg, details: parsed, changes, confidentialCompliance };
+    return { summary: msg, details: parsed, changes };
   } catch {
-    return { summary: raw, details: null, changes: [], confidentialCompliance: [] };
+    return { summary: raw, details: null, changes: [] };
   }
 }
 
@@ -217,23 +207,6 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
       render: (c) => <GitOpsFileCell filePath={c.file_path} />,
     },
     {
-      key: 'confidential',
-      header: 'Confidential',
-      width: 110,
-      render: (c) => {
-        const audit = parsedSync.confidentialCompliance.find((row) => row.file_path === c.file_path);
-        const label = !audit
-          ? '—'
-          : !audit.confidential_enabled
-            ? 'off'
-            : audit.gitops_issues.length > 0 || audit.sovereign_compliant === false
-              ? 'issues'
-              : 'ok';
-        const variant = label === 'ok' ? 'green' : label === 'issues' ? 'red' : 'muted';
-        return <Badge text={label} variant={variant} />;
-      },
-    },
-    {
       key: 'commit',
       header: 'Commit',
       width: 110,
@@ -265,55 +238,6 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
         <span className="font-mono text-xs text-subtle truncate" title={c.commit}>
           {c.commit.slice(0, 12)}
         </span>
-      ),
-    },
-  ];
-
-  const confidentialColumns: DataTableColumn<GitOpsConfidentialAudit>[] = [
-    {
-      key: 'workload',
-      header: 'Workload',
-      render: (row) =>
-        row.workload ? (
-          <button
-            type="button"
-            onClick={() =>
-              navigate(pathWithQuery(viewToPath('workloads'), { workload: row.workload!, tab: 'trust' }))
-            }
-            className="text-primary hover:underline"
-            data-testid={`gitops-confidential-row-${row.workload}`}
-          >
-            {row.workload}
-          </button>
-        ) : (
-          '—'
-        ),
-    },
-    {
-      key: 'file',
-      header: 'File',
-      render: (row) => <span className="font-mono text-xs text-muted">{row.file_path}</span>,
-    },
-    {
-      key: 'issues',
-      header: 'GitOps issues',
-      render: (row) => (
-        <span className="text-xs text-warning/90">
-          {row.gitops_issues.length > 0 ? row.gitops_issues.join('; ') : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'sovereign',
-      header: 'Sovereign',
-      width: 140,
-      render: (row) => (
-        <div>
-          <Badge text={row.sovereign_compliant ? 'compliant' : 'violations'} variant={row.sovereign_compliant ? 'green' : 'red'} />
-          {row.sovereign_violations.length > 0 && (
-            <p className="mt-1 text-xs text-danger/90">{row.sovereign_violations.join('; ')}</p>
-          )}
-        </div>
       ),
     },
   ];
@@ -566,33 +490,10 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
               />
             </div>
           )}
-          {parsedSync.confidentialCompliance.some((row) => row.confidential_enabled) && (
-            <div className="mb-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                  Confidential compliance
-                </h4>
-                <button
-                  type="button"
-                  data-testid="gitops-confidential-link"
-                  onClick={() => navigate(viewToPath('confidential'))}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Open confidential page →
-                </button>
-              </div>
-              <DataTable<GitOpsConfidentialAudit>
-                items={parsedSync.confidentialCompliance.filter((row) => row.confidential_enabled)}
-                getId={(row) => row.file_path}
-                columns={confidentialColumns}
-                sortBySeverityDefault={false}
-              />
-            </div>
-          )}
           {parsedSync.details && (
             <dl className="space-y-2 text-sm">
               {Object.entries(parsedSync.details)
-                .filter(([key]) => key !== 'changes' && key !== 'confidential_compliance')
+                .filter(([key]) => key !== 'changes')
                 .map(([key, value]) => (
                   <div key={key} className="flex gap-2">
                     <dt className="text-subtle shrink-0">{key}:</dt>

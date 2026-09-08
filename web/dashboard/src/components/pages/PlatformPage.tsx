@@ -266,17 +266,6 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
           <Link
             to={
               focusedWorkload
-                ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
-                : viewToPath('confidential')
-            }
-            className="mt-4 ml-4 inline-flex text-xs text-primary hover:underline"
-            data-testid="platform-confidential-link"
-          >
-            Confidential computing →
-          </Link>
-          <Link
-            to={
-              focusedWorkload
                 ? pathWithQuery(viewToPath('health'), { workload: focusedWorkload })
                 : viewToPath('health')
             }

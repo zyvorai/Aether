@@ -12,12 +12,6 @@ interface SbomDriftReport {
   current_component_count: number;
 }
 
-interface ConfidentialFleetDashboard {
-  workload_count: number;
-  attestation_passed: number;
-  average_trust_score: number;
-}
-
 interface ZeroTrustWizard {
   completion_pct: number;
   steps: Array<{ id: string; title: string; ready: boolean; workloads: string[] }>;
@@ -36,12 +30,11 @@ interface ThreatHuntReport {
 
 export default function SecurityPlatformPanel() {
   const [tab, setTab] = useState<
-    'score' | 'sbom' | 'confidential' | 'zerotrust' | 'hunt' | 'compliance'
+    'score' | 'sbom' | 'zerotrust' | 'hunt' | 'compliance'
   >('score');
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<SecurityScoreTrend | null>(null);
   const [sbom, setSbom] = useState<SbomDriftReport | null>(null);
-  const [confidential, setConfidential] = useState<ConfidentialFleetDashboard | null>(null);
   const [wizard, setWizard] = useState<ZeroTrustWizard | null>(null);
   const [huntQuery, setHuntQuery] = useState('gpu');
   const [hunt, setHunt] = useState<ThreatHuntReport | null>(null);
@@ -49,10 +42,9 @@ export default function SecurityPlatformPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sc, sb, cf, zt, comp] = await Promise.all([
+    const [sc, sb, zt, comp] = await Promise.all([
       apiFetch<SecurityScoreTrend>('/intelligence/security/score-trend'),
       apiFetch<SbomDriftReport>('/intelligence/security/sbom-drift'),
-      apiFetch<ConfidentialFleetDashboard>('/intelligence/security/confidential-fleet'),
       apiFetch<ZeroTrustWizard>('/intelligence/security/zero-trust-wizard'),
       apiFetch<{ framework: string; sections: Array<{ control: string; status: string }> }>(
         '/intelligence/security/compliance-report',
@@ -60,7 +52,6 @@ export default function SecurityPlatformPanel() {
     ]);
     setScore(sc);
     setSbom(sb);
-    setConfidential(cf);
     setWizard(zt);
     setCompliance(comp);
     setLoading(false);
@@ -116,7 +107,6 @@ export default function SecurityPlatformPanel() {
   const tabs = [
     { id: 'score' as const, label: 'Score trend' },
     { id: 'sbom' as const, label: 'SBOM drift' },
-    { id: 'confidential' as const, label: 'Confidential' },
     { id: 'zerotrust' as const, label: 'Zero-trust' },
     { id: 'hunt' as const, label: 'Threat hunt' },
     { id: 'compliance' as const, label: 'Compliance' },
@@ -127,7 +117,7 @@ export default function SecurityPlatformPanel() {
       accent="purple"
       testId="security-platform-panel"
       title="Security Platform"
-      subtitle="Policy apply, SBOM drift, confidential fleet, zero-trust wizard, threat hunt, compliance"
+      subtitle="Policy apply, SBOM drift, zero-trust wizard, threat hunt, compliance"
       icon={<Shield className="h-5 w-5 text-danger" />}
       actions={
         <div className="flex flex-wrap gap-2">
@@ -203,16 +193,6 @@ export default function SecurityPlatformPanel() {
             <p className="text-success">No SBOM drift detected</p>
           )}
           <p className="text-xs text-subtle mt-1">{sbom?.current_component_count ?? 0} components tracked</p>
-        </div>
-      ) : null}
-
-      {tab === 'confidential' ? (
-        <div data-testid="security-confidential-panel" className="text-sm text-muted">
-          <p>
-            {confidential?.workload_count ?? 0} confidential workload(s) ·{' '}
-            {confidential?.attestation_passed ?? 0} attested · avg trust{' '}
-            {(confidential?.average_trust_score ?? 0).toFixed(1)}
-          </p>
         </div>
       ) : null}
 

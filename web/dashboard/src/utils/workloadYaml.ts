@@ -15,18 +15,6 @@ export interface EditorWorkloadInput {
   healthCheck: boolean;
   owner?: string;
   project?: string;
-  confidentialEnabled?: boolean;
-  confidentialTee?: 'sev-snp' | 'tdx';
-  /** Tenant-facing profile; when set, backend resolves kataRuntimeClass. */
-  confidentialSecurityProfile?: string;
-  confidentialKataRuntime?: 'kata-clh-snp' | 'kata-clh-tdx' | 'kata-qemu-snp' | 'kata-qemu-tdx';
-  attestationRequired?: boolean;
-  attestationPolicy?: 'strict' | 'standard';
-  confidentialRegionLock?: string;
-  confidentialSecretNames?: string;
-  confidentialVtpm?: boolean;
-  confidentialEncryptedState?: boolean;
-  confidentialDebugAllowed?: boolean;
   imageDigest?: string;
   k8sNamespace?: string;
   k8sServiceAccount?: string;
@@ -181,90 +169,6 @@ function appendEnvConfig(lines: string[], envText: string | undefined, mapName: 
   lines.push(`      name: ${mapName}`);
 }
 
-function buildConfidentialYamlLines(
-  input: EditorWorkloadInput,
-  preferred: string,
-  kataPath: boolean,
-): string[] {
-  if (!input.confidentialEnabled) return [];
-  const tee = input.confidentialTee ?? 'sev-snp';
-  const policy = input.attestationPolicy ?? 'strict';
-  const vtpm = input.confidentialVtpm !== false;
-  const encryptedState = input.confidentialEncryptedState !== false;
-  const debugAllowed = input.confidentialDebugAllowed === true;
-  const lines = [
-    'confidential:',
-    '  enabled: true',
-    `  tee: ${tee}`,
-    '  attestation:',
-    `    required: ${input.attestationRequired !== false}`,
-    `    policy: ${policy}`,
-    '  isolation:',
-    `    vtpm: ${vtpm}`,
-    `    encryptedState: ${encryptedState}`,
-    `    debugAllowed: ${debugAllowed}`,
-    '  secrets:',
-    '    releasePolicy: attest-gated',
-    '    provider: vault',
-  ];
-  const secretNames = (input.confidentialSecretNames ?? '')
-    .split(/[\n,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (secretNames.length > 0) {
-    lines.push('    names:');
-    for (const name of secretNames) {
-      lines.push(`      - ${name}`);
-    }
-  }
-  if (input.confidentialRegionLock?.trim()) {
-    lines.push(`  regionLock: ${input.confidentialRegionLock.trim()}`);
-  }
-  if (input.imageDigest?.trim()) {
-    lines.push(`  imageDigest: ${input.imageDigest.trim()}`);
-  }
-  const profile = input.confidentialSecurityProfile?.trim();
-  if (profile) {
-    lines.push(`  securityProfile: ${profile}`);
-  } else if (kataPath && input.confidentialKataRuntime) {
-    lines.push(`  kataRuntimeClass: ${input.confidentialKataRuntime}`);
-  }
-  if (preferred === 'kubevirt') {
-    // kubevirt path — no extra kata field
-  }
-  return lines;
-}
-
-function appendConfidentialBlock(
-  lines: string[],
-  input: EditorWorkloadInput,
-  preferred: string,
-  kataPath: boolean,
-) {
-  lines.push(...buildConfidentialYamlLines(input, preferred, kataPath));
-}
-
-function inferRuntimeFromYaml(yaml: string): string | null {
-  if (/preferred:\s*kubevirt/i.test(yaml) || /-\s*kubevirt/i.test(yaml)) return 'kubevirt';
-  if (/preferred:\s*kata/i.test(yaml)) return 'kata';
-  if (/preferred:\s*kube/i.test(yaml)) return 'kubernetes';
-  return null;
-}
-
-/** Merge or replace the confidential block in existing workload YAML. */
-export function mergeConfidentialIntoYaml(yaml: string, input: Partial<EditorWorkloadInput>): string {
-  const runtime = inferRuntimeFromYaml(yaml) ?? 'kubernetes';
-  const body = yaml.replace(/^confidential:\n(?:^  .+\n?)+/m, '').trimEnd();
-  if (!input.confidentialEnabled) {
-    return body;
-  }
-  const { preferred } = runtimeBlock(runtime);
-  const kataPath = preferred === 'kube' && (runtime === 'kata' || runtime === 'kubernetes');
-  const block = buildConfidentialYamlLines(input as EditorWorkloadInput, preferred, kataPath);
-  if (block.length === 0) return body;
-  return `${body}\n\n${block.join('\n')}\n`;
-}
-
 /** Generate aether/v1 workload YAML from the visual editor form. */
 export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   const { preferred, allow } = runtimeBlock(input.runtime);
@@ -272,7 +176,6 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
   const metadataName = input.name.trim() || repo;
   const owner = input.owner?.trim() || 'dashboard';
   const project = input.project?.trim() || 'default';
-  const kataPath = preferred === 'kube' && (input.runtime === 'kata' || input.runtime === 'kubernetes');
 
   const lines: string[] = [
     'apiVersion: aether/v1',
@@ -318,18 +221,10 @@ export function buildEditorWorkloadYaml(input: EditorWorkloadInput): string {
     );
   }
 
-  const confidentialStrict = input.confidentialEnabled && (preferred === 'kubevirt' || kataPath);
-  if (input.intent || confidentialStrict) {
+  if (input.intent) {
     lines.push('intent:');
-    if (input.intent) {
-      lines.push(`  goal: ${intentGoal(input.intent)}`);
-    }
-    if (confidentialStrict) {
-      lines.push('  trust: strict', '  compliance:', '    isolationRequired: true');
-    }
+    lines.push(`  goal: ${intentGoal(input.intent)}`);
   }
-
-  appendConfidentialBlock(lines, input, preferred, kataPath);
 
   if (preferred === 'kube' && (input.k8sNamespace?.trim() || input.k8sServiceAccount?.trim() || input.k8sNodeSelector?.trim() || input.k8sWorkloadKind || input.k8sGatewayEnabled || input.k8sVpaEnabled || input.k8sKedaEnabled || input.k8sCertManagerEnabled || input.k8sPdbMinAvailable?.trim())) {
     lines.push('kubernetes:');

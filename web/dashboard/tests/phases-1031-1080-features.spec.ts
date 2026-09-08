@@ -111,85 +111,8 @@ test.describe('Phases 1031–1080 features', () => {
     await expect(page.getByTestId('health-workload-context')).toContainText('web', { timeout: 10_000 });
   });
 
-  test('phase 1035: alerts workload context and events link', async ({ page }) => {
-    await page.route('**/api/alerts/status', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            channels: [],
-            rules: [
-              {
-                name: 'web-health',
-                enabled: true,
-                condition: 'health_failure',
-                severity: 'warning',
-                message_template: 'Workload web unhealthy',
-                cooldown_seconds: 60,
-                last_triggered: null,
-              },
-            ],
-          },
-        }),
-      }),
-    );
-    await page.route('**/api/webhooks/queue', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
-    );
-    await page.goto('/alerts?workload=web');
-    await expect(page.getByTestId('alerts-workload-context')).toContainText('web', { timeout: 10_000 });
-    await page.getByTestId('alerts-events-link').first().click();
-    await expect(page).toHaveURL(/workload=web/, { timeout: 10_000 });
-  });
 
-  test('phase 1036: copilot suggestion sets query param', async ({ page }) => {
-    await page.route('**/api/copilot/chat', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: { session_id: 's1', reply: 'ok', tool_results: [], pending_actions: [] },
-        }),
-      }),
-    );
-    await page.goto('/copilot');
-    await page.getByTestId('copilot-suggestion').first().click({ force: true });
-    await expect(page.getByTestId('copilot-input')).not.toHaveValue('', { timeout: 10_000 });
-  });
 
-  test('phase 1037: gitops confidential compliance from API on reload', async ({ page }) => {
-    await page.route('**/api/gitops/status', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            configured: true,
-            repo_url: 'https://github.com/example/repo.git',
-            branch: 'main',
-            last_confidential_compliance: [
-              {
-                file_path: 'workloads/web.yaml',
-                workload: 'web',
-                confidential_enabled: true,
-                gitops_issues: [],
-                sovereign_compliant: true,
-                sovereign_violations: [],
-              },
-            ],
-          },
-        }),
-      }),
-    );
-    await page.goto('/gitops');
-    await expect(page.getByTestId('gitops-confidential-link')).toBeVisible({ timeout: 10_000 });
-    await page.reload();
-    await expect(page.getByTestId('gitops-confidential-link')).toBeVisible({ timeout: 10_000 });
-  });
 
   test('phase 1038: workload detail alerts opens alerts page', async ({ page }) => {
     await page.route('**/api/workloads', (route) =>

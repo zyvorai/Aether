@@ -10,10 +10,6 @@ import { markSpecValidated, markFirstDeploy } from '../../utils/onboardingState'
 import { useAuth } from '../../contexts/AuthContext';
 import { buildEditorWorkloadYaml } from '../../utils/workloadYaml';
 import { countYamlLines, yamlEditorHeightPx } from '../../utils/editorHeight';
-import ConfidentialFormFields, {
-  defaultConfidentialFormState,
-  type ConfidentialFormState,
-} from '../ConfidentialFormFields';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
@@ -22,7 +18,7 @@ import YamlCodeEditor from '../YamlCodeEditor';
 import PageLoading from '../PageLoading';
 import type { ValidateResponse, PolicyResult, WorkloadResponse } from '../../types/api';
 
-interface EditorForm extends ConfidentialFormState {
+interface EditorForm {
   name: string;
   image: string;
   runtime: string;
@@ -84,7 +80,6 @@ const defaultForm: EditorForm = {
   k8sCertManagerEnabled: false,
   k8sPdbMinAvailable: '',
   showAdvancedK8s: false,
-  ...defaultConfidentialFormState,
 };
 
 function EditorPage() {
@@ -129,13 +124,6 @@ function EditorPage() {
   const handleChange = (field: keyof EditorForm, value: string | number | boolean | undefined) => {
     if (value === undefined) return;
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleConfidentialChange = <K extends keyof ConfidentialFormState>(
-    field: K,
-    value: ConfidentialFormState[K],
-  ) => {
-    handleChange(field as keyof EditorForm, value as EditorForm[keyof EditorForm]);
   };
 
   const generateYaml = (): string => buildEditorWorkloadYaml(form);
@@ -586,15 +574,6 @@ function EditorPage() {
                 />
               </div>
             )}
-          </div>
-
-          <div className="rounded-xl border border-lavender/20 bg-lavender/5 p-4 space-y-3">
-            <h3 className="text-sm font-medium text-lavender">Confidential computing (Ragnarok / Aether)</h3>
-            <ConfidentialFormFields
-              runtime={form.runtime}
-              state={form}
-              onChange={handleConfidentialChange}
-            />
           </div>
 
           <div>

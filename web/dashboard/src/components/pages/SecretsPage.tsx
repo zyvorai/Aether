@@ -162,15 +162,6 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
         >
           API access control →
         </button>
-        {' · '}
-        <button
-          type="button"
-          data-testid="secrets-confidential-link"
-          onClick={() => navigate(viewToPath('confidential'))}
-          className="text-primary hover:underline"
-        >
-          Confidential computing →
-        </button>
       </p>
       <SearchQueryContextBanner testId="secrets-workload-context" query={search} entityLabel="secrets">
         <WorkloadScopedCrossLinks workload={search} prefix="secrets" showDrift showAudit />
@@ -207,14 +198,6 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
               data-testid="secrets-context-policy-link"
             >
               Policy →
-            </Link>
-            {' · '}
-            <Link
-              to={pathWithQuery(viewToPath('confidential'), { workload: search.trim() })}
-              className="text-primary hover:underline"
-              data-testid="secrets-context-confidential-link"
-            >
-              Confidential →
             </Link>
             {' · '}
             <Link

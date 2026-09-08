@@ -463,16 +463,6 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                   Alert rules →
                 </Link>
                 <Link
-                  to={pathWithQuery(viewToPath('workloads'), {
-                    workload: selected.workload.name,
-                    tab: 'trust',
-                  })}
-                  className="text-xs text-primary hover:underline"
-                  data-testid="health-trust-link"
-                >
-                  Trust & attestation →
-                </Link>
-                <Link
                   to={viewToPath('sla')}
                   className="text-xs text-primary hover:underline"
                   data-testid="health-sla-link"

@@ -277,7 +277,7 @@ flowchart TB
 
 | Want… | Go here |
 |-------|---------|
-| Full feature map (70 features) | [User Guide](docs/aether-user-guide.md) · [PDF](docs/aether-user-guide.pdf) |
+| Full feature map (70 features) | [User Guide](docs/user-guide/aether-user-guide.md) · [PDF](docs/user-guide/aether-user-guide.pdf) |
 | Install / 5-minute start | [Installation](docs/getting-started/01-Installation.md) · [Quick Start](docs/getting-started/02-Quick-Start.md) |
 | Migration internals | [MIGRATION-INTERNALS](docs/guides/migration/MIGRATION-INTERNALS.md) |
 | Scoring / intent | [Decision engine](docs/guides/decision-engine/SCORING.md) |

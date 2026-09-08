@@ -62,7 +62,7 @@ function ApplicationsPage({ refreshKey }: { refreshKey?: number } = {}) {
     if (!match) return;
     setSelected(match);
     const tab = tabParam as DetailTab | '';
-    if (tab && ['overview', 'logs', 'topology', 'manifest', 'drift', 'scoring', 'events', 'trust'].includes(tab)) {
+    if (tab && ['overview', 'logs', 'topology', 'manifest', 'drift', 'scoring', 'events'].includes(tab)) {
       setDetailTab(tab as DetailTab);
     }
   }, [workloadParam, tabParam, workloads]);

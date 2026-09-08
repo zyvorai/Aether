@@ -99,7 +99,6 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'drift', path: '/drift', label: 'Drift Detection', breadcrumb: 'Drift Detection', subtitle: 'Configuration drift & desired-state reconciliation', group: 'intelligence', icon: GitCompareArrows, paletteLabel: 'Drift' },
   { view: 'intelligence', path: '/intelligence', label: 'Intelligence Layer', breadcrumb: 'Intelligence Layer', subtitle: 'Failure predictions, threats, cost optimization, and global placement', group: 'intelligence', icon: Sparkles, paletteLabel: 'Intelligence' },
   { view: 'policy', path: '/policy', label: 'Policy Check', breadcrumb: 'Policy Check', subtitle: 'Validate workloads against policy rules', group: 'intelligence', icon: ShieldCheck, paletteLabel: 'Policy' },
-  { view: 'confidential', path: '/confidential', label: 'Confidential Computing', breadcrumb: 'Confidential Computing', subtitle: 'TEE capabilities, attestation trust scores, and Ragnarok integration', group: 'intelligence', icon: LockKeyhole, paletteLabel: 'Confidential' },
   { view: 'clusters', path: '/clusters', label: 'Cluster Browser', breadcrumb: 'Cluster Browser', subtitle: 'Browse and manage Kubernetes resources', group: 'operations', icon: Server, paletteLabel: 'Clusters' },
   { view: 'fleet', path: '/fleet', label: 'Fleet Overview', breadcrumb: 'Fleet Overview', subtitle: 'Multi-cluster inventory, Hubble, and PacketWolf links', group: 'operations', icon: Globe, paletteLabel: 'Fleet' },
   { view: 'hosted', path: '/hosted', label: 'Hosted SaaS', breadcrumb: 'Hosted SaaS', subtitle: 'Tenants, API keys, metering, and Stripe billing', group: 'resources', icon: Building2, paletteLabel: 'Hosted' },
@@ -161,7 +160,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'fabric-graph', path: '/fabric/knowledge-graph', label: 'Fabric Knowledge Graph', breadcrumb: 'Knowledge Graph', subtitle: 'Fabric knowledge graph', group: 'primary', icon: GitBranch, sidebar: false },
   { view: 'fabric-unified', path: '/fabric/unified', label: 'Unified Fabric', breadcrumb: 'Unified Fabric', subtitle: 'Unified fabric view', group: 'primary', icon: Globe, sidebar: false },
 
-  // Hub children (AI / Intelligence / Fleet / Confidential)
+  // Hub children (AI / Intelligence / Fleet)
   { view: 'ai-advisor', path: '/ai/advisor', label: 'Runtime Advisor', breadcrumb: 'Runtime Advisor', subtitle: 'Compare runtimes with confidence scores', group: 'intelligence', icon: Brain, sidebar: false },
   { view: 'ai-designer', path: '/ai/designer', label: 'Workload Designer', breadcrumb: 'Workload Designer', subtitle: 'Design workloads from intent', group: 'intelligence', icon: Wand2, sidebar: false },
   { view: 'ai-intent', path: '/ai/intent', label: 'Intent Studio', breadcrumb: 'Intent Studio', subtitle: 'Shape and score workload intent', group: 'intelligence', icon: Sparkles, sidebar: false },
@@ -177,10 +176,6 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'fleet-overview', path: '/fleet/overview', label: 'Fleet Overview', breadcrumb: 'Overview', subtitle: 'Clusters and network observability', group: 'operations', icon: Globe, sidebar: false },
   { view: 'fleet-edge', path: '/fleet/edge', label: 'Edge Fleet', breadcrumb: 'Edge', subtitle: 'Edge fleet inventory', group: 'operations', icon: Network, sidebar: false },
   { view: 'fleet-placement', path: '/fleet/placement', label: 'Fleet Placement', breadcrumb: 'Placement', subtitle: 'Federation placement planning', group: 'operations', icon: MapPin, sidebar: false },
-  { view: 'conf-tee', path: '/confidential/tee', label: 'TEE & Integration', breadcrumb: 'TEE', subtitle: 'Confidential computing integration and host TEE', group: 'intelligence', icon: LockKeyhole, sidebar: false },
-  { view: 'conf-trust', path: '/confidential/trust', label: 'Trust Scores', breadcrumb: 'Trust', subtitle: 'Fleet attestation trust scores', group: 'intelligence', icon: ShieldCheck, sidebar: false },
-  { view: 'conf-migrate', path: '/confidential/migrate', label: 'Encrypted Migration', breadcrumb: 'Migration', subtitle: 'Confidential migration wizard', group: 'intelligence', icon: ArrowRightLeft, sidebar: false },
-  { view: 'conf-workloads', path: '/confidential/workloads', label: 'Confidential Workloads', breadcrumb: 'Workloads', subtitle: 'Confidential workload inventory', group: 'intelligence', icon: Layers, sidebar: false },
 
   // Dense-page children
   { view: 'activity-cpu', path: '/activity/cpu', label: 'CPU', breadcrumb: 'CPU', subtitle: 'Top CPU pods', group: 'operations', icon: Cpu, sidebar: false },

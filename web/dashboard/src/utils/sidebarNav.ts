@@ -19,7 +19,7 @@ const SECTION_LABELS: Record<Exclude<NavGroup, 'primary'>, string> = {
 /** Apple-lite sidebar: hubs only. Everything else is command palette / hub children. */
 const SIDEBAR_PRIMARY_VIEWS: AppView[] = ['overview', 'workloads', 'fabric'];
 const SIDEBAR_SECTION_VIEWS: Record<Exclude<NavGroup, 'primary'>, AppView[]> = {
-  intelligence: ['intelligence', 'confidential'],
+  intelligence: ['intelligence'],
   operations: ['observability', 'fleet', 'clusters', 'migrations'],
   resources: ['labs', 'settings'],
 };

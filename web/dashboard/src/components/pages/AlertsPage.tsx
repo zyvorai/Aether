@@ -261,18 +261,6 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
         >
           Policy check →
         </Link>
-        {workloadFocus ? (
-          <>
-            {' · '}
-            <Link
-              to={pathWithQuery(viewToPath('workloads'), { workload: workloadFocus, tab: 'trust' })}
-              className="text-xs text-primary hover:underline"
-              data-testid="alerts-trust-link"
-            >
-              Trust & attestation →
-            </Link>
-          </>
-        ) : null}
       </div>
 
       <section className="glass mb-6 p-6 sm:p-8">
@@ -414,7 +402,7 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
                     <div className="flex items-center gap-2 flex-wrap">
                       {rule.workload ? (
                         <Link
-                          to={pathWithQuery(viewToPath('workloads'), { workload: rule.workload, tab: 'trust' })}
+                          to={pathWithQuery(viewToPath('workloads'), { workload: rule.workload })}
                           className="text-xs font-mono text-primary hover:underline"
                           data-testid={`alerts-rule-workload-${rule.workload}`}
                         >

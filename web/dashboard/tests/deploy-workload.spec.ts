@@ -165,15 +165,6 @@ test.describe('Deploy workload UX', () => {
     await expect(dialog.getByText('Copied')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('confidential assist applies block to YAML', async ({ page }) => {
-    const dialog = await openDeployDialog(page);
-    const editor = await yamlText(dialog);
-
-    await dialog.getByRole('checkbox', { name: /Enable confidential workload/i }).check();
-    await dialog.getByRole('button', { name: 'Apply to YAML' }).click();
-    await expect(editor).toContainText('confidential:');
-  });
-
   test('deploy success panel view logs opens workload logs tab', async ({ page }) => {
     const unique = `logs-${Date.now().toString(36)}`;
     mockValidateAndPolicy(page);

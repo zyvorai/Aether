@@ -16,11 +16,6 @@ test.describe('AI Infrastructure OS v14 — Security & Compliance', () => {
     expect(res.ok()).toBeTruthy();
   });
 
-  test('security confidential fleet API', async ({ request }) => {
-    const res = await request.get('/api/intelligence/security/confidential-fleet');
-    expect(res.ok()).toBeTruthy();
-  });
-
   test('security zero-trust wizard API', async ({ request }) => {
     const res = await request.get('/api/intelligence/security/zero-trust-wizard');
     expect(res.ok()).toBeTruthy();

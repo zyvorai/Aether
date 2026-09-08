@@ -61,13 +61,6 @@ export default function DeploySuccessPanel({ name, status, onViewLogs, onClose }
           Drift
         </Link>
         <Link
-          to={pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'trust' })}
-          className={linkClass}
-          data-testid="deploy-success-trust-link"
-        >
-          Trust tab
-        </Link>
-        <Link
           to={pathWithQuery(viewToPath('gitops'), { workload: name })}
           className={linkClass}
           data-testid="deploy-success-gitops-link"

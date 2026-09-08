@@ -180,14 +180,6 @@ function RbacPage({ refreshKey }: { refreshKey?: number } = {}) {
           >
             Editor →
           </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })}
-            className="text-primary hover:underline"
-            data-testid="rbac-context-confidential-link"
-          >
-            Confidential →
-          </Link>
         </WorkloadContextBanner>
       ) : null}
 

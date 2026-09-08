@@ -90,9 +90,8 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
             {ZYVOR_LINE}
           </span>
           <br />
-          Open source under the Apache License, Version 2.0 — see the repository LICENSE. Confidential
-          computing ships as <span className="font-medium text-ink">Ragnarok</span>, a separate Zyvor
-          product.
+          Open source under the Apache License, Version 2.0 — see the repository LICENSE.
+          Confidential computing ships as Ragnarok, a separate Zyvor product.
         </p>
       </div>
 

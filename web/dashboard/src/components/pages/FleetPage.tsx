@@ -334,20 +334,6 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
         </button>
         <button
           type="button"
-          data-testid="fleet-confidential-link"
-          onClick={() =>
-            navigate(
-              focusedWorkload
-                ? pathWithQuery(viewToPath('confidential'), { workload: focusedWorkload })
-                : viewToPath('confidential'),
-            )
-          }
-          className="text-xs text-primary hover:underline ml-3"
-        >
-          Confidential fleet →
-        </button>
-        <button
-          type="button"
           data-testid="fleet-health-link"
           onClick={() =>
             navigate(

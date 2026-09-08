@@ -62,7 +62,6 @@ import AuditPage from './components/pages/AuditPage';
 import MetricsPage from './components/pages/MetricsPage';
 import GitOpsPage from './components/pages/GitOpsPage';
 import EditorPage from './components/pages/EditorPage';
-import ConfidentialPage from './components/pages/ConfidentialPage';
 import IntelligencePage from './components/pages/IntelligencePage';
 import FleetPage from './components/pages/FleetPage';
 import ActivityMonitorPage from './components/pages/ActivityMonitorPage';
@@ -110,10 +109,6 @@ import IntelPlacementPage from './components/pages/IntelPlacementPage';
 import FleetOverviewPage from './components/pages/FleetOverviewPage';
 import FleetEdgePage from './components/pages/FleetEdgePage';
 import FleetPlacementPage from './components/pages/FleetPlacementPage';
-import ConfTeePage from './components/pages/ConfTeePage';
-import ConfTrustPage from './components/pages/ConfTrustPage';
-import ConfMigratePage from './components/pages/ConfMigratePage';
-import ConfWorkloadsPage from './components/pages/ConfWorkloadsPage';
 
 import ActivityCpuPage from './components/pages/ActivityCpuPage';
 import ActivityMemoryPage from './components/pages/ActivityMemoryPage';
@@ -723,16 +718,6 @@ function AetherDashboard() {
         return <GitopsSyncPage refreshKey={refreshKey} />;
       case 'editor':
         return <EditorPage />;
-      case 'confidential':
-        return <ConfidentialPage />;
-      case 'conf-tee':
-        return <ConfTeePage refreshKey={refreshKey} />;
-      case 'conf-trust':
-        return <ConfTrustPage refreshKey={refreshKey} />;
-      case 'conf-migrate':
-        return <ConfMigratePage refreshKey={refreshKey} />;
-      case 'conf-workloads':
-        return <ConfWorkloadsPage refreshKey={refreshKey} />;
       
       case 'obs-root-cause':
         return <ObsRootCausePage />;

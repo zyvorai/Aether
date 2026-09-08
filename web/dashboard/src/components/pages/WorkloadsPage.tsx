@@ -10,11 +10,7 @@ import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { markSpecValidated, markFirstDeploy, syncDeployFromWorkloads } from '../../utils/onboardingState';
 import { useAuth } from '../../contexts/AuthContext';
-import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, mergeConfidentialIntoYaml, workloadJsonToYaml, workloadNameFromYaml } from '../../utils/workloadYaml';
-import ConfidentialFormFields, {
-  defaultConfidentialFormState,
-  type ConfidentialFormState,
-} from '../ConfidentialFormFields';
+import { DEFAULT_DEPLOY_WORKLOAD_YAML, freshDeployWorkloadYaml, workloadJsonToYaml, workloadNameFromYaml } from '../../utils/workloadYaml';
 import {
   countAetherManaged,
   isAetherManaged,
@@ -34,7 +30,7 @@ import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
 import DeploySuccessPanel from '../DeploySuccessPanel';
 import EmptyState from '../EmptyState';
-import type { WorkloadResponse, ValidateResponse, MigrationAdvice, PolicyResult, ConfidentialMigrationPlan } from '../../types/api';
+import type { WorkloadResponse, ValidateResponse, MigrationAdvice, PolicyResult } from '../../types/api';
 import PageToolbar from '../PageToolbar';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import PageLoading from '../PageLoading';
@@ -67,11 +63,9 @@ function toast(message: string, type: 'success' | 'error') {
 
 function openDeployModal(
   setDeployYaml: (yaml: string) => void,
-  setDeployConfidential: (state: ConfidentialFormState) => void,
   setDeployModal: (open: boolean) => void,
 ) {
   setDeployYaml(freshDeployWorkloadYaml());
-  setDeployConfidential(defaultConfidentialFormState);
   setDeployModal(true);
 }
 
@@ -95,7 +89,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   const [updateLoading, setUpdateLoading] = useState(false);
   const [migrateModal, setMigrateModal] = useState<string | null>(null);
   const [migrateAdvice, setMigrateAdvice] = useState<MigrationAdvice | null>(null);
-  const [confidentialMigrationPlan, setConfidentialMigrationPlan] = useState<ConfidentialMigrationPlan | null>(null);
   const [migrateTarget, setMigrateTarget] = useState<string | null>(null);
   const [migrateStrategy, setMigrateStrategy] = useState('blue-green');
   const [migrateResult, setMigrateResult] = useState<string | null>(null);
@@ -108,7 +101,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false);
   const [deployModal, setDeployModal] = useState(false);
   const [deployYaml, setDeployYaml] = useState(DEFAULT_DEPLOY_WORKLOAD_YAML);
-  const [deployConfidential, setDeployConfidential] = useState<ConfidentialFormState>(defaultConfidentialFormState);
   const [deployLoading, setDeployLoading] = useState(false);
   const [deployTemplateLoading, setDeployTemplateLoading] = useState(false);
   const [deployValidateResult, setDeployValidateResult] = useState<ValidateResponse | null>(null);
@@ -173,7 +165,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     const params = new URLSearchParams(window.location.search);
     if (params.get('deploy') === '1') {
       setDeployYaml(freshDeployWorkloadYaml());
-      setDeployConfidential(defaultConfidentialFormState);
       setDeployModal(true);
       params.delete('deploy');
       const qs = params.toString();
@@ -248,7 +239,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     if (!workloadParam || workloads.length === 0) return;
     const match = workloads.find((w) => w.name === workloadParam);
     if (!match) return;
-    const tab = (['overview', 'logs', 'topology', 'manifest', 'drift', 'scoring', 'events', 'trust'] as const).includes(
+    const tab = (['overview', 'logs', 'topology', 'manifest', 'drift', 'scoring', 'events'] as const).includes(
       tabParam as DetailTab,
     )
       ? (tabParam as DetailTab)
@@ -287,22 +278,17 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   async function loadMigrationAdvice(name: string, target: string) {
     setAdviceLoading(true);
     setMigrateTarget(target);
-    const [data, confPlan] = await Promise.all([
-      apiFetch<MigrationAdvice>(`/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`),
-      apiFetch<ConfidentialMigrationPlan>(`/confidential/migration-plan/${encodeURIComponent(name)}/${encodeURIComponent(target)}`),
-    ]);
+    const data = await apiFetch<MigrationAdvice>(
+      `/ai/migration-advice/${encodeURIComponent(name)}/${encodeURIComponent(target)}`,
+    );
     setMigrateAdvice(data);
-    if (confPlan?.recommended_strategy?.includes('Confidential')) {
-      setMigrateStrategy('confidential-blue-green');
-    } else if (data?.recommended_strategy) {
+    if (data?.recommended_strategy) {
       const s = data.recommended_strategy.toLowerCase().replace(/_/g, '-');
       if (s.includes('immediate')) setMigrateStrategy('immediate');
       else if (s.includes('rolling')) setMigrateStrategy('rolling');
       else if (s.includes('canary')) setMigrateStrategy('canary');
-      else if (s.includes('confidential')) setMigrateStrategy('confidential-blue-green');
       else setMigrateStrategy('blue-green');
     }
-    setConfidentialMigrationPlan(confPlan);
     setAdviceLoading(false);
   }
 
@@ -345,7 +331,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   function closeDeployModal() {
     setDeployModal(false);
     setDeployYaml(DEFAULT_DEPLOY_WORKLOAD_YAML);
-    setDeployConfidential(defaultConfidentialFormState);
     setDeployValidateResult(null);
     setDeployPolicyResult(null);
     setDeploySuccess(null);
@@ -786,7 +771,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             <button
               type="button"
               data-testid="workloads-deploy-button"
-              onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
+              onClick={() => openDeployModal(setDeployYaml, setDeployModal)}
               className="btn-primary inline-flex items-center gap-2"
             >
               <Plus size={16} />
@@ -1016,7 +1001,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => openDeployModal(setDeployYaml, setDeployConfidential, setDeployModal)}
+                  onClick={() => openDeployModal(setDeployYaml, setDeployModal)}
                   className="btn-primary inline-flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -1235,7 +1220,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             <div>
               <span className="text-xs uppercase tracking-wider text-subtle mb-2 block">Migration strategy</span>
               <div className="flex flex-wrap gap-2">
-                {(['immediate', 'blue-green', 'rolling', 'confidential-blue-green'] as const).map((s) => (
+                {(['immediate', 'blue-green', 'rolling'] as const).map((s) => (
                   <label key={s} className="inline-flex items-center gap-2 text-sm text-muted cursor-pointer">
                     <input
                       type="radio"
@@ -1249,27 +1234,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                   </label>
                 ))}
               </div>
-              {migrateStrategy === 'confidential-blue-green' && (
-                <p className="text-xs text-warning/90 mt-2">
-                  Encrypted migration: deploy target, re-attest launch digest, then cutover. Requires TEE-capable nodes.
-                </p>
-              )}
-              {confidentialMigrationPlan && (
-                <div className="mt-3 p-3 rounded-lg glass-inset-surface border glass-divider text-xs space-y-2">
-                  <p className="text-muted font-mono break-all">
-                    Channel: {confidentialMigrationPlan.encrypted_migration_uri}
-                  </p>
-                  {confidentialMigrationPlan.blockers.length > 0 ? (
-                    <ul className="text-danger/90">
-                      {confidentialMigrationPlan.blockers.map((b) => (
-                        <li key={b}>{b}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-success/90">Ready for confidential cutover</p>
-                  )}
-                </div>
-              )}
             </div>
             {migrateAdvice.reasons.length > 0 && (
               <ul className="text-xs text-muted space-y-1">
@@ -1347,27 +1311,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             validateLoading={deployInlineValidateLoading}
             submitTestId="workloads-deploy-submit"
             placeholder="Paste aether/v1 Workload YAML (see examples/ in the repo)..."
-            header={
-              <div className="shrink-0 rounded-xl border border-lavender/20 bg-lavender/5 p-4 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-medium text-lavender">Confidential assist</h3>
-                  <button
-                    type="button"
-                    onClick={() => setDeployYaml(mergeConfidentialIntoYaml(deployYaml, deployConfidential))}
-                    className="rounded-lg border border-lavender/30 bg-lavender/10 px-3 py-1.5 text-xs font-medium text-lavender hover:bg-lavender/20"
-                  >
-                    Apply to YAML
-                  </button>
-                </div>
-                <ConfidentialFormFields
-                  runtime="kubernetes"
-                  state={deployConfidential}
-                  onChange={(field, value) =>
-                    setDeployConfidential((prev) => ({ ...prev, [field]: value }))
-                  }
-                />
-              </div>
-            }
             footer={
               <ValidateResultPanel validate={deployValidateResult} policy={deployPolicyResult} />
             }

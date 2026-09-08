@@ -119,10 +119,6 @@ export function SecurityStudio({ refreshKey, forcedSection }: { refreshKey?: num
       <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="security-context-fleet-link">
         Fleet →
       </Link>
-      {' · '}
-      <Link to={viewToPath('confidential')} className="text-primary hover:underline" data-testid="security-context-confidential-hub-link">
-        Confidential →
-      </Link>
     </div>
   );
 
@@ -147,14 +143,6 @@ export function SecurityStudio({ refreshKey, forcedSection }: { refreshKey?: num
             data-testid="security-context-audit-link"
           >
             Audit →
-          </Link>
-          {' · '}
-          <Link
-            to={pathWithQuery(viewToPath('confidential'), { workload: workloadFocus.trim() })}
-            className="text-primary hover:underline"
-            data-testid="security-context-confidential-link"
-          >
-            Confidential →
           </Link>
         </WorkloadContextBanner>
       ) : null}

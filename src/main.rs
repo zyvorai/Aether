@@ -257,9 +257,6 @@ async fn main() -> Result<()> {
             output_dir,
             chart_version,
         } => commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await,
-        Commands::Confidential { action } => {
-            commands::confidential_command(action, &cli.spec).await
-        }
         Commands::Sbom { action } => commands::sbom_command(action).await,
         Commands::EdgeAgent {
             control_plane,

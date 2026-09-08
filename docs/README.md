@@ -1,44 +1,40 @@
 # Aether Documentation
 
-Universal runtime portability — deploy once, run anywhere
+Universal runtime portability — deploy once, run on Podman, Kubernetes, or KubeVirt.
 
-## Start Here
+**License:** [Apache License 2.0](../LICENSE) · **Version:** 0.4.0 · **Repo:** [zyvorai/Aether](https://github.com/zyvorai/Aether)
+
+## Start here
 
 | Goal | Document |
 |------|----------|
-| Install | [01-Installation.md](getting-started/01-Installation.md) |
-| Quick start | [02-Quick-Start.md](getting-started/02-Quick-Start.md) |
+| Install | [Getting started — Installation](getting-started/01-Installation.md) |
+| Quick start | [Getting started — Quick Start](getting-started/02-Quick-Start.md) |
+| User guide (feature map) | [User Guide](user-guide/aether-user-guide.md) · [PDF](user-guide/aether-user-guide.pdf) |
+| Dashboard manual | [User guide hub](user-guide/README.md) |
 | Product overview | [PRODUCT.md](PRODUCT.md) |
 | Ecosystem | [ECOSYSTEM.md](ECOSYSTEM.md) |
-| Migration internals | [MIGRATION-INTERNALS.md](guides/migration/MIGRATION-INTERNALS.md) |
+| Migration internals | [MIGRATION-INTERNALS](guides/migration/MIGRATION-INTERNALS.md) |
 | Full index | [index.md](index.md) |
-| **User journeys & acceptance criteria** | [User Stories](USER_STORIES.md) |
+| User journeys | [USER_STORIES.md](USER_STORIES.md) |
 
-## User Stories
+## By topic
 
-Persona-based journeys with acceptance criteria: **[USER_STORIES.md](USER_STORIES.md)**
+| Area | Path |
+|------|------|
+| Tutorials | [tutorials/](tutorials/) |
+| Guides | [guides/](guides/) (CLI, migration, decision engine, security, operations) |
+| Architecture | [architecture/](architecture/) |
+| Reference | [reference/](reference/) |
+| Features | [features/](features/) |
+| Deployment | [deployment/](deployment/) |
+| Integrations | [integrations/](integrations/) |
+| Legal | [legal/](legal/) |
 
-| Persona | Focus |
-|---------|-------|
-| Alex (Platform Engineer) | Migrate workloads across Podman, K8s, KubeVirt |
-| Morgan (DevOps Lead) | Blue-green and rolling migrations with zero downtime |
-| Jordan (SRE) | Drift detection, health checks, and auto-reconciliation |
-| Riley (Developer) | Single YAML spec for local Podman and prod K8s |
+## Archive
 
-## Ecosystem
+Historical phase logs and legacy notes live under [archive/](archive/) and are not maintained.
 
-Part of the [Zyvor / HyperSDK platform stack](https://zyvor.dev):
+## Zyvor stack
 
-| Product | Role |
-|---------|------|
-| **hypercluster** | Kubernetes bootstrap |
-| **machina** | Bare-metal hypervisor OS |
-| **zeus-os (v9s)** | Cloud / KubeVirt control plane |
-| **forge** | AI infrastructure on K8s |
-| **hypersdk / hyper2kvm** | VM migration |
-| **guestkit** | Offline VM assurance |
-| **packetwolf** | Network intelligence |
-| **Aether** | Runtime portability |
-| **hermes** | Application layer for K8s |
-
-See also: [../README.md](../README.md)
+See [ECOSYSTEM.md](ECOSYSTEM.md) and [zyvor.dev](https://zyvor.dev). Confidential computing (**Ragnarok**) is a separate product and is not part of this repository.
