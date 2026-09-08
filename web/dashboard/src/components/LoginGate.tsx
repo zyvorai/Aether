@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowRight,
   Boxes,
+  ChevronDown,
   Container,
   Eye,
   EyeOff,
@@ -30,7 +31,7 @@ import {
   type AuthProvidersPayload,
   type HealthPayload,
 } from '../utils/api';
-import { ZyvorFooter, ZYVOR_URL } from './ZyvorBrand';
+import { ZyvorFooter, ZYVOR_URL, ZYVOR_ORANGE } from './ZyvorBrand';
 
 interface LoginGateProps {
   onAuthenticated: (username: string) => void;
@@ -180,35 +181,36 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
   );
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]" data-testid="login-gate">
+    <main className="login-scroll" data-testid="login-gate">
       <div className="ae-ambient" aria-hidden><i /><i /><i /></div>
-      <section className="login-hero min-h-[320px] lg:min-h-screen px-8 py-10 sm:px-12 lg:px-16 xl:px-24 flex flex-col">
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl glass-fill flex items-center justify-center">
-            <Hexagon className="h-5 w-5 text-primary" strokeWidth={1.6} aria-hidden />
-          </div>
-          <div>
-            <div className="text-lg font-semibold tracking-tight">Aether</div>
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Universal runtime control plane</div>
+
+      <section className="login-chapter login-hero text-center" aria-label="Aether">
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl glass-fill flex items-center justify-center">
+              <Hexagon className="h-5 w-5 text-primary" strokeWidth={1.6} aria-hidden />
+            </div>
+            <div className="text-left">
+              <div className="text-lg font-semibold tracking-tight">Aether</div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Universal runtime control plane</div>
+            </div>
           </div>
           {health ? (
             <span
               data-tone="sky"
-              className="hero-swatch ml-auto"
+              className="hero-swatch mt-4"
               title={`Host: ${health.hostname}${health.environment ? ` · Environment: ${health.environment}` : ''}`}
             >
               <span className="hero-swatch-dot" aria-hidden />
               {health.environment ?? health.hostname}
             </span>
           ) : null}
-        </div>
 
-        <div className="relative z-10 my-auto max-w-2xl py-16 lg:py-20">
-          <div className="login-fade-in glass-fill inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-muted">
+          <div className="login-fade-in glass-fill mt-9 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-muted">
             <Radio className="h-3.5 w-3.5 text-primary" aria-hidden />
             One control plane. Every runtime.
           </div>
-          <h1 className="login-fade-in login-fade-in-d1 mt-7 text-4xl sm:text-5xl xl:text-6xl font-semibold tracking-[-0.04em] leading-[1.04]">
+          <h1 className="login-fade-in login-fade-in-d1 mt-7 max-w-3xl text-4xl sm:text-5xl xl:text-6xl font-semibold tracking-[-0.04em] leading-[1.04]">
             Deploy anywhere
             <br />
             <span className="login-text-gradient">from one YAML spec.</span>
@@ -218,13 +220,13 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             policy, and real-time intelligence.
           </p>
 
-          <div className="login-fade-in login-fade-in-d3 mt-9 grid max-w-xl gap-3 sm:grid-cols-3">
+          <div className="login-fade-in login-fade-in-d3 mt-9 grid w-full max-w-xl gap-3 sm:grid-cols-3">
             {[
               { icon: Layers, title: 'One specification', text: 'Portable workload intent', tone: 'sky' as const },
               { icon: ShieldCheck, title: 'Policy built in', text: 'RBAC and audit trails', tone: 'violet' as const },
               { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions', tone: 'teal' as const },
             ].map(({ icon: Icon, title, text, tone }) => (
-              <div key={title} data-tone={tone} className="glass-fill rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--tone-color) 14%, var(--glass-bg))' }}>
+              <div key={title} data-tone={tone} className="glass-fill rounded-xl p-4 text-left" style={{ background: 'color-mix(in srgb, var(--tone-color) 14%, var(--glass-bg))' }}>
                 <Icon className="h-4 w-4" style={{ color: 'var(--tone-color)' }} aria-hidden />
                 <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
                 <div className="mt-1 text-xs leading-relaxed text-muted">{text}</div>
@@ -232,7 +234,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             ))}
           </div>
 
-          <div className="login-fade-in login-fade-in-d4 mt-8 hero-swatch-row">
+          <div className="login-fade-in login-fade-in-d4 mt-8 hero-swatch-row justify-center">
             {[
               { icon: Container, label: 'Podman', tone: 'sky' as const },
               { icon: Server, label: 'Kubernetes', tone: 'violet' as const },
@@ -244,22 +246,28 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
               </span>
             ))}
           </div>
-        </div>
 
-        <a
-          href={ZYVOR_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative z-10 inline-flex items-center gap-2 text-xs text-muted hover:text-foreground transition-colors w-fit"
-        >
-          <img src="/zyvor-logo.svg" alt="" width={16} height={16} className="rounded-[4px]" />
-          Built by ZyvorAI Labs
-        </a>
+          <a href="#login-sign-in-chapter" className="login-scroll-cue mt-14">
+            Continue to sign in
+            <ChevronDown className="h-4 w-4" aria-hidden />
+          </a>
+
+          <a
+            href={ZYVOR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center gap-2 text-xs font-medium"
+            style={{ color: ZYVOR_ORANGE }}
+          >
+            <img src="/zyvor-logo.svg" alt="" width={16} height={16} className="rounded-[4px]" />
+            Built by ZyvorAI Labs
+          </a>
+        </div>
       </section>
 
-      <section className="login-panel min-h-screen px-5 py-10 sm:px-10 lg:px-14 xl:px-20 flex flex-col">
-        <div className="m-auto w-full max-w-md">
-          <div className="mb-8">
+      <section id="login-sign-in-chapter" className="login-chapter login-panel" aria-label="Sign in">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Aether console</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">

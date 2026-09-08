@@ -712,7 +712,51 @@ html.dark-theme .apple-editorial-hero::before,
     color: var(--muted-foreground);
   }
 
-  /* Aurora login — macOS 26 glass over an ambient wash */
+  /* Aurora login — macOS 26 glass over an ambient wash, h2kvm-style
+     single-column chapter scroll (hero chapter snaps into a sign-in
+     chapter below it, instead of a side-by-side split). */
+  .login-scroll {
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .login-scroll { scroll-snap-type: none; }
+  }
+  .login-chapter {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(2rem, 6vh, 4rem) clamp(1.25rem, 5vw, 3rem);
+  }
+  .login-scroll-cue {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: color 0.18s ease;
+  }
+  .login-scroll-cue:hover { color: var(--foreground); }
+  .login-scroll-cue svg { animation: login-scroll-cue-bob 1.6s ease-in-out infinite; }
+  @keyframes login-scroll-cue-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .login-scroll-cue svg { animation: none; }
+  }
+
   .login-hero {
     position: relative;
     overflow: hidden;

@@ -13,7 +13,8 @@ export const ZYVOR_BRAND = 'Zyvor';
 export const ZYVOR_COPY = '© 2026';
 export const ZYVOR_LINE = `zyvor.dev · ${ZYVOR_COPY}`;
 
-const ORANGE = '#f97316';
+export const ZYVOR_ORANGE = '#f97316';
+const ORANGE = ZYVOR_ORANGE;
 const MUTED = 'rgba(148, 163, 184, 0.75)';
 
 const linkStyle: React.CSSProperties = {
