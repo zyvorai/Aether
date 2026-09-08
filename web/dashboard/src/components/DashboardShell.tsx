@@ -4,7 +4,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import GlobalNav from './layout/GlobalNav/GlobalNav';
-import AetherSidebar, { loadSidebarCollapsed, saveSidebarCollapsed } from './layout/AetherSidebar/AetherSidebar';
+import AetherSidebar from './layout/AetherSidebar/AetherSidebar';
 import Breadcrumb from './Breadcrumb';
 import ZyraRail from './ZyraRail';
 import CriticalIssueNotifier from './CriticalIssueNotifier';
@@ -55,17 +55,11 @@ export default function DashboardShell({
   refreshKey = 0,
 }: DashboardShellProps) {
   const isZyraView = currentView === 'zyra' || currentView === 'copilot';
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => loadSidebarCollapsed());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [currentView]);
-
-  const handleSidebarCollapsedChange = (collapsed: boolean) => {
-    setSidebarCollapsed(collapsed);
-    saveSidebarCollapsed(collapsed);
-  };
 
   return (
     <div className={shellClass}>
@@ -92,12 +86,7 @@ export default function DashboardShell({
         <VersionRefreshBanner />
       </div>
       <div className="relative z-[1] flex min-h-0 flex-1">
-        <AetherSidebar
-          currentView={currentView}
-          onNavigate={onNavigate}
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={handleSidebarCollapsedChange}
-        />
+        <AetherSidebar currentView={currentView} onNavigate={onNavigate} />
         <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:py-6">
           <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
           {children}
@@ -118,8 +107,6 @@ export default function DashboardShell({
             <AetherSidebar
               currentView={currentView}
               onNavigate={onNavigate}
-              collapsed={false}
-              onCollapsedChange={() => {}}
               mobile
               onNavigateMobile={() => setMobileSidebarOpen(false)}
             />

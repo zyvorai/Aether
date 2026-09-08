@@ -30,7 +30,7 @@ import {
   type AuthProvidersPayload,
   type HealthPayload,
 } from '../utils/api';
-import { ZyvorFooter } from './ZyvorBrand';
+import { ZyvorFooter, ZYVOR_URL } from './ZyvorBrand';
 
 interface LoginGateProps {
   onAuthenticated: (username: string) => void;
@@ -246,7 +246,15 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-muted">Built by ZyvorAI Labs</p>
+        <a
+          href={ZYVOR_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative z-10 inline-flex items-center gap-2 text-xs text-muted hover:text-foreground transition-colors w-fit"
+        >
+          <img src="/zyvor-logo.svg" alt="" width={16} height={16} className="rounded-[4px]" />
+          Built by ZyvorAI Labs
+        </a>
       </section>
 
       <section className="login-panel min-h-screen px-5 py-10 sm:px-10 lg:px-14 xl:px-20 flex flex-col">
