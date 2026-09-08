@@ -446,6 +446,11 @@ pub(crate) const DASHBOARD_HTML: &str = include_str!("../../web/dashboard/dist/i
 // Run `npm run build` in web/dashboard/ after UI changes (stable asset names in vite.config.ts).
 const DASHBOARD_CSS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.css");
 const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/aether-dashboard.js");
+// The dashboard build only embeds the JS/CSS bundle (above) — anything else
+// under web/dashboard/public/ (favicons, brand marks referenced by <img src>)
+// otherwise 404s into the SPA fallback below and silently renders as a
+// broken image. Embed those referenced-by-name here too.
+const ZYVOR_LOGO_SVG: &str = include_str!("../../web/dashboard/public/zyvor-logo.svg");
 const DASHBOARD_CACHE_CONTROL: &str = "no-store, no-cache, must-revalidate, max-age=0";
 
 /// GET / - Serve the web dashboard
@@ -480,6 +485,17 @@ pub(crate) async fn serve_dashboard_js() -> impl IntoResponse {
             (header::PRAGMA, "no-cache"),
         ],
         DASHBOARD_JS,
+    )
+}
+
+/// GET /zyvor-logo.svg - Serve the embedded Zyvor brand mark
+pub(crate) async fn serve_zyvor_logo_svg() -> impl IntoResponse {
+    (
+        [
+            (header::CONTENT_TYPE, "image/svg+xml"),
+            (header::CACHE_CONTROL, "public, max-age=31536000, immutable"),
+        ],
+        ZYVOR_LOGO_SVG,
     )
 }
 
