@@ -26,7 +26,8 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             asset_name: aether-macos-arm64
-          - os: macos-13
+          # Cross-compile Intel macOS on Apple Silicon runners (macos-13 is scarce)
+          - os: macos-latest
             target: x86_64-apple-darwin
             asset_name: aether-macos-amd64
 
