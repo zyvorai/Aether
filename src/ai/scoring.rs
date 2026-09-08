@@ -460,7 +460,11 @@ impl ScoringEngine {
         }
 
         // Confidential + attestation required → KubeVirt only
-        if crate::ragnarok::trust::requires_attestation_for_strict_trust(spec) {
+        if spec
+            .confidential
+            .as_ref()
+            .is_some_and(|c| c.enabled && c.attestation.required)
+        {
             filtered.retain(|rt| *rt == RuntimeKind::KubeVirt);
         }
 

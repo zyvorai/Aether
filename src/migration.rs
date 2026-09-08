@@ -211,141 +211,14 @@ impl MigrationEngine {
         }
     }
 
-    /// Confidential blue-green: target deploy + re-attestation gate before cutover.
+    /// Confidential blue-green: delegates to standard blue-green (Ragnarok gates removed).
     async fn migrate_confidential_blue_green(
         &self,
         plan: MigrationPlan,
     ) -> Result<MigrationResult> {
-        tracing::info!("Using confidential blue-green migration strategy");
+        tracing::info!("Using confidential blue-green migration strategy (standard blue-green path)");
         migration_trace(&plan, "strategy", "confidential-blue-green");
-
-        let attestation_dir = std::env::var("RAGNAROK_DATA_DIR")
-            .map(PathBuf::from)
-            .or_else(|_| std::env::var("AETHER_STATE_DIR").map(PathBuf::from))
-            .unwrap_or_else(|_| {
-                dirs::home_dir()
-                    .unwrap_or_else(|| PathBuf::from("."))
-                    .join(".aether")
-            });
-        let attestation = crate::ragnarok::AttestationService::new(attestation_dir.clone());
-        let mig_store =
-            crate::ragnarok::migration::ConfidentialMigrationStore::new(&attestation_dir);
-
-        let mut state = StateStore::load(&self.state_path)?;
-        let workload_state = state
-            .get(&plan.workload_name)
-            .ok_or_else(|| anyhow::anyhow!("Workload '{}' not found", plan.workload_name))?
-            .clone();
-        let workload = Workload::from_file(&workload_state.spec_path)?;
-
-        let host = crate::ragnarok::probe_host_tee();
-        let mig_plan = crate::ragnarok::migration::plan_confidential_migration_tee(
-            &workload,
-            host.sev_snp,
-            host.sev_snp,
-            host.tdx,
-            host.tdx,
-        );
-        crate::ragnarok::migration::pre_migrate_gate(&workload, &mig_plan)?;
-
-        migration_trace(
-            &plan,
-            "encrypted-channel",
-            &mig_plan.encrypted_migration_uri,
-        );
-        let _ = crate::ragnarok::migration::record_migration_start(
-            &mig_store,
-            &workload,
-            &mig_plan,
-            &plan.target_runtime.to_string(),
-        );
-
-        let source_runtime = self.get_runtime(&plan.source_runtime).await?;
-        let target_runtime = self.get_runtime(&plan.target_runtime).await?;
-
-        let image = target_runtime.build(&workload).await?;
-        let target_instance = target_runtime.run(&image, &workload).await?;
-
-        tokio::time::sleep(plan.validation_delay).await;
-
-        let attest_required = workload
-            .confidential
-            .as_ref()
-            .is_some_and(|c| c.enabled && c.attestation.required);
-
-        let timeout = std::env::var("AETHER_CONFIDENTIAL_MIGRATION_ATTEST_TIMEOUT")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(0);
-
-        let att_passed = if attest_required && timeout > 0 {
-            crate::ragnarok::migration::wait_for_re_attestation(
-                &plan.workload_name,
-                &attestation,
-                timeout,
-            )
-            .await
-        } else {
-            crate::ragnarok::migration::attestation_ready_for_cutover(
-                &plan.workload_name,
-                &attestation,
-                attest_required,
-            )
-        };
-
-        if attest_required && !att_passed {
-            tracing::warn!(
-                "Confidential migration waiting for re-attestation on target for {}",
-                plan.workload_name
-            );
-            let _ = crate::ragnarok::migration::record_migration_complete(
-                &mig_store,
-                &plan.workload_name,
-                false,
-                Some("Target re-attestation not passed — cutover blocked".into()),
-            );
-            if plan.rollback_on_failure {
-                let _ = target_runtime.delete(&target_instance).await;
-            }
-            return Ok(MigrationResult {
-                success: false,
-                source_instance: Some(workload_state.instance.clone()),
-                target_instance: if plan.rollback_on_failure {
-                    None
-                } else {
-                    Some(target_instance)
-                },
-                error: Some(
-                    "Target re-attestation not passed — cutover blocked. Submit attestation report then retry.".into(),
-                ),
-                rollback_performed: plan.rollback_on_failure,
-            });
-        }
-
-        source_runtime.stop(&workload_state.instance).await?;
-        tokio::time::sleep(plan.shutdown_delay).await;
-        source_runtime.delete(&workload_state.instance).await?;
-
-        state.upsert(
-            plan.workload_name.clone(),
-            workload_state.migrated(plan.target_runtime, target_instance.clone()),
-        );
-        state.save(&self.state_path)?;
-
-        let _ = crate::ragnarok::migration::record_migration_complete(
-            &mig_store,
-            &plan.workload_name,
-            true,
-            None,
-        );
-
-        Ok(MigrationResult {
-            success: true,
-            source_instance: None,
-            target_instance: Some(target_instance),
-            error: None,
-            rollback_performed: false,
-        })
+        self.migrate_blue_green(plan).await
     }
 
     /// Immediate migration strategy

@@ -155,75 +155,18 @@ pub async fn execute_tool(
             let result = crate::observability::prometheus_instant_query(query).await?;
             Ok(result)
         }
-        "explain_attestation_failure" => {
-            let vm_id = args.get("vm_id").and_then(|v| v.as_str()).unwrap_or("");
-            let dir = ctx
-                .state_path
-                .parent()
-                .unwrap_or(&ctx.state_path)
-                .to_path_buf();
-            let svc = crate::ragnarok::AttestationService::new(dir.clone());
-            let gk = crate::ragnarok::guestkit::GuestKitService::new(dir).summary(vm_id);
-            let explain = svc.explain_with_guestkit(vm_id, gk)?;
-            Ok(serde_json::to_value(explain)?)
-        }
-        "confidential_migrate_plan" => {
-            let name = args.get("workload").and_then(|v| v.as_str()).unwrap_or("");
-            let store = ctx.state.read().await;
-            let ws = store
-                .get(name)
-                .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
-            let spec = Workload::from_file(&ws.spec_path)?;
-            let host = crate::ragnarok::probe_host_tee();
-            let plan = crate::ragnarok::migration::plan_confidential_migration_tee(
-                &spec,
-                host.sev_snp,
-                host.sev_snp,
-                host.tdx,
-                host.tdx,
-            );
-            Ok(serde_json::to_value(plan)?)
-        }
-        "trust_score_fleet" => {
-            let dir = ctx
-                .state_path
-                .parent()
-                .unwrap_or(&ctx.state_path)
-                .to_path_buf();
-            let pairs = workload_pairs(&ctx.state).await;
-            let confidential: Vec<_> = pairs
-                .iter()
-                .filter(|(s, _)| s.confidential.as_ref().is_some_and(|c| c.enabled))
-                .map(|(s, ws)| (ws.name.as_str(), s, ws.runtime.to_string()))
-                .collect();
-            let refs: Vec<(&str, &Workload, &str)> = confidential
-                .iter()
-                .map(|(n, s, r)| (*n, *s, r.as_str()))
-                .collect();
-            Ok(serde_json::to_value(
-                crate::ragnarok::intelligence::analyze_fleet(&refs, &dir),
-            )?)
-        }
-        "confidential_analyze" => {
-            let name = args.get("workload").and_then(|v| v.as_str()).unwrap_or("");
-            let store = ctx.state.read().await;
-            let ws = store
-                .get(name)
-                .ok_or_else(|| anyhow::anyhow!("workload not found"))?;
-            let spec = Workload::from_file(&ws.spec_path)?;
-            let dir = ctx
-                .state_path
-                .parent()
-                .unwrap_or(&ctx.state_path)
-                .to_path_buf();
-            Ok(serde_json::to_value(
-                crate::ragnarok::intelligence::analyze_workload(
-                    &spec,
-                    &ws.runtime.to_string(),
-                    &dir,
-                ),
-            )?)
-        }
+        "explain_attestation_failure" => Ok(serde_json::json!({
+            "error": "requires Ragnarok (separate product)"
+        })),
+        "confidential_migrate_plan" => Ok(serde_json::json!({
+            "error": "requires Ragnarok (separate product)"
+        })),
+        "trust_score_fleet" => Ok(serde_json::json!({
+            "error": "requires Ragnarok (separate product)"
+        })),
+        "confidential_analyze" => Ok(serde_json::json!({
+            "error": "requires Ragnarok (separate product)"
+        })),
         "intelligence_place" => {
             let yaml = args
                 .get("yaml")

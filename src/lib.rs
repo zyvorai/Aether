@@ -55,7 +55,6 @@ pub mod orchestrator;
 pub mod output;
 pub mod plugin;
 pub mod policy;
-pub mod ragnarok;
 pub mod rbac;
 pub mod resources;
 pub mod runtime;

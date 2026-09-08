@@ -1093,56 +1093,12 @@ async fn deploy_workload_spec(
 
     let name = request.spec.metadata.name.clone();
 
-    if request
-        .spec
-        .confidential
-        .as_ref()
-        .is_some_and(|c| c.enabled)
-    {
-        crate::ragnarok::image::deploy_image_gate(
-            &request.spec,
-            &crate::ragnarok::image::ImageCatalog::load(
-                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
-            ),
-        )
-        .map_err(err_bad_request)?;
-        crate::ragnarok::isolation::deploy_isolation_gate(&request.spec)
-            .map_err(err_bad_request)?;
-        crate::ragnarok::sovereign::deploy_sovereign_gate(&request.spec)
-            .map_err(err_bad_request)?;
-        crate::ragnarok::kata::deploy_kata_gate(&request.spec).map_err(err_bad_request)?;
-    }
-
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
     let instance = runtime
         .run(&image, &request.spec)
         .await
         .map_err(err_internal)?;
-
-    if request
-        .spec
-        .confidential
-        .as_ref()
-        .is_some_and(|c| c.enabled)
-    {
-        if let Err(e) = crate::ragnarok::attestation_gate_for_workload(&request.spec, &name).await {
-            return Err(err_bad_request(e));
-        }
-        let broker = crate::ragnarok::secrets::SecretBroker::new(
-            std::sync::Arc::new(crate::ragnarok::attestation::AttestationService::new(
-                crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
-            )),
-            &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
-        );
-        if let Err(e) = broker.register_workload(&request.spec) {
-            tracing::warn!(workload = %name, error = %e, "failed to register attest-gated secrets");
-        }
-        tracing::info!(
-            workload = %name,
-            "Confidential workload deployed; attestation gate evaluated"
-        );
-    }
 
     // Persist the submitted spec to disk so spec_path is a real, readable file — every
     // handler that inspects a running workload (drift check, migration advice, AI profile,
@@ -4360,32 +4316,10 @@ pub(crate) async fn validate_workload(Json(request): Json<ValidateRequest>) -> i
             // YAML parsed successfully, now run validation
             match workload.validate() {
                 Ok(()) => {
-                    let mut errors = Vec::new();
-                    if workload.confidential.as_ref().is_some_and(|c| c.enabled) {
-                        if let Err(e) = crate::ragnarok::image::deploy_image_gate(
-                            &workload,
-                            &crate::ragnarok::image::ImageCatalog::load(
-                                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
-                            ),
-                        ) {
-                            errors.push(e.to_string());
-                        }
-                        if let Err(e) = crate::ragnarok::isolation::deploy_isolation_gate(&workload)
-                        {
-                            errors.push(e.to_string());
-                        }
-                        if let Err(e) = crate::ragnarok::sovereign::deploy_sovereign_gate(&workload)
-                        {
-                            errors.push(e.to_string());
-                        }
-                        if let Err(e) = crate::ragnarok::kata::deploy_kata_gate(&workload) {
-                            errors.push(e.to_string());
-                        }
-                    }
                     let response = ValidateResponse {
-                        valid: errors.is_empty(),
+                        valid: true,
                         workload_name: Some(workload.metadata.name),
-                        errors,
+                        errors: vec![],
                     };
                     ok_json(response)
                 }

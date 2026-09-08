@@ -9,6 +9,22 @@ use crate::spec::Workload;
 use crate::state::WorkloadState;
 use serde::{Deserialize, Serialize};
 
+fn network_policy_count(spec: &Workload) -> usize {
+    let mut count = 0usize;
+    if spec.network.network_policy.is_some() {
+        count += 1;
+    }
+    if spec
+        .network
+        .cilium_network_policy
+        .as_ref()
+        .is_some_and(|p| p.enabled)
+    {
+        count += 1;
+    }
+    count
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThreatReport {
     pub generated_at: String,
@@ -122,27 +138,9 @@ impl SecurityEngine {
             });
         }
 
-        if spec
-            .confidential
-            .as_ref()
-            .is_some_and(|c| c.enabled && c.attestation.required)
-        {
-            let dir = crate::ragnarok::client::RagnarokClient::attestation_data_dir();
-            let att = crate::ragnarok::AttestationService::new(dir);
-            if !att.passed(&spec.metadata.name) {
-                return Some(ThreatEntry {
-                    workload: spec.metadata.name.clone(),
-                    severity: "critical".into(),
-                    category: "attestation".into(),
-                    score: 0.9,
-                    reason: "Confidential workload has not passed Ragnarok attestation".into(),
-                    detected_at: crate::resources::now_rfc3339(),
-                });
-            }
-        }
 
         if spec.confidential.as_ref().is_some_and(|c| c.enabled)
-            && crate::ragnarok::network::policy_count(spec) < 2
+            && network_policy_count(spec) < 2
         {
             return Some(ThreatEntry {
                 workload: spec.metadata.name.clone(),
@@ -156,25 +154,6 @@ impl SecurityEngine {
             });
         }
 
-        if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-            let sovereign = crate::ragnarok::sovereign::evaluate(
-                spec,
-                &crate::ragnarok::sovereign::SovereignConfig::from_env(),
-            );
-            if !sovereign.compliant {
-                return Some(ThreatEntry {
-                    workload: spec.metadata.name.clone(),
-                    severity: "high".into(),
-                    category: "sovereign".into(),
-                    score: 0.85,
-                    reason: format!(
-                        "Sovereign policy violation: {}",
-                        sovereign.violations.join("; ")
-                    ),
-                    detected_at: crate::resources::now_rfc3339(),
-                });
-            }
-        }
 
         if recent_audit.len() > 20 {
             return Some(ThreatEntry {

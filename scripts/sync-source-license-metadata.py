@@ -40,11 +40,8 @@ OPEN_SOURCE_REPO_PATHS = {
     "tt/netctl",
     "tt/netevd",
     # Aether-core went Apache 2.0 (2026) — do not re-stamp proprietary headers/
-    # license metadata over it. src/ragnarok/ within Aether stays proprietary
-    # and keeps its own explicit header (see src/ragnarok/PROPRIETARY.md); it's
-    # intentionally excluded from this script's per-repo stamping rather than
-    # handled via a path-level exception, since this script only supports
-    # whole-repo skips, not per-directory ones.
+    # license metadata over it. Ragnarok (confidential computing) is a separate
+    # proprietary repository and is not part of the Aether tree.
     "Aether",
 }
 

@@ -1,11 +1,11 @@
 # Product license matrix (draft)
 
-**Aether-core is open source; everything else below is proprietary** to ZyvorAI Labs Private Limited. No Apache, MIT, LGPL, or other open-source license applies to any other Zyvor-shipped source or binaries — and it does not apply to Aether's own confidential-computing features either (see the Ragnarok row).
+**Aether-core is open source; everything else below is proprietary** to ZyvorAI Labs Private Limited. No Apache, MIT, LGPL, or other open-source license applies to any other Zyvor-shipped source or binaries.
 
 | Product | License | Hosted SaaS | Trademark |
 |---------|---------|-------------|-----------|
 | **PacketWolf / NetPredator** | Proprietary EULA / ELA | Optional | PacketWolf, NetPredator |
-| **Ragnarok** (incl. Aether confidential computing) | Proprietary EULA / ELA | Optional | Ragnarok |
+| **Ragnarok** (confidential computing; separate repo) | Proprietary EULA / ELA | Optional | Ragnarok |
 | **Aether (core)** | Apache License 2.0 | N/A | Aether — name/logo not granted by the Apache license, see below |
 | **GuestKit** | Proprietary EULA / ELA | Optional | GuestKit |
 | **HyperSDK** | Proprietary EULA / ELA | N/A | HyperSDK |

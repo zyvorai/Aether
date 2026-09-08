@@ -100,21 +100,7 @@ Partial traffic to target (requires canary config). See migration advisor for ti
 
 ### Confidential blue-green
 
-For workloads with `confidential.enabled: true` on KubeVirt (or other TEE-backed targets):
-
-1. **Pre-migrate gate** — measured launch digest, attestation policy, host TEE capability (`pre_migrate_gate` in `src/ragnarok/migration.rs`)
-2. **Deploy target** — green instance on target runtime while source runs
-3. **Re-attestation** — target must pass attestation before cutover (optional poll via `AETHER_CONFIDENTIAL_MIGRATION_ATTEST_TIMEOUT`)
-4. **Cutover** — stop source; migration record in `ragnarok-migration.json`
-
-Encrypted memory channel is planned as `tls+sev://…` URIs with **hyper2kvm** operator hints — Aether orchestrates gates and state; the live QEMU memory stream is external.
-
-```bash
-aether --spec examples/confidential-migrate-kubevirt.yaml confidential migration plan --target kubevirt
-aether migrate confidential-migrate-demo --target kubevirt --strategy confidential-blue-green
-```
-
-See [Ragnarok + Aether confidential guide](../security/RAGNAROK-AND-AETHER.md#phase-6--encrypted-live-migration-aether).
+Confidential / TEE-gated migration is provided by **Ragnarok**, a separate Zyvor product — it is not implemented in Aether-core. Aether's remaining strategies are Immediate, Blue-Green, Rolling, and Canary.
 
 ---
 

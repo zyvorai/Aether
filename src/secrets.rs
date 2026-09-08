@@ -57,7 +57,7 @@ impl std::fmt::Display for EncryptionMethod {
     }
 }
 
-/// Attestation-gated secret reference (released only after Ragnarok verify).
+/// Attestation-gated secret reference (released only via Ragnarok, separate product).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AttestGatedSecret {
     pub name: String,

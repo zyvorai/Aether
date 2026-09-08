@@ -1195,14 +1195,6 @@ pub(crate) async fn api_intelligence_finops_trends(
     }
 }
 
-fn security_state_dir(app_state: &AppState) -> std::path::PathBuf {
-    app_state
-        .state_path
-        .parent()
-        .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| crate::resources::aether_path(""))
-}
-
 async fn confidential_workload_triples(app_state: &AppState) -> Vec<(String, Workload, String)> {
     let store = app_state.state.read().await;
     store
@@ -1238,15 +1230,13 @@ pub(crate) async fn api_intelligence_security_sbom_drift() -> impl axum::respons
 pub(crate) async fn api_intelligence_security_confidential_fleet(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
-    let svc = crate::ragnarok::attestation::AttestationService::new(security_state_dir(&app_state));
-    let catalog = crate::ragnarok::image::ImageCatalog::load(&security_state_dir(&app_state));
     let triples = confidential_workload_triples(&app_state).await;
     let refs: Vec<(&str, &Workload, &str)> = triples
         .iter()
         .map(|(n, s, r)| (n.as_str(), s, r.as_str()))
         .collect();
     ok_json(
-        crate::intelligence::security_os::build_confidential_fleet_dashboard(&refs, &svc, &catalog),
+        crate::intelligence::security_os::build_confidential_fleet_dashboard(&refs),
     )
     .into_response()
 }
@@ -1288,8 +1278,7 @@ pub(crate) async fn api_intelligence_security_image_enforcement(
     AxumState(app_state): AxumState<AppState>,
 ) -> impl axum::response::IntoResponse {
     let pairs = workload_pairs(&app_state).await;
-    let catalog = crate::ragnarok::image::ImageCatalog::load(&security_state_dir(&app_state));
-    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(&pairs, &catalog))
+    ok_json(crate::intelligence::security_os::build_image_signing_enforcement(&pairs))
         .into_response()
 }
 

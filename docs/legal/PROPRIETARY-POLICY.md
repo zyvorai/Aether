@@ -2,7 +2,7 @@
 
 ## Position
 
-ZyvorAI Labs does **not** distribute product source or binaries under Apache 2.0, MIT, LGPL, or other open-source licenses, with one approved exception: **Aether-core** (the orchestration engine — CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0. Everything else — **PacketWolf**, **Ragnarok** (including Aether's own confidential-computing features, implemented in `src/ragnarok/` inside the Aether repository but licensed separately from the rest of it), **GuestKit**, **HyperSDK**, and related commercial extensions — remains fully proprietary.
+ZyvorAI Labs does **not** distribute product source or binaries under Apache 2.0, MIT, LGPL, or other open-source licenses, with one approved exception: **Aether-core** (the orchestration engine — CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0. Everything else — **PacketWolf**, **Ragnarok** (confidential computing; separate repository), **GuestKit**, **HyperSDK**, and related commercial extensions — remains fully proprietary.
 
 ## Third-party dependencies
 
@@ -20,9 +20,9 @@ Agreements should state:
 
 ## Repositories
 
-- Do not add `LICENSE` files implying Apache/MIT for Zyvor-owned code — **except Aether**, which is the approved exception (Apache-2.0 `LICENSE`, `src/ragnarok/` carved out proprietary).
-- Use the company **proprietary LICENSE** (synced via `scripts/sync-proprietary-license.sh`) for every other repo — Aether is deliberately excluded from that script's repo list (see the script's own comment) so it doesn't get overwritten back to a proprietary EULA.
-- Keep confidential materials out of public repos; if a repo is private, access is still under proprietary terms unless a separate contract says otherwise. Ragnarok's source (`src/ragnarok/` in the Aether repo) must not be present in the public Aether repository or its history — this requires the confidential-computing trait/plugin extraction described in `src/ragnarok/PROPRIETARY.md` to be complete, and the repo's git history to be scrubbed or restarted, before Aether is actually made public. Until that's done, Aether stays private even though its LICENSE now reads Apache-2.0.
+- Do not add `LICENSE` files implying Apache/MIT for Zyvor-owned code — **except Aether**, which is the approved Apache-2.0 exception.
+- Use the company **proprietary LICENSE** (synced via `scripts/sync-proprietary-license.sh`) for every other repo — Aether is deliberately excluded from that script's repo list so it doesn't get overwritten back to a proprietary EULA.
+- Keep confidential materials out of public repos. **Ragnarok** lives in its own private repository; it must not be vendored into the public Aether tree.
 
 ## Contributions
 

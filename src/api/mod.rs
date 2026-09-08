@@ -7,7 +7,6 @@
 //! Supports optional API key authentication via AETHER_API_KEY environment variable.
 //! Supports optional HTTPS via --tls-cert and --tls-key flags.
 
-mod confidential_handlers;
 mod ecosystem_handlers;
 mod fleet_handlers;
 mod handlers;
@@ -32,7 +31,6 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use confidential_handlers::*;
 use ecosystem_handlers::*;
 use fleet_handlers::*;
 use handlers::*;
@@ -1919,107 +1917,6 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route(
             "/api/intelligence/livelabs/confidential-lab",
             get(api_intelligence_livelabs_confidential_lab),
-        )
-        .route(
-            "/api/confidential/capabilities",
-            get(api_confidential_capabilities),
-        )
-        .route(
-            "/api/confidential/security-profiles",
-            get(api_confidential_security_profiles),
-        )
-        .route(
-            "/api/confidential/attestation/verify",
-            post(api_attestation_verify),
-        )
-        .route(
-            "/api/confidential/attestation/:vm_id/status",
-            get(api_attestation_status),
-        )
-        .route(
-            "/api/confidential/attestation/:vm_id/explain",
-            get(api_attestation_explain),
-        )
-        .route(
-            "/api/confidential/trust-score/:workload",
-            get(api_confidential_trust_score),
-        )
-        .route(
-            "/api/confidential/trust-score",
-            get(api_confidential_trust_fleet),
-        )
-        .route("/api/confidential/fleet", get(api_confidential_fleet))
-        .route(
-            "/api/confidential/workload/:workload",
-            get(api_confidential_workload_row),
-        )
-        .route(
-            "/api/confidential/secrets/release",
-            post(api_confidential_secret_release),
-        )
-        .route(
-            "/api/confidential/secrets/:workload/status",
-            get(api_confidential_secret_status),
-        )
-        .route(
-            "/api/confidential/migration-plan/:name/:target",
-            get(api_confidential_migration_plan),
-        )
-        .route(
-            "/api/confidential/migration/:workload/status",
-            get(api_confidential_migration_status),
-        )
-        .route(
-            "/api/confidential/guestkit/inspect",
-            post(api_guestkit_inspect),
-        )
-        .route(
-            "/api/confidential/guestkit/:vm_id/history",
-            get(api_guestkit_history),
-        )
-        .route(
-            "/api/confidential/sovereign/status",
-            get(api_confidential_sovereign_status),
-        )
-        .route(
-            "/api/confidential/sovereign/evaluate/:workload",
-            get(api_confidential_sovereign_evaluate),
-        )
-        .route(
-            "/api/confidential/kata/status",
-            get(api_confidential_kata_status),
-        )
-        .route(
-            "/api/confidential/network/:workload",
-            get(api_confidential_network_status),
-        )
-        .route(
-            "/api/confidential/intelligence/:workload",
-            get(api_confidential_intelligence_workload),
-        )
-        .route(
-            "/api/confidential/intelligence",
-            get(api_confidential_intelligence_fleet),
-        )
-        .route(
-            "/api/confidential/images",
-            get(api_confidential_image_catalog),
-        )
-        .route(
-            "/api/confidential/images/sign",
-            post(api_confidential_image_sign),
-        )
-        .route(
-            "/api/confidential/isolation/:workload",
-            get(api_confidential_isolation),
-        )
-        .route(
-            "/api/confidential/placement/:workload",
-            get(api_confidential_placement),
-        )
-        .route(
-            "/api/confidential/images/verify",
-            post(api_confidential_image_verify),
         )
         .route("/api/drift/:name", get(api_drift_check))
         .route("/api/drift/:name/reconcile", post(api_drift_reconcile))

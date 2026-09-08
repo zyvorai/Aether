@@ -3,9 +3,10 @@ Copyright 2026 ZyvorAI Labs Private Limited
 
 This product includes software developed by ZyvorAI Labs Private Limited
 (https://zyvor.dev), licensed under the Apache License, Version 2.0 — see
-the LICENSE file for the full text and for the scope of this license
-(it does not cover `src/ragnarok/`, which remains proprietary; see
-`src/ragnarok/PROPRIETARY.md`).
+the LICENSE file for the full text.
+
+Confidential computing (Ragnarok) is a separate Zyvor product and is not
+part of this repository. Contact licensing@zyvor.dev for commercial terms.
 
 ------------------------------------------------------------------------------
 Third-party attributions

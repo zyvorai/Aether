@@ -519,11 +519,7 @@ impl Workload {
                 }
             }
             if let Some(ref rc) = conf.kata_runtime_class {
-                if !crate::ragnarok::kata::supported_runtime_classes().contains(&rc.as_str()) {
-                    anyhow::bail!(
-                        "unsupported confidential.kataRuntimeClass '{rc}' — use kata-clh-snp, kata-clh-tdx, kata-qemu-snp, or kata-qemu-tdx"
-                    );
-                }
+                Self::validate_dns_label(rc, "confidential.kataRuntimeClass")?;
             }
             if conf.enabled
                 && conf.attestation.policy == crate::spec::AttestationPolicy::Strict

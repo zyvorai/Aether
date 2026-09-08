@@ -161,10 +161,8 @@ impl KubeVirtRuntime {
 
 /// Build DataVolume JSON (standalone, testable without kube::Client)
 fn build_datavolume_json(namespace: &str, _image: &Image, spec: &Workload) -> serde_json::Value {
-    use crate::ragnarok::isolation::datavolume_encryption_annotations;
-
     let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
-    let enc_ann = datavolume_encryption_annotations(spec);
+    let enc_ann: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     let storage_class = enc_ann
         .get("ragnarok.zyvor.dev/storage-class")
         .cloned()
@@ -303,8 +301,6 @@ fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Va
         vm_spec["spec"]["template"]["spec"]["evictionStrategy"] = json!("LiveMigrate");
     }
 
-    crate::ragnarok::kubevirt::apply_confidential_to_vm(&mut vm_spec, spec);
-
     vm_spec
 }
 
@@ -328,18 +324,6 @@ impl Runtime for KubeVirtRuntime {
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
         common::validate_kube_name(&spec.metadata.name)?;
-
-        // Deploy confidential VM extensions when spec requests TEE
-        crate::ragnarok::image::deploy_image_gate(
-            spec,
-            &crate::ragnarok::image::ImageCatalog::load(
-                &crate::ragnarok::client::RagnarokClient::attestation_data_dir(),
-            ),
-        )?;
-        crate::ragnarok::sovereign::enforce_region_lock(
-            spec,
-            &crate::ragnarok::sovereign::SovereignConfig::from_env(),
-        )?;
 
         // Create DataVolume
         let datavolume_json = self.generate_datavolume_json(image, spec);

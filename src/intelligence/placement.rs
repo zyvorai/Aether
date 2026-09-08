@@ -7,8 +7,6 @@ use crate::ai::scoring::ScoringEngine;
 use crate::config::Config;
 use crate::intelligence::store::IntelligenceStore;
 use crate::kubecluster::ClusterInfo;
-use crate::ragnarok::scheduling;
-use crate::ragnarok::tee::probe_host_tee;
 use crate::runtime::RuntimeKind;
 use crate::spec::Workload;
 use serde::{Deserialize, Serialize};
@@ -35,13 +33,9 @@ impl GlobalPlacementEngine {
         let intel = IntelligenceStore::load(&IntelligenceStore::default_path()).unwrap_or_default();
         let engine = ScoringEngine::new(config.engine).with_history(intel.runtime_history_map());
         let scoring = engine.score(workload);
-        let host_tee = probe_host_tee();
-        let (conf_bonus, conf_reasons) = scheduling::placement_bonus(workload, &host_tee);
-        let conf_runtime = if workload.confidential.as_ref().is_some_and(|c| c.enabled) {
-            Some(scheduling::recommended_runtime(workload))
-        } else {
-            None
-        };
+        let conf_bonus = 0.0;
+        let conf_reasons: Vec<String> = vec![];
+        let conf_runtime = None;
 
         let mut out = Vec::new();
         let reachable_clusters: Vec<&ClusterInfo> =

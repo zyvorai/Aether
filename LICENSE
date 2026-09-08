@@ -189,22 +189,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-------------------------------------------------------------------------------
-
-SCOPE OF THIS LICENSE — READ BEFORE ASSUMING A FILE IS APACHE 2.0
-
-This license covers every file in this repository EXCEPT the contents of
-`src/ragnarok/`, which is ZyvorAI Labs' confidential-computing engine
-(TEE attestation, sovereign policy, vault/KBS secret release, confidential
-migration) and remains proprietary, closed-source software. It is not
-licensed under the Apache License and is not covered by the grant above.
-
-See `src/ragnarok/PROPRIETARY.md` for the terms governing that directory,
-and `NOTICE` for third-party attributions. Individual source files also
-carry their own `SPDX-License-Identifier` header reflecting which of the
-two regimes applies — that header, not this file's location in the repo,
-is the authoritative statement of a given file's license.
-
-Contact licensing@zyvor.dev for commercial licensing of `src/ragnarok/` or
-questions about this split.

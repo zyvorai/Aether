@@ -162,7 +162,11 @@ fn workload_labels(spec: &Workload) -> BTreeMap<String, String> {
                     labels.insert("ragnarok.zyvor.dev/tee".into(), tee.into());
                 }
             }
-            if let Some(rc) = crate::ragnarok::kata::resolve_runtime_class(spec) {
+            if let Some(rc) = spec
+                .confidential
+                .as_ref()
+                .and_then(|c| c.kata_runtime_class.clone())
+            {
                 labels.insert("ragnarok.zyvor.dev/runtime-class".into(), rc);
             }
         }
@@ -227,9 +231,6 @@ fn pod_annotations(spec: &Workload) -> BTreeMap<String, String> {
         for (k, v) in &wi.annotations {
             pod_annotations.insert(k.clone(), v.clone());
         }
-    }
-    for (k, v) in crate::ragnarok::network::confidential_pod_annotations(spec) {
-        pod_annotations.insert(k, v);
     }
     pod_annotations
 }
@@ -936,7 +937,10 @@ pub(crate) fn build_pod_template_spec(
 }
 
 fn confidential_runtime_class(spec: &Workload) -> Option<String> {
-    crate::ragnarok::kata::resolve_runtime_class(spec)
+    spec.confidential
+        .as_ref()
+        .filter(|c| c.enabled)
+        .and_then(|c| c.kata_runtime_class.clone())
 }
 
 fn object_meta(namespace: &str, spec: &Workload) -> ObjectMeta {

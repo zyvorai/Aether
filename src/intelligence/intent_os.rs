@@ -477,14 +477,7 @@ pub fn check_compliance_gate(spec: &Workload) -> ComplianceGateReport {
         }
 
         if spec.confidential.as_ref().is_some_and(|c| c.enabled) {
-            let sovereign = crate::ragnarok::sovereign::evaluate(
-                spec,
-                &crate::ragnarok::sovereign::SovereignConfig::from_env(),
-            );
-            if !sovereign.compliant {
-                violations.extend(sovereign.violations.iter().cloned());
-                recommendations.push("Resolve sovereign policy before deploy".into());
-            }
+            // Sovereign evaluation requires Ragnarok (separate product).
         }
     }
 

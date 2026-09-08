@@ -98,8 +98,7 @@ pub(crate) fn build_cilium_network_policy_json(namespace: &str, spec: &Workload)
         }
         return None;
     }
-    let auto = crate::ragnarok::network::default_confidential_cilium(spec)?;
-    build_cilium_from_spec(namespace, spec, &auto)
+    None
 }
 
 fn build_cilium_from_spec(
