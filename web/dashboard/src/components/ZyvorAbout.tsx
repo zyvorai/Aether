@@ -8,7 +8,7 @@ import { ZYVOR_HELP, AETHER_HELP } from '../config/zyvorHelp';
 
 export const AETHER_PRODUCT = AETHER_HELP.name;
 export const AETHER_VERSION = AETHER_HELP.version;
-export const AETHER_TAGLINE = `${AETHER_HELP.tagline} — one spec, four runtimes, one tool.`;
+export const AETHER_TAGLINE = `${AETHER_HELP.tagline} — one spec, three runtimes, one tool.`;
 
 const ORANGE = '#f97316';
 const AETHER = '#d35400';
@@ -83,7 +83,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
           >
             {ZYVOR_BRAND}
           </a>{' '}
-          product family — deploy workloads to Podman, Kubernetes, KubeVirt, and Metal3 from a single YAML
+          product family — deploy workloads to Podman, Kubernetes, and KubeVirt from a single YAML
           specification with AI-assisted runtime selection and built-in observability.
         </p>
         <p className="text-xs text-subtle leading-relaxed">

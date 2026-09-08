@@ -65,7 +65,6 @@ workloads:
 | `container` / `podman` | Podman | 🐳 |
 | `kube` / `kubernetes` / `k8s` | Kubernetes | ☸️ |
 | `kubevirt` / `vm` | KubeVirt | 🖥️ |
-| `metal` / `metal3` / `bare-metal` | Metal3 | 🖧 |
 
 ### Minimal Example
 

@@ -1,6 +1,6 @@
 apiVersion: v2
 name: aether
-description: Aether — Universal Runtime Control Plane for Containers, Kubernetes, KubeVirt, and Metal3
+description: Aether — Universal Runtime Control Plane for Containers, Kubernetes, and KubeVirt
 type: application
 version: 0.1.0
 appVersion: "0.3.0"

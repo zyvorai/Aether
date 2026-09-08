@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live Metal3 / KubeVirt reference-cluster smoke (requires kubeconfig + AETHER_LABS_LIVE=1).
+# Live KubeVirt reference-cluster smoke (requires kubeconfig + AETHER_LABS_LIVE=1).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

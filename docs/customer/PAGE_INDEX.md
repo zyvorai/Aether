@@ -13,7 +13,7 @@ Regenerate: `node scripts/customer-docs/generate-page-index.mjs`
 | Overview | `/` | Fleet briefing, savings, and capacity intelligence | [Open](pages/primary/home.md) |
 | Runtime Fabric | `/fabric` | Live Application → Runtime → Cluster → Node topology | [Open](pages/primary/fabric.md) |
 | Applications | `/applications` | Manage Kubernetes apps like an operating system — not like YAML | [Open](pages/primary/applications.md) |
-| Workloads | `/workloads` | Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3 | [Open](pages/primary/workloads.md) |
+| Workloads | `/workloads` | Deploy, monitor, and manage across Podman, Kubernetes & KubeVirt | [Open](pages/primary/workloads.md) |
 
 ## Intelligence
 

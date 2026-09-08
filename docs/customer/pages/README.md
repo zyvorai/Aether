@@ -46,7 +46,7 @@ Every route is also listed in the [complete page index](../PAGE_INDEX.md).
 | [Applications](primary/applications.md) | Manage Kubernetes apps like an operating system — not like YAML |
 | [Runtime Fabric](primary/fabric.md) | Live Application → Runtime → Cluster → Node topology |
 | [Overview](primary/home.md) | Fleet briefing, savings, and capacity intelligence |
-| [Workloads](primary/workloads.md) | Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3 |
+| [Workloads](primary/workloads.md) | Deploy, monitor, and manage across Podman, Kubernetes & KubeVirt |
 
 ## Resources
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live Metal3 / KubeVirt checks. Skips when no cluster credentials are present.
+# Live KubeVirt checks. Skips when no cluster credentials are present.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -42,7 +42,6 @@ if [[ ! -x "$AETHER" ]]; then
   cargo build --release
 fi
 
-run_lab "metal3" "examples/labs/metal3/workload.yaml" "metal"
 run_lab "kubevirt" "examples/labs/kubevirt/workload.yaml" "kubevirt"
 
 if [[ -x scripts/k8s-labs-e2e.sh ]] || [[ -f scripts/k8s-labs-e2e.sh ]]; then

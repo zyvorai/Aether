@@ -26,7 +26,7 @@ pub fn show_help() {
     use crate::output;
 
     output::logo();
-    output::muted("  Universal Runtime Control Plane - One spec, four runtimes");
+    output::muted("  Universal Runtime Control Plane - One spec, three runtimes");
     output::muted(&format!("  Version {}\n", env!("CARGO_PKG_VERSION")));
 
     // Core Operations
@@ -361,11 +361,10 @@ pub fn show_help() {
     output::section("Supported Runtimes");
     use crate::runtime::RuntimeKind;
     println!(
-        "  {} {} {} {}",
+        "  {} {} {}",
         output::runtime_display(&RuntimeKind::Podman),
         output::runtime_display(&RuntimeKind::Kubernetes),
         output::runtime_display(&RuntimeKind::KubeVirt),
-        output::runtime_display(&RuntimeKind::Metal3),
     );
     println!();
 }

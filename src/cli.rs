@@ -10,8 +10,8 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(name = "aether")]
 #[command(
-    about = "Universal runtime control plane - One spec, four runtimes",
-    long_about = "Aether deploys workloads across four runtimes (Podman, Kubernetes, KubeVirt, Metal3)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability."
+    about = "Universal runtime control plane - One spec, three runtimes",
+    long_about = "Aether deploys workloads across three runtimes (Podman, Kubernetes, KubeVirt)\nfrom a single YAML specification with AI-powered runtime selection, zero-downtime\nmigration, and built-in observability."
 )]
 #[command(version)]
 #[command(styles = get_styles())]
@@ -104,7 +104,7 @@ pub(crate) enum Commands {
 
     /// Run / deploy workload instance (auto-selects best runtime via intent engine)
     Run {
-        /// Override runtime decision (podman, kube, kubevirt, metal)
+        /// Override runtime decision (podman, kube, kubevirt)
         #[arg(short, long)]
         runtime: Option<String>,
     },
@@ -463,7 +463,7 @@ pub(crate) enum Commands {
         /// Directory containing YAML workload specs
         dir: PathBuf,
 
-        /// Override runtime for all workloads (podman, kube, kubevirt, metal)
+        /// Override runtime for all workloads (podman, kube, kubevirt)
         #[arg(short, long)]
         runtime: Option<String>,
 

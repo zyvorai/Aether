@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://aether.io/schema/workload.schema.json",
   "title": "Aether Workload Specification",
-  "description": "Universal workload specification for Aether - One spec, four runtimes",
+  "description": "Universal workload specification for Aether - One spec, three runtimes",
   "type": "object",
   "required": ["apiVersion", "kind", "metadata", "build", "requirements", "runtime"],
   "properties": {
@@ -123,14 +123,14 @@
         "preferred": {
           "type": "string",
           "description": "Preferred runtime",
-          "enum": ["auto", "container", "kube", "kubevirt", "metal"]
+          "enum": ["auto", "container", "kube", "kubevirt"]
         },
         "allow": {
           "type": "array",
           "description": "Allowed runtimes for this workload",
           "items": {
             "type": "string",
-            "enum": ["container", "kube", "kubevirt", "metal"]
+            "enum": ["container", "kube", "kubevirt"]
           },
           "minItems": 1
         }

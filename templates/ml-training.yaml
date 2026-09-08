@@ -31,7 +31,6 @@ runtime:
   preferred: Kubevirt
   allowed:
     - Kubevirt
-    - Metal
   disallowed:
     - Container
     - Kube

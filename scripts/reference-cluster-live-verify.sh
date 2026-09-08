@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live Metal3/KubeVirt reference cluster smoke + optional post-deploy API verify.
+# Live KubeVirt reference cluster smoke + optional post-deploy API verify.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

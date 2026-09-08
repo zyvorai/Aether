@@ -46,7 +46,7 @@ jobs:
             type=raw,value=edge,enable={{is_default_branch}}
           labels: |
             org.opencontainers.image.title=Aether
-            org.opencontainers.image.description=Universal runtime control plane - One spec, four runtimes
+            org.opencontainers.image.description=Universal runtime control plane - One spec, three runtimes
             org.opencontainers.image.vendor=Aether
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 

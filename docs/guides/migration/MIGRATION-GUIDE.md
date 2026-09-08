@@ -18,18 +18,17 @@
 
 ## 🌐 Overview
 
-Aether supports migrating workloads between any pair of its four runtimes.
+Aether supports migrating workloads between any pair of its three runtimes.
 
 > **Internals:** For state machine, limits matrix, and trace mode see [Migration Internals](MIGRATION-INTERNALS.md) and [Stateful Portability](STATEFUL-PORTABILITY.md).
 
-| From \ To | Podman | Kubernetes | KubeVirt | Metal3 |
-|-----------|--------|------------|----------|--------|
-| **Podman** | — | ✅ | ✅ | ✅ |
-| **Kubernetes** | ✅ | — | ✅ | ✅ |
-| **KubeVirt** | ✅ | ✅ | — | ✅ |
-| **Metal3** | ✅ | ✅ | ✅ | — |
+| From \ To | Podman | Kubernetes | KubeVirt |
+|-----------|--------|------------|----------|
+| **Podman** | — | ✅ | ✅ |
+| **Kubernetes** | ✅ | — | ✅ |
+| **KubeVirt** | ✅ | ✅ | — |
 
-That's **16 runtime pair combinations**, each supporting 3 migration strategies.
+That's **9 runtime pair combinations**, each supporting 3 migration strategies.
 
 ---
 
@@ -111,7 +110,7 @@ aether migrate my-app podman --strategy immediate
 aether migrate my-app kubevirt --strategy rolling
 
 # Skip health validation (not recommended)
-aether migrate my-app metal3 --no-validation
+aether migrate my-app kubevirt --no-validation
 
 # Disable automatic rollback
 aether migrate my-app kubernetes --no-rollback

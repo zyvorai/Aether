@@ -34,19 +34,16 @@ The **Migration Engine** enables seamless workload migration between different r
 ### Supported Migration Paths
 
 ```
-🐳 Podman ←→ ☸️ Kubernetes ←→ 🖥️ KubeVirt ←→ 🖧 Metal3
-   ↓            ↓               ↓              ↓
-   └────────────┴───────────────┴──────────────┘
-          Any-to-Any Migrations
+🐳 Podman ←→ ☸️ Kubernetes ←→ 🖥️ KubeVirt
+   ↓            ↓               ↓
+   └────────────┴───────────────┘
+       Any-to-Any Migrations
 ```
 
 **Bidirectional migrations supported:**
 - Podman ↔ Kubernetes
 - Podman ↔ KubeVirt
-- Podman ↔ Metal3
 - Kubernetes ↔ KubeVirt
-- Kubernetes ↔ Metal3
-- KubeVirt ↔ Metal3
 
 ---
 
@@ -172,9 +169,6 @@ aether migrate my-app kubernetes --strategy rolling
 
    # For KubeVirt
    kubectl get kubevirt -n kubevirt
-
-   # For Metal3
-   kubectl get bmh -A
    ```
 
 ### Basic Migration
@@ -262,56 +256,6 @@ aether migrate my-app kubevirt --strategy rolling
 - Different console access (virtctl)
 - Direct hardware access available
 - May need cloud-init configuration
-
-### KubeVirt → Metal3
-
-**Use Case:** Moving VM to bare metal for maximum performance
-
-**Example:**
-```bash
-# Start on KubeVirt
-aether run --spec app.yaml --runtime kubevirt
-
-# Migrate to Metal3
-aether migrate my-app metal --strategy immediate
-```
-
-**What Happens:**
-1. VM disk image prepared for bare metal
-2. BareMetalHost provisioned
-3. Physical server boots and installs
-4. VM deleted
-
-**Considerations:**
-- Requires available bare metal hosts
-- Provisioning takes longer (hardware boot)
-- BMC access needed
-- Hardware-specific configuration
-
-### Podman → Metal3
-
-**Use Case:** Moving container directly to dedicated hardware
-
-**Example:**
-```bash
-# Start on Podman
-aether run --spec app.yaml --runtime podman
-
-# Migrate to Metal3
-aether migrate my-app metal --strategy blue-green
-```
-
-**What Happens:**
-1. Container converted to bootable bare metal image
-2. Server provisioned with image
-3. Validation after provisioning
-4. Container removed
-
-**Considerations:**
-- Significant architecture change
-- Boot time much longer
-- Exclusive hardware resource access
-- Best for performance-critical workloads
 
 ---
 
@@ -472,9 +416,6 @@ kubectl get sc  # Storage classes
 
 # KubeVirt
 kubectl get kubevirt -n kubevirt
-
-# Metal3
-kubectl get bmh -A
 ```
 
 **3. Backup State**
@@ -630,7 +571,6 @@ aether run --spec workload.yaml
 # Check target runtime
 kubectl get pods  # for Kubernetes
 kubectl get vmi   # for KubeVirt
-kubectl get bmh   # for Metal3
 
 # Check logs
 kubectl logs my-app  # for Kubernetes
@@ -778,10 +718,6 @@ sleep 60  # Monitor
 
 # Stage 2: Kubernetes to KubeVirt (need better isolation)
 aether migrate my-app kubevirt --strategy rolling
-sleep 120  # Monitor
-
-# Stage 3: KubeVirt to Metal3 (need max performance)
-aether migrate my-app metal --strategy immediate
 ```
 
 ### Example 6: Canary Migration
@@ -831,8 +767,6 @@ aether delete my-app-canary
 **Immediate:**
 - Podman → Kubernetes: 30-60 seconds
 - Kubernetes → KubeVirt: 2-5 minutes (VM boot)
-- KubeVirt → Metal3: 10-30 minutes (server provisioning)
-- Podman → Metal3: 10-30 minutes
 
 **Blue-Green:**
 - Add deployment time + configurable traffic switch delay (default: validation_delay from MigrationPlan)

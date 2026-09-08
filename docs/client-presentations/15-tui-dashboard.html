@@ -74,7 +74,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <!-- PAGE 2: TUI Features -->
 <div class="page page-dark">
     <h2 class="st">TUI <span>Features</span></h2>
-    <p class="sub">The Aether TUI provides a unified operational view of every workload across Podman, Kubernetes, KubeVirt, and Metal3 in a single terminal screen.</p>
+    <p class="sub">The Aether TUI provides a unified operational view of every workload across Podman, Kubernetes, and KubeVirt in a single terminal screen.</p>
 
     <div class="card-grid">
         <div class="card">
@@ -114,7 +114,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 |    cache       podman Running||  State:    Running                |
 |    ml-train    kubevirt Pend.||  Ready:    true                   |
 |    db-primary  podman Running||  Restarts: 0                     |
-|    gpu-node    metal3 Failed ||  Image:    my-api:latest          |
+|    gpu-node    kubevirt Failed||  Image:    my-api:latest          |
 |                              ||  Ports:    8080:80                |
 |                              ||  CPU:      500m / 500m            |
 |                              ||  Memory:   256Mi / 256Mi          |
@@ -209,7 +209,6 @@ li { margin-bottom: 0.4em; font-size: 1em; }
                 <tr><td><strong>Podman</strong></td><td style="color: #3b82f6; font-weight: 700;">Blue badge</td></tr>
                 <tr><td><strong>Kubernetes</strong></td><td style="color: #22c55e; font-weight: 700;">Green badge</td></tr>
                 <tr><td><strong>KubeVirt</strong></td><td style="color: #a855f7; font-weight: 700;">Purple badge</td></tr>
-                <tr><td><strong>Metal3</strong></td><td style="color: #f97316; font-weight: 700;">Orange badge</td></tr>
                 <tr><td><strong>Plugin</strong></td><td style="color: #06b6d4; font-weight: 700;">Cyan badge</td></tr>
             </table>
         </div>
@@ -246,7 +245,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
         <div class="card">
             <div class="icon">&#x1F504;</div>
             <h4>Auto-Refresh (5 seconds)</h4>
-            <p>The TUI polls all runtime adapters every 5 seconds for fresh status data. Each runtime is queried concurrently &mdash; Podman via CLI, Kubernetes via the kube API, KubeVirt and Metal3 via CRD watches.</p>
+            <p>The TUI polls all runtime adapters every 5 seconds for fresh status data. Each runtime is queried concurrently &mdash; Podman via CLI, Kubernetes via the kube API, KubeVirt via CRD watches.</p>
 <pre>
 # Launch the TUI
 $ aether tui
@@ -338,7 +337,7 @@ Server running at http://localhost:8080
 $ aether tui
 
 # What you see:
-#   - All workloads across Podman, Kubernetes, KubeVirt, Metal3
+#   - All workloads across Podman, Kubernetes, KubeVirt
 #   - Color-coded runtime badges and status indicators
 #   - Real-time auto-refresh every 5 seconds
 #   - Search/filter with '/' key

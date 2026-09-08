@@ -364,7 +364,6 @@ impl PolicyEngine {
                         RuntimeKind::Podman | RuntimeKind::Docker => RuntimeType::Container,
                         RuntimeKind::Kubernetes => RuntimeType::Kube,
                         RuntimeKind::KubeVirt => RuntimeType::Kubevirt,
-                        RuntimeKind::Metal3 => RuntimeType::Metal,
                     };
                     if spec.runtime.allow.contains(&rt) {
                         violate(

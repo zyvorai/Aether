@@ -1,6 +1,6 @@
 # Aether Client Presentations
 
-22 slide decks covering business value, architecture, runtime guides, migration, security, operations, and developer experience.
+21 slide decks covering business value, architecture, runtime guides, migration, security, operations, and developer experience.
 
 All presentations available as HTML (viewable in browser) and can be printed to PDF.
 
@@ -30,7 +30,6 @@ All presentations available as HTML (viewable in browser) and can be printed to 
 |---|-------|-------|---------|
 | 08 | Kubernetes & Helm | 6 | Kubernetes |
 | 09 | KubeVirt VMs | 6 | KubeVirt |
-| 10 | Metal3 Bare Metal | 6 | Metal3 |
 | 11 | Podman Local Dev | 6 | Podman |
 
 ### Migration & Operations

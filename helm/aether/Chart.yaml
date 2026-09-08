@@ -1,6 +1,6 @@
 apiVersion: v2
 name: aether
-description: Universal runtime control plane - One spec, four runtimes
+description: Universal runtime control plane - One spec, three runtimes
 type: application
 version: 0.3.0
 appVersion: "0.3.0"
@@ -9,7 +9,6 @@ keywords:
   - kubernetes
   - container
   - kubevirt
-  - metal3
   - runtime
   - workload
 home: https://github.com/ssahani/aether

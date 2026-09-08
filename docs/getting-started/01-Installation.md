@@ -40,7 +40,6 @@ Install the runtimes you plan to target. You only need the ones you will use:
 | 🐳 **Podman** (container) | `podman` | `sudo dnf install podman` or `sudo apt install podman` |
 | ☸️ **Kubernetes** | `kubectl` | [kubernetes.io/docs/tasks/tools](https://kubernetes.io/docs/tasks/tools/) |
 | 🖥️ **KubeVirt** | `kubectl` + `virtctl` | [kubevirt.io/user-guide](https://kubevirt.io/user-guide/) |
-| 🔩 **Metal3** | `kubectl` | [metal3.io/documentation](https://metal3.io/) |
 
 > **Tip:** For local development, start with Podman only. You can add Kubernetes
 > and other runtimes later without reinstalling aether.
@@ -409,9 +408,6 @@ kubectl get nodes
 
 # KubeVirt (if installed)
 kubectl get kubevirt -n kubevirt
-
-# Metal3 (if installed)
-kubectl get baremetalhosts -A
 ```
 
 ---

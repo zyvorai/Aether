@@ -5,7 +5,6 @@
 | Vendor | Runtime | Level | Notes |
 |--------|---------|-------|-------|
 | AWS EKS | Kubernetes | **Supported** | kubeconfig + standard adapter |
-| AWS (EC2 bare) | Metal3 | **Lab** | Requires Metal3/ironic stack |
 | Google GKE | Kubernetes | **Supported** | See `examples/labs/` |
 | Azure AKS | Kubernetes | **Supported** | See `examples/labs/` |
 | OpenStack | KubeVirt/K8s | **Lab** | Tenant clusters via kubeconfig |

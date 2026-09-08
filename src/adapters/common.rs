@@ -2,7 +2,7 @@
 // Proprietary software — see LICENSE in the repository root.
 // https://zyvor.dev · info@zyvor.dev
 
-//! Common utilities shared across CRD-based adapters (KubeVirt, Metal3)
+//! Common utilities shared across CRD-based adapters (Kubernetes, KubeVirt)
 
 use crate::runtime::{InstanceState, Status};
 use kube::{

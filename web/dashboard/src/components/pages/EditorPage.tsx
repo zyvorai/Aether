@@ -124,7 +124,7 @@ function EditorPage() {
     });
   }, [workloadQuery]);
 
-  const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt', 'metal3'];
+  const runtimes = ['podman', 'docker', 'kubernetes', 'kata', 'kubevirt'];
   const intents = ['low-latency', 'high-throughput', 'cost-optimized', 'balanced'];
 
   const handleChange = (field: keyof EditorForm, value: string | number | boolean | undefined) => {

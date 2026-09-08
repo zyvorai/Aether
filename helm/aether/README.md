@@ -1,13 +1,12 @@
 # Aether Helm Chart
 
-This Helm chart deploys Aether as a Kubernetes operator for managing workloads across multiple runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+This Helm chart deploys Aether as a Kubernetes operator for managing workloads across multiple runtimes (Podman, Kubernetes, KubeVirt).
 
 ## Prerequisites
 
 - Kubernetes 1.20+
 - Helm 3.0+
 - (Optional) KubeVirt CRDs for VM support
-- (Optional) Metal3 CRDs for bare metal support
 
 ## Installation
 
@@ -132,9 +131,6 @@ aether:
     kubevirt:
       enabled: true  # Requires KubeVirt CRDs
 
-    metal3:
-      enabled: false  # Requires Metal3 CRDs
-
   migration:
     defaultStrategy: blue-green
     validationDelay: 30s
@@ -159,7 +155,6 @@ The chart creates a ClusterRole with permissions for:
 - Ingresses
 - HorizontalPodAutoscalers
 - VirtualMachines (KubeVirt)
-- BareMetalHosts (Metal3)
 
 To customize permissions:
 
@@ -348,16 +343,6 @@ aether:
 
     kubevirt:
       enabled: true
-
-    metal3:
-      enabled: true
-      bmcCredentials:
-        secretName: metal3-bmc-credentials
-
-secrets:
-  bmcCredentials:
-    username: admin
-    password: changeme
 EOF
 ```
 
@@ -425,7 +410,6 @@ kubectl delete pvc -l app.kubernetes.io/instance=aether
 | `aether.logging.level` | Log level | `info` |
 | `aether.runtimes.kubernetes.enabled` | Enable Kubernetes runtime | `true` |
 | `aether.runtimes.kubevirt.enabled` | Enable KubeVirt runtime | `false` |
-| `aether.runtimes.metal3.enabled` | Enable Metal3 runtime | `false` |
 
 For a complete list, see [`values.yaml`](values.yaml).
 

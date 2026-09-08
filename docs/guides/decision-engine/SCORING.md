@@ -30,11 +30,10 @@ The engine classifies specs before scoring:
 | Stateless | Default web/API |
 | Stateful | PVC / persistence block |
 | GpuCompute | `requirements.gpu` set |
-| BareMetal | High CPU/memory thresholds |
 | Batch | Cron/batch patterns |
 | General | Fallback |
 
-Classification filters ineligible runtimes (e.g. GPU → KubeVirt/Metal3 bias).
+Classification filters ineligible runtimes (e.g. GPU → KubeVirt bias).
 
 ---
 

@@ -347,7 +347,6 @@ aether/
        Podman,
        Kubernetes,
        KubeVirt,
-       Metal3,
        MyRuntime,  // Add here
    }
    ```

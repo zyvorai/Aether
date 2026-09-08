@@ -12,19 +12,17 @@ pub mod kube_manifest;
 pub mod kube_policy_extras;
 pub mod kube_reconcile;
 pub mod kubevirt;
-pub mod metal;
 pub mod podman;
 
 pub use docker::DockerRuntime;
 pub use kube::KubernetesRuntime;
 pub use kubevirt::KubeVirtRuntime;
-pub use metal::Metal3Runtime;
 pub use podman::PodmanRuntime;
 
 /// Implement `new()`, `with_namespace()`, and `with_context()` for a kube-client-based adapter.
 ///
-/// Eliminates the identical constructor boilerplate across `KubernetesRuntime`,
-/// `KubeVirtRuntime`, and `Metal3Runtime`.
+/// Eliminates the identical constructor boilerplate across `KubernetesRuntime`
+/// and `KubeVirtRuntime`.
 macro_rules! impl_kube_adapter_new {
     ($ty:ty, $default_ns:expr) => {
         impl $ty {

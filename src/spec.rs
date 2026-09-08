@@ -5,7 +5,7 @@
 //! Workload specification schema
 //!
 //! This module defines the universal workload spec that can be deployed
-//! to any runtime (Container, Kubernetes, KubeVirt, Metal3).
+//! to any runtime (Container, Kubernetes, KubeVirt).
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -144,7 +144,6 @@ pub enum RuntimePreference {
     Container,
     Kube,
     Kubevirt,
-    Metal,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -153,7 +152,6 @@ pub enum RuntimeType {
     Container,
     Kube,
     Kubevirt,
-    Metal,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -586,7 +584,6 @@ impl Workload {
             RuntimePreference::Container => self.runtime.allow.contains(&RuntimeType::Container),
             RuntimePreference::Kube => self.runtime.allow.contains(&RuntimeType::Kube),
             RuntimePreference::Kubevirt => self.runtime.allow.contains(&RuntimeType::Kubevirt),
-            RuntimePreference::Metal => self.runtime.allow.contains(&RuntimeType::Metal),
         };
 
         if !preferred_in_allow && self.runtime.preferred != RuntimePreference::Auto {
@@ -1078,7 +1075,7 @@ pub enum K8sWorkloadKind {
     CronJob,
 }
 
-/// Kubernetes-specific workload options (ignored by Podman/Docker/KubeVirt/Metal3).
+/// Kubernetes-specific workload options (ignored by Podman/Docker/KubeVirt).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct KubernetesSpec {
@@ -1858,7 +1855,7 @@ pub enum ResilienceLevel {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ComplianceSpec {
-    /// Workload must run in an isolated environment (VM or bare metal)
+    /// Workload must run in an isolated environment (VM)
     #[serde(default)]
     pub isolation_required: bool,
     /// Workload data must be encrypted at rest
@@ -1875,7 +1872,7 @@ pub enum TrustLevel {
     /// Standard trust — basic security (default)
     Standard,
     /// Strict trust — requires TPM, secure boot, attested nodes only.
-    /// Filters to KubeVirt (VM isolation) or Metal3 (dedicated hardware).
+    /// Filters to KubeVirt (VM isolation).
     Strict,
 }
 

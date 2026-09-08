@@ -56,8 +56,7 @@ impl GlobalPlacementEngine {
                     score: rs.total_score,
                     latency_score: rs.performance_score,
                     cost_score: rs.cost_score,
-                    gpu_available: rs.runtime == RuntimeKind::KubeVirt
-                        || rs.runtime == RuntimeKind::Metal3,
+                    gpu_available: rs.runtime == RuntimeKind::KubeVirt,
                     reasons: rs.reasons.clone(),
                 });
             }
@@ -68,7 +67,7 @@ impl GlobalPlacementEngine {
             for rs in &scoring.scores {
                 let cluster_bonus = if cluster.reachable { 0.05 } else { 0.0 };
                 let gpu_bonus = if workload.requirements.gpu.is_some()
-                    && (rs.runtime == RuntimeKind::KubeVirt || rs.runtime == RuntimeKind::Metal3)
+                    && rs.runtime == RuntimeKind::KubeVirt
                 {
                     0.1
                 } else {

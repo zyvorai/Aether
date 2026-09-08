@@ -126,7 +126,7 @@ pub(crate) struct CreateWorkloadRequest {
 /// Migrate workload request
 #[derive(Debug, Deserialize)]
 pub(crate) struct MigrateWorkloadRequest {
-    /// Target runtime (podman, kubernetes, kubevirt, metal3)
+    /// Target runtime (podman, kubernetes, kubevirt)
     pub(crate) target_runtime: String,
     /// Migration strategy (immediate, blue-green, rolling)
     #[serde(default = "default_strategy")]
@@ -936,7 +936,7 @@ mod tests {
     fn test_workload_response_serialization_produces_valid_json() {
         let response = WorkloadResponse {
             name: "test".to_string(),
-            runtime: "Metal3".to_string(),
+            runtime: "KubeVirt".to_string(),
             image: "img:latest".to_string(),
             status: "deployed".to_string(),
             created_at: "2026-01-01T00:00:00Z".to_string(),
@@ -1591,14 +1591,14 @@ mod tests {
     #[test]
     fn test_migrate_workload_request_extra_fields_ignored() {
         let json = serde_json::json!({
-            "target_runtime": "metal3",
+            "target_runtime": "kubevirt",
             "strategy": "immediate",
             "unknown_field": "should be ignored"
         });
         let result = serde_json::from_value::<MigrateWorkloadRequest>(json);
         assert!(result.is_ok());
         let request = result.unwrap();
-        assert_eq!(request.target_runtime, "metal3");
+        assert_eq!(request.target_runtime, "kubevirt");
         assert_eq!(request.strategy, "immediate");
     }
 

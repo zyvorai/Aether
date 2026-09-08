@@ -30,7 +30,7 @@ Per [CLIENT_BUNDLE_POLICY.md](../../CLIENT_BUNDLE_POLICY.md), customer tarballs 
 
 Reasons for separation:
 
-1. **Different primary jobs** — Aether is the universal control plane (Podman, Kubernetes, KubeVirt, Metal3, migration, intent placement). Ragnarok focuses on **confidential VM operations** on KubeVirt (create wizard, attestation UX, image signing, cluster TEE inventory).
+1. **Different primary jobs** — Aether is the universal control plane (Podman, Kubernetes, KubeVirt, migration, intent placement). Ragnarok focuses on **confidential VM operations** on KubeVirt (create wizard, attestation UX, image signing, cluster TEE inventory).
 2. **Independent release and sizing** — Security teams can deploy Ragnarok on attestation-heavy nodes without pulling the full Aether surface area; dev clusters can run Aether alone with embedded confidential APIs.
 3. **Composite packaging** — Enterprise bundles install both binaries side-by-side; they coordinate via env vars and shared data dirs, not a monolithic fork.
 

@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEMO="${1:-}"
 
 if [[ -z "$DEMO" ]]; then
-  echo "Usage: $0 <01|02|03>" >&2
+  echo "Usage: $0 <01|02>" >&2
   exit 1
 fi
 
@@ -22,12 +22,6 @@ case "$DEMO" in
     SPEC="$DIR/workload-kube.yaml"
     NAME="demo-k8s-kubevirt"
     TARGET="kubevirt"
-    ;;
-  03)
-    DIR="$ROOT/examples/demos/03-kubevirt-to-metal3"
-    SPEC="$DIR/workload-kubevirt.yaml"
-    NAME="demo-kubevirt-metal3"
-    TARGET="metal3"
     ;;
   *)
     echo "Unknown demo: $DEMO" >&2

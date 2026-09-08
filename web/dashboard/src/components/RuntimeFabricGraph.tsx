@@ -116,7 +116,7 @@ function buildFabricGraph(workloads: WorkloadResponse[]): FabricGraph {
       addEdge(nodeId, resId);
     }
 
-    if (w.runtime.toLowerCase().includes('virt') || w.runtime.toLowerCase().includes('metal')) {
+    if (w.runtime.toLowerCase().includes('virt')) {
       const gpuId = `res:${w.name}:gpu`;
       addNode({ id: gpuId, label: 'GPU', kind: 'resource', sub: 'Accelerator', workload: w.name });
       addEdge(nodeId, gpuId);

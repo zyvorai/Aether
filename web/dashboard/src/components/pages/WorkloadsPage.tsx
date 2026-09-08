@@ -130,7 +130,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   });
   const detailRef = useRef<HTMLDivElement | null>(null);
 
-  const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt', 'metal3'];
+  const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt'];
 
   function setViewModePersist(mode: 'cards' | 'table') {
     setViewMode(mode);

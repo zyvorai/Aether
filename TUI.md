@@ -11,7 +11,7 @@ The Aether TUI provides an interactive dashboard for managing workloads across m
 - 📋 **Resource Panel** - CPU, memory, storage, GPU details in the detail view
 - 🎨 **Color-coded** - Visual status indicators
 - ⌨️ **Keyboard Navigation** - Efficient workflow
-- 🐳☸️ **Multi-Runtime** - Podman + Kubernetes + KubeVirt + Metal3 support
+- 🐳☸️ **Multi-Runtime** - Podman + Kubernetes + KubeVirt support
 
 ---
 
@@ -56,7 +56,7 @@ That's it! The dashboard will load automatically.
 Each workload displays:
 
 - **Name** - Workload identifier
-- **Runtime Icon** - 🐳 Podman, ☸️ Kubernetes, 🖥️ KubeVirt, 🖧 Metal3
+- **Runtime Icon** - 🐳 Podman, ☸️ Kubernetes, 🖥️ KubeVirt
 - **Status Indicator**:
   - **●** (filled) - Ready
   - **○** (hollow) - Not ready
@@ -81,7 +81,6 @@ Each workload displays:
 | 🐳 podman | Podman container |
 | ☸️ kubernetes | Kubernetes pod |
 | 🖥️ kubevirt | KubeVirt VM |
-| 🖧 metal3 | Bare metal |
 
 ---
 

@@ -4,7 +4,7 @@
 
 //! Aether - Universal Runtime Control Plane
 //!
-//! One spec. Four runtimes. One tool.
+//! One spec. Three runtimes. One tool.
 
 pub mod adapters;
 pub mod ai;

@@ -3,7 +3,7 @@ name = "aether"
 version = "0.3.0"
 edition = "2021"
 authors = ["ZyvorAI Labs Private Limited <ssahani@gmail.com>"]
-description = "Universal runtime control plane - One spec, four runtimes (Container, Kubernetes, KubeVirt, Metal3)"
+description = "Universal runtime control plane - One spec, three runtimes (Container, Kubernetes, KubeVirt)"
 license = "LicenseRef-Zyvor-Proprietary"
 build = "build.rs"
 
@@ -30,7 +30,7 @@ crossterm = "0.28"
 kube = { version = "0.97", features = ["client", "runtime", "derive", "ws"] }
 k8s-openapi = { version = "0.23", features = ["latest"] }
 
-# HTTP client for Metal3/APIs
+# HTTP client for external APIs
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 
 # API Server

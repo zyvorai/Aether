@@ -12,7 +12,6 @@ SPECS=(
   examples/workload-full-featured.yaml
   examples/workload-k8s-advanced.yaml
   examples/labs/kubernetes/workload.yaml
-  examples/labs/metal3/workload.yaml
   examples/labs/kubevirt/workload.yaml
 )
 

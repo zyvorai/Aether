@@ -69,8 +69,8 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <div class="cover">
     <h1><span>Aether</span> vs Alternatives</h1>
     <h2>Why a Universal Runtime Control Plane?</h2>
-    <p class="tagline">Compare Aether to kubectl/Helm, HashiCorp Nomad, Docker Compose, and custom scripts. One spec, four runtimes, zero lock-in.</p>
-    <div class="badge">Podman &bull; Kubernetes &bull; KubeVirt &bull; Metal3</div>
+    <p class="tagline">Compare Aether to kubectl/Helm, HashiCorp Nomad, Docker Compose, and custom scripts. One spec, three runtimes, zero lock-in.</p>
+    <div class="badge">Podman &bull; Kubernetes &bull; KubeVirt</div>
 </div>
 
 <!-- PAGE 2: Comparison Table -->
@@ -89,7 +89,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
         </tr>
         <tr>
             <td><strong>Runtimes</strong></td>
-            <td class="check">4 (Podman, K8s, KubeVirt, Metal3)</td>
+            <td class="check">3 (Podman, K8s, KubeVirt)</td>
             <td>1 (K8s only)</td>
             <td>3 (Docker, exec, QEMU)</td>
             <td>1 (Docker only)</td>
@@ -157,13 +157,13 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <!-- PAGE 3: Unique Advantages -->
 <div class="page page-accent">
     <h2 class="st">Unique <span>Advantages</span></h2>
-    <p class="sub">Aether is not just another deployment tool &mdash; it is the only control plane that unifies four runtimes behind a single declarative spec.</p>
+    <p class="sub">Aether is not just another deployment tool &mdash; it is the only control plane that unifies three runtimes behind a single declarative spec.</p>
 
     <div class="card-grid">
         <div class="card">
             <div class="icon">&#128196;</div>
-            <h4>One Spec, Four Runtimes</h4>
-            <p>Write your workload YAML once. Aether deploys it to Podman for dev, Kubernetes for staging, KubeVirt for legacy apps, and Metal3 for GPU workloads &mdash; without rewriting a single line.</p>
+            <h4>One Spec, Three Runtimes</h4>
+            <p>Write your workload YAML once. Aether deploys it to Podman for dev, Kubernetes for staging, and KubeVirt for GPU and legacy apps &mdash; without rewriting a single line.</p>
         </div>
         <div class="card">
             <div class="icon">&#128260;</div>
@@ -401,7 +401,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 
     <div class="cta-box">
         <h3>Start Deploying Across Every Runtime Today</h3>
-        <p>Aether is open source, written in Rust, and designed for production. One spec, four runtimes, zero lock-in. Install in seconds, deploy in minutes.</p>
+        <p>Aether is open source, written in Rust, and designed for production. One spec, three runtimes, zero lock-in. Install in seconds, deploy in minutes.</p>
     </div>
 
     <pre><span style="color:#d35400;">#</span> Get started in 3 commands

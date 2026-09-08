@@ -6,7 +6,7 @@
   "/labs": "Experimental AI-generated infrastructure artifacts",
   "/settings": "Platform, environments, secrets, and extensions",
   "/applications": "Manage Kubernetes apps like an operating system \u2014 not like YAML",
-  "/workloads": "Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3",
+  "/workloads": "Deploy, monitor, and manage across Podman, Kubernetes & KubeVirt",
   "/ai": "Intent scoring, runtime recommendations & migration planning",
   "/zyra": "AI infrastructure operating layer \u2014 multi-LLM, multi-agent intelligence",
   "/settings/ai-providers": "Configure OpenAI, Claude, Gemini, Grok, Ollama, and custom LLM endpoints",

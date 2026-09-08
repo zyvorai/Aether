@@ -97,7 +97,6 @@ export default function DigitalTwinPanel() {
             <option value="">No change</option>
             <option value="kubernetes">kubernetes</option>
             <option value="kubevirt">kubevirt</option>
-            <option value="metal3">metal3</option>
             <option value="podman">podman</option>
           </select>
         </label>

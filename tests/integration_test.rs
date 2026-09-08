@@ -182,7 +182,6 @@ runtime:
   preferred: auto
   allow:
     - kubevirt
-    - metal
 
 network:
   service: true
@@ -205,10 +204,11 @@ persistence:
     let engine = Engine::new();
     let runtime = engine.decide(&workload).unwrap();
 
-    // With GPU requirement, should select KubeVirt or Metal3
-    assert!(
-        runtime == RuntimeKind::KubeVirt || runtime == RuntimeKind::Metal3,
-        "Expected KubeVirt or Metal3 for GPU workload, got {:?}",
+    // With GPU requirement, should select KubeVirt
+    assert_eq!(
+        runtime,
+        RuntimeKind::KubeVirt,
+        "Expected KubeVirt for GPU workload, got {:?}",
         runtime
     );
 }
@@ -666,7 +666,7 @@ fn test_scheduler_placement_and_release() {
 
     // Utilization summary
     let utils = scheduler.utilization_summary();
-    assert_eq!(utils.len(), 4);
+    assert_eq!(utils.len(), 3);
 
     // Optimization suggestions (may or may not have suggestions depending on state)
     let _suggestions = scheduler.optimize();
@@ -972,7 +972,7 @@ fn test_affinity_learning_and_recommendation() {
 
     // Recommendations: Kubernetes should rank highest for web services
     let web_recs = engine.recommend(&WorkloadClass::WebService);
-    assert_eq!(web_recs.len(), 4);
+    assert_eq!(web_recs.len(), 3);
     assert_eq!(web_recs[0].runtime, RuntimeKind::Kubernetes);
     assert!(web_recs[0].confidence > 0.0);
 
@@ -997,7 +997,7 @@ fn test_affinity_learning_and_recommendation() {
 
     // Compatibility matrix
     let matrix = engine.compatibility_matrix();
-    assert_eq!(matrix.len(), 32); // 8 classes x 4 runtimes
+    assert_eq!(matrix.len(), 24); // 8 classes x 3 runtimes
 
     // Learning stats
     let stats = engine.stats();

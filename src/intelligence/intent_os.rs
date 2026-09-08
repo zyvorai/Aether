@@ -473,8 +473,7 @@ pub fn check_compliance_gate(spec: &Workload) -> ComplianceGateReport {
                 recommendations.push("Enable confidential.encryption or confidential block".into());
             }
             if compliance.isolation_required {
-                recommendations
-                    .push("Prefer kubevirt or metal3 runtime for isolation_required intent".into());
+                recommendations.push("Prefer kubevirt runtime for isolation_required intent".into());
             }
         }
 

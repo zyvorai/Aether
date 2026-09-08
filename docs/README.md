@@ -20,7 +20,7 @@ Persona-based journeys with acceptance criteria: **[USER_STORIES.md](USER_STORIE
 
 | Persona | Focus |
 |---------|-------|
-| Alex (Platform Engineer) | Migrate workloads across Podman, K8s, KubeVirt, Metal3 |
+| Alex (Platform Engineer) | Migrate workloads across Podman, K8s, KubeVirt |
 | Morgan (DevOps Lead) | Blue-green and rolling migrations with zero downtime |
 | Jordan (SRE) | Drift detection, health checks, and auto-reconciliation |
 | Riley (Developer) | Single YAML spec for local Podman and prod K8s |

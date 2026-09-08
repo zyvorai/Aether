@@ -156,7 +156,7 @@ async function main() {
   // —— Act 1: Arrive ——
   await gotoPath(page, '/');
   await caption(page, 'Aether — the Universal Runtime Control Plane.', 3000);
-  await caption(page, 'One YAML spec. Podman, Kubernetes, KubeVirt, and Metal3.', 3200);
+  await caption(page, 'One YAML spec. Podman, Kubernetes, and KubeVirt.', 3200);
   await page.screenshot({ path: join(SHOTS, '01-overview.png') });
 
   // —— Act 2: Fleet ——

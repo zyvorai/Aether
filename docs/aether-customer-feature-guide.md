@@ -4,14 +4,14 @@
 
 Aether is a universal runtime control plane: one workload spec describes what to run, and Aether deploys it to the right runtime, explains why, and migrates it between runtimes with production strategies. It ships a Rust CLI, an interactive TUI, and a React web dashboard over a shared control plane — think of it as Terraform for where your workloads run, not just what they are.
 
-**4** Runtimes (Podman, K8s, KubeVirt, Metal3) · **16** Migration paths · **5** Migration strategies · **65+** CLI commands · **3** Interfaces (CLI, TUI, Web)
+**3** Runtimes (Podman, K8s, KubeVirt) · **9** Migration paths · **5** Migration strategies · **65+** CLI commands · **3** Interfaces (CLI, TUI, Web)
 
 This is the customer-facing onboarding guide — how to access the product, your first workflows, and how to use every feature. A print-ready PDF of the same content sits alongside this file.
 
 ## Contents
 
 0. [Getting started — access & first workflows](#getting-started)
-1. [One Spec, Four Runtimes](#1-one-spec,-four-runtimes)
+1. [One Spec, Three Runtimes](#1-one-spec,-three-runtimes)
 2. [Production Migration Engine](#2-production-migration-engine)
 3. [Intent Decision Engine](#3-intent-decision-engine)
 4. [Discovery, Assessment & Cloud Exit](#4-discovery,-assessment-cloud-exit)
@@ -71,22 +71,21 @@ This is the customer-facing onboarding guide — how to access the product, your
   1. Estimate spend across clouds: `aether cost --provider all`.
   1. Snapshot state before risky changes: `aether backup -n before-upgrade`.
 
-## 1. One Spec, Four Runtimes
+## 1. One Spec, Three Runtimes
 
-_A single Aether workload spec validates and deploys everywhere — from a laptop container to bare metal._
+_A single Aether workload spec validates and deploys everywhere — from a laptop container to a cluster VM._
 
 | Runtime | Best for |
 |---|---|
 | Podman | Local dev and edge containers |
 | Kubernetes | Cluster orchestration, services, scaling |
 | KubeVirt | VM isolation and GPU passthrough |
-| Metal3 | Bare-metal performance |
 
-- **Universal Workload Spec** — Describe a workload once in the aether/v1 YAML schema — image, resources, ports, persistence, secrets, and intent. — _Stop maintaining four different manifest dialects for the same app._
+- **Universal Workload Spec** — Describe a workload once in the aether/v1 YAML schema — image, resources, ports, persistence, secrets, and intent. — _Stop maintaining three different manifest dialects for the same app._
   - **How:** CLI: scaffold with `aether template web-app --output workload.yaml`, then edit the `aether/v1` YAML; Web UI: Templates page.
 - **Validate Before Deploy** — Check spec syntax, intent, and per-runtime compatibility before anything ships. — _Catch misconfiguration at author time, not in production._
   - **How:** CLI: `aether validate` (or `aether validate --spec my-app.yaml`).
-- **Run Anywhere** — Deploy a spec to Podman, Kubernetes, KubeVirt, or Metal3 — with the runtime auto-selected or pinned by flag. — _The same command targets local dev, clusters, VMs, and bare metal._
+- **Run Anywhere** — Deploy a spec to Podman, Kubernetes, or KubeVirt — with the runtime auto-selected or pinned by flag. — _The same command targets local dev, clusters, and VMs._
   - **How:** CLI: `aether run` (auto-select) or `aether run --runtime kube`; Web UI: Workloads page; REST: `POST /api/workloads`.
 - **Podman & Local Dev** — Run containers locally or at the edge through the Podman adapter with the identical spec you ship to prod. — _True dev/prod parity from the first line of YAML._
   - **How:** CLI: `aether run --runtime podman` (alias `container`).
@@ -94,14 +93,12 @@ _A single Aether workload spec validates and deploys everywhere — from a lapto
   - **How:** CLI: `aether run --runtime kube` (aliases `kubernetes`/`k8s`); set namespace with `-n` or `AETHER_NAMESPACE`.
 - **KubeVirt VMs** — Deploy the workload as a KubeVirt virtual machine for strong isolation and GPU passthrough. — _Move a container to a VM when you need harder boundaries — no rewrite._
   - **How:** CLI: `aether run --runtime kubevirt` (alias `vm`).
-- **Metal3 Bare Metal** — Target bare-metal hosts through the Metal3 adapter for maximum performance. — _Reach dedicated hardware from the same control plane as everything else._
-  - **How:** CLI: `aether run --runtime metal3` (aliases `metal`/`bare-metal`).
 
 ## 2. Production Migration Engine
 
 _Move a running workload between any two runtimes with health gates, connection draining, and automatic rollback._
 
-- **16 Migration Paths** — Migrate across every ordered pair of the four runtimes with a single migrate command. — _Escape a legacy VM or container stack without a re-platforming project._
+- **9 Migration Paths** — Migrate across every ordered pair of the three runtimes with a single migrate command. — _Escape a legacy VM or container stack without a re-platforming project._
   - **How:** CLI: `aether migrate  ` (e.g. `aether migrate hello-web kube`).
 - **Blue-Green Cutover** — Stand up the target (green) while the source (blue) keeps serving, health-gate it, then cut over. — _Zero-downtime moves that only switch traffic once the target is proven healthy._
   - **How:** CLI: `aether migrate hello-web kube --strategy blue-green` (the default strategy).
@@ -130,9 +127,9 @@ _Score and rank runtimes on cost, performance, reliability, and availability —
   - **How:** CLI: `aether recommend`; Web UI: AI Engine page.
 - **Intent Multipliers** — An intent block (goal, SLA, budget, resilience, compliance) reshapes the weights toward your objective. — _Encode 'low-latency' or 'cost-optimized' once and let the engine honor it._
   - **How:** CLI: `aether intent` (evaluates the spec's `intent` block goals and scoring).
-- **Workload Classification** — Specs are auto-classified (stateless, stateful, GPU, bare-metal, batch) to filter ineligible runtimes. — _GPU jobs never get scored onto runtimes that can't run them._
+- **Workload Classification** — Specs are auto-classified (stateless, stateful, GPU, batch) to filter ineligible runtimes. — _GPU jobs never get scored onto runtimes that can't run them._
   - **How:** CLI: applied automatically during `aether recommend`; inspect resource fit with `aether profile`.
-- **Runtime Compare** — Side-by-side comparison of cost, capabilities, and limitations across all four runtimes for a spec. — _One view to justify a placement decision to your team._
+- **Runtime Compare** — Side-by-side comparison of cost, capabilities, and limitations across all three runtimes for a spec. — _One view to justify a placement decision to your team._
   - **How:** CLI: `aether compare`; Web UI: AI Engine page.
 - **Intent Debugger (Radar)** — The dashboard renders scores as a radar chart so you can see trade-offs at a glance. — _Turn placement scoring into a picture stakeholders understand._
   - **How:** Web UI: Workload detail → Scoring tab (pure-SVG radar chart across the four axes).

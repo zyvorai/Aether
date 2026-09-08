@@ -59,10 +59,6 @@ rules:
   - apiGroups: ["cdi.kubevirt.io"]
     resources: [datavolumes]
     verbs: [get, list, watch, create, update, patch, delete]
-  # Metal3 bare metal
-  - apiGroups: ["metal3.io"]
-    resources: [baremetalhosts]
-    verbs: [get, list, watch, create, update, patch, delete]
   # CRD discovery (inventory / dynamic clients)
   - apiGroups: ["apiextensions.k8s.io"]
     resources: [customresourcedefinitions]

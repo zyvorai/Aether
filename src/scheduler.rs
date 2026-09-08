@@ -41,8 +41,6 @@ pub enum ScheduleConstraint {
     MaxCostPerDay(f64),
     /// Require GPU
     RequireGpu,
-    /// Require bare metal
-    RequireBareMetal,
     /// Region/zone constraint
     Zone(String),
     /// Require NVMe storage
@@ -64,7 +62,6 @@ impl std::fmt::Display for ScheduleConstraint {
             ScheduleConstraint::AntiAffinity(name) => write!(f, "anti-affinity:{}", name),
             ScheduleConstraint::MaxCostPerDay(cost) => write!(f, "max-cost:${:.2}/day", cost),
             ScheduleConstraint::RequireGpu => write!(f, "require:gpu"),
-            ScheduleConstraint::RequireBareMetal => write!(f, "require:bare-metal"),
             ScheduleConstraint::Zone(zone) => write!(f, "zone:{}", zone),
             ScheduleConstraint::RequireNvme => write!(f, "require:nvme"),
             ScheduleConstraint::RequireTrusted => write!(f, "require:trusted"),
@@ -190,28 +187,6 @@ impl RuntimeCapacity {
                 healthy: true,
                 zones: vec!["us-east-1a".to_string()],
                 hardware_labels: vec!["gpu:passthrough".to_string(), "ssd".to_string()],
-                trusted: true,
-            },
-            RuntimeKind::Metal3 => Self {
-                runtime,
-                total_cpu: 128.0,
-                available_cpu: 96.0,
-                total_memory_mb: 524288,
-                available_memory_mb: 393216,
-                total_storage_mb: 4194304,
-                available_storage_mb: 3145728,
-                gpu_available: 8,
-                cost_per_cpu_day: 3.0,
-                cost_per_gb_day: 0.30,
-                current_workloads: 1,
-                max_workloads: 20,
-                healthy: true,
-                zones: vec!["dc-1".to_string()],
-                hardware_labels: vec![
-                    "nvme".to_string(),
-                    "gpu:nvidia-a100".to_string(),
-                    "10gbe".to_string(),
-                ],
                 trusted: true,
             },
         }
@@ -344,7 +319,6 @@ impl Scheduler {
             RuntimeKind::Podman,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ] {
             capacities.insert(*rt, RuntimeCapacity::default_for(*rt));
         }
@@ -658,21 +632,6 @@ impl Scheduler {
             }
         }
 
-        // Check for cost optimization across placements
-        for placement in &self.placements {
-            if placement.runtime == RuntimeKind::Metal3 && placement.cpu_reserved < 4.0 {
-                suggestions.push(OptimizationSuggestion {
-                    category: OptCategory::Cost,
-                    runtime: Some(placement.runtime),
-                    message: format!(
-                        "'{}' uses only {:.0} CPUs on Metal3 - consider moving to Kubernetes or Podman",
-                        placement.workload_name, placement.cpu_reserved
-                    ),
-                    potential_saving: Some(placement.cpu_reserved * 2.0), // rough saving estimate
-                });
-            }
-        }
-
         suggestions
     }
 
@@ -700,9 +659,6 @@ impl Scheduler {
                             .get(c)
                             .is_some_and(|cap| cap.gpu_available > 0)
                     });
-                }
-                ScheduleConstraint::RequireBareMetal => {
-                    candidates.retain(|c| *c == RuntimeKind::Metal3);
                 }
                 ScheduleConstraint::MaxCostPerDay(max_cost) => {
                     candidates.retain(|c| {
@@ -1077,13 +1033,9 @@ mod tests {
         let mut request = basic_request("worker");
         request
             .constraints
-            .push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::Metal3));
-        request
-            .constraints
             .push(ScheduleConstraint::ExcludeRuntime(RuntimeKind::KubeVirt));
 
         let decision = scheduler.schedule(&request).unwrap();
-        assert!(decision.selected_runtime != RuntimeKind::Metal3);
         assert!(decision.selected_runtime != RuntimeKind::KubeVirt);
     }
 
@@ -1126,7 +1078,7 @@ mod tests {
     fn test_utilization_summary() {
         let scheduler = Scheduler::new();
         let utils = scheduler.utilization_summary();
-        assert_eq!(utils.len(), 4); // one per runtime
+        assert_eq!(utils.len(), 3); // one per runtime
     }
 
     #[test]

@@ -43,17 +43,15 @@ export function formatUSD(amount: number): string {
 
 /*
   Runtime identity colors — iPhone 17 categorical palette (see theme.css).
-  Metal3 uses --brand (Cosmic Orange, the Pro flagship material) since
-  bare-metal pairs naturally with the "Pro" line; the others each get a
-  distinct non-brand, non-semantic tone so runtimes stay visually
-  distinguishable at a glance without colliding with severity red/amber/green.
+  Each runtime gets a distinct non-brand, non-semantic tone so runtimes stay
+  visually distinguishable at a glance without colliding with severity
+  red/amber/green.
 */
 export function getRuntimeColor(runtime: string): string {
   const r = runtime.toLowerCase();
   if (r.includes('podman')) return 'text-deepblue';
   if (r.includes('kubevirt') || r.includes('virt')) return 'text-lavender';
   if (r.includes('kube') || r.includes('k8s')) return 'text-sage';
-  if (r.includes('metal')) return 'text-primary';
   if (r.includes('docker')) return 'text-mistblue';
   return 'text-subtle';
 }
@@ -63,7 +61,6 @@ export function getRuntimeBg(runtime: string): string {
   if (r.includes('podman')) return 'bg-deepblue/10 text-deepblue border-deepblue/20';
   if (r.includes('kubevirt') || r.includes('virt')) return 'bg-lavender/10 text-lavender border-lavender/20';
   if (r.includes('kube') || r.includes('k8s')) return 'bg-sage/10 text-sage border-sage/20';
-  if (r.includes('metal')) return 'bg-primary-wash text-primary border-primary-wash';
   if (r.includes('docker')) return 'bg-mistblue/10 text-mistblue border-mistblue/20';
   return 'bg-hover text-subtle border-rule';
 }

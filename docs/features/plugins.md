@@ -336,7 +336,7 @@ plugin    ──stdout──► {"type":"RunResponse","instance_json":"{...}"}
 
 ## 🏗️ Plugin Runtime Implementation
 
-When a plugin is registered, Aether can use it as a full `Runtime` implementation via the `PluginRuntime` struct. This means plugins participate in the same lifecycle as built-in runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+When a plugin is registered, Aether can use it as a full `Runtime` implementation via the `PluginRuntime` struct. This means plugins participate in the same lifecycle as built-in runtimes (Podman, Kubernetes, KubeVirt).
 
 ### How It Works
 

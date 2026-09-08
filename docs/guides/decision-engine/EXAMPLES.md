@@ -11,11 +11,10 @@
 | Runtime | Typical outcome |
 |---------|-----------------|
 | KubeVirt | + GPU passthrough, + VM isolation |
-| Metal3 | + Bare-metal GPU, + Performance headroom |
 | Kubernetes | − GPU scheduling complexity unless device plugin configured |
 | Podman | − No production GPU path for large models |
 
-**Recommended:** KubeVirt or Metal3 depending on cluster inventory.
+**Recommended:** KubeVirt.
 
 ---
 
@@ -28,7 +27,6 @@
 | Podman | + Zero cloud spend for dev/staging |
 | Kubernetes | + Efficient bin-packing at scale |
 | KubeVirt | − VM overhead vs containers |
-| Metal3 | − CapEx / dedicated hardware |
 
 **Recommended:** Podman (local) or Kubernetes (shared cluster).
 
@@ -43,7 +41,6 @@
 | Kubernetes | + Native HA, + HPA, + Intent HA bonus |
 | KubeVirt | + Strong isolation, − Higher overhead |
 | Podman | − Single-node unless orchestrated externally |
-| Metal3 | + Predictable performance, − Manual HA |
 
 **Recommended:** Kubernetes.
 
@@ -58,7 +55,6 @@
 | Kubernetes | + PVC, snapshots via backup module |
 | KubeVirt | + VM + disk workflows |
 | Podman | + Simple local dev |
-| Metal3 | + Dedicated I/O |
 
 **Note:** Scoring picks a runtime; **data migration is operator responsibility**. See [Stateful Portability](../migration/STATEFUL-PORTABILITY.md).
 

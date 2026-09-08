@@ -1,6 +1,6 @@
 # 🏛️ Aether Architecture
 
-> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, KubeVirt, and Metal3 without rewriting infrastructure.
+> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
 
 See [Deployment Topologies](DEPLOYMENT-TOPOLOGIES.md) for HA (Postgres + Redis + API replicas) and [PRODUCT.md](../PRODUCT.md) for the product narrative.
 
@@ -23,7 +23,7 @@ Aether's core philosophy is **write once, deploy anywhere**. A single
 workload YAML specification describes what to run, and Aether's decision
 engine automatically selects the optimal runtime -- or you override
 it manually. The same CLI, API, and state management layer works
-identically across all four runtimes.
+identically across all three runtimes.
 
 ### High-Level Architecture
 
@@ -51,19 +51,19 @@ identically across all four runtimes.
               ┌─────────────────────────────────────────────────────────────┐
               │                    Runtime Trait (dyn Runtime)              │
               │            build | run | stop | status | logs | delete     │
-              └──┬──────────┬──────────────┬──────────────┬────────────────┘
-                 │          │              │              │
-                 ▼          ▼              ▼              ▼
-           ┌─────────┐ ┌──────────┐ ┌───────────┐ ┌───────────┐
-           │ Podman   │ │   Kube   │ │  KubeVirt │ │  Metal3   │
-           │ Runtime  │ │  Runtime │ │  Runtime  │ │  Runtime  │
-           └────┬─────┘ └────┬─────┘ └─────┬─────┘ └─────┬─────┘
-                │            │              │              │
-                ▼            ▼              ▼              ▼
-           ┌─────────┐ ┌──────────┐ ┌───────────┐ ┌───────────┐
-           │ podman   │ │ kube-rs  │ │ VirtualMa-│ │ BareMetal │
-           │  CLI     │ │  client  │ │ chine CRD │ │ Host CRD  │
-           └──────────┘ └──────────┘ └───────────┘ └───────────┘
+              └──┬──────────┬──────────────┬────────────────┘
+                 │          │              │
+                 ▼          ▼              ▼
+           ┌─────────┐ ┌──────────┐ ┌───────────┐
+           │ Podman   │ │   Kube   │ │  KubeVirt │
+           │ Runtime  │ │  Runtime │ │  Runtime  │
+           └────┬─────┘ └────┬─────┘ └─────┬─────┘
+                │            │              │
+                ▼            ▼              ▼
+           ┌─────────┐ ┌──────────┐ ┌───────────┐
+           │ podman   │ │ kube-rs  │ │ VirtualMa-│
+           │  CLI     │ │  client  │ │ chine CRD │
+           └──────────┘ └──────────┘ └───────────┘
 
               ┌─────────────────────────────────────────────────────────┐
               │                  Cross-Cutting Concerns                 │
@@ -171,11 +171,6 @@ in strict priority order:
 └──────────┘                        └───────────┘
      │ no
      ▼
-  High resources?                   ┌───────────┐
-  (CPU >16 cores                    │  Metal3   │
-   OR memory >64Gi) ── yes ───────►│           │
-     │ no                           └───────────┘
-     ▼
   Network service?                  ┌───────────┐
   (service: true) ──── yes ────────►│   Kube    │
      │ no                           └───────────┘
@@ -189,6 +184,10 @@ in strict priority order:
      ▼                              └───────────┘
   Fallback: first in allow list
 ```
+
+There's also a Rule 0 ahead of GPU: if `intent.compliance.isolation_required`
+is set, the engine tries KubeVirt first (falling through with a warning if
+KubeVirt isn't in the `allow` list).
 
 Every rule checks the `allow` list before selecting a runtime. If a rule
 matches but the target runtime is not allowed, the engine falls through to
@@ -225,7 +224,6 @@ pub trait Runtime: Send + Sync {
 | `PodmanRuntime` | `src/adapters/podman.rs` | Shell commands via `tokio::process::Command` | 10 min | Rootless containers, Podman health checks |
 | `KubernetesRuntime` | `src/adapters/kube.rs` | `kube-rs` client | 5 min | 409 conflict handling, resource cleanup on failure |
 | `KubeVirtRuntime` | `src/adapters/kubevirt.rs` | `kube-rs` + VirtualMachine CRD | 5 min | GPU passthrough, VM lifecycle |
-| `Metal3Runtime` | `src/adapters/metal.rs` | `kube-rs` + BareMetalHost CRD | 5 min | Annotation-based config, fail-fast validation |
 
 Kube-based adapters share constructor boilerplate via the
 `impl_kube_adapter_new!` macro defined in `src/adapters/mod.rs`. Each
@@ -491,7 +489,7 @@ only supports `["run", "stop"]` returns a descriptive error.
                       ▼
               ┌────────────────┐
               │ Engine Decide  │    Engine::decide()
-              │                │    GPU → KubeVirt, High → Metal3,
+              │                │    GPU → KubeVirt,
               └───────┬────────┘    Service → Kube, Default → Podman
                       │
                       ▼
@@ -634,8 +632,7 @@ src/
 │   ├── common.rs            # Shared adapter utilities
 │   ├── podman.rs            # PodmanRuntime: shell-based container management
 │   ├── kube.rs              # KubernetesRuntime: kube-rs Deployment/Service/PVC
-│   ├── kubevirt.rs          # KubeVirtRuntime: VirtualMachine CRD management
-│   └── metal.rs             # Metal3Runtime: BareMetalHost CRD management
+│   └── kubevirt.rs          # KubeVirtRuntime: VirtualMachine CRD management
 ├── api/
 │   ├── mod.rs               # Axum router, auth middleware, CORS, server start
 │   ├── handlers.rs          # 40+ route handler implementations
@@ -679,7 +676,7 @@ further -- any external binary that speaks JSON-RPC can act as a runtime,
 discovered at runtime from `~/.aether/plugins/`.
 
 ```
-Built-in: PodmanRuntime, KubernetesRuntime, KubeVirtRuntime, Metal3Runtime
+Built-in: PodmanRuntime, KubernetesRuntime, KubeVirtRuntime
 Plugin:   PluginRuntime (wraps any binary that speaks JSON-RPC)
 ```
 

@@ -96,20 +96,20 @@ li { margin-bottom: 0.4em; font-size: 1em; }
                     |  | State    |  |  Secret      |  |
                     |  | Manager  |  |  Manager     |  |
                     |  +----------+  +-------------+  |
-                    +--+-----+-----+-----+--------+--+
-                       |     |     |     |
-              +--------+  +--+--+  +--+--+  +-----+
-              v           v        v        v
-         +--------+ +--------+ +--------+ +--------+
-         | Podman | |  K8s   | |KubeVirt| | Metal3 |
-         |Adapter | |Adapter | |Adapter | |Adapter |
-         +---+----+ +---+----+ +---+----+ +---+----+
-             |           |         |           |
-             v           v         v           v
-         +--------+ +--------+ +--------+ +--------+
-         |Podman  | |  K8s   | |KubeVirt| | Metal3 |
-         |Runtime | | Cluster| |  VMs   | |  BMS   |
-         +--------+ +--------+ +--------+ +--------+
+                    +--+-----+-----+--------+--+
+                       |     |     |
+              +--------+  +--+--+  +-----+
+              v           v        v
+         +--------+ +--------+ +--------+
+         | Podman | |  K8s   | |KubeVirt|
+         |Adapter | |Adapter | |Adapter |
+         +---+----+ +---+----+ +---+----+
+             |           |         |
+             v           v         v
+         +--------+ +--------+ +--------+
+         |Podman  | |  K8s   | |KubeVirt|
+         |Runtime | | Cluster| |  VMs   |
+         +--------+ +--------+ +--------+
 </pre>
     </div>
 
@@ -181,12 +181,6 @@ li { margin-bottom: 0.4em; font-size: 1em; }
                 <td><code>kube-rs</code> with CRD definitions</td>
                 <td>120s default</td>
                 <td>VirtualMachine lifecycle, cloud-init injection, disk management, live migration, console access</td>
-            </tr>
-            <tr>
-                <td><strong>Metal3</strong></td>
-                <td><code>kube-rs</code> with BareMetalHost CRDs</td>
-                <td>300s default</td>
-                <td>Host provisioning, firmware config, RAID setup, network boot, hardware inventory, power management</td>
             </tr>
         </tbody>
     </table>
@@ -454,7 +448,6 @@ aether/
       podman.rs       # Podman adapter
       kubernetes.rs   # Kubernetes adapter
       kubevirt.rs     # KubeVirt adapter
-      metal3.rs       # Metal3 adapter
     api/
       server.rs       # Axum API server
       routes.rs       # Endpoint definitions

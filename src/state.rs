@@ -24,7 +24,7 @@ pub struct WorkloadState {
     pub spec_path: PathBuf,
     pub created_at: String,
     pub updated_at: String,
-    /// OS/image version running on the node (Metal3/KubeVirt)
+    /// OS/image version running on the node (KubeVirt)
     #[serde(default)]
     pub os_version: Option<String>,
     /// Hardware labels discovered from the node (GPU, NVMe, etc.)
@@ -298,7 +298,6 @@ mod tests {
             RuntimeKind::Podman,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ] {
             let state = create_test_state_with_runtime("rt-test", runtime);
             assert_eq!(state.runtime, runtime);

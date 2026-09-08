@@ -173,7 +173,6 @@ sudo zypper install aether-0.1.0-1.x86_64.rpm
 - Kubernetes 1.20+
 - Helm 3.0+
 - (Optional) KubeVirt CRDs
-- (Optional) Metal3 CRDs
 
 ### Installation
 

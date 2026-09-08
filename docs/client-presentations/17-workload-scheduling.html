@@ -67,7 +67,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <div class="cover">
     <h1><span>Aether</span> &mdash; Intelligent Workload Scheduling</h1>
     <h2>Right Workload, Right Runtime, Right Time</h2>
-    <p class="tagline">Four scheduling strategies, resource-aware placement, constraint-based filtering, and optimization suggestions &mdash; across Podman, Kubernetes, KubeVirt, and Metal3.</p>
+    <p class="tagline">Four scheduling strategies, resource-aware placement, constraint-based filtering, and optimization suggestions &mdash; across Podman, Kubernetes, and KubeVirt.</p>
     <div class="badge">Balanced &bull; Cost &bull; Performance &bull; Bin-Packing</div>
 </div>
 
@@ -85,7 +85,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
         <div class="card">
             <div class="icon">&#128176;</div>
             <h4>Cost Optimized</h4>
-            <p>Minimizes estimated daily cost by favoring runtimes with the lowest cost-per-CPU and cost-per-GB rates. Podman typically wins for small workloads at $0.50/CPU/day vs Metal3 at $3.00/CPU/day.</p>
+            <p>Minimizes estimated daily cost by favoring runtimes with the lowest cost-per-CPU and cost-per-GB rates. Podman typically wins for small workloads at $0.50/CPU/day vs KubeVirt at $2.00/CPU/day.</p>
         </div>
         <div class="card">
             <div class="icon">&#9889;</div>
@@ -149,14 +149,6 @@ li { margin-bottom: 0.4em; font-size: 1em; }
             <td>$2.00</td>
             <td>50</td>
         </tr>
-        <tr>
-            <td><strong>Metal3</strong></td>
-            <td>128 cores</td>
-            <td>512 GB</td>
-            <td>8</td>
-            <td>$3.00</td>
-            <td>20</td>
-        </tr>
     </table>
 
     <h3>Constraint-Based Filtering</h3>
@@ -169,7 +161,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
         <div class="card">
             <div class="icon">&#128187;</div>
             <h4>Hardware Constraints</h4>
-            <p><code>RequireGpu</code> filters to runtimes with available GPUs. <code>RequireBareMetal</code> restricts to Metal3 only. <code>MaxCostPerDay</code> caps the estimated daily cost per placement.</p>
+            <p><code>RequireGpu</code> filters to runtimes with available GPUs. <code>MaxCostPerDay</code> caps the estimated daily cost per placement.</p>
         </div>
     </div>
 
@@ -184,7 +176,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <!-- PAGE 4: Utilization Monitoring -->
 <div class="page page-accent">
     <h2 class="st">Utilization <span>Monitoring</span></h2>
-    <p class="sub">Real-time visibility into resource utilization across all four runtimes. Identify overloaded runtimes, underused capacity, and cost-saving opportunities.</p>
+    <p class="sub">Real-time visibility into resource utilization across all three runtimes. Identify overloaded runtimes, underused capacity, and cost-saving opportunities.</p>
 
     <pre><span style="color:#d35400;">$</span> aether schedule utilization
 
@@ -194,8 +186,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
   --------------------------------------------------------
   Podman           25%      25%      2/20      $  1.20
   Kubernetes       25%      25%     10/200     $ 12.80
-  KubeVirt         25%      25%      3/50      $  6.40
-  Metal3           25%      25%      1/20      $  9.60</span></pre>
+  KubeVirt         25%      25%      3/50      $  6.40</span></pre>
 
     <h3>Utilization Metrics</h3>
     <div class="card-grid">
@@ -232,13 +223,9 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <span style="color:#888;">[CAPACITY] Kubernetes CPU utilization at 92% - consider scaling up
            or migrating workloads
 
-[COST]     Metal3 is underutilized (5% CPU) with 1 workload -
+[COST]     KubeVirt is underutilized (5% CPU) with 1 workload -
            consider consolidation
            Potential saving: $4.80/day
-
-[COST]     'data-loader' uses only 2 CPUs on Metal3 - consider
-           moving to Kubernetes or Podman
-           Potential saving: $4.00/day
 
 [BALANCE]  KubeVirt utilization (75%) deviates significantly from
            average (40%)</span></pre>
@@ -261,11 +248,6 @@ li { margin-bottom: 0.4em; font-size: 1em; }
             <td>Consolidate to cheaper runtime</td>
         </tr>
         <tr>
-            <td><strong>COST</strong></td>
-            <td>Small workload on expensive runtime</td>
-            <td>Move workloads using &lt;4 CPUs off Metal3</td>
-        </tr>
-        <tr>
             <td><strong>BALANCE</strong></td>
             <td>Utilization deviates &gt;30% from average</td>
             <td>Redistribute workloads across runtimes</td>
@@ -283,8 +265,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
   ----------------------------------------------------------------
   web-frontend     Podman        2.0   2048 MB  2026-04-10T08:00:00Z
   api-service      Kubernetes    4.0   8192 MB  2026-04-10T09:15:00Z
-  gpu-trainer      KubeVirt      8.0   32 GB    2026-04-11T14:30:00Z
-  data-pipeline    Metal3       16.0   64 GB    2026-04-12T06:00:00Z</span></pre>
+  gpu-trainer      KubeVirt      8.0   32 GB    2026-04-11T14:30:00Z</span></pre>
 </div>
 
 <!-- PAGE 6: CTA -->
@@ -309,7 +290,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 
     <div class="cta-box">
         <h3>Intelligent Placement for Every Workload</h3>
-        <p>From cost-optimized dev workloads to performance-critical production services, Aether schedules across Podman, Kubernetes, KubeVirt, and Metal3 with a single command.</p>
+        <p>From cost-optimized dev workloads to performance-critical production services, Aether schedules across Podman, Kubernetes, and KubeVirt with a single command.</p>
     </div>
 
     <pre><span style="color:#d35400;">#</span> End-to-end scheduling workflow

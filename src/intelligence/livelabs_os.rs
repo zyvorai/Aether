@@ -169,7 +169,7 @@ pub fn build_reference_runner_report() -> ReferenceRunnerReport {
                 "Live mode active — run `make reference-cluster-live` against your kubeconfig."
                     .into()
             } else {
-                "Set AETHER_LABS_LIVE=1 to enable live Metal3/KubeVirt deploy smoke.".into()
+                "Set AETHER_LABS_LIVE=1 to enable live KubeVirt deploy smoke.".into()
             }
         } else {
             "Export KUBECONFIG or place credentials at ~/.kube/config before live smoke.".into()
@@ -364,14 +364,11 @@ pub fn build_advanced_runtime_labs_report() -> AdvancedRuntimeLabReport {
         generated_at: crate::resources::now_rfc3339(),
         labs_live_enabled: labs_live_enabled(),
         kubeconfig_available: kubeconfig_available(),
-        specs: vec![
-            lab_spec("metal3", "examples/labs/metal3/workload.yaml", "metal"),
-            lab_spec(
-                "kubevirt",
-                "examples/labs/kubevirt/workload.yaml",
-                "kubevirt",
-            ),
-        ],
+        specs: vec![lab_spec(
+            "kubevirt",
+            "examples/labs/kubevirt/workload.yaml",
+            "kubevirt",
+        )],
     }
 }
 
@@ -418,7 +415,7 @@ pub fn build_ci_pipeline_report() -> CiPipelineReport {
             CiPipelineJob {
                 id: "reference-cluster-live".into(),
                 workflow: "manual".into(),
-                description: "Metal3/KubeVirt live smoke".into(),
+                description: "KubeVirt live smoke".into(),
                 command: "make reference-cluster-live".into(),
             },
         ],

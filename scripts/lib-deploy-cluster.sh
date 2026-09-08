@@ -142,12 +142,6 @@ aether_print_cluster_mesh_report() {
     aether_kv "KubeVirt" "${A_DIM}— (install KubeVirt for VM workloads)${A_RST}"
   fi
 
-  if aether__kubectl_exec "${kubectl_bin}" get crd baremetalhosts.metal3.io &>/dev/null; then
-    aether_kv "Metal3" "${A_GRN}BareMetalHost CRD present${A_RST}"
-  else
-    aether_kv "Metal3" "${A_DIM}— (optional bare metal)${A_RST}"
-  fi
-
   if aether__kubectl_exec "${kubectl_bin}" get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
     aether_kv "Cilium" "${A_GRN}Network policies available${A_RST}"
     if [ "${AETHER_CILIUM_EGRESS_STRICT:-}" = "1" ] || [ "${AETHER_CILIUM_EGRESS_STRICT:-}" = "true" ]; then

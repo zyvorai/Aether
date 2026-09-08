@@ -17,7 +17,7 @@ The dashboard includes:
 ### Visualization Panels
 
 1. **Workloads by Runtime** (Pie Chart)
-   - Distribution of workloads across Podman, Kubernetes, KubeVirt, Metal3
+   - Distribution of workloads across Podman, Kubernetes, KubeVirt
    - Percentage and absolute values
 
 2. **Deployment Rate by Runtime** (Time Series)

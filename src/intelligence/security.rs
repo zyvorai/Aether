@@ -118,8 +118,7 @@ impl SecurityEngine {
                 severity: "medium".into(),
                 category: "gpu_exposure".into(),
                 score: 0.55,
-                reason: "GPU workload on shared Kubernetes — consider KubeVirt/Metal3 isolation"
-                    .into(),
+                reason: "GPU workload on shared Kubernetes — consider KubeVirt isolation".into(),
                 detected_at: crate::resources::now_rfc3339(),
             });
         }

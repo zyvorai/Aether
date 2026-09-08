@@ -4,7 +4,7 @@
 > **License:** Proprietary HyperSDK
 
 A step-by-step operational checklist for migrating workloads between Aether
-runtimes (Podman, Kubernetes, KubeVirt, Metal3).
+runtimes (Podman, Kubernetes, KubeVirt).
 
 ---
 
@@ -48,7 +48,6 @@ aether compare
 | Podman        | `podman` binary in PATH, daemon accessible    |
 | Kubernetes    | `kubectl` configured, cluster reachable       |
 | KubeVirt      | KubeVirt operator installed on cluster        |
-| Metal3        | BMC credentials configured, hardware enrolled |
 
 ### 3. Workload spec is valid
 

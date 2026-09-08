@@ -28,7 +28,6 @@ fi
 declare -a SPECS=(
   "examples/demos/01-podman-to-k8s/workload-podman.yaml:kubernetes"
   "examples/demos/02-k8s-to-kubevirt/workload-kube.yaml:kubevirt"
-  "examples/demos/03-kubevirt-to-metal3/workload-kubevirt.yaml:metal3"
 )
 
 echo "==> Migration dry-run E2E"

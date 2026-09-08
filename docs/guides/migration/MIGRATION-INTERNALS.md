@@ -75,7 +75,7 @@ Phases logged: `start`, `strategy`, `stop-source`, `build-target`, `start-target
 | DNS / external names | **Manual** | Update Ingress, Service, or external DNS |
 | Secrets in spec | **Partial** | Same encrypted store; runtime-specific mounting differs |
 | ConfigMaps / env | **Partial** | Translated per adapter; verify after migrate |
-| GPU device assignment | **Manual** | KubeVirt/Metal3 paths need operator validation |
+| GPU device assignment | **Manual** | KubeVirt path needs operator validation |
 | StatefulSet ordering | **Not supported** | Treat as operational concern |
 
 ---

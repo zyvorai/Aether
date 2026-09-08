@@ -8,13 +8,13 @@
 
 Workload `network` block drives adapter-specific manifests:
 
-| Spec field | Podman | Kubernetes | KubeVirt | Metal3 |
-|------------|--------|------------|----------|--------|
-| `ports` | `-p host:container` | Service + containerPort | VM service | host networking |
-| `ingress` | N/A (local) | Ingress + TLS | Route/Ingress* | Manual |
-| `network_policy` | N/A | NetworkPolicy CRD | Limited | N/A |
-| `cilium_network_policy` | N/A | CiliumNetworkPolicy CRD | N/A | N/A |
-| `service_type` | N/A | ClusterIP/NodePort/LB | Service | N/A |
+| Spec field | Podman | Kubernetes | KubeVirt |
+|------------|--------|------------|----------|
+| `ports` | `-p host:container` | Service + containerPort | VM service |
+| `ingress` | N/A (local) | Ingress + TLS | Route/Ingress* |
+| `network_policy` | N/A | NetworkPolicy CRD | Limited |
+| `cilium_network_policy` | N/A | CiliumNetworkPolicy CRD | N/A |
+| `service_type` | N/A | ClusterIP/NodePort/LB | Service |
 
 See [Cilium guide](../guides/kubernetes/CILIUM.md) for bootstrap policies, dashboard visibility, and Hubble auto-discovery.
 
@@ -29,7 +29,6 @@ See [Cilium guide](../guides/kubernetes/CILIUM.md) for bootstrap policies, dashb
 | Podman | localhost published ports |
 | Kubernetes | Cluster DNS `svc.namespace` |
 | KubeVirt | Service → VM port |
-| Metal3 | Host IP / BMC management net |
 
 **DNS names do not migrate** — update clients after cutover.
 

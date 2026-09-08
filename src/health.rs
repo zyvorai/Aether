@@ -550,7 +550,7 @@ mod tests {
             history.record(HealthRecord {
                 timestamp: format!("2026-01-15T10:00:{:02}Z", i % 60),
                 workload: "load-test".to_string(),
-                runtime: RuntimeKind::Metal3,
+                runtime: RuntimeKind::KubeVirt,
                 state: InstanceState::Running,
                 ready: true,
                 restart_count: i as u32,

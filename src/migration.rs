@@ -915,7 +915,6 @@ mod tests {
             RuntimeKind::Podman,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ];
 
         for source in &runtimes {
@@ -1015,7 +1014,7 @@ mod tests {
         let plan = make_plan(
             "clone-test",
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
+            RuntimeKind::Kubernetes,
             MigrationStrategy::Rolling,
             true,
         );
@@ -1415,32 +1414,6 @@ mod tests {
         );
         assert_eq!(plan.source_runtime, RuntimeKind::Kubernetes);
         assert_eq!(plan.target_runtime, RuntimeKind::KubeVirt);
-    }
-
-    #[test]
-    fn test_plan_kubevirt_to_metal3() {
-        let plan = make_plan(
-            "migrate-metal",
-            RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
-            MigrationStrategy::Immediate,
-            true,
-        );
-        assert_eq!(plan.source_runtime, RuntimeKind::KubeVirt);
-        assert_eq!(plan.target_runtime, RuntimeKind::Metal3);
-    }
-
-    #[test]
-    fn test_plan_metal3_to_podman() {
-        let plan = make_plan(
-            "migrate-back",
-            RuntimeKind::Metal3,
-            RuntimeKind::Podman,
-            MigrationStrategy::Immediate,
-            false,
-        );
-        assert_eq!(plan.source_runtime, RuntimeKind::Metal3);
-        assert_eq!(plan.target_runtime, RuntimeKind::Podman);
     }
 
     // ---------------------------------------------------------------
@@ -1845,7 +1818,7 @@ mod tests {
         let plan = make_plan(
             "ir-app",
             RuntimeKind::Podman,
-            RuntimeKind::Metal3,
+            RuntimeKind::Kubernetes,
             MigrationStrategy::Immediate,
             true,
         );
@@ -1858,7 +1831,7 @@ mod tests {
         let plan = make_plan(
             "inr-app",
             RuntimeKind::Podman,
-            RuntimeKind::Metal3,
+            RuntimeKind::Kubernetes,
             MigrationStrategy::Immediate,
             false,
         );
@@ -1883,7 +1856,7 @@ mod tests {
     fn test_rolling_with_rollback() {
         let plan = make_plan(
             "rr-app",
-            RuntimeKind::Metal3,
+            RuntimeKind::KubeVirt,
             RuntimeKind::Podman,
             MigrationStrategy::Rolling,
             true,

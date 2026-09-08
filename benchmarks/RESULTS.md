@@ -31,7 +31,6 @@ Baseline metrics from `benchmarks/aether-bench.sh` and demo migrations. Numbers 
 |------|------|----------|-------|
 | 01 | Podman → K8s | _run `./scripts/run-demo-migration.sh 01`_ | |
 | 02 | K8s → KubeVirt | _run script_ | Requires KubeVirt |
-| 03 | KubeVirt → Metal3 | _run script_ | Lab only |
 
 ---
 

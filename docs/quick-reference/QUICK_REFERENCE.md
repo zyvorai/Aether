@@ -130,7 +130,6 @@ aether list --json                   # Shorthand JSON
 | 🐳 | Podman | `podman`, `container` | Container runtime |
 | ☸️ | Kubernetes | `kubernetes`, `kube`, `k8s` | Container orchestration |
 | 🖥️ | KubeVirt | `kubevirt`, `vm` | Virtual machines on Kubernetes |
-| 🖧 | Metal3 | `metal3`, `metal`, `bare-metal` | Bare-metal provisioning |
 
 ---
 

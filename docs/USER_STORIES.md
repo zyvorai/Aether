@@ -8,7 +8,7 @@ Cross-reference: [Documentation index](README.md) · [Main README](../README.md)
 
 | Persona | Name | Focus |
 |---------|------|-------|
-| Platform Engineer | Alex | Migrate workloads across Podman, K8s, KubeVirt, Metal3 |
+| Platform Engineer | Alex | Migrate workloads across Podman, K8s, KubeVirt |
 | DevOps Lead | Morgan | Blue-green and rolling migrations with zero downtime |
 | SRE | Jordan | Drift detection, health checks, and auto-reconciliation |
 | Developer | Riley | Single YAML spec for local Podman and prod K8s |
@@ -17,7 +17,7 @@ Cross-reference: [Documentation index](README.md) · [Main README](../README.md)
 
 ### Story 1 — Deploy one YAML to any runtime
 
-**As Alex** (Platform Engineer), I want deploy a workload yaml to podman, kubernetes, kubevirt, or metal3 from one spec, **so that** I deliver reliable outcomes.
+**As Alex** (Platform Engineer), I want deploy a workload yaml to podman, kubernetes, or kubevirt from one spec, **so that** I deliver reliable outcomes.
 
 | Criterion | Notes |
 |-----------|-------|

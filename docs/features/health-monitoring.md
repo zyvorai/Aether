@@ -42,7 +42,7 @@ Each health check produces a `HealthRecord` with the following fields:
 |---|---|---|
 | `timestamp` | string (RFC 3339) | When the health check occurred (e.g. `2026-01-15T10:00:00Z`) |
 | `workload` | string | Name of the workload |
-| `runtime` | RuntimeKind | Runtime hosting the workload: `podman`, `kubernetes`, `kubevirt`, `metal3` |
+| `runtime` | RuntimeKind | Runtime hosting the workload: `podman`, `kubernetes`, `kubevirt` |
 | `state` | InstanceState | Instance state at check time: `pending`, `running`, `stopped`, `failed`, `unknown` |
 | `ready` | bool | Whether the workload was healthy/ready at check time |
 | `restart_count` | u32 | Cumulative restart count reported by the runtime |

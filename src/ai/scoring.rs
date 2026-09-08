@@ -45,8 +45,6 @@ pub enum WorkloadClass {
     Stateful,
     /// GPU-accelerated compute
     GpuCompute,
-    /// High-resource bare metal workload
-    BareMetal,
     /// Batch / job workload
     Batch,
     /// General purpose
@@ -59,7 +57,6 @@ impl std::fmt::Display for WorkloadClass {
             WorkloadClass::Stateless => write!(f, "Stateless Service"),
             WorkloadClass::Stateful => write!(f, "Stateful Service"),
             WorkloadClass::GpuCompute => write!(f, "GPU Compute"),
-            WorkloadClass::BareMetal => write!(f, "Bare Metal"),
             WorkloadClass::Batch => write!(f, "Batch Job"),
             WorkloadClass::General => write!(f, "General Purpose"),
         }
@@ -162,15 +159,6 @@ impl ScoringEngine {
             return WorkloadClass::GpuCompute;
         }
 
-        // High-resource bare metal
-        let cpu = crate::resources::parse_cpu(&spec.requirements.cpu);
-        let memory_gi = crate::resources::parse_memory_gi(&spec.requirements.memory);
-        if cpu > self.config.metal3_cpu_threshold
-            || memory_gi > self.config.metal3_memory_threshold_gi
-        {
-            return WorkloadClass::BareMetal;
-        }
-
         // Stateful with persistence
         if spec.persistence.enabled {
             return WorkloadClass::Stateful;
@@ -262,15 +250,6 @@ impl ScoringEngine {
                     0.40
                 }
             }
-            RuntimeKind::Metal3 => {
-                if cpu > 16.0 || memory_gi > 64.0 {
-                    reasons.push("Dedicated hardware efficient at scale".to_string());
-                    0.70
-                } else {
-                    reasons.push("Bare metal over-provisioned for small workloads".to_string());
-                    0.20
-                }
-            }
         }
     }
 
@@ -284,14 +263,10 @@ impl ScoringEngine {
         warnings: &mut Vec<String>,
     ) -> f64 {
         match (runtime, class) {
-            // GPU workloads need KubeVirt or Metal3
+            // GPU workloads need KubeVirt
             (RuntimeKind::KubeVirt, WorkloadClass::GpuCompute) => {
                 reasons.push("GPU passthrough with VM isolation".to_string());
                 0.90
-            }
-            (RuntimeKind::Metal3, WorkloadClass::GpuCompute) => {
-                reasons.push("Direct GPU access on bare metal".to_string());
-                0.95
             }
             (RuntimeKind::Podman | RuntimeKind::Docker, WorkloadClass::GpuCompute) => {
                 warnings.push("Container GPU support varies by host".to_string());
@@ -300,20 +275,6 @@ impl ScoringEngine {
             (RuntimeKind::Kubernetes, WorkloadClass::GpuCompute) => {
                 reasons.push("GPU device plugin required".to_string());
                 0.65
-            }
-
-            // Bare metal workloads
-            (RuntimeKind::Metal3, WorkloadClass::BareMetal) => {
-                reasons.push("Native hardware performance, no virtualization overhead".to_string());
-                0.95
-            }
-            (RuntimeKind::KubeVirt, WorkloadClass::BareMetal) => {
-                reasons.push("VM can provide near-native performance".to_string());
-                0.65
-            }
-            (_, WorkloadClass::BareMetal) => {
-                warnings.push("Resource limits may be constrained".to_string());
-                0.35
             }
 
             // Stateful workloads prefer K8s (PVC, StatefulSets)
@@ -354,10 +315,6 @@ impl ScoringEngine {
                 reasons.push("VM isolation provides security boundary".to_string());
                 0.50
             }
-            (RuntimeKind::Metal3, _) => {
-                reasons.push("Dedicated hardware resources".to_string());
-                0.45
-            }
         }
     }
 
@@ -390,10 +347,6 @@ impl ScoringEngine {
             RuntimeKind::KubeVirt => {
                 reasons.push("VM lifecycle managed by K8s operators".to_string());
                 0.75
-            }
-            RuntimeKind::Metal3 => {
-                reasons.push("Hardware provisioning has longer failure recovery".to_string());
-                0.65
             }
         }
     }
@@ -429,10 +382,6 @@ impl ScoringEngine {
                 reasons.push("VM live migration can improve availability".to_string());
                 0.70
             }
-            RuntimeKind::Metal3 => {
-                reasons.push("Hardware failures require physical intervention".to_string());
-                0.55
-            }
         }
     }
 
@@ -447,7 +396,6 @@ impl ScoringEngine {
                 RuntimeType::Container => RuntimeKind::Podman,
                 RuntimeType::Kube => RuntimeKind::Kubernetes,
                 RuntimeType::Kubevirt => RuntimeKind::KubeVirt,
-                RuntimeType::Metal => RuntimeKind::Metal3,
             })
             .collect()
     }
@@ -507,9 +455,9 @@ impl ScoringEngine {
             }
         }
 
-        // Trust: Strict → only VM/bare-metal runtimes (attested, isolated)
+        // Trust: Strict → only VM runtimes (attested, isolated)
         if let Some(crate::spec::TrustLevel::Strict) = intent.trust {
-            filtered.retain(|rt| matches!(rt, RuntimeKind::KubeVirt | RuntimeKind::Metal3));
+            filtered.retain(|rt| *rt == RuntimeKind::KubeVirt);
         }
 
         // Confidential + attestation required → KubeVirt only
@@ -520,15 +468,6 @@ impl ScoringEngine {
         // Resilience: High → remove single-host runtimes (no HA)
         if let Some(crate::spec::ResilienceLevel::High) = intent.resilience {
             filtered.retain(|rt| !matches!(rt, RuntimeKind::Podman | RuntimeKind::Docker));
-        }
-
-        // SLA: very low latency → remove Metal3 (slow provisioning overhead)
-        if let Some(ref sla) = intent.sla {
-            if let Some(max_ms) = sla.max_latency_ms {
-                if max_ms < 10 {
-                    filtered.retain(|rt| !matches!(rt, RuntimeKind::Metal3));
-                }
-            }
         }
 
         // Budget: estimate cheapest provider cost per runtime, remove those exceeding cap
@@ -592,32 +531,19 @@ impl ScoringEngine {
 
         let mut multiplier = 1.0;
 
-        // Compliance isolation bonus for VM/bare-metal runtimes
+        // Compliance isolation bonus for VM runtimes
         if let Some(ref compliance) = intent.compliance {
-            if compliance.isolation_required {
-                match runtime {
-                    RuntimeKind::KubeVirt | RuntimeKind::Metal3 => {
-                        multiplier *= 1.3;
-                        reasons.push("Intent: isolation bonus (VM/bare-metal)".to_string());
-                    }
-                    _ => {}
-                }
+            if compliance.isolation_required && runtime == RuntimeKind::KubeVirt {
+                multiplier *= 1.3;
+                reasons.push("Intent: isolation bonus (VM)".to_string());
             }
         }
 
-        // Trust: strict → bonus for isolated runtimes (VM/bare-metal)
+        // Trust: strict → bonus for isolated runtimes (VM)
         if let Some(crate::spec::TrustLevel::Strict) = intent.trust {
-            match runtime {
-                RuntimeKind::Metal3 => {
-                    multiplier *= 1.4;
-                    reasons
-                        .push("Intent: strict trust bonus (dedicated hardware, TPM)".to_string());
-                }
-                RuntimeKind::KubeVirt => {
-                    multiplier *= 1.3;
-                    reasons.push("Intent: strict trust bonus (VM isolation)".to_string());
-                }
-                _ => {}
+            if runtime == RuntimeKind::KubeVirt {
+                multiplier *= 1.3;
+                reasons.push("Intent: strict trust bonus (VM isolation)".to_string());
             }
         }
 

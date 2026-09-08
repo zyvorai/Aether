@@ -100,10 +100,6 @@ impl Config {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EngineConfig {
-    /// CPU threshold (cores) above which Metal3 is preferred
-    pub metal3_cpu_threshold: f64,
-    /// Memory threshold (GiB) above which Metal3 is preferred
-    pub metal3_memory_threshold_gi: f64,
     /// Enable AI scoring engine for runtime selection
     pub enable_scoring: bool,
     /// Scoring weights for multi-factor decisions
@@ -113,8 +109,6 @@ pub struct EngineConfig {
 impl Default for EngineConfig {
     fn default() -> Self {
         Self {
-            metal3_cpu_threshold: 16.0,
-            metal3_memory_threshold_gi: 64.0,
             enable_scoring: true,
             scoring_weights: ScoringWeights::default(),
         }
@@ -504,7 +498,6 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = Config::default();
-        assert_eq!(config.engine.metal3_cpu_threshold, 16.0);
         assert!(config.engine.enable_scoring);
         assert_eq!(config.migration.max_validation_retries, 3);
         assert!(config.cost.include_gpu);
@@ -532,13 +525,13 @@ mod tests {
         let config = Config::default();
         let yaml = serde_yaml::to_string(&config).unwrap();
         let parsed: Config = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(parsed.engine.metal3_cpu_threshold, 16.0);
+        assert!(parsed.engine.enable_scoring);
     }
 
     #[test]
     fn test_load_missing_file() {
         let config = Config::load_from(&PathBuf::from("/nonexistent/config.yaml"));
-        assert_eq!(config.engine.metal3_cpu_threshold, 16.0);
+        assert!(config.engine.enable_scoring);
     }
 
     #[test]

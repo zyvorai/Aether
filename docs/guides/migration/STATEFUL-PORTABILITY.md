@@ -22,11 +22,11 @@ Migration moves the **workload definition and process**, not the bytes on disk.
 
 ## Limits by concern
 
-| Concern | Podman | Kubernetes | KubeVirt | Metal3 |
-|---------|--------|------------|----------|--------|
-| Local volume | bind mount | PVC | VM disk | host path |
-| Snapshot | Manual | CSI snapshot* | VM snapshot* | Manual |
-| Cross-runtime copy | Not automatic | Not automatic | Not automatic | Not automatic |
+| Concern | Podman | Kubernetes | KubeVirt |
+|---------|--------|------------|----------|
+| Local volume | bind mount | PVC | VM disk |
+| Snapshot | Manual | CSI snapshot* | VM snapshot* |
+| Cross-runtime copy | Not automatic | Not automatic | Not automatic |
 
 \* Via platform tooling + [BACKUP.md](../../BACKUP.md), not migration engine.
 

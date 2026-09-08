@@ -32,7 +32,6 @@ runtime:
   disallowed:
     - Container
     - Kubevirt
-    - Metal
 
 scaling:
   enabled: true

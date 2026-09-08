@@ -2,8 +2,8 @@
 # AWS → Kubernetes migration plan (all services)
 
 A repeatable, evidence-based plan for moving an AWS-hosted platform — applications
-**and** managed services — onto a Kubernetes platform (K3s/RKE2/vanilla, KubeVirt,
-or Metal3), driven by Aether. This is a **cloud-exit / consolidation** methodology:
+**and** managed services — onto a Kubernetes platform (K3s/RKE2/vanilla or KubeVirt),
+driven by Aether. This is a **cloud-exit / consolidation** methodology:
 discover how each application actually runs, score its portability, map every AWS
 dependency to a Kubernetes-native target, migrate in risk-ordered waves, prove the
 result, and keep it portable afterward.
@@ -56,7 +56,7 @@ references.
 | **A** Stateless / portable | web, APIs, workers | replicate image, convert manifests, blue-green/canary |
 | **B** Stateful (K8s-native) | PVC-backed DBs/caches on the cluster | app-consistent copy → incremental sync → quiesce → final delta → cut over |
 | **C** Cloud-managed dependency | RDS/S3/ElastiCache/… | see AWS-service mapping below (keep / migrate-managed / replace) |
-| **D** Privileged / node-dependent | hostNetwork, GPU, devices | node-capability match; may target KubeVirt/Metal3 |
+| **D** Privileged / node-dependent | hostNetwork, GPU, devices | node-capability match; may target KubeVirt |
 | **E** Operator-managed | CRD-owned (Kafka, DBs) | install CRDs + operator → restore CRs → migrate data |
 | **F** Non-portable | naked Pods, `:latest`, no requests | **remediate first**, then re-class |
 
@@ -133,7 +133,7 @@ target above.
 HyperCluster   target Kubernetes            Aether     discovery + migration
 Atlas/Ceph     persistent + S3 storage      PacketWolf dependency + network policy
 DataBridge     cloud DB → CNPG/Percona       Zeus OS    day-2 control plane
-Veyron         KubeVirt VMs (Class D)        Metal3     bare metal (Class D)
+Veyron         KubeVirt VMs (Class D)
 ```
 
 See also: [decision-engine/SCORING](../guides/decision-engine/SCORING.md),

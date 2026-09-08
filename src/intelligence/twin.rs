@@ -91,7 +91,6 @@ impl DigitalTwinEngine {
             .as_ref()
             .and_then(|t| t.parse::<RuntimeKind>().ok())
             .map(|rt| match rt {
-                RuntimeKind::Metal3 => 1.15,
                 RuntimeKind::KubeVirt => 1.08,
                 RuntimeKind::Kubernetes => 1.0,
                 RuntimeKind::Podman | RuntimeKind::Docker => 0.92,

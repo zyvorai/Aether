@@ -78,7 +78,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 <!-- PAGE 2: Migration Overview -->
 <div class="page page-dark">
     <h2 class="st"><span>Migration</span> Overview</h2>
-    <p class="sub">Aether supports migrations across all 4 runtimes in every direction — 16 total runtime pair combinations managed through a unified interface.</p>
+    <p class="sub">Aether supports migrations across all 3 runtimes in every direction — 9 total runtime pair combinations managed through a unified interface.</p>
 
     <h3>Runtime Migration Matrix</h3>
     <table class="matrix-table">
@@ -87,12 +87,10 @@ li { margin-bottom: 0.4em; font-size: 1em; }
             <th>Podman</th>
             <th>Kubernetes</th>
             <th>KubeVirt</th>
-            <th>Metal3</th>
         </tr>
         <tr>
             <td>Podman</td>
             <td>Same-runtime guard</td>
-            <td class="check">Supported</td>
             <td class="check">Supported</td>
             <td class="check">Supported</td>
         </tr>
@@ -101,18 +99,9 @@ li { margin-bottom: 0.4em; font-size: 1em; }
             <td class="check">Supported</td>
             <td>Same-runtime guard</td>
             <td class="check">Supported</td>
-            <td class="check">Supported</td>
         </tr>
         <tr>
             <td>KubeVirt</td>
-            <td class="check">Supported</td>
-            <td class="check">Supported</td>
-            <td>Same-runtime guard</td>
-            <td class="check">Supported</td>
-        </tr>
-        <tr>
-            <td>Metal3</td>
-            <td class="check">Supported</td>
             <td class="check">Supported</td>
             <td class="check">Supported</td>
             <td>Same-runtime guard</td>
@@ -361,18 +350,18 @@ Attempt 5:  1s  * 2^4  = 16s  (max 5 attempts by default)</pre>
 
     <h3>Canary Configuration</h3>
     <pre><span style="color:#d35400;">#</span> Rolling migration with custom canary steps
-<span style="color:#d35400;">$</span> aether migrate my-app metal3 --strategy rolling \
+<span style="color:#d35400;">$</span> aether migrate my-app kubevirt --strategy rolling \
     --canary-steps 10,25,50,75,100 \
     --health-interval 5s \
     --health-retries 5
 
-<span style="color:#888;">Migrating 'my-app' to metal3 (strategy: rolling)...</span>
-<span style="color:#888;">  Step 1/5: 10% on metal3 — health OK</span>
-<span style="color:#888;">  Step 2/5: 25% on metal3 — health OK</span>
-<span style="color:#888;">  Step 3/5: 50% on metal3 — health OK</span>
-<span style="color:#888;">  Step 4/5: 75% on metal3 — health OK</span>
-<span style="color:#888;">  Step 5/5: 100% on metal3 — health OK</span>
-<span style="color:#22c55e;">Rolling migration complete: my-app fully on metal3</span></pre>
+<span style="color:#888;">Migrating 'my-app' to kubevirt (strategy: rolling)...</span>
+<span style="color:#888;">  Step 1/5: 10% on kubevirt — health OK</span>
+<span style="color:#888;">  Step 2/5: 25% on kubevirt — health OK</span>
+<span style="color:#888;">  Step 3/5: 50% on kubevirt — health OK</span>
+<span style="color:#888;">  Step 4/5: 75% on kubevirt — health OK</span>
+<span style="color:#888;">  Step 5/5: 100% on kubevirt — health OK</span>
+<span style="color:#22c55e;">Rolling migration complete: my-app fully on kubevirt</span></pre>
 </div>
 
 <!-- PAGE 6: Migration Advice AI -->
@@ -523,7 +512,7 @@ Avoid: immediate (persistent data risk without validation)</pre>
 
     <div class="cta-box">
         <h3>Start Migrating Today</h3>
-        <p>Move workloads between Podman, Kubernetes, KubeVirt, and Metal3 with confidence.</p>
+        <p>Move workloads between Podman, Kubernetes, and KubeVirt with confidence.</p>
     </div>
 
     <h3>Essential Commands</h3>
@@ -537,7 +526,7 @@ Avoid: immediate (persistent data risk without validation)</pre>
 <span style="color:#d35400;">$</span> aether migrate my-app podman --strategy immediate
 
 <span style="color:#d35400;">#</span> Rolling migration with custom canary steps
-<span style="color:#d35400;">$</span> aether migrate my-app metal3 --strategy rolling \
+<span style="color:#d35400;">$</span> aether migrate my-app kubevirt --strategy rolling \
     --canary-steps 10,25,50,75,100
 
 <span style="color:#d35400;">#</span> View migration history

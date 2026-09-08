@@ -114,11 +114,8 @@ function runtimeBlock(runtime: string): { preferred: string; allow: string[] } {
       return { preferred: 'kube', allow: ['kube'] };
     case 'kubevirt':
       return { preferred: 'kubevirt', allow: ['kubevirt'] };
-    case 'metal3':
-    case 'metal':
-      return { preferred: 'metal', allow: ['metal'] };
     default:
-      return { preferred: 'auto', allow: ['container', 'kube', 'kubevirt', 'metal'] };
+      return { preferred: 'auto', allow: ['container', 'kube', 'kubevirt'] };
   }
 }
 

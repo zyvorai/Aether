@@ -109,13 +109,6 @@ pub fn build_plugin_marketplace() -> anyhow::Result<PluginMarketplaceReport> {
         capabilities: vec!["anomalies".into(), "egress-verify".into()],
         installed: crate::ecosystem::packetwolf::config().configured,
     });
-    entries.push(PluginMarketplaceEntry {
-        name: "metal3-baremetal".into(),
-        version: "1.0.0".into(),
-        runtime_kind: "metal3".into(),
-        capabilities: vec!["provision".into(), "capacity".into()],
-        installed: false,
-    });
     Ok(PluginMarketplaceReport {
         generated_at: crate::resources::now_rfc3339(),
         entries,

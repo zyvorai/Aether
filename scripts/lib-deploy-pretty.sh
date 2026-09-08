@@ -41,7 +41,7 @@ aether_banner_orchestrator() {
   echo ""
   aether_sparkle_line "Control Plane"
   echo -e "${A_CYN}${A_BLD}     🎼  Deployment Orchestra${A_RST}"
-  echo -e "${A_MAG}     ✶  Runtime mesh: Podman · K8s · KubeVirt · Metal3${A_RST}"
+  echo -e "${A_MAG}     ✶  Runtime mesh: Podman · K8s · KubeVirt${A_RST}"
   echo -e "${A_DIM}     ─────────────────────────────────────────────────${A_RST}"
 }
 

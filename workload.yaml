@@ -27,7 +27,7 @@ requirements:
   #   vendor: nvidia
 
 runtime:
-  preferred: auto        # auto | container | kube | kubevirt | metal
+  preferred: auto        # auto | container | kube | kubevirt
   allow:
     - container
     - kube

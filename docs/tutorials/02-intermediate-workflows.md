@@ -157,7 +157,7 @@ dependency order.
 
 ## ⚖️ Runtime Comparison
 
-Before committing to a runtime, compare your workload across all four targets:
+Before committing to a runtime, compare your workload across all three targets:
 
 ```bash
 aether compare
@@ -172,7 +172,6 @@ Sample output:
 │ 🐳 Podman     │  85/100  │ $0    │ Fast startup │ Single host only          │
 │ ☸️ Kubernetes  │  92/100  │ $45   │ HA, scaling  │ Cluster required          │
 │ 🖥️ KubeVirt   │  78/100  │ $62   │ GPU, VMs     │ Higher overhead           │
-│ 🖧 Metal3     │  70/100  │ $120  │ Max perf     │ BMC provisioning required │
 └───────────────┴──────────┴───────┴──────────────┴───────────────────────────┘
 ```
 

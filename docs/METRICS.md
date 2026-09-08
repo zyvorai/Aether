@@ -167,7 +167,7 @@ aether_migration_rollbacks_total{source_runtime="kubernetes",target_runtime="kub
 Example:
 ```
 aether_runtime_available{runtime="kubernetes"} 1
-aether_runtime_available{runtime="metal3"} 0
+aether_runtime_available{runtime="kubevirt"} 0
 ```
 
 #### `aether_runtime_decision_seconds`

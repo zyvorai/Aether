@@ -69,7 +69,6 @@ impl IntelligenceStore {
             RuntimeKind::Docker,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ] {
             let key = format!("{rt}");
             if let Some(h) = self.runtime_history.get(&key) {
@@ -93,7 +92,6 @@ pub fn affinity_class_from_spec(workload: &crate::spec::Workload) -> WorkloadCla
         crate::ai::scoring::WorkloadClass::Stateless => WorkloadClass::WebService,
         crate::ai::scoring::WorkloadClass::Stateful => WorkloadClass::Database,
         crate::ai::scoring::WorkloadClass::GpuCompute => WorkloadClass::MlTraining,
-        crate::ai::scoring::WorkloadClass::BareMetal => WorkloadClass::Worker,
         crate::ai::scoring::WorkloadClass::Batch => WorkloadClass::BatchJob,
         crate::ai::scoring::WorkloadClass::General => WorkloadClass::Microservice,
     }

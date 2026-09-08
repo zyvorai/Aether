@@ -1,6 +1,6 @@
 # Aether -- Complete Documentation Index
 
-> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, KubeVirt, and Metal3 without rewriting infrastructure.
+> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
 >
 > Version **0.3.0** | License: Proprietary HyperSDK | **[Product overview](PRODUCT.md)**
 
@@ -340,8 +340,8 @@
 | Term | Definition |
 |------|-----------|
 | **Workload** | A deployable unit described by a YAML spec (`workload.yaml`) |
-| **Runtime** | A deployment target: Podman, Kubernetes, KubeVirt, or Metal3 |
-| **RuntimeKind** | Enum identifying one of the four supported runtimes |
+| **Runtime** | A deployment target: Podman, Kubernetes, or KubeVirt |
+| **RuntimeKind** | Enum identifying one of the three supported runtimes |
 | **Instance** | A running workload on a specific runtime |
 | **Migration** | Moving a workload from one runtime to another |
 | **Drift** | Divergence between declared spec and actual live state |

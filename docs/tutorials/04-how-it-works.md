@@ -212,6 +212,14 @@ best runtime for your workload.
                │
                ▼
 ┌──────────────────────────────────────────────────────────┐
+│  Rule 0: Isolation required?                              │
+│  intent.compliance.isolation_required == true             │
+│  && kubevirt in allow list                                │
+│  YES ──────────────────────────────────── ► KubeVirt     │
+└──────────────┬───────────────────────────────────────────┘
+               │ NO (or KubeVirt not allowed — falls through with a warning)
+               ▼
+┌──────────────────────────────────────────────────────────┐
 │  Rule 1: GPU required?                                   │
 │  gpu.is_some() && kubevirt in allow list                 │
 │  YES ──────────────────────────────────── ► KubeVirt     │
@@ -219,23 +227,15 @@ best runtime for your workload.
                │ NO
                ▼
 ┌──────────────────────────────────────────────────────────┐
-│  Rule 2: High resources?                                 │
-│  CPU > 16 cores  OR  Memory > 64Gi                       │
-│  AND metal in allow list                                 │
-│  YES ──────────────────────────────────── ► Metal3       │
-└──────────────┬───────────────────────────────────────────┘
-               │ NO
-               ▼
-┌──────────────────────────────────────────────────────────┐
-│  Rule 3: Network service enabled?                        │
+│  Rule 2: Network service enabled?                        │
 │  network.service == true && kube in allow list           │
 │  YES ──────────────────────────────────── ► Kubernetes   │
 └──────────────┬───────────────────────────────────────────┘
                │ NO
                ▼
 ┌──────────────────────────────────────────────────────────┐
-│  Rule 4: Persistence enabled?                            │
-│  persistence.enabled == true && kube in allow list       │
+│  Rule 3: Persistence enabled?                             │
+│  persistence.enabled == true && kube in allow list        │
 │  YES ──────────────────────────────────── ► Kubernetes   │
 └──────────────┬───────────────────────────────────────────┘
                │ NO
@@ -252,24 +252,7 @@ best runtime for your workload.
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Bare-metal thresholds
-
-The `needs_bare_metal()` method uses strict greater-than comparisons:
-
-```rust
-const BARE_METAL_CPU_THRESHOLD: f64 = 16.0;    // cores
-const BARE_METAL_MEM_THRESHOLD: f64 = 64.0 * 1024.0 * 1024.0 * 1024.0; // 64 GiB
-```
-
-| Requirement      | Result                                        |
-|------------------|-----------------------------------------------|
-| CPU = 16         | Does NOT trigger Metal3 (threshold is **>** 16) |
-| CPU = 17         | Triggers Metal3                               |
-| Memory = 64Gi    | Does NOT trigger Metal3                       |
-| Memory = 65Gi    | Triggers Metal3                               |
-| CPU = 20000m     | 20 cores -> triggers Metal3                   |
-
-### 2.3 Allow-list filtering
+### 2.2 Allow-list filtering
 
 Every rule checks `is_allowed()` before selecting a runtime. If the
 target runtime is not in the spec's `runtime.allow` list, the rule is
@@ -287,7 +270,7 @@ runtime:
 Even though GPU triggers Rule 1, KubeVirt is not allowed, so the engine
 skips to the default and picks Podman.
 
-### 2.4 Example: same workload, different runtimes
+### 2.3 Example: same workload, different runtimes
 
 Consider this base spec:
 
@@ -297,29 +280,26 @@ requirements:
   memory: 4Gi
 runtime:
   preferred: auto
-  allow: [container, kube, kubevirt, metal]
+  allow: [container, kube, kubevirt]
 ```
 
 | Change                         | Engine decision   | Rule triggered                |
 |--------------------------------|-------------------|-------------------------------|
 | *(no change)*                  | Podman            | Default (no triggers)         |
 | `gpu: { count: 1, vendor: nvidia }` | KubeVirt    | Rule 1: GPU                   |
-| `cpu: "32"`                    | Metal3            | Rule 2: High CPU              |
-| `memory: 128Gi`               | Metal3            | Rule 2: High memory           |
-| `network.service: true`       | Kubernetes        | Rule 3: Network service       |
-| `persistence.enabled: true`   | Kubernetes        | Rule 4: Persistence           |
+| `network.service: true`       | Kubernetes        | Rule 2: Network service       |
+| `persistence.enabled: true`   | Kubernetes        | Rule 3: Persistence           |
 
-### 2.5 Rule priority
+### 2.4 Rule priority
 
 When multiple rules match simultaneously, the **highest priority rule wins**:
 
 ```
-GPU (Rule 1) > High Resources (Rule 2) > Network (Rule 3) > Persistence (Rule 4) > Default
+Isolation (Rule 0) > GPU (Rule 1) > Network (Rule 2) > Persistence (Rule 3) > Default
 ```
 
-A workload with GPU requirements, 64-core CPU, network service, and
-persistence will always choose KubeVirt (Rule 1), regardless of the
-other properties.
+A workload with GPU requirements, network service, and persistence will
+always choose KubeVirt (Rule 1), regardless of the other properties.
 
 ---
 
@@ -354,7 +334,7 @@ pub struct Image {
     pub name: String,
     pub tag: String,
     pub digest: Option<String>,
-    pub runtime: RuntimeKind,      // Podman | Kubernetes | KubeVirt | Metal3
+    pub runtime: RuntimeKind,      // Podman | Kubernetes | KubeVirt
 }
 
 pub struct Instance {
@@ -466,47 +446,15 @@ Instance { id: <vm-name>, runtime: KubeVirt, ... }
 Both CRDs are accessed via `kube::core::DynamicObject` and the
 `discover_crd_api()` helper that resolves the API resource at runtime.
 
-### 3.5 Metal3 adapter
+### 3.5 Namespace override
 
-**Location:** `src/adapters/metal.rs`
-
-The Metal3 adapter manages bare-metal servers via the Metal3
-BareMetalHost CRD.
-
-```
-aether run (runtime = metal)
-  │
-  ▼
-Metal3Runtime::build()
-  │  (no-op: bare metal uses pre-built OS images)
-  ▼
-Metal3Runtime::run()
-  │
-  └─ Create BareMetalHost (CRD: metal3.io/v1alpha1)
-       Annotations drive configuration:
-       - boot-mac-address
-       - image-url (OS image)
-       - boot-mode (UEFI/Legacy)
-       Labels:
-       - cpu-cores, memory-mb, storage-gb (from requirements)
-  │
-  ▼
-Instance { id: <bmh-name>, runtime: Metal3, ... }
-```
-
-The adapter parses memory to megabytes and storage to gigabytes for
-the BareMetalHost annotations. Invalid values default to 1024 MB and
-10 GB respectively.
-
-### 3.6 Namespace override
-
-All kube-based adapters (`Kubernetes`, `KubeVirt`, `Metal3`) support
+All kube-based adapters (`Kubernetes`, `KubeVirt`) support
 namespace override through two mechanisms, in priority order:
 
 1. **CLI flag:** `aether run --namespace staging`
 2. **Environment variable:** `AETHER_NAMESPACE=staging`
 3. **Default:** Each adapter has a built-in default (`"default"` for
-   Kubernetes/KubeVirt, `"metal3-system"` for Metal3)
+   Kubernetes/KubeVirt)
 
 Internally, the `create_runtime_ns()` factory function passes the namespace
 to the adapter's `with_namespace()` constructor.

@@ -189,7 +189,6 @@ impl DriftDetector {
             RuntimePreference::Container => Some(RuntimeKind::Podman),
             RuntimePreference::Kube => Some(RuntimeKind::Kubernetes),
             RuntimePreference::Kubevirt => Some(RuntimeKind::KubeVirt),
-            RuntimePreference::Metal => Some(RuntimeKind::Metal3),
             RuntimePreference::Auto => None,
         };
 

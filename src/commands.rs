@@ -258,17 +258,11 @@ async fn deploy_workload_inner(
                 "KubeVirt",
                 "Virtual machines — GPU passthrough, isolation",
             ),
-            (
-                "🖧",
-                "Metal3",
-                "Bare metal — maximum performance, BMC provisioning",
-            ),
         ]);
         match selected {
             Some(0) => RuntimeKind::Podman,
             Some(1) => RuntimeKind::Kubernetes,
             Some(2) => RuntimeKind::KubeVirt,
-            Some(3) => RuntimeKind::Metal3,
             _ => ai_recommended,
         }
     } else {
@@ -2167,14 +2161,6 @@ pub(crate) async fn config_command(show: bool, init: bool) -> Result<()> {
 
     output::section("Engine");
     output::kv("Scoring enabled", &config.engine.enable_scoring.to_string());
-    output::kv(
-        "Metal3 CPU threshold",
-        &format!("{:.0} cores", config.engine.metal3_cpu_threshold),
-    );
-    output::kv(
-        "Metal3 memory threshold",
-        &format!("{:.0}Gi", config.engine.metal3_memory_threshold_gi),
-    );
     output::kv(
         "Weights",
         &format!(
@@ -4138,12 +4124,6 @@ pub(crate) async fn exec_command(
             cmd.args(["console", &ws.instance.name]);
             run_with_timeout(cmd, "virtctl console", timeout).await?;
         }
-        RuntimeKind::Metal3 => {
-            anyhow::bail!(
-                "Exec is not supported for Metal3 bare-metal hosts.\n\
-                 Hint: Use SSH or BMC console to access the host directly."
-            );
-        }
     }
     Ok(())
 }
@@ -4223,12 +4203,6 @@ pub(crate) async fn port_forward_command(name: &str, ports: &str, timeout: u64) 
             ]);
             run_with_timeout(cmd, "virtctl port-forward", timeout).await?;
         }
-        RuntimeKind::Metal3 => {
-            anyhow::bail!(
-                "Port-forward is not supported for Metal3 bare-metal hosts.\n\
-                 Hint: Configure networking directly on the host."
-            );
-        }
     }
     Ok(())
 }
@@ -4265,12 +4239,6 @@ pub(crate) async fn cp_command(name: &str, src: &str, dest: &str, timeout: u64) 
             let mut cmd = std::process::Command::new("kubectl");
             cmd.args(["cp", &src_arg, &dest_arg]);
             run_with_timeout(cmd, "kubectl cp", timeout).await?;
-        }
-        RuntimeKind::Metal3 => {
-            anyhow::bail!(
-                "Copy is not supported for Metal3 bare-metal hosts.\n\
-                 Hint: Use scp or rsync to transfer files to the host."
-            );
         }
     }
     output::success("Copy completed");
@@ -4394,13 +4362,6 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
                     "Adequate"
                 }
             }
-            RuntimeKind::Metal3 => {
-                if cpu > 16.0 || mem_gi > 64.0 {
-                    "Excellent (bare-metal perf)"
-                } else {
-                    "Over-provisioned"
-                }
-            }
         };
 
         let limitations = match runtime {
@@ -4408,7 +4369,6 @@ pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
             RuntimeKind::Docker => "Single host, no HA, no service mesh",
             RuntimeKind::Kubernetes => "Requires cluster, higher complexity",
             RuntimeKind::KubeVirt => "Requires KubeVirt operator, VM overhead",
-            RuntimeKind::Metal3 => "Requires BMC, slow provisioning, no autoscale",
         };
 
         let marker = if is_recommended { "★ " } else { "  " };
@@ -6202,7 +6162,7 @@ pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     }
     if msg.contains("Unknown runtime") {
         return err.context(
-            "Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm), metal3 (metal/bare-metal)."
+            "Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm)."
         );
     }
 

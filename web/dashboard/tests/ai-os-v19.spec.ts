@@ -60,7 +60,7 @@ test.describe('AI Infrastructure OS v19 — Live Labs & Reference Cluster', () =
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     const data = body.data ?? body;
-    expect(data.specs.some((s: { name: string }) => s.name === 'metal3')).toBeTruthy();
+    expect(data.specs.some((s: { name: string }) => s.name === 'kubevirt')).toBeTruthy();
   });
 
   test('livelabs ci pipeline API', async ({ request }) => {

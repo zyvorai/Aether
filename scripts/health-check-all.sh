@@ -203,15 +203,6 @@ check_mesh_kubevirt() {
   return 0
 }
 
-check_mesh_metal3() {
-  if ${KUBECTL} get crd baremetalhosts.metal3.io &>/dev/null; then
-    pass "Metal3 API detected (baremetalhosts.metal3.io)"
-  else
-    warn "Metal3 CRDs not found (optional unless you provision bare metal)"
-  fi
-  return 0
-}
-
 check_mesh_cilium() {
   if ${KUBECTL} get crd ciliumnetworkpolicies.cilium.io &>/dev/null; then
     pass "CiliumNetworkPolicy CRD detected (deploy scripts can install aether egress allow)"
@@ -243,7 +234,6 @@ run_check check_ingress
 
 section "Cluster mesh (optional)"
 run_check check_mesh_kubevirt
-run_check check_mesh_metal3
 run_check check_mesh_cilium
 
 echo ""

@@ -58,7 +58,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Validate example specs
         run: |
-          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/workload-k8s-advanced.yaml examples/confidential-kata-workload.yaml examples/labs/metal3/workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
+          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/workload-k8s-advanced.yaml examples/confidential-kata-workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
             cargo run --quiet -- --spec "$f" validate
           done
           chmod +x scripts/validate-confidential-examples.sh scripts/validate-schema-examples.sh
@@ -118,7 +118,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build aether
         run: cargo build --release
-      - name: Metal3 / KubeVirt labs
+      - name: KubeVirt labs
         run: chmod +x scripts/labs-e2e.sh && AETHER_BIN=./target/release/aether scripts/labs-e2e.sh
 
   migration-dry-run-e2e:
@@ -169,7 +169,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build aether
         run: cargo build --release
-      - name: Live Metal3/KubeVirt smoke when kubeconfig is configured
+      - name: Live KubeVirt smoke when kubeconfig is configured
         run: |
           chmod +x scripts/labs-live-smoke.sh
           if [ -n "${KUBECONFIG:-}" ] || [ -f "${HOME}/.kube/config" ]; then

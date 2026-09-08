@@ -1,10 +1,10 @@
 # Aether — Universal Runtime Portability
 
-> **Deploy once. Move workloads across containers, Kubernetes, VMs, and bare metal without rewriting infrastructure.**
+> **Deploy once. Move workloads across containers, Kubernetes, and VMs without rewriting infrastructure.**
 
 ## The problem
 
-Teams run the same application on Podman locally, Kubernetes in production, KubeVirt for GPU/VM isolation, and Metal3 for bare metal — but each runtime has its own toolchain, config language, and operational model. Moving between them means rewriting manifests, re-learning networking, and accepting migration risk.
+Teams run the same application on Podman locally, Kubernetes in production, and KubeVirt for GPU/VM isolation — but each runtime has its own toolchain, config language, and operational model. Moving between them means rewriting manifests, re-learning networking, and accepting migration risk.
 
 ## The differentiator
 
@@ -15,11 +15,10 @@ Teams run the same application on Podman locally, Kubernetes in production, Kube
 | Podman | Local dev and edge containers |
 | Kubernetes | Cluster orchestration, services, scaling |
 | KubeVirt | VM isolation, GPU passthrough |
-| Metal3 | Bare-metal performance |
 
 ## Three proof points
 
-1. **One spec, four runtimes** — Validate once, deploy anywhere. See [Schema Reference](SCHEMA.md) and [Quick Start](getting-started/02-Quick-Start.md).
+1. **One spec, three runtimes** — Validate once, deploy anywhere. See [Schema Reference](SCHEMA.md) and [Quick Start](getting-started/02-Quick-Start.md).
 
 2. **Production migration** — 16 runtime pairs, rollback on failure, health gates, connection draining. See [Migration Guide](guides/migration/MIGRATION-GUIDE.md) and [Migration Internals](guides/migration/MIGRATION-INTERNALS.md).
 

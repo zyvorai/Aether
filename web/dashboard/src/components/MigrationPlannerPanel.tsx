@@ -11,7 +11,7 @@ import WorkloadSelect from './WorkloadSelect';
 import Badge from './Badge';
 import GlassSection from './GlassSection';
 
-const TARGET_RUNTIMES = ['kube', 'podman', 'kubevirt', 'metal3'] as const;
+const TARGET_RUNTIMES = ['kube', 'podman', 'kubevirt'] as const;
 
 interface RiskRow {
   label: string;

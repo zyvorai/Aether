@@ -21,12 +21,12 @@ See also: [Security Features](../features/security.md) · [Presentation 04](../.
 
 ## Isolation comparison
 
-| Control | Podman | Kubernetes | KubeVirt | Metal3 |
-|---------|--------|------------|----------|--------|
-| Process isolation | Namespaces/cgroups | Pod boundary | VM boundary | Dedicated host |
-| Network policy | Limited | NetworkPolicy | VM + cluster policy | Physical segmentation |
-| Secrets | Files/env | K8s Secrets + encryption at rest | VM secrets | Host env |
-| Compliance attest | Host OS | PSA/OPA | VM isolation | BMC audit |
+| Control | Podman | Kubernetes | KubeVirt |
+|---------|--------|------------|----------|
+| Process isolation | Namespaces/cgroups | Pod boundary | VM boundary |
+| Network policy | Limited | NetworkPolicy | VM + cluster policy |
+| Secrets | Files/env | K8s Secrets + encryption at rest | VM secrets |
+| Compliance attest | Host OS | PSA/OPA | VM isolation |
 
 ---
 

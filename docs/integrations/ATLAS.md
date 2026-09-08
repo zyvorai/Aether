@@ -57,7 +57,7 @@ intent: { goal: balanced, storage: { tier: database } }
 | Deployment / Job | ✅ Atlas API creates a single tracked volume + PVC `{name}-pvc`. |
 | StatefulSet | ✅ Atlas API creates one tracked volume per replica, named `{name}-storage-{name}-{ordinal}`, which the StatefulSet **adopts**. The `volumeClaimTemplate` is rewritten to the resolved concrete class, so **scale-up** dynamically provisions further PVCs on the same Atlas-backed class. |
 | KubeVirt | ✅ the DataVolume's `storageClassName` is set to the Atlas-resolved class, so CDI provisions the VM disk on Atlas-backed storage (Ceph RBD/CephFS). The disk is CDI-owned (imports the OS image), so it is **not** a separately tracked Atlas volume. |
-| Metal3 / Podman | Not routed through Atlas (native/no persistent storage). |
+| Podman | Not routed through Atlas (native/no persistent storage). |
 
 The concrete StorageClass behind a policy is resolved at deploy time from Atlas's
 policy catalog (`GET /api/atlas/v1/policies`) — Aether does not hardcode class names.

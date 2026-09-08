@@ -3,8 +3,8 @@
 > **Version:** See `aether --version`
 > **License:** Proprietary HyperSDK
 
-Aether is the Universal Runtime Control Plane. One spec, four runtimes:
-Podman, Kubernetes, KubeVirt, and Metal3.
+Aether is the Universal Runtime Control Plane. One spec, three runtimes:
+Podman, Kubernetes, and KubeVirt.
 
 ---
 
@@ -378,7 +378,7 @@ aether --spec api.yaml watch --runtime podman
 
 ### compare
 
-Compare a workload across all four runtimes (cost, capabilities, limitations).
+Compare a workload across all three runtimes (cost, capabilities, limitations).
 
 ```
 aether [OPTIONS] compare

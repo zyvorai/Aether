@@ -408,7 +408,7 @@ curl -X POST http://localhost:5090/api/workloads/my-app/migrate \
 
 | Field | Required | Default | Description |
 |---|---|---|---|
-| `target_runtime` | Yes | -- | Target runtime: `podman`, `kubernetes`, `kubevirt`, `metal3` |
+| `target_runtime` | Yes | -- | Target runtime: `podman`, `kubernetes`, `kubevirt` |
 | `strategy` | No | `"blue-green"` | Strategy: `immediate`, `blue-green`, `rolling` |
 
 **Response (success):**

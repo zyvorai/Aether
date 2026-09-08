@@ -72,9 +72,6 @@ rbac:
     - apiGroups: ["cdi.kubevirt.io"]
       resources: ["datavolumes"]
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-    - apiGroups: ["metal3.io"]
-      resources: ["baremetalhosts"]
-      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
     - apiGroups: ["cilium.io"]
       resources:
         - ciliumnetworkpolicies
@@ -312,12 +309,6 @@ aether:
       enabled: false
       # Requires KubeVirt CRDs to be installed
 
-    metal3:
-      enabled: false
-      # Requires Metal3 CRDs to be installed
-      bmcCredentials:
-        secretName: ""
-
   # Migration settings
   migration:
     # Default strategy: immediate, blue-green, rolling
@@ -352,11 +343,6 @@ secrets:
   # Container registry credentials
   registryCredentials: {}
     # dockerconfigjson: base64-encoded-docker-config
-
-  # Metal3 BMC credentials
-  bmcCredentials: {}
-    # username: admin
-    # password: password
 
   # Additional secrets
   additional: {}

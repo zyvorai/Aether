@@ -413,17 +413,6 @@ API endpoints validate workload names against **DNS-1123** format:
 | **CLI template output** | Blocks system directories (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, `/sbin`) |
 | **Backup names** | No `/`, `\`, `..`, or null bytes |
 
-### Metal3 Annotations
-
-Metal3 deployments **fail fast** if required annotations are missing:
-
-| Annotation | Required | Purpose |
-|---|---|---|
-| `aether.io/boot-mac-address` | Yes | Hardware MAC address for provisioning |
-| `aether.io/image-url` | Yes | Bootable disk image URL |
-| `aether.io/boot-mode` | No (default: `UEFI`) | Boot mode (`UEFI` or `BIOS`) |
-| `aether.io/image-checksum-url` | No | Image integrity verification URL |
-
 ---
 
 ## 📋 Audit Trail Integrity

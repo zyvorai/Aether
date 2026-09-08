@@ -12,17 +12,17 @@
                     │  deploy · migrate · spec │
                     └───────────┬─────────────┘
                                 │
-        ┌───────────────────────┼───────────────────────┐
-        ▼                       ▼                       ▼
-   Podman/K8s              KubeVirt                 Metal3
-        │                       │
-        │              ┌────────┴────────┐
-        │              │    Ragnarok     │  (optional composite)
-        │              │ attestation ·   │
-        │              │ measured images │
-        │              └────────┬────────┘
-        │                       │
-        └───────────────────────┼───────────────────────┘
+                    ┌───────────┴───────────┐
+                    ▼                       ▼
+               Podman/K8s               KubeVirt
+                    │                       │
+                    │              ┌────────┴────────┐
+                    │              │    Ragnarok     │  (optional composite)
+                    │              │ attestation ·   │
+                    │              │ measured images │
+                    │              └────────┬────────┘
+                    │                       │
+                    └───────────┬───────────┘
                                 ▼
                     ┌─────────────────────────┐
                     │      PacketWolf         │
@@ -56,7 +56,7 @@
 
 Use Kubernetes alone when you have a single cluster and no VM/bare-metal path.
 
-Use Aether when you need **one spec** across dev (Podman), prod (K8s), isolation (KubeVirt), and metal (Metal3) with **migration** and **explainable placement**.
+Use Aether when you need **one spec** across dev (Podman), prod (K8s), and isolation (KubeVirt) with **migration** and **explainable placement**.
 
 ---
 

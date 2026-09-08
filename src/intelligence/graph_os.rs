@@ -812,7 +812,7 @@ pub fn build_runtime_fabric_topology(state_path: &Path) -> anyhow::Result<Fabric
         }
 
         let rt_lower = runtime.to_lowercase();
-        if rt_lower.contains("virt") || rt_lower.contains("metal") {
+        if rt_lower.contains("virt") {
             let gpu_id = format!("res:{name}:gpu");
             add_node(FabricTopologyNode {
                 id: gpu_id.clone(),

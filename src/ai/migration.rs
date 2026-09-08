@@ -229,13 +229,10 @@ impl MigrationAdvisor {
     ) -> RiskLevel {
         let mut risk_score = 0u32;
 
-        // Cross-category migration (e.g., container to bare metal) is higher risk
+        // Cross-category migration (e.g., container to VM) is higher risk
         let category_change = matches!(
             (source, target),
-            (RuntimeKind::Podman, RuntimeKind::Metal3)
-                | (RuntimeKind::Metal3, RuntimeKind::Podman)
-                | (RuntimeKind::Podman, RuntimeKind::KubeVirt)
-                | (RuntimeKind::KubeVirt, RuntimeKind::Podman)
+            (RuntimeKind::Podman, RuntimeKind::KubeVirt) | (RuntimeKind::KubeVirt, RuntimeKind::Podman)
         );
         if category_change {
             risk_score += 3;
@@ -614,7 +611,7 @@ mod tests {
     fn test_cross_category_migration_high_risk() {
         let advisor = MigrationAdvisor::with_defaults();
         let spec = create_test_workload();
-        let advice = advisor.advise(&spec, RuntimeKind::Podman, RuntimeKind::Metal3);
+        let advice = advisor.advise(&spec, RuntimeKind::Podman, RuntimeKind::KubeVirt);
 
         assert!(matches!(
             advice.risk_level,

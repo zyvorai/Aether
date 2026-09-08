@@ -7,7 +7,7 @@
 //!
 //! Aether calls Forge's REST gateway to inspect GPU capacity, ask where to place
 //! a GPU/AI workload, and read GPU cost — informing runtime selection (GPU →
-//! KubeVirt/Metal3) and migration decisions.
+//! KubeVirt) and migration decisions.
 //!
 //! Environment:
 //! - `AETHER_FORGE_URL`   — Forge API gateway base URL (unset ⇒ integration off; `FORGE_API_URL` also accepted)

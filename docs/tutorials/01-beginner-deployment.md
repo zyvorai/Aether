@@ -33,7 +33,7 @@
 | **RAM**          | 2 GB                        | 8 GB                        |
 
 > 💡 **Tip:** Podman is the only runtime required for this beginner tutorial.
-> Kubernetes, KubeVirt, and Metal3 are covered in later guides.
+> Kubernetes and KubeVirt are covered in later guides.
 
 ---
 

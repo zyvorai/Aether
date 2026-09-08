@@ -15,7 +15,7 @@ Recommends: podman, kubectl
 Suggests: kubevirt-virtctl
 Description: Universal runtime control plane
  Aether is a universal runtime control plane that deploys workloads
- across multiple runtimes: Podman, Kubernetes, KubeVirt, and Metal3.
+ across multiple runtimes: Podman, Kubernetes, and KubeVirt.
  .
  Features:
   - Single workload specification (YAML)

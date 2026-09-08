@@ -382,17 +382,13 @@ impl Profiler {
             });
         }
 
-        // GPU workload not on KubeVirt or Metal3
-        if *classification == WorkloadType::GpuCompute
-            && current != RuntimeKind::KubeVirt
-            && current != RuntimeKind::Metal3
-        {
+        // GPU workload not on KubeVirt
+        if *classification == WorkloadType::GpuCompute && current != RuntimeKind::KubeVirt {
             recommendations.push(Recommendation {
                 category: RecommendationCategory::Performance,
                 priority: Priority::High,
                 title: "GPU workload on non-optimal runtime".to_string(),
-                description: "GPU passthrough works best with VM isolation or bare metal"
-                    .to_string(),
+                description: "GPU passthrough works best with VM isolation".to_string(),
                 estimated_savings_pct: 0.0,
                 action: "Consider migrating to KubeVirt for GPU passthrough".to_string(),
             });
@@ -1183,21 +1179,6 @@ mod tests {
         );
         let gpu_rec = recs.iter().find(|r| r.title.contains("GPU workload"));
         assert!(gpu_rec.is_none(), "KubeVirt should be fine for GPU");
-    }
-
-    #[test]
-    fn test_runtime_gpu_on_metal3_no_warning() {
-        let profiler = Profiler::with_defaults();
-        let spec = create_test_workload();
-        let mut recs = Vec::new();
-        profiler.check_runtime(
-            &spec,
-            Some(RuntimeKind::Metal3),
-            &WorkloadType::GpuCompute,
-            &mut recs,
-        );
-        let gpu_rec = recs.iter().find(|r| r.title.contains("GPU workload"));
-        assert!(gpu_rec.is_none(), "Metal3 should be fine for GPU");
     }
 
     #[test]

@@ -202,7 +202,7 @@ pub fn application_to_workload(app: &Application, raw: &RawInventory) -> Result<
          metadata:\n  name: {name}\n  owner: discovered\n  project: {project}\n\
          build:\n  context: \".\"\n  dockerfile: Dockerfile\n  registry: discovered\n\
          requirements:\n  cpu: \"{cpu}\"\n  memory: \"{memory}\"\n  storage: \"{storage}\"\n\
-         runtime:\n  preferred: kube\n  allow: [container, kube, kubevirt, metal]\n",
+         runtime:\n  preferred: kube\n  allow: [container, kube, kubevirt]\n",
         name = sanitize_name(&app.name),
         project = sanitize_name(&app.namespace),
         cpu = cpu,

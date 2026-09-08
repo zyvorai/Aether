@@ -137,12 +137,7 @@ fn build_trajectory(
 
 fn ideal_path(classification: &str) -> Vec<String> {
     match classification {
-        c if c.contains("gpu") => vec![
-            "podman".into(),
-            "kubernetes".into(),
-            "kubevirt".into(),
-            "metal3".into(),
-        ],
+        c if c.contains("gpu") => vec!["podman".into(), "kubernetes".into(), "kubevirt".into()],
         c if c.contains("stateless") => vec!["podman".into(), "kubernetes".into()],
         c if c.contains("stateful") => vec!["kubernetes".into(), "kubevirt".into()],
         _ => vec!["podman".into(), "kubernetes".into()],

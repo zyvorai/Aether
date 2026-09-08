@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Aether is a Universal Runtime Control Plane written in Rust. It deploys workloads to Podman, Kubernetes, KubeVirt, and Metal3 from a single YAML specification.
+Aether is a Universal Runtime Control Plane written in Rust. It deploys workloads to Podman, Kubernetes, and KubeVirt from a single YAML specification.
 
 ## Build & Test
 
@@ -10,7 +10,7 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 cd web/dashboard && npm run build   # Build embedded UI assets (see note below)
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 1,329 tests
+cargo test           # Run all 1,238 tests
 cargo clippy --all-targets --all-features  # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
 make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
@@ -24,8 +24,8 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 - `src/cli.rs` — CLI argument definitions (40+ subcommands)
 - `src/commands.rs` — All command handler implementations (~4500 lines)
 - `src/spec.rs` — Workload YAML schema (Workload struct, validation, intent types)
-- `src/engine.rs` — Runtime decision engine (GPU→KubeVirt, high resources→Metal3, etc.)
-- `src/adapters/` — Runtime implementations (podman.rs, docker.rs, kube.rs, kubevirt.rs, metal.rs)
+- `src/engine.rs` — Runtime decision engine (GPU→KubeVirt, network service/persistence→Kubernetes, etc.)
+- `src/adapters/` — Runtime implementations (podman.rs, docker.rs, kube.rs, kubevirt.rs)
 - `src/migration.rs` — Migration engine (Immediate, Blue-Green, Rolling)
 - `src/api/` — Axum REST API server (mod.rs, handlers.rs, types.rs)
 - `src/rbac.rs` — RBAC key store (Admin/Operator/Viewer roles, API middleware enforcement)
@@ -71,7 +71,7 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 
 ## Testing
 
-- 1,329 tests (lib + integration)
+- 1,238 tests (lib + integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests

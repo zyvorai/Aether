@@ -204,14 +204,12 @@ fn runtime_from_legacy(raw: Option<&str>) -> (RuntimePreference, Vec<RuntimeType
         }
         "kubernetes" | "kube" | "k8s" => (RuntimePreference::Kube, vec![RuntimeType::Kube]),
         "kubevirt" | "vm" => (RuntimePreference::Kubevirt, vec![RuntimeType::Kubevirt]),
-        "metal3" | "metal" | "baremetal" => (RuntimePreference::Metal, vec![RuntimeType::Metal]),
         _ => (
             RuntimePreference::Auto,
             vec![
                 RuntimeType::Container,
                 RuntimeType::Kube,
                 RuntimeType::Kubevirt,
-                RuntimeType::Metal,
             ],
         ),
     }

@@ -689,7 +689,7 @@ export default function CommandPalette({
         id: 'action-ai-os-gpu',
         label: 'Find GPU workloads',
         category: 'action',
-        searchText: 'gpu workloads accelerator kubevirt metal3 high latency',
+        searchText: 'gpu workloads accelerator kubevirt high latency',
         run: () => navigate(pathWithQuery(viewToPath('workloads'), { q: 'gpu' })),
       },
       {

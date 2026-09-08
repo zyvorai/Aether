@@ -102,7 +102,6 @@ pub fn runtime_meta(
         crate::runtime::RuntimeKind::Docker => ("🐋", "Docker", (36, 130, 206)),
         crate::runtime::RuntimeKind::Kubernetes => ("☸️", "Kubernetes", (93, 173, 226)),
         crate::runtime::RuntimeKind::KubeVirt => ("🖥️", "KubeVirt", (155, 89, 182)),
-        crate::runtime::RuntimeKind::Metal3 => ("🖧", "Metal3", (231, 76, 60)),
     }
 }
 

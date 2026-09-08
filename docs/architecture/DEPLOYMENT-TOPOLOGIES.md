@@ -41,10 +41,10 @@ Developer laptop / VM
               │ Redis (sessions/SSE)  │
               └───────────────────────┘
                           │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
-     Kubernetes      KubeVirt         Metal3
-     target clusters  clusters         BMC pools
+                    ┌───────┴───────┐
+                    ▼               ▼
+               Kubernetes       KubeVirt
+               target clusters  clusters
 ```
 
 **Ship today:** Helm values for Postgres, Redis, OIDC/SAML, TLS — see `docs/NEXT-STEPS.md`.

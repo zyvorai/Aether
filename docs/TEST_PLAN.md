@@ -1,6 +1,6 @@
 # Aether feature test plan
 
-End-to-end validation for the universal runtime control plane API, React dashboard, labs (Kubernetes / KubeVirt / Metal3), confidential fabric, and Playwright UI — aligned with Zyvor platform staging workflows.
+End-to-end validation for the universal runtime control plane API, React dashboard, labs (Kubernetes / KubeVirt), confidential fabric, and Playwright UI — aligned with Zyvor platform staging workflows.
 
 ## Quick start
 
@@ -38,7 +38,7 @@ Default API: `http://<host>:30090` (NodePort) · Auth: session cookie via mock I
 |------|-----------------|----------|----------------|
 | **api-live** | `api-live-test.sh` → `api-live-runner.py` | ~2 min | All routes from `mod.rs`, live terminal output |
 | **smoke** | `post-deploy-verify.sh` | ~2 min | Health, 55+ API routes, UX cross-checks, k8s-api-smoke |
-| **labs-dry** | `reference-cluster-e2e.sh` | ~1 min | Validate + dry-run Metal3, KubeVirt, k8s lab specs |
+| **labs-dry** | `reference-cluster-e2e.sh` | ~1 min | Validate + dry-run KubeVirt, k8s lab specs |
 | **migration-dry-run** | `migration-dry-run-e2e.sh` | ~30 s | Demo specs validate + `--dry-run` migrate |
 | **labs-live** | SSH `k8s-labs-e2e.sh` on remote | ~3–5 min | Live nginx deploy on cluster kubeconfig |
 | **confidential** | `confidential-fabric-e2e.sh` + `confidential-cluster-e2e.sh` | ~2 min | Confidential APIs + CLI placement checks |
@@ -129,7 +129,7 @@ Running `AETHER_TEST_TIERS=full` executes **all** specs in `web/dashboard/tests/
 | `AETHER_MOCK_IDP_ENCRYPTED=1` | Encrypted mock IdP cases | Optional server env |
 | `AETHER_E2E_KIND=1` + kind | `cluster-exec-terminal.spec.ts` | Local `playwright-exec` tier only |
 | Live cluster metrics | `remote-live-ux.spec.ts` | Deployed API with cluster connected |
-| Metal3 / KubeVirt live | Some phase specs | May skip or fail without infra — manual/nightly |
+| KubeVirt live | Some phase specs | May skip or fail without infra — manual/nightly |
 
 Remote Playwright:
 
@@ -142,12 +142,11 @@ cd web/dashboard && npm run test:e2e
 ## Manual-only scenarios
 
 1. **Live migration** — blue-green / rolling across runtimes with real workloads
-2. **Metal3 bare metal deploy** — requires Metal3 lab cluster
-3. **KubeVirt GPU / SR-IOV** — hardware feature gates
-4. **LDAP / OIDC / SAML login** — IdP configured (`deploy-with-ldap.sh`, ingress SSO)
-5. **Velero DR / failover** — backup storage configured
-6. **Ragnarok composite confidential** — `RAGNAROK_API` set for fabric E2E
-7. **SSE reconnect banner** — manual per `web/dashboard/tests/README.md`
+2. **KubeVirt GPU / SR-IOV** — hardware feature gates
+3. **LDAP / OIDC / SAML login** — IdP configured (`deploy-with-ldap.sh`, ingress SSO)
+4. **Velero DR / failover** — backup storage configured
+5. **Ragnarok composite confidential** — `RAGNAROK_API` set for fabric E2E
+6. **SSE reconnect banner** — manual per `web/dashboard/tests/README.md`
 
 ## CI recommendation
 

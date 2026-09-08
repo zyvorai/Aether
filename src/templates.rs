@@ -550,7 +550,7 @@ fn generate_ml_training(params: &TemplateParams) -> Workload {
     let mut w = base_workload(
         params,
         RuntimePreference::Kubevirt,
-        vec![RuntimeType::Kubevirt, RuntimeType::Metal, RuntimeType::Kube],
+        vec![RuntimeType::Kubevirt, RuntimeType::Kube],
     );
 
     w.requirements.cpu = params.cpu.clone().unwrap_or_else(|| "8".to_string());

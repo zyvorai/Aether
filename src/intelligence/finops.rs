@@ -172,11 +172,9 @@ impl FinOpsEngine {
         }
 
         let profile = profiles.get(&spec.metadata.name);
-        let suggested = if profile.map(|p| p.gpu_contention).unwrap_or(false) {
-            RuntimeKind::Metal3
-        } else if profile.map(|p| p.cpu_bursty).unwrap_or(false) {
+        let suggested = if profile.map(|p| p.cpu_bursty).unwrap_or(false) {
             RuntimeKind::KubeVirt
-        } else if ws.runtime == RuntimeKind::KubeVirt || ws.runtime == RuntimeKind::Metal3 {
+        } else if ws.runtime == RuntimeKind::KubeVirt {
             RuntimeKind::Kubernetes
         } else {
             return None;
@@ -190,7 +188,6 @@ impl FinOpsEngine {
             RuntimeKind::Kubernetes => 25.0,
             RuntimeKind::Podman | RuntimeKind::Docker => 40.0,
             RuntimeKind::KubeVirt => 15.0,
-            RuntimeKind::Metal3 => -10.0,
         };
 
         if savings_pct <= 0.0 {

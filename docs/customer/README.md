@@ -1,6 +1,6 @@
 # Aether — Customer Documentation
 
-Universal runtime portability — place and move apps across Podman/K8s/KubeVirt/Metal3 with AI scoring and FinOps.
+Universal runtime portability — place and move apps across Podman/K8s/KubeVirt with AI scoring and FinOps.
 
 | You want to… | Open |
 |--------------|------|
@@ -29,7 +29,7 @@ Output lands in [`pdf/`](pdf/):
 
 ## Product at a glance
 
-Universal runtime portability — place and move apps across Podman/K8s/KubeVirt/Metal3 with AI scoring and FinOps.
+Universal runtime portability — place and move apps across Podman/K8s/KubeVirt with AI scoring and FinOps.
 
 ## Support surfaces (quick map)
 

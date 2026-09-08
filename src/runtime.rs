@@ -4,7 +4,7 @@
 
 //! Runtime trait and common types
 //!
-//! All runtime adapters (Podman, Docker, Kubernetes, KubeVirt, Metal3)
+//! All runtime adapters (Podman, Docker, Kubernetes, KubeVirt)
 //! must implement this trait.
 
 use crate::spec::Workload;
@@ -150,17 +150,15 @@ pub enum RuntimeKind {
     Docker,
     Kubernetes,
     KubeVirt,
-    Metal3,
 }
 
 impl RuntimeKind {
     /// All supported runtime variants.
-    pub const ALL: [RuntimeKind; 5] = [
+    pub const ALL: [RuntimeKind; 4] = [
         RuntimeKind::Podman,
         RuntimeKind::Docker,
         RuntimeKind::Kubernetes,
         RuntimeKind::KubeVirt,
-        RuntimeKind::Metal3,
     ];
 }
 
@@ -171,7 +169,6 @@ impl fmt::Display for RuntimeKind {
             RuntimeKind::Docker => write!(f, "docker"),
             RuntimeKind::Kubernetes => write!(f, "kubernetes"),
             RuntimeKind::KubeVirt => write!(f, "kubevirt"),
-            RuntimeKind::Metal3 => write!(f, "metal3"),
         }
     }
 }
@@ -185,9 +182,8 @@ impl std::str::FromStr for RuntimeKind {
             "docker" => Ok(RuntimeKind::Docker),
             "kubernetes" | "kube" | "k8s" => Ok(RuntimeKind::Kubernetes),
             "kubevirt" | "vm" => Ok(RuntimeKind::KubeVirt),
-            "metal3" | "metal" | "bare-metal" => Ok(RuntimeKind::Metal3),
             _ => Err(anyhow::anyhow!(
-                "Unknown runtime: '{}'. Valid: podman, docker, kubernetes, kubevirt, metal3",
+                "Unknown runtime: '{}'. Valid: podman, docker, kubernetes, kubevirt",
                 s
             )),
         }
@@ -208,9 +204,7 @@ pub async fn create_runtime_ns(
     kind: &RuntimeKind,
     namespace: Option<&str>,
 ) -> crate::Result<Box<dyn Runtime>> {
-    use crate::adapters::{
-        DockerRuntime, KubeVirtRuntime, KubernetesRuntime, Metal3Runtime, PodmanRuntime,
-    };
+    use crate::adapters::{DockerRuntime, KubeVirtRuntime, KubernetesRuntime, PodmanRuntime};
 
     // Check for multi-cluster context override
     let context = std::env::var("AETHER_CONTEXT")
@@ -237,15 +231,6 @@ pub async fn create_runtime_ns(
                 KubeVirtRuntime::with_namespace(ns.to_string()).await?,
             )),
             (None, None) => Ok(Box::new(KubeVirtRuntime::new().await?)),
-        },
-        RuntimeKind::Metal3 => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(
-                Metal3Runtime::with_context(ctx, ns.map(String::from)).await?,
-            )),
-            (None, Some(ns)) => Ok(Box::new(
-                Metal3Runtime::with_namespace(ns.to_string()).await?,
-            )),
-            (None, None) => Ok(Box::new(Metal3Runtime::new().await?)),
         },
     }
 }
@@ -285,15 +270,6 @@ mod tests {
             RuntimeKind::KubeVirt
         );
         assert_eq!("vm".parse::<RuntimeKind>().unwrap(), RuntimeKind::KubeVirt);
-        assert_eq!(
-            "metal3".parse::<RuntimeKind>().unwrap(),
-            RuntimeKind::Metal3
-        );
-        assert_eq!("metal".parse::<RuntimeKind>().unwrap(), RuntimeKind::Metal3);
-        assert_eq!(
-            "bare-metal".parse::<RuntimeKind>().unwrap(),
-            RuntimeKind::Metal3
-        );
     }
 
     #[test]

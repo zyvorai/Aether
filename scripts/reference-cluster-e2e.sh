@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reference-cluster E2E — Metal3, KubeVirt, and confidential offline/API checks.
+# Reference-cluster E2E — KubeVirt and confidential offline/API checks.
 #
 # Usage:
 #   ./scripts/reference-cluster-e2e.sh
@@ -19,7 +19,7 @@ fi
 echo "==> Validate confidential kata workload example"
 "${AETHER}" --spec examples/confidential-kata-workload.yaml validate
 
-echo "==> Labs E2E (Metal3 / KubeVirt dry-run or live when AETHER_LABS_LIVE=1)"
+echo "==> Labs E2E (KubeVirt dry-run or live when AETHER_LABS_LIVE=1)"
 chmod +x scripts/labs-e2e.sh
 AETHER_BIN="${AETHER}" scripts/labs-e2e.sh
 

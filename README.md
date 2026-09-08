@@ -9,7 +9,7 @@
 
 **[Customer manual (page-by-page)](docs/customer/README.md)** — getting started, admin basics, and a guide for every product surface (PDFs under `docs/customer/pdf/`).
 
-Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** without rewriting infrastructure. One YAML spec. Sixteen migration paths. Production-grade drift detection and intent-driven runtime scoring.
+Deploy once. Move workloads across **Podman, Kubernetes, and KubeVirt** without rewriting infrastructure. One YAML spec. Nine migration paths. Production-grade drift detection and intent-driven runtime scoring.
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 ├──────────────────────────────────────────────────────────────┤
 │  Control     Intent Engine · Migration Engine · Policy Gate  │
 ├──────────────────────────────────────────────────────────────┤
-│  Runtimes    Podman · Kubernetes · KubeVirt · Metal3         │
+│  Runtimes    Podman · Kubernetes · KubeVirt                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -27,8 +27,8 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 
 | Problem | Aether answer |
 |---------|---------------|
-| Same app, four different deploy paths | One YAML spec validates and deploys everywhere |
-| Runtime migrations are manual and risky | 16 runtime pairs with blue-green, rolling, rollback |
+| Same app, three different deploy paths | One YAML spec validates and deploys everywhere |
+| Runtime migrations are manual and risky | 9 runtime pairs with blue-green, rolling, rollback |
 | Teams guess which runtime fits | Intent engine scores cost, latency, reliability |
 | Config drift goes unnoticed | Drift detection + auto-reconciliation loop |
 | Ops needs one pane of glass | k9s-level web UI with SSE, command palette, log viewer |
@@ -42,8 +42,8 @@ Deploy once. Move workloads across **Podman, Kubernetes, KubeVirt, and Metal3** 
 | Layer | What's in the repo |
 |-------|-------------------|
 | **Core** | Rust runtime control plane — `src/` |
-| **Runtimes** | Podman, K8s, KubeVirt, Metal3 adapters |
-| **Migration** | Immediate, blue-green, rolling — 16 combinations; KubeVirt live migration (vGPU-aware) |
+| **Runtimes** | Podman, K8s, KubeVirt adapters |
+| **Migration** | Immediate, blue-green, rolling — 9 combinations; KubeVirt live migration (vGPU-aware) |
 | **UI** | React dashboard (40+ pages) + interactive TUI — `web/` |
 | **Deploy** | Helm, Docker, deb/rpm packages — `helm/`, `packaging/` |
 | **Examples** | Compose stacks, demos, migration scenarios — `examples/` |
@@ -116,11 +116,9 @@ flowchart LR
   Intent --> Podman[Podman]
   Intent --> K8s[Kubernetes]
   Intent --> KV[KubeVirt]
-  Intent --> M3[Metal3]
   Mig --> Podman
   Mig --> K8s
   Mig --> KV
-  Mig --> M3
 ```
 
 Full design: **[Architecture docs](docs/architecture/)** · **[Product overview](docs/PRODUCT.md)**

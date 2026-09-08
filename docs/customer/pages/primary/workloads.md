@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Deploy, monitor, and manage across Podman, Kubernetes, KubeVirt & Metal3
+Deploy, monitor, and manage across Podman, Kubernetes & KubeVirt
 
 ## When to use it
 

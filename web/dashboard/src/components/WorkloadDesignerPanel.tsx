@@ -75,8 +75,7 @@ runtime:
   allow:
     - kube
     - podman
-    - kubevirt
-    - metal3${extra}
+    - kubevirt${extra}
 # Generated from: ${prompt.slice(0, 120)}
 `;
 }

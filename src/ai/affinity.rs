@@ -152,7 +152,6 @@ impl AffinityEngine {
             RuntimeKind::Podman,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ];
 
         let mut scores: Vec<AffinityScore> = runtimes
@@ -186,7 +185,6 @@ impl AffinityEngine {
             RuntimeKind::Podman,
             RuntimeKind::Kubernetes,
             RuntimeKind::KubeVirt,
-            RuntimeKind::Metal3,
         ];
 
         let mut matrix = HashMap::new();
@@ -384,7 +382,6 @@ impl AffinityEngine {
             (WorkloadClass::WebService, RuntimeKind::Podman) => 0.90,
             (WorkloadClass::Database, RuntimeKind::Kubernetes) => 0.90,
             (WorkloadClass::Database, RuntimeKind::KubeVirt) => 0.80,
-            (WorkloadClass::MlTraining, RuntimeKind::Metal3) => 0.85,
             (WorkloadClass::MlTraining, RuntimeKind::KubeVirt) => 0.80,
             (WorkloadClass::BatchJob, RuntimeKind::Podman) => 0.95,
             (WorkloadClass::Cache, RuntimeKind::Kubernetes) => 0.95,
@@ -397,7 +394,6 @@ impl AffinityEngine {
             RuntimeKind::Podman | RuntimeKind::Docker => 5.0,
             RuntimeKind::Kubernetes => 15.0,
             RuntimeKind::KubeVirt => 25.0,
-            RuntimeKind::Metal3 => 40.0,
         }
     }
 
@@ -539,7 +535,7 @@ mod tests {
         let recs = engine.recommend(&WorkloadClass::WebService);
 
         // Should return scores based on heuristics
-        assert_eq!(recs.len(), 4);
+        assert_eq!(recs.len(), 3);
         assert!(recs.iter().all(|r| r.confidence == 0.0));
     }
 
@@ -547,8 +543,8 @@ mod tests {
     fn test_compatibility_matrix() {
         let engine = AffinityEngine::new();
         let matrix = engine.compatibility_matrix();
-        // 8 classes x 4 runtimes = 32 entries
-        assert_eq!(matrix.len(), 32);
+        // 8 classes x 3 runtimes = 24 entries
+        assert_eq!(matrix.len(), 24);
     }
 
     #[test]

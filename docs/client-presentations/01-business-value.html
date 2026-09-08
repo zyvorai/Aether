@@ -197,7 +197,6 @@ li { margin-bottom: 0.4em; font-size: 1em; }
                 <th>Podman</th>
                 <th>Kubernetes</th>
                 <th>KubeVirt</th>
-                <th>Metal3</th>
             </tr>
         </thead>
         <tbody>
@@ -206,39 +205,33 @@ li { margin-bottom: 0.4em; font-size: 1em; }
                 <td>Containers &amp; pods on a single host</td>
                 <td>Orchestrated container clusters</td>
                 <td>Virtual machines on K8s</td>
-                <td>Bare-metal provisioning</td>
             </tr>
             <tr>
                 <td><strong>Scaling Model</strong></td>
                 <td>Vertical (single node)</td>
                 <td>Horizontal (multi-node)</td>
                 <td>Horizontal (VM pools)</td>
-                <td>Horizontal (hardware fleet)</td>
             </tr>
             <tr>
                 <td><strong>Isolation Level</strong></td>
                 <td>Container (cgroups/namespaces)</td>
                 <td>Container + network policies</td>
                 <td>Full VM isolation</td>
-                <td>Physical hardware isolation</td>
             </tr>
             <tr>
                 <td><strong>Best For</strong></td>
                 <td>Dev/test, CI/CD, edge</td>
                 <td>Microservices, stateless apps</td>
                 <td>Legacy apps, compliance</td>
-                <td>HPC, GPU, low-latency</td>
             </tr>
             <tr>
                 <td><strong>Startup Time</strong></td>
                 <td>Seconds</td>
                 <td>Seconds to minutes</td>
                 <td>Minutes</td>
-                <td>Minutes to hours</td>
             </tr>
             <tr>
                 <td><strong>Aether Adapter</strong></td>
-                <td class="check">&#10003; Full</td>
                 <td class="check">&#10003; Full</td>
                 <td class="check">&#10003; Full</td>
                 <td class="check">&#10003; Full</td>
@@ -384,7 +377,7 @@ li { margin-bottom: 0.4em; font-size: 1em; }
 # Deploy to the optimal runtime with a single command
 $ aether run --spec workload.yaml
 
-# Aether selects Podman, Kubernetes, KubeVirt, or Metal3
+# Aether selects Podman, Kubernetes, or KubeVirt
 # based on your workload requirements automatically
 </pre>
 
@@ -411,7 +404,7 @@ $ aether tui
 
     <div class="cta-box">
         <h3>Ready to Unify Your Runtimes?</h3>
-        <p>Aether is open source, written in Rust, and built for production. Start deploying across Podman, Kubernetes, KubeVirt, and Metal3 today.</p>
+        <p>Aether is open source, written in Rust, and built for production. Start deploying across Podman, Kubernetes, and KubeVirt today.</p>
     </div>
 
     <div class="footer">Aether &mdash; Universal Runtime Control Plane &bull; Built with Rust</div>
