@@ -732,7 +732,7 @@ metadata:
 ## Support
 
 For template-related issues:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `template`
 - Include: Template name, error message, YAML content
 

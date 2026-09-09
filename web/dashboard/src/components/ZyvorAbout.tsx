@@ -20,19 +20,19 @@ export type HelpDocLink = {
 export const AETHER_HELP_LINKS: HelpDocLink[] = [
   {
     label: 'Documentation index',
-    href: 'https://github.com/ssahani/aether/blob/main/docs/README.md',
+    href: 'https://github.com/zyvorai/Aether/blob/main/docs/README.md',
   },
   {
     label: 'Web dashboard guide',
-    href: 'https://github.com/ssahani/aether/tree/main/web/dashboard',
+    href: 'https://github.com/zyvorai/Aether/tree/main/web/dashboard',
   },
   {
     label: 'CLI & API reference',
-    href: 'https://github.com/ssahani/aether/blob/main/README.md',
+    href: 'https://github.com/zyvorai/Aether/blob/main/README.md',
   },
   {
     label: 'Customer bundle help (HELP.txt)',
-    href: 'https://github.com/ssahani/aether/blob/main/scripts/lib/write-customer-help.sh',
+    href: 'https://github.com/zyvorai/Aether/blob/main/scripts/lib/write-customer-help.sh',
   },
   {
     label: 'Zyvor documentation',

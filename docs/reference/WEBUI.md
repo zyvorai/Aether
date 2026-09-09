@@ -717,7 +717,7 @@ spec:
     spec:
       containers:
       - name: aether
-        image: ghcr.io/ssahani/aether:latest
+        image: ghcr.io/zyvorai/aether:latest
         command: ["aether", "serve", "--host", "0.0.0.0", "--port", "8080"]
         ports:
         - containerPort: 8080
@@ -767,7 +767,7 @@ docker run -d \
   --name aether-api \
   -p 8080:8080 \
   -v ~/.aether:/root/.aether \
-  ghcr.io/ssahani/aether:latest \
+  ghcr.io/zyvorai/aether:latest \
   serve --host 0.0.0.0 --port 8080
 ```
 
@@ -778,7 +778,7 @@ version: '3.8'
 
 services:
   aether-api:
-    image: ghcr.io/ssahani/aether:latest
+    image: ghcr.io/zyvorai/aether:latest
     command: serve --host 0.0.0.0 --port 8080
     ports:
       - "8080:8080"
@@ -890,7 +890,7 @@ Enterprise SSO is provided via **OIDC** (`AETHER_OIDC_*`) and **SAML** (`AETHER_
 ## Support
 
 For WebUI/API issues:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `webui` or `api`
 
 ## Related Documentation

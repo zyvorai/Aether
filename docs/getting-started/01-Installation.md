@@ -64,7 +64,7 @@ Building from source gives you the latest features and lets you customize the bu
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ssahani/aether.git
+git clone https://github.com/zyvorai/Aether.git
 cd aether
 
 # 2. Build the release binary (optimized)
@@ -111,7 +111,7 @@ cargo build --release
 
 ```bash
 # Download the latest release
-wget https://github.com/ssahani/aether/releases/latest/download/aether_0.3.0-1_amd64.deb
+wget https://github.com/zyvorai/Aether/releases/latest/download/aether_0.3.0-1_amd64.deb
 
 # Install
 sudo apt install ./aether_0.3.0-1_amd64.deb
@@ -124,7 +124,7 @@ aether --version
 
 ```bash
 # Download the latest release
-wget https://github.com/ssahani/aether/releases/latest/download/aether-0.3.0-1.x86_64.rpm
+wget https://github.com/zyvorai/Aether/releases/latest/download/aether-0.3.0-1.x86_64.rpm
 
 # Install
 sudo dnf install ./aether-0.3.0-1.x86_64.rpm
@@ -151,7 +151,7 @@ If you have the Rust toolchain installed, you can install directly from crates.i
 cargo install --path .
 
 # Or install from a git URL
-cargo install --git https://github.com/ssahani/aether.git
+cargo install --git https://github.com/zyvorai/Aether.git
 
 # Verify
 aether --version
@@ -168,10 +168,10 @@ Run aether as a container without installing anything on the host:
 
 ```bash
 # Pull from GitHub Container Registry
-podman pull ghcr.io/ssahani/aether:latest
+podman pull ghcr.io/zyvorai/aether:latest
 
 # Or with Docker
-docker pull ghcr.io/ssahani/aether:latest
+docker pull ghcr.io/zyvorai/aether:latest
 ```
 
 ### Create a Shell Alias
@@ -184,7 +184,7 @@ alias aether='podman run --rm -it \
   -v ~/.kube:/root/.kube:ro \
   -v /run/podman/podman.sock:/run/podman/podman.sock \
   -v "$(pwd):/work" -w /work \
-  ghcr.io/ssahani/aether:latest'
+  ghcr.io/zyvorai/aether:latest'
 ```
 
 ### Verify
@@ -205,14 +205,10 @@ aether --version
 Deploy aether as a Kubernetes service with the API server and web dashboard:
 
 ```bash
-# Add the Helm repository
-helm repo add aether https://ssahani.github.io/aether/charts
-helm repo update
+# From OCI (when charts are published to GHCR)
+helm install aether oci://ghcr.io/zyvorai/charts/aether --version 0.4.0
 
-# Install with default values
-helm install aether aether/aether
-
-# Or install from a local chart directory
+# Or from a local checkout of this repository
 helm install aether ./helm/aether
 ```
 
@@ -241,7 +237,7 @@ resources:
 ```
 
 ```bash
-helm install aether aether/aether -f values.yaml
+helm install aether ./helm/aether -f values.yaml
 ```
 
 ### Verify Helm Deployment

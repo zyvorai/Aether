@@ -2,8 +2,8 @@ apiVersion: v2
 name: aether
 description: Universal runtime control plane - One spec, three runtimes
 type: application
-version: 0.3.0
-appVersion: "0.3.0"
+version: 0.4.0
+appVersion: "0.4.0"
 keywords:
   - orchestration
   - kubernetes
@@ -11,10 +11,10 @@ keywords:
   - kubevirt
   - runtime
   - workload
-home: https://github.com/ssahani/aether
+home: https://github.com/zyvorai/Aether
 sources:
-  - https://github.com/ssahani/aether
+  - https://github.com/zyvorai/Aether
 maintainers:
   - name: ZyvorAI Labs Private Limited
-    email: ssahani@gmail.com
-icon: https://raw.githubusercontent.com/ssahani/aether/main/docs/logo.png
+    email: legal@zyvor.dev
+icon: https://raw.githubusercontent.com/zyvorai/Aether/main/docs/assets/readme/zyvor-logo.png

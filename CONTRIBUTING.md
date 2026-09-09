@@ -15,7 +15,7 @@ Thank you for your interest in contributing to Aether! This document provides gu
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ssahani/aether
+   git clone https://github.com/zyvorai/Aether
    cd aether
    ```
 

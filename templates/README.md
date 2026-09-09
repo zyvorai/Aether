@@ -393,7 +393,7 @@ To add a new template:
 ## Support
 
 Issues? Questions?
-- GitHub: https://github.com/ssahani/aether/issues
+- GitHub: https://github.com/zyvorai/Aether/issues
 - Tag: `template`
 
 ## License

@@ -473,5 +473,5 @@ async fn create_backup() -> anyhow::Result<()> {
 ## Support
 
 For backup-related issues:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `backup`

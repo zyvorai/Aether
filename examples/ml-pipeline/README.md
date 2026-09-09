@@ -631,5 +631,5 @@ kubectl top pod -n ml-pipeline -l app=model-server
 ## Support
 
 For ML pipeline questions:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `example-ml-pipeline`

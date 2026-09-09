@@ -42,7 +42,7 @@ If you haven't installed yet:
 
 ```bash
 # Build from source (fastest path)
-git clone https://github.com/ssahani/aether.git
+git clone https://github.com/zyvorai/Aether.git
 cd aether
 cargo build --release
 sudo install -m 0755 target/release/aether /usr/local/bin/aether

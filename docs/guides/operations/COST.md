@@ -511,7 +511,7 @@ Alert rule `CostExceeds` compares fleet and per-workload estimates from this pri
 ## Support
 
 For cost estimation issues:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `cost-estimation`
 
 ## Additional Resources

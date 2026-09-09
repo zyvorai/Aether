@@ -63,5 +63,5 @@ To learn more about the release, try:
 4. View logs:
    kubectl logs -f deployment/{{ include "aether.fullname" . }}
 
-📚 Documentation: https://github.com/ssahani/aether
-🐛 Report issues: https://github.com/ssahani/aether/issues
+📚 Documentation: https://github.com/zyvorai/Aether
+🐛 Report issues: https://github.com/zyvorai/Aether/issues

@@ -17,7 +17,7 @@ stages:
 
 # Reusable configuration
 .install_aether: &install_aether
-  - curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+  - curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
   - chmod +x aether-linux-amd64
   - mv aether-linux-amd64 /usr/local/bin/aether
   - aether --version

@@ -121,7 +121,7 @@ kubectl get crds | grep kubevirt
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/aether
+git clone https://github.com/zyvorai/Aether
 cd aether
 
 # Build release binary

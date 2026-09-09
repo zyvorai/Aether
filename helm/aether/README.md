@@ -10,28 +10,15 @@ This Helm chart deploys Aether as a Kubernetes operator for managing workloads a
 
 ## Installation
 
-### Add Helm Repository
-
 ```bash
-# Add the Aether Helm repository (when published)
-helm repo add aether https://ssahani.github.io/aether/charts
-helm repo update
-```
+# From OCI (when charts are published)
+helm install aether oci://ghcr.io/zyvorai/charts/aether --version 0.4.0
 
-### Install from Local Chart
-
-```bash
-# From the repository root
+# From a local checkout
 helm install aether ./helm/aether
 
-# Or with custom values
-helm install aether ./helm/aether -f custom-values.yaml
-```
-
-### Install with Custom Namespace
-
-```bash
-helm install aether ./helm/aether \
+# Custom values / namespace
+helm install aether ./helm/aether -f custom-values.yaml \
   --namespace aether-system \
   --create-namespace
 ```
@@ -45,7 +32,7 @@ helm install aether ./helm/aether \
 replicaCount: 1
 
 image:
-  repository: ghcr.io/ssahani/aether
+  repository: ghcr.io/zyvorai/aether
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
@@ -383,7 +370,7 @@ kubectl delete pvc -l app.kubernetes.io/instance=aether
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `replicaCount` | Number of Aether replicas | `1` |
-| `image.repository` | Container image repository | `ghcr.io/ssahani/aether` |
+| `image.repository` | Container image repository | `ghcr.io/zyvorai/aether` |
 | `image.tag` | Container image tag | `Chart.appVersion` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `serviceAccount.create` | Create service account | `true` |
@@ -479,5 +466,5 @@ Proprietary (HyperSDK)
 
 ## Support
 
-- GitHub Issues: https://github.com/ssahani/aether/issues
-- Documentation: https://github.com/ssahani/aether
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
+- Documentation: https://github.com/zyvorai/Aether

@@ -75,6 +75,30 @@ aether --help
 
 Also available: **macOS amd64** (`aether-macos-amd64`) and `.sha256` checksums on the [Releases](https://github.com/zyvorai/Aether/releases) page.
 
+### Run from GHCR (container)
+
+Official images publish from the Release workflow to GitHub Container Registry:
+
+```bash
+# Pull
+docker pull ghcr.io/zyvorai/aether:0.4.0
+# or: docker pull ghcr.io/zyvorai/aether:latest
+
+# CLI via container (mount state + kubeconfig)
+docker run --rm -it \
+  -v "$HOME/.aether:/root/.aether" \
+  -v "$HOME/.kube:/root/.kube:ro" \
+  -v "$(pwd):/work" -w /work \
+  ghcr.io/zyvorai/aether:0.4.0 --help
+
+# API + glass dashboard on :5090
+docker run --rm -p 5090:5090 \
+  -v "$HOME/.aether:/root/.aether" \
+  ghcr.io/zyvorai/aether:0.4.0 serve --host 0.0.0.0 --port 5090
+```
+
+Tags: `latest`, `0.4.0`, `0.4`, `0` — image: [`ghcr.io/zyvorai/aether`](https://github.com/zyvorai/Aether/pkgs/container/aether).
+
 ### Run a workload
 
 ```bash

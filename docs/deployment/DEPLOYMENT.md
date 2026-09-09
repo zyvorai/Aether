@@ -1,6 +1,6 @@
 # Aether Deployment Guide
 
-This guide covers all deployment options for Aetheracross different environments and use cases.
+This guide covers all deployment options for Aether across different environments and use cases.
 
 ## Deployment Options
 
@@ -23,13 +23,13 @@ Aether can be deployed in multiple ways:
 
 ```bash
 # Pull latest image
-docker pull ghcr.io/ssahani/aether:latest
+docker pull ghcr.io/zyvorai/aether:latest
 
 # Create alias for convenience
 alias aether='docker run --rm \
   -v ~/.aether:/root/.aether \
   -v ~/.kube:/root/.kube \
-  ghcr.io/ssahani/aether:latest'
+  ghcr.io/zyvorai/aether:latest'
 
 # Use normally
 aether --help
@@ -46,7 +46,7 @@ docker run --rm \
   -v ~/.kube:/root/.kube \
   -v $(pwd):/workspace \
   -w /workspace \
-  ghcr.io/ssahani/aether:latest \
+  ghcr.io/zyvorai/aether:latest \
   run -s workload.yaml
 ```
 
@@ -56,7 +56,7 @@ docker run --rm \
 version: '3.8'
 services:
   aether:
-    image: ghcr.io/ssahani/aether:latest
+    image: ghcr.io/zyvorai/aether:latest
     volumes:
       - aether-state:/root/.aether
       - ~/.kube:/root/.kube:ro
@@ -74,13 +74,13 @@ volumes:
 
 ```bash
 # Linux (amd64)
-curl -L https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64 -o aether
+curl -L https://github.com/zyvorai/Aether/releases/latest/download/aether-linux-amd64 -o aether
 
 # macOS (amd64)
-curl -L https://github.com/ssahani/aether/releases/latest/download/aether-macos-amd64 -o aether
+curl -L https://github.com/zyvorai/Aether/releases/latest/download/aether-macos-amd64 -o aether
 
 # macOS (ARM64)
-curl -L https://github.com/ssahani/aether/releases/latest/download/aether-macos-arm64 -o aether
+curl -L https://github.com/zyvorai/Aether/releases/latest/download/aether-macos-arm64 -o aether
 
 # Make executable
 chmod +x aether
@@ -106,7 +106,7 @@ aether --help
 
 ```bash
 # Download package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
 
 # Install
 sudo apt install ./aether_0.1.0-1_amd64.deb
@@ -136,7 +136,7 @@ Automatically installed to:
 
 ```bash
 # Download package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install with DNF (Fedora/RHEL 8+)
 sudo dnf install aether-0.1.0-1.x86_64.rpm
@@ -159,7 +159,7 @@ rpm -ql aether  # List installed files
 
 ```bash
 # Download package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
 sudo zypper install aether-0.1.0-1.x86_64.rpm
@@ -180,7 +180,7 @@ sudo zypper install aether-0.1.0-1.x86_64.rpm
 
 ```bash
 # From repository
-git clone https://github.com/ssahani/aether
+git clone https://github.com/zyvorai/Aether
 cd aether
 
 # Install with default values
@@ -270,7 +270,7 @@ kubectl delete pvc -l app.kubernetes.io/instance=aether
 
 ```bash
 # Clone repository
-git clone https://github.com/ssahani/aether
+git clone https://github.com/zyvorai/Aether
 cd aether
 
 # Build release binary
@@ -365,7 +365,7 @@ kubectl get nodes
 # Copy to container (if using Docker)
 docker run --rm \
   -v ~/.kube:/root/.kube \
-  ghcr.io/ssahani/aether:latest \
+  ghcr.io/zyvorai/aether:latest \
   kubectl get nodes
 ```
 
@@ -474,6 +474,6 @@ After deployment:
 
 ## Support
 
-- **Documentation**: https://github.com/ssahani/aether
-- **Issues**: https://github.com/ssahani/aether/issues
-- **Discussions**: https://github.com/ssahani/aether/discussions
+- **Documentation**: https://github.com/zyvorai/Aether
+- **Issues**: https://github.com/zyvorai/Aether/issues
+- **Discussions**: https://github.com/zyvorai/Aether/discussions

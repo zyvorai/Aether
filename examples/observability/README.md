@@ -449,7 +449,7 @@ groups:
     annotations:
       summary: "Workload deployment failed"
       description: "Workload {{ $labels.workload }} failed to deploy"
-      runbook_url: "https://github.com/ssahani/aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
+      runbook_url: "https://github.com/zyvorai/Aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
 
   - alert: WorkloadCrashLoop
     expr: |
@@ -1159,6 +1159,6 @@ rules:
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `observability` or `monitoring`
-- Documentation: https://github.com/ssahani/aether/tree/main/docs
+- Documentation: https://github.com/zyvorai/Aether/tree/main/docs

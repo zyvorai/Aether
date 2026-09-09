@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        Universal runtime control plane
 
 License:        MIT OR Apache-2.0
-URL:            https://github.com/ssahani/aether
+URL:            https://github.com/zyvorai/Aether
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  rust >= 1.70

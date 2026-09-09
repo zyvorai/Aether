@@ -348,7 +348,7 @@ Requires Grafana Enterprise or Image Renderer plugin:
 ## Support
 
 For issues or feature requests:
-- GitHub: https://github.com/ssahani/aether/issues
+- GitHub: https://github.com/zyvorai/Aether/issues
 - Documentation: `docs/METRICS.md`
 
 ## Related Resources

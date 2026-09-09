@@ -257,7 +257,7 @@ data:
         annotations:
           summary: "Workload deployment failure detected"
           description: "Workload {{ $labels.workload }} failed to deploy in namespace {{ $labels.namespace }}"
-          runbook_url: "https://github.com/ssahani/aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
+          runbook_url: "https://github.com/zyvorai/Aether/blob/main/docs/RUNBOOK.md#workload-deployment-failure"
 
       - alert: MigrationFailureRateHigh
         expr: |

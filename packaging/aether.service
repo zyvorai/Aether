@@ -1,6 +1,6 @@
 [Unit]
 Description=Aether Universal Runtime Control Plane
-Documentation=https://github.com/ssahani/aether
+Documentation=https://github.com/zyvorai/Aether
 After=network-online.target
 Wants=network-online.target
 

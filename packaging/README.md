@@ -14,7 +14,7 @@ This directory contains packaging specifications for distributing Aether across 
 
 ```bash
 # Download DEB package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether_0.1.0-1_amd64.deb
 
 # Install
 sudo dpkg -i aether_0.1.0-1_amd64.deb
@@ -27,7 +27,7 @@ sudo apt install ./aether_0.1.0-1_amd64.deb
 
 ```bash
 # Download RPM package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
 sudo rpm -ivh aether-0.1.0-1.x86_64.rpm
@@ -40,7 +40,7 @@ sudo dnf install aether-0.1.0-1.x86_64.rpm
 
 ```bash
 # Download RPM package
-wget https://github.com/ssahani/aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
+wget https://github.com/zyvorai/Aether/releases/download/v0.1.0/aether-0.1.0-1.x86_64.rpm
 
 # Install
 sudo zypper install aether-0.1.0-1.x86_64.rpm
@@ -242,13 +242,13 @@ To improve packaging:
 ## Package Hosting
 
 Packages are hosted on:
-- GitHub Releases: https://github.com/ssahani/aether/releases
+- GitHub Releases: https://github.com/zyvorai/Aether/releases
 - PackageCloud (optional): https://packagecloud.io/aether/stable
 
 ## Support
 
 For packaging issues:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `packaging`
 
 ## References

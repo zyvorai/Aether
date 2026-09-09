@@ -97,7 +97,7 @@ Complete e-commerce application demonstrating Aether multi-runtime deployment wi
 
 ```bash
 # Install Aether
-curl -LO https://github.com/ssahani/aether/releases/latest/download/aether-linux-amd64
+curl -LO https://github.com/zyvorai/Aether/releases/latest/download/aether-linux-amd64
 chmod +x aether-linux-amd64
 sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -502,5 +502,5 @@ kubectl delete namespace ecommerce
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/ssahani/aether/issues
+- GitHub Issues: https://github.com/zyvorai/Aether/issues
 - Tag: `example-microservices`

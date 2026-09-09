@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -146,7 +146,7 @@ jobs:
     steps:
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -175,7 +175,7 @@ jobs:
 
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -243,7 +243,7 @@ jobs:
 
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -292,7 +292,7 @@ jobs:
     steps:
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
@@ -323,7 +323,7 @@ jobs:
     steps:
       - name: Install Aether
         run: |
-          curl -LO https://github.com/ssahani/aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
+          curl -LO https://github.com/zyvorai/Aether/releases/download/v${AETHER_VERSION}/aether-linux-amd64
           chmod +x aether-linux-amd64
           sudo mv aether-linux-amd64 /usr/local/bin/aether
 
