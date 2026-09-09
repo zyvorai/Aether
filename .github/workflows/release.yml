@@ -77,10 +77,11 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          # Prefer GHCR_TOKEN (PAT with write:packages) when GITHUB_TOKEN cannot
-          # create/link the user package; falls back to the job token.
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          # Match guestkit: login as the triggering actor with GITHUB_TOKEN.
+          # Using repository_owner while actor is ssahani caused
+          # permission_denied: read_package on push.
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
