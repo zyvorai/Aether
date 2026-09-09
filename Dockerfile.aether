@@ -1,5 +1,5 @@
 # Multi-stage build for Aether CLI
-FROM rust:1.88-slim as builder
+FROM rust:1.88-slim AS builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -57,5 +57,5 @@ CMD ["--help"]
 # Labels
 LABEL org.opencontainers.image.title="Aether"
 LABEL org.opencontainers.image.description="Universal Runtime Control Plane"
-LABEL org.opencontainers.image.source="https://github.com/ssahani/aether"
-LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/zyvorai/Aether"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
