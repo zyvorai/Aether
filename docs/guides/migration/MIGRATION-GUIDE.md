@@ -204,5 +204,5 @@ ls ~/.aether/snapshots/my-app-*
 | Document | Description |
 |----------|-------------|
 | [Migration Checklist](../operations/MIGRATION_CHECKLIST.md) | Detailed pre/post migration steps |
-| [Migration Strategies Deck](../../client-presentations/03-migration-strategies.html) | Client-facing presentation |
+| [Migration internals](MIGRATION-INTERNALS.md) | Engine behavior and strategies |
 | [Architecture](../../architecture/ARCHITECTURE.md) | Migration engine internals |

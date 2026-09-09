@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/readme/zyvor-logo.svg" alt="Zyvor" width="72" height="72"/>
+<img src="docs/assets/readme/zyvor-logo.png" alt="Zyvor" width="72" height="72"/>
 
 # Aether
 
@@ -17,7 +17,7 @@ The universal runtime control plane — deploy the same workload to **Podman**, 
 
 <br/>
 
-<img src="docs/architecture/diagrams/portability-spine.svg" alt="Aether portability: one Workload YAML to Podman, Kubernetes, and KubeVirt" width="880"/>
+<img src="docs/assets/readme/portability-spine.png" alt="Aether portability: one Workload YAML to Podman, Kubernetes, and KubeVirt" width="880"/>
 
 </div>
 

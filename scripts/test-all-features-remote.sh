@@ -9,7 +9,7 @@
 # Environment:
 #   AETHER_TEST_TIERS   Comma list, or preset: quick | full
 #     quick → smoke
-#     full  → smoke,labs-live,confidential,deploy-remove,playwright-all
+#     full  → smoke,labs-live,deploy-remove,playwright-all
 #   AETHER_API          Base URL (default http://HOST:30090)
 #   AETHER_E2E_REPORT_JSON  Optional path for JSON summary
 #   AETHER_E2E_KIND=1   Enables playwright-exec tier (kind cluster exec tests)
@@ -22,7 +22,7 @@ ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 HOST="${1:-${AETHER_REMOTE_HOST:-${DEPLOY_HOST:-}}}"
 USER="${2:-${AETHER_REMOTE_USER:-${DEPLOY_USER:-sus}}}"
 NODE_PORT="${AETHER_NODE_PORT:-30090}"
-TIERS_RAW="${AETHER_TEST_TIERS:-smoke,labs-dry,confidential}"
+TIERS_RAW="${AETHER_TEST_TIERS:-smoke,labs-dry}"
 
 if [[ -z "${HOST}" ]]; then
     echo "Usage: $0 <host> [ssh_user]" >&2
@@ -31,7 +31,7 @@ fi
 
 case "${TIERS_RAW}" in
     quick) TIERS="smoke" ;;
-    full) TIERS="smoke,labs-live,confidential,deploy-remove,playwright-all" ;;
+    full) TIERS="smoke,labs-live,deploy-remove,playwright-all" ;;
     *) TIERS="${TIERS_RAW}" ;;
 esac
 
@@ -90,18 +90,7 @@ if tier_enabled labs-live; then
 fi
 
 if tier_enabled confidential; then
-    run_tier_cmd confidential bash -c "
-        set -euo pipefail
-        cd '${ROOT}'
-        chmod +x scripts/confidential-fabric-e2e.sh scripts/confidential-cluster-e2e.sh \
-            scripts/lib/aether-confidential-smoke.sh
-        AETHER_API='${AETHER_API}' AETHER_TEE_SNP=1 scripts/confidential-fabric-e2e.sh
-        if [[ -x ./target/release/aether ]]; then AETHER_BIN=./target/release/aether; \
-          elif [[ -x ./target/debug/aether ]]; then AETHER_BIN=./target/debug/aether; \
-          else cargo build --release && AETHER_BIN=./target/release/aether; fi
-        AETHER_API='${AETHER_API}' AETHER_TEE_SNP=1 AETHER_BIN=\"\${AETHER_BIN}\" \
-            scripts/confidential-cluster-e2e.sh
-    " || true
+    record_tier_skipped confidential "Ragnarok confidential E2E is not shipped in this repository"
 fi
 
 if tier_enabled deploy-remove; then

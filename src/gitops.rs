@@ -833,7 +833,28 @@ mod tests {
     #[test]
     fn test_audit_confidential_changes_parses_enabled_workload() {
         let dir = tempfile::tempdir().unwrap();
-        let yaml = include_str!("../examples/confidential-snp.yaml");
+        // Minimal forward-compat confidential YAML (Ragnarok is not shipped in-tree).
+        let yaml = r#"
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: confidential-app
+  owner: test
+  project: test
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+requirements:
+  cpu: "500m"
+  memory: 256Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow: [kube]
+confidential:
+  enabled: true
+"#;
         let path = dir.path().join("workloads/conf.yaml");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, yaml).unwrap();

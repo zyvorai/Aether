@@ -47,15 +47,4 @@ for entry in "${SPECS[@]}"; do
   "$AETHER" --dry-run migrate "$name" "$target" --strategy blue-green
 done
 
-if [ -f scripts/confidential-cluster-e2e.sh ]; then
-  echo "==> Confidential migration plan smoke (offline API when server available)"
-  if curl -sf "${AETHER_API:-http://127.0.0.1:5090}/health" >/dev/null 2>&1; then
-    chmod +x scripts/lib/aether-confidential-smoke.sh 2>/dev/null || true
-    curl -sf "${AETHER_API}/api/ai/migration-plan/demo-podman-k8s/kubernetes" >/dev/null \
-      || echo "  (migration-plan API optional skip)"
-  else
-    echo "  (skip API migration-plan: no server at ${AETHER_API:-http://127.0.0.1:5090})"
-  fi
-fi
-
 echo "Migration dry-run E2E complete."

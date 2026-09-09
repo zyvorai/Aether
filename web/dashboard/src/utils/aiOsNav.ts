@@ -11,7 +11,7 @@ export interface AiOsNavSection {
   views: AppView[];
 }
 
-/** Twelve-section AI OS navigation — see docs/VISION-AI-OS.md */
+/** Twelve-section AI OS navigation — see docs/ROADMAP.md */
 export const AI_OS_NAV: AiOsNavSection[] = [
   {
     id: 'overview',

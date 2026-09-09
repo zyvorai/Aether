@@ -63,6 +63,5 @@ Use Aether when you need **one spec** across dev (Podman), prod (K8s), and isola
 ## Links
 
 - [Product overview](PRODUCT.md)
-- [Product tiers](PRODUCT-TIERS.md)
-- [Ragnarok and Aether — integration](guides/security/RAGNAROK-AND-AETHER.md)
-- README — Zyvor platform section
+- [README](../README.md) — Zyvor stack note
+- [zyvor.dev](https://zyvor.dev) — Confidential computing (**Ragnarok**) is a separate product

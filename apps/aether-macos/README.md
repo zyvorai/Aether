@@ -49,5 +49,5 @@ Output: `src-tauri/target/release/bundle/dmg/`
 
 ## Related
 
-- [VISION-AI-OS.md](../../docs/VISION-AI-OS.md)
+- [Roadmap (AI OS phases)](../../docs/ROADMAP.md)
 - [WEBUI.md](../../docs/WEBUI.md)

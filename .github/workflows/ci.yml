@@ -58,11 +58,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Validate example specs
         run: |
-          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/workload-k8s-advanced.yaml examples/confidential-kata-workload.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
+          for f in examples/demo-webserver.yaml examples/workload-full-featured.yaml examples/workload-k8s-advanced.yaml examples/labs/kubevirt/workload.yaml examples/labs/kubernetes/workload.yaml; do
             cargo run --quiet -- --spec "$f" validate
           done
-          chmod +x scripts/validate-confidential-examples.sh scripts/validate-schema-examples.sh
-          AETHER_BIN=./target/debug/aether scripts/validate-confidential-examples.sh
+          chmod +x scripts/validate-schema-examples.sh
           AETHER_BIN=./target/debug/aether scripts/validate-schema-examples.sh
       - name: Run tests
         env:
@@ -207,24 +206,15 @@ jobs:
           npx playwright install chromium --with-deps
       - name: Run observability API smoke
         run: |
-          chmod +x scripts/k8s-api-smoke.sh scripts/confidential-fabric-e2e.sh scripts/lib/aether-confidential-smoke.sh
-          AETHER_TEE_SNP=1 ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          chmod +x scripts/k8s-api-smoke.sh
+          ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
           SERVER_PID=$!
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           AETHER_API=http://127.0.0.1:5090 scripts/k8s-api-smoke.sh
-          AETHER_API=http://127.0.0.1:5090 AETHER_TEE_SNP=1 scripts/confidential-fabric-e2e.sh
-          kill $SERVER_PID || true
-      - name: Confidential CLI cluster E2E (offline)
-        run: |
-          chmod +x scripts/confidential-cluster-e2e.sh scripts/lib/aether-confidential-smoke.sh
-          AETHER_TEE_SNP=1 ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
-          SERVER_PID=$!
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
-          AETHER_API=http://127.0.0.1:5090 AETHER_BIN=../../target/release/aether ../../scripts/confidential-cluster-e2e.sh
           kill $SERVER_PID || true
       - name: Reference cluster E2E (offline)
         run: |
-          chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/confidential-cluster-e2e.sh
+          chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh
           AETHER_BIN=./target/release/aether scripts/reference-cluster-e2e.sh
       - name: Run Playwright smoke
         working-directory: web/dashboard

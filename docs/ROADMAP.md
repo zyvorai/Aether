@@ -51,7 +51,7 @@
 
 ## AI Infrastructure OS (Product Vision)
 
-Full vision: [VISION-AI-OS.md](VISION-AI-OS.md) · 100-phase backlog: [PHASES-AI-OS.md](PHASES-AI-OS.md)
+AI OS command-center navigation and intelligence panels ship in the dashboard; this table tracks product maturity by phase.
 
 | Phase | Focus | Status |
 |-------|-------|--------|
@@ -353,5 +353,6 @@ Update this file when items graduate to Ship.
 
 ## Related engineering docs
 
-- [NEXT-STEPS.md](NEXT-STEPS.md) — HA/OIDC implementation checklist
+- [Deployment topologies](architecture/DEPLOYMENT-TOPOLOGIES.md) — HA / hybrid layouts
+- [Enterprise security](guides/security/ENTERPRISE-SECURITY.md) — OIDC / SAML / RBAC
 - [Trust Layer guides](index.md#trust-and-proof)

@@ -4,7 +4,7 @@
 # ============================================================================
 #
 # Default tiers (AETHER_LIVE_TIERS=all):
-#   api-live, smoke, deploy-remove, confidential, labs-live, playwright-all
+#   api-live, smoke, deploy-remove, labs-live, playwright-all
 #
 # Usage:
 #   ./scripts/api-live-test.sh
@@ -51,7 +51,7 @@ HOST="${POSITIONAL[0]:-${AETHER_REMOTE_HOST:-${DEPLOY_HOST:-}}}"
 USER="${POSITIONAL[1]:-${AETHER_REMOTE_USER:-${DEPLOY_USER:-sus}}}"
 
 case "${TIERS_RAW}" in
-  all) TIERS="api-live,smoke,deploy-remove,confidential,labs-live,playwright-all" ;;
+  all) TIERS="api-live,smoke,deploy-remove,labs-live,playwright-all" ;;
   quick) TIERS="api-live,smoke" ;;
   *) TIERS="${TIERS_RAW}" ;;
 esac
@@ -148,18 +148,7 @@ if tier_enabled deploy-remove; then
 fi
 
 if tier_enabled confidential; then
-  run_tier_cmd confidential bash -c "
-    set -euo pipefail
-    cd '${ROOT}'
-    chmod +x scripts/confidential-fabric-e2e.sh scripts/confidential-cluster-e2e.sh \
-      scripts/lib/aether-confidential-smoke.sh
-    AETHER_API='${API}' AETHER_TEE_SNP=1 scripts/confidential-fabric-e2e.sh
-    if [[ -x ./target/release/aether ]]; then AETHER_BIN=./target/release/aether; \
-      elif [[ -x ./target/debug/aether ]]; then AETHER_BIN=./target/debug/aether; \
-      else cargo build --release && AETHER_BIN=./target/release/aether; fi
-    AETHER_API='${API}' AETHER_TEE_SNP=1 AETHER_BIN=\"\${AETHER_BIN}\" \
-      scripts/confidential-cluster-e2e.sh
-  " || true
+  record_tier_skipped confidential "Ragnarok confidential E2E is not shipped in this repository"
 fi
 
 if tier_enabled labs-live; then

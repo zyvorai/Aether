@@ -2,7 +2,7 @@
 
 > Production security narrative for regulated environments.
 
-See also: [Security Features](../features/security.md) · [Presentation 04](../../client-presentations/04-security-compliance.html)
+See also: [Security Features](../../features/security.md)
 
 ---
 
@@ -60,7 +60,7 @@ See [AIR-GAPPED.md](../deployment/AIR-GAPPED.md) for offline bundle install with
 
 ## IdP runbook
 
-1. Deploy mock or corporate IdP (Keycloak, Okta) per `docs/NEXT-STEPS.md`
+1. Deploy mock or corporate IdP (Keycloak, Okta); for local/CI set `AETHER_MOCK_IDP=1`
 2. Configure Helm `oidc.*` values
 3. Map groups → RBAC roles
 4. Verify dashboard login and API token exchange

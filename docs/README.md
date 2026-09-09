@@ -31,10 +31,6 @@ Universal runtime portability — deploy once, run on Podman, Kubernetes, or Kub
 | Integrations | [integrations/](integrations/) |
 | Legal | [legal/](legal/) |
 
-## Archive
-
-Historical phase logs and legacy notes live under [archive/](archive/) and are not maintained.
-
 ## Zyvor stack
 
 See [ECOSYSTEM.md](ECOSYSTEM.md) and [zyvor.dev](https://zyvor.dev). Confidential computing (**Ragnarok**) is a separate product and is not part of this repository.

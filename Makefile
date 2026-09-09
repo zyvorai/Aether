@@ -1,5 +1,5 @@
 .PHONY: help build test lint clean install release docker run-dev \
-	confidential-validate confidential-fabric-e2e confidential-cluster-e2e reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
+	reference-cluster-e2e reference-cluster-live reference-cluster-live-verify \
 	post-deploy-verify remote-post-deploy-verify remote-reference-verify api-live-test api-live-test-remote \
 	test-remote-smoke test-remote-quick test-remote-all \
 	deploy-remote deploy-all-remote test-platform-remote
@@ -20,10 +20,7 @@ help:
 	@echo "  docker     - Build Docker image"
 	@echo "  run-dev    - Run in development mode with verbose logging"
 	@echo "  ci         - Run CI checks (test + lint + dashboard build + vitest)"
-	@echo "  confidential-validate      - Validate examples/confidential-*.yaml"
-	@echo "  confidential-fabric-e2e    - API smoke (AETHER_API, server running)"
-	@echo "  confidential-cluster-e2e   - CLI placement/migrate checks (no live deploy)"
-	@echo "  reference-cluster-e2e    - KubeVirt + confidential kata validate (dry-run by default)"
+	@echo "  reference-cluster-e2e    - KubeVirt labs E2E (dry-run by default)"
 	@echo "  reference-cluster-live     - Live KubeVirt smoke (requires kubeconfig)"
 	@echo "  reference-cluster-live-verify - Live smoke + post-deploy API verify"
 	@echo "  post-deploy-verify         - API smoke against AETHER_API (default localhost:5090)"
@@ -42,7 +39,6 @@ help:
 	@echo "  deploy-reference-sso         - Deploy remote with mock IdP SSO (AETHER_DEPLOY_ENV)"
 	@echo "  deploy-with-ldap             - Deploy remote with LDAP/AD (AETHER_DEPLOY_ENV required)"
 	@echo "  deploy-hosted-stripe-prod    - Deploy remote with Stripe production billing env"
-	@echo "  deploy-confidential-snp-lab  - Validate confidential SNP lab (offline smoke)"
 	@echo "  migration-dry-run-e2e        - Validate demo specs + dry-run migrate targets"
 
 build:
@@ -84,7 +80,7 @@ run-dev:
 	@echo "Running aether in development mode..."
 	cargo run -- -v --help
 
-ci: test lint confidential-validate audit-warn dashboard-glass dashboard-unit
+ci: test lint audit-warn dashboard-glass dashboard-unit
 	@echo "CI checks passed!"
 
 dashboard-glass:
@@ -99,24 +95,12 @@ audit-warn:
 	@echo "Running cargo audit (non-blocking)..."
 	-cargo audit
 
-confidential-validate:
-	@chmod +x scripts/validate-confidential-examples.sh 2>/dev/null || true
-	@./scripts/validate-confidential-examples.sh
-
-confidential-fabric-e2e:
-	@chmod +x scripts/confidential-fabric-e2e.sh scripts/lib/aether-confidential-smoke.sh 2>/dev/null || true
-	@./scripts/confidential-fabric-e2e.sh
-
-confidential-cluster-e2e: release
-	@chmod +x scripts/confidential-cluster-e2e.sh 2>/dev/null || true
-	@./scripts/confidential-cluster-e2e.sh
-
 deploy-remove-e2e:
 	@chmod +x scripts/deploy-remove-e2e.sh 2>/dev/null || true
 	@./scripts/deploy-remove-e2e.sh
 
 reference-cluster-e2e: release
-	@chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh scripts/confidential-cluster-e2e.sh 2>/dev/null || true
+	@chmod +x scripts/reference-cluster-e2e.sh scripts/labs-e2e.sh 2>/dev/null || true
 	@./scripts/reference-cluster-e2e.sh
 
 reference-cluster-live: release
@@ -199,10 +183,6 @@ deploy-with-ldap:
 deploy-hosted-stripe-prod:
 	@chmod +x scripts/deploy-hosted-stripe-prod.sh 2>/dev/null || true
 	@echo "Usage: AETHER_DEPLOY_ENV=~/aether-stripe.env make deploy-hosted-stripe-prod HOST=<ip> USER=<ssh-user>"
-
-deploy-confidential-snp-lab:
-	@chmod +x scripts/deploy-confidential-snp-lab.sh scripts/confidential-cluster-e2e.sh scripts/lib/aether-confidential-smoke.sh 2>/dev/null || true
-	@./scripts/deploy-confidential-snp-lab.sh
 
 migration-dry-run-e2e:
 	@cargo build --quiet 2>/dev/null || cargo build
