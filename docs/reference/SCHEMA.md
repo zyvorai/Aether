@@ -1,4 +1,9 @@
-# Workload Schema Documentation
+---
+hero:
+  eyebrow: REFERENCE
+  title: Workload Schema Documentation
+  tone: rust
+---
 
 This document describes how to use the Aether workload JSON Schema for IDE autocomplete and validation.
 

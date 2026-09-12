@@ -1,4 +1,9 @@
-# Access Control
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Access Control
+  tone: sky
+---
 
 ## Purpose
 

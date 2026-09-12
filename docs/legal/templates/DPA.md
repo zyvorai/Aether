@@ -1,4 +1,9 @@
-# Data Processing Agreement (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Data Processing Agreement (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

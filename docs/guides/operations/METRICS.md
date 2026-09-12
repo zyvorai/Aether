@@ -1,4 +1,9 @@
-# Prometheus Metrics
+---
+hero:
+  eyebrow: GUIDES
+  title: Prometheus Metrics
+  tone: violet
+---
 
 Aether provides comprehensive Prometheus metrics for monitoring deployments, migrations, and system health.
 

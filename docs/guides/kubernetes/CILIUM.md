@@ -1,7 +1,9 @@
-# Cilium on Kubernetes with Aether
-
-> Bootstrap egress policies, workload CNPs, and platform visibility.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: Cilium on Kubernetes with Aether
+  tone: violet
+  lead: Bootstrap egress policies, workload CNPs, and platform visibility.
 ---
 
 ## What ships today

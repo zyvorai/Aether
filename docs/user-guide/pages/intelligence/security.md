@@ -1,4 +1,9 @@
-# Security Center
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Security Center
+  tone: sky
+---
 
 ## Purpose
 

@@ -1,4 +1,9 @@
-# Runtime Fabric
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Runtime Fabric
+  tone: sky
+---
 
 ## Purpose
 

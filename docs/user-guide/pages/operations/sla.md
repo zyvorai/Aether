@@ -1,4 +1,9 @@
-# SLA Compliance
+---
+hero:
+  eyebrow: USER GUIDE
+  title: SLA Compliance
+  tone: sky
+---
 
 ## Purpose
 

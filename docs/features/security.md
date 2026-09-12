@@ -1,7 +1,10 @@
-# 🔐 Security Features
-
-> Encryption, secrets management, RBAC, API authentication, policy enforcement, audit integrity, email notifications, and safe state persistence.
-
+---
+hero:
+  eyebrow: FEATURES
+  title: 🔐 Security Features
+  tone: rust
+  lead: Encryption, secrets management, RBAC, API authentication, policy enforcement,
+    audit integrity, email notifications, and safe state persistence.
 ---
 
 ## 📑 Table of Contents

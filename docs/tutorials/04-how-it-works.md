@@ -1,10 +1,12 @@
-# 🔬 Tutorial 4: How Aether Works -- A Deep Dive
-
-> **Estimated time:** 90 minutes
-> **Level:** Advanced / Contributor
-> **Prerequisites:** [Tutorial 1 - Beginner Deployment](./01-beginner-deployment.md), [Tutorial 2 - Intermediate Workflows](./02-intermediate-workflows.md)
-> **License:** Proprietary HyperSDK
-
+---
+hero:
+  eyebrow: TUTORIALS
+  title: '🔬 Tutorial 4: How Aether Works -- A Deep Dive'
+  tone: amber
+  swatches:
+    - {label: "90 min", tone: amber}
+    - {label: "Level: Advanced / Contributor", tone: sky}
+    - {label: "Prereq: Tutorials 1–2", tone: violet}
 ---
 
 ## 📑 Table of Contents

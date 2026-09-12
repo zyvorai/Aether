@@ -1,4 +1,9 @@
-# AI Providers
+---
+hero:
+  eyebrow: USER GUIDE
+  title: AI Providers
+  tone: sky
+---
 
 ## Purpose
 

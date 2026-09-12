@@ -1,4 +1,9 @@
-# Acceptable Use Policy (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Acceptable Use Policy (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

@@ -1,4 +1,9 @@
-# Labs
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Labs
+  tone: sky
+---
 
 ## Purpose
 

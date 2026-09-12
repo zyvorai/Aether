@@ -1,4 +1,9 @@
-# Policy Check
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Policy Check
+  tone: sky
+---
 
 ## Purpose
 

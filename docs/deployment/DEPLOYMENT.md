@@ -1,4 +1,9 @@
-# Aether Deployment Guide
+---
+hero:
+  eyebrow: DEPLOYMENT
+  title: Aether Deployment Guide
+  tone: sky
+---
 
 This guide covers all deployment options for Aether across different environments and use cases.
 

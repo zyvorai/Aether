@@ -1,4 +1,9 @@
-# Workload Templates Guide
+---
+hero:
+  eyebrow: REFERENCE
+  title: Workload Templates Guide
+  tone: rust
+---
 
 Aether provides production-ready workload templates for common use cases. These templates follow best practices for security, scalability, and reliability.
 

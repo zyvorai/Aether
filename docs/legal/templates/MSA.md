@@ -1,4 +1,9 @@
-# Master Subscription Agreement (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Master Subscription Agreement (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

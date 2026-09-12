@@ -1,4 +1,9 @@
-# Aether customer PDFs
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Aether customer PDFs
+  tone: sky
+---
 
 Generated: 2026-08-29
 

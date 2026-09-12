@@ -1,4 +1,9 @@
-# Zyra — AI Infrastructure Operating Layer
+---
+hero:
+  eyebrow: REFERENCE
+  title: Zyra — AI Infrastructure Operating Layer
+  tone: rust
+---
 
 Zyra is Aether's first-class AI assistant — not a chatbot, but an ambient intelligence layer present throughout the platform.
 

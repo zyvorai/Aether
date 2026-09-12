@@ -1,4 +1,9 @@
-# Production Runbook
+---
+hero:
+  eyebrow: GUIDES
+  title: Production Runbook
+  tone: violet
+---
 
 Operational procedures, incident response, and troubleshooting guide for Aether deployments.
 

@@ -1,10 +1,12 @@
-# ⚙️ Tutorial 3: Advanced Features
-
-> **Estimated time:** 60--90 minutes
-> **Level:** Advanced
-> **Prerequisites:** [Tutorial 2 - Intermediate Workflows](./02-intermediate-workflows.md)
-> **License:** Proprietary HyperSDK
-
+---
+hero:
+  eyebrow: TUTORIALS
+  title: '⚙️ Tutorial 3: Advanced Features'
+  tone: amber
+  swatches:
+    - {label: "60–90 min", tone: amber}
+    - {label: "Level: Advanced", tone: sky}
+    - {label: "Prereq: Tutorial 2", tone: violet}
 ---
 
 ## 📑 Table of Contents

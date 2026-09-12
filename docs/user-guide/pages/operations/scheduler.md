@@ -1,4 +1,9 @@
-# Scheduler
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Scheduler
+  tone: sky
+---
 
 ## Purpose
 

@@ -1,7 +1,9 @@
-# Aether Roadmap
-
-> Ship vs Roadmap — no inflated claims.
-
+---
+hero:
+  eyebrow: ROADMAP
+  title: Aether Roadmap
+  tone: sky
+  lead: Ship vs Roadmap — no inflated claims.
 ---
 
 ## Shipped (Trust Layer)

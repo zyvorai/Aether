@@ -1,4 +1,9 @@
-# Compose Import
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Compose Import
+  tone: sky
+---
 
 ## Purpose
 

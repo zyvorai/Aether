@@ -1,4 +1,9 @@
-# Platform
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Platform
+  tone: sky
+---
 
 ## Purpose
 

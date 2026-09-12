@@ -1,4 +1,9 @@
-# OPA bundle sync with Helm
+---
+hero:
+  eyebrow: EXAMPLES & LABS
+  title: OPA bundle sync with Helm
+  tone: teal
+---
 
 When `opa.bundle.enabled` is true, the chart renders a ConfigMap `*-opa-bundle` with starter Rego.
 

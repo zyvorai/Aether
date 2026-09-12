@@ -1,4 +1,9 @@
-# Admin Basics (Aether)
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Admin Basics (Aether)
+  tone: sky
+---
 
 ## Ports / access
 

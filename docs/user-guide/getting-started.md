@@ -1,4 +1,9 @@
-# Getting Started with Aether
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Getting Started with Aether
+  tone: sky
+---
 
 ## What you need
 

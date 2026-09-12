@@ -1,4 +1,9 @@
-# Drift Detection
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Drift Detection
+  tone: sky
+---
 
 ## Purpose
 

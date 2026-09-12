@@ -1,4 +1,9 @@
-# Aether — User Guide
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Aether — User Guide
+  tone: sky
+---
 
 Universal runtime portability — place and move apps across Podman/K8s/KubeVirt with AI scoring and FinOps.
 

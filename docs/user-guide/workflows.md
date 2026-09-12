@@ -1,4 +1,9 @@
-# Common workflows
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Common workflows
+  tone: sky
+---
 
 ## Purpose
 

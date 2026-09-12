@@ -1,4 +1,9 @@
-# Fleet Overview
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Fleet Overview
+  tone: sky
+---
 
 ## Purpose
 

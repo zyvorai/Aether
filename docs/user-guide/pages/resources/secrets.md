@@ -1,4 +1,9 @@
-# Secrets
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Secrets
+  tone: sky
+---
 
 ## Purpose
 

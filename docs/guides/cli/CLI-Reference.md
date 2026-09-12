@@ -1,7 +1,10 @@
-# 📖 Aether CLI Reference
-
-> **Version:** See `aether --version`
-> **License:** Proprietary HyperSDK
+---
+hero:
+  eyebrow: GUIDES
+  title: 📖 Aether CLI Reference
+  tone: violet
+  lead: "One spec, three runtimes: Podman, Kubernetes, and KubeVirt."
+---
 
 Aether is the Universal Runtime Control Plane. One spec, three runtimes:
 Podman, Kubernetes, and KubeVirt.

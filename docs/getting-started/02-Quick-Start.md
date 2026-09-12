@@ -1,8 +1,10 @@
-# 🚀 Quick Start Guide
-
-> Deploy your first workload in under 5 minutes. From YAML spec to running instance
-> with status, logs, migration, and a TUI dashboard.
-
+---
+hero:
+  eyebrow: GETTING STARTED
+  title: 🚀 Quick Start Guide
+  tone: emerald
+  lead: Deploy your first workload in under 5 minutes. From YAML spec to running instance
+    with status, logs, migration, and a TUI dashboard.
 ---
 
 ## 📖 Table of Contents

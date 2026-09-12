@@ -1,4 +1,9 @@
-# Storage
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Storage
+  tone: sky
+---
 
 ## Purpose
 

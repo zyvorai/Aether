@@ -1,4 +1,9 @@
-# WebUI and REST API Guide
+---
+hero:
+  eyebrow: REFERENCE
+  title: WebUI and REST API Guide
+  tone: rust
+---
 
 Aether provides a full-featured React web dashboard and REST API for managing workloads through your browser.
 

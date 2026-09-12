@@ -1,7 +1,9 @@
-# Scoring Engine
-
-> How Aether ranks runtimes — weights, intent multipliers, and explain output.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: Scoring Engine
+  tone: violet
+  lead: How Aether ranks runtimes — weights, intent multipliers, and explain output.
 ---
 
 ## Formula

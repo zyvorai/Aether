@@ -1,4 +1,9 @@
-# Zyvor commercial legal framework
+---
+hero:
+  eyebrow: LEGAL
+  title: Zyvor commercial legal framework
+  tone: pink
+---
 
 **Draft for internal use and customer negotiation.** Have counsel licensed in your target jurisdictions (India, EU, US, etc.) review and finalize before any customer signs.
 

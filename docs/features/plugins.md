@@ -1,7 +1,9 @@
-# 🔌 Plugin System: Custom Runtime Extensions
-
-> Extend aether with third-party runtimes via a JSON manifest and JSON-RPC protocol.
-
+---
+hero:
+  eyebrow: FEATURES
+  title: '🔌 Plugin System: Custom Runtime Extensions'
+  tone: violet
+  lead: Extend aether with third-party runtimes via a JSON manifest and JSON-RPC protocol.
 ---
 
 ## 📑 Table of Contents

@@ -1,7 +1,9 @@
-# 🔄 Migration Guide
-
-> Complete guide to migrating workloads between runtimes with zero downtime.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: 🔄 Migration Guide
+  tone: violet
+  lead: Complete guide to migrating workloads between runtimes with zero downtime.
 ---
 
 ## 📑 Table of Contents

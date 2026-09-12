@@ -1,5 +1,11 @@
+---
+hero:
+  eyebrow: GUIDES
+  title: AWS → Kubernetes migration plan (all services)
+  tone: violet
+---
+
 <!-- Copyright 2026 ZyvorAI Labs Private Limited -- SPDX-License-Identifier: Apache-2.0 -->
-# AWS → Kubernetes migration plan (all services)
 
 A repeatable, evidence-based plan for moving an AWS-hosted platform — applications
 **and** managed services — onto a Kubernetes platform (K3s/RKE2/vanilla or KubeVirt),

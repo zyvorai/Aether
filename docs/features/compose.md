@@ -1,7 +1,10 @@
-# 🎼 Compose: Multi-Workload Deployments
-
-> Deploy entire application stacks with a single command using dependency-ordered orchestration.
-
+---
+hero:
+  eyebrow: FEATURES
+  title: '🎼 Compose: Multi-Workload Deployments'
+  tone: sky
+  lead: Deploy entire application stacks with a single command using dependency-ordered
+    orchestration.
 ---
 
 ## 📑 Table of Contents

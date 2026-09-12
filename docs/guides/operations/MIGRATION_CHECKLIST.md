@@ -1,7 +1,11 @@
-# ✈️ Migration Checklist
-
-> **Audience:** SREs, DevOps engineers, platform operators
-> **License:** Proprietary HyperSDK
+---
+hero:
+  eyebrow: GUIDES
+  title: ✈️ Migration Checklist
+  tone: violet
+  swatches:
+    - {label: "Audience: SREs & platform operators", tone: violet}
+---
 
 A step-by-step operational checklist for migrating workloads between Aether
 runtimes (Podman, Kubernetes, KubeVirt).

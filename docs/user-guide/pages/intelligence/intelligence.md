@@ -1,4 +1,9 @@
-# Intelligence Layer
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Intelligence Layer
+  tone: sky
+---
 
 ## Purpose
 

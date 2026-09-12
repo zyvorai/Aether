@@ -1,7 +1,9 @@
-# Demo Recording Guide
-
-> Capture CLI and dashboard footage for migration and decision-engine demos.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: Demo Recording Guide
+  tone: violet
+  lead: Capture CLI and dashboard footage for migration and decision-engine demos.
 ---
 
 ## Setup

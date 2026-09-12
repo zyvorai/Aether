@@ -1,6 +1,10 @@
-# Cloud Integration Matrix
-
-> Vendor support levels for Aether target runtimes.
+---
+hero:
+  eyebrow: INTEGRATIONS
+  title: Cloud Integration Matrix
+  tone: teal
+  lead: Vendor support levels for Aether target runtimes.
+---
 
 | Vendor | Runtime | Level | Notes |
 |--------|---------|-------|-------|

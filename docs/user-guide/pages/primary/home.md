@@ -1,4 +1,9 @@
-# Overview
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Overview
+  tone: sky
+---
 
 ## Purpose
 

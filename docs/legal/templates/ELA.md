@@ -1,4 +1,9 @@
-# Enterprise License Agreement (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Enterprise License Agreement (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

@@ -1,7 +1,10 @@
-# 🏥 Health Monitoring & Uptime Tracking
-
-> Track workload health over time with historical records, uptime calculations, and timeline views.
-
+---
+hero:
+  eyebrow: FEATURES
+  title: 🏥 Health Monitoring & Uptime Tracking
+  tone: emerald
+  lead: Track workload health over time with historical records, uptime calculations,
+    and timeline views.
 ---
 
 ## 📑 Table of Contents

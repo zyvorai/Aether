@@ -1,6 +1,10 @@
-# Deployment Topologies
-
-> How to run Aether in dev, production HA, hybrid cloud, and edge scenarios.
+---
+hero:
+  eyebrow: ARCHITECTURE
+  title: Deployment Topologies
+  tone: emerald
+  lead: How to run Aether in dev, production HA, hybrid cloud, and edge scenarios.
+---
 
 See also: [Architecture](../architecture/ARCHITECTURE.md) · [Production Reference](../deployment/PRODUCTION-REFERENCE.md) · Helm chart `helm/aether/`
 

@@ -1,4 +1,9 @@
-# Cost Estimation
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Cost Estimation
+  tone: sky
+---
 
 ## Purpose
 

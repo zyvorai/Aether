@@ -1,7 +1,9 @@
-# ⚡ aether Quick Reference Card
-
-> One-page cheat sheet for the Universal Runtime Control Plane.
-
+---
+hero:
+  eyebrow: QUICK REFERENCE
+  title: ⚡ aether Quick Reference Card
+  tone: amber
+  lead: One-page cheat sheet for the Universal Runtime Control Plane.
 ---
 
 ## 📑 Table of Contents

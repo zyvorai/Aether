@@ -1,4 +1,9 @@
-# Helm App Store
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Helm App Store
+  tone: sky
+---
 
 ## Purpose
 

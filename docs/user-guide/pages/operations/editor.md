@@ -1,4 +1,9 @@
-# Visual Editor
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Visual Editor
+  tone: sky
+---
 
 ## Purpose
 

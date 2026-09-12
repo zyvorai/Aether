@@ -1,4 +1,9 @@
-# KubeVirt reference lab
+---
+hero:
+  eyebrow: EXAMPLES & LABS
+  title: KubeVirt reference lab
+  tone: teal
+---
 
 Checklist for GPU / VM-style workloads via Aether’s KubeVirt adapter.
 

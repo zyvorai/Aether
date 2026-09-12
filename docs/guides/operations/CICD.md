@@ -1,4 +1,9 @@
-# CI/CD Integration Guide
+---
+hero:
+  eyebrow: GUIDES
+  title: CI/CD Integration Guide
+  tone: violet
+---
 
 Aether integrates seamlessly with popular CI/CD platforms for automated deployments, cost analysis, and workflow orchestration.
 

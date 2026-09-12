@@ -1,4 +1,9 @@
-# Order Form (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Order Form (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

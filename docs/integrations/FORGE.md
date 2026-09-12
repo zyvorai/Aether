@@ -1,5 +1,11 @@
+---
+hero:
+  eyebrow: INTEGRATIONS
+  title: Forge GPU / AI integration
+  tone: teal
+---
+
 <!-- Copyright 2026 ZyvorAI Labs Private Limited -- SPDX-License-Identifier: Apache-2.0 -->
-# Forge GPU / AI integration
 
 [Forge](https://github.com/ssahani/forge) is the Zyvor **AI infrastructure control
 plane** on Kubernetes. When enabled, Aether reads GPU capacity, node inventory,

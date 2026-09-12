@@ -1,4 +1,9 @@
-# Plugins
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Plugins
+  tone: sky
+---
 
 ## Purpose
 

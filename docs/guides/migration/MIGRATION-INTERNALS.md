@@ -1,6 +1,11 @@
-# Migration Internals
-
-> How Aether migrates workloads between runtimes — state machine, rollback, and honest limits.
+---
+hero:
+  eyebrow: GUIDES
+  title: Migration Internals
+  tone: violet
+  lead: How Aether migrates workloads between runtimes — state machine, rollback,
+    and honest limits.
+---
 
 See also: [Migration Guide](MIGRATION-GUIDE.md) · [Stateful Portability](STATEFUL-PORTABILITY.md)
 

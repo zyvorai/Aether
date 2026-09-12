@@ -1,4 +1,9 @@
-# Support and Service Level Agreement (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Support and Service Level Agreement (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

@@ -1,4 +1,9 @@
-# Health Monitor
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Health Monitor
+  tone: sky
+---
 
 ## Purpose
 

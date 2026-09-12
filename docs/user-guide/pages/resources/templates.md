@@ -1,4 +1,9 @@
-# Templates
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Templates
+  tone: sky
+---
 
 ## Purpose
 

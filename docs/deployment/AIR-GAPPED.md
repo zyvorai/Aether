@@ -1,7 +1,9 @@
-# Air-Gapped Deployment
-
-> Install and operate Aether without internet access.
-
+---
+hero:
+  eyebrow: DEPLOYMENT
+  title: Air-Gapped Deployment
+  tone: rust
+  lead: Install and operate Aether without internet access.
 ---
 
 ## Build offline bundle

@@ -1,4 +1,9 @@
-# Metrics
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Metrics
+  tone: sky
+---
 
 ## Purpose
 

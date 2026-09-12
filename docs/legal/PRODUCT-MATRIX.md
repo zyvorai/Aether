@@ -1,4 +1,9 @@
-# Product license matrix (draft)
+---
+hero:
+  eyebrow: LEGAL
+  title: Product license matrix (draft)
+  tone: pink
+---
 
 **Aether-core is open source; everything else below is proprietary** to ZyvorAI Labs Private Limited. No Apache, MIT, LGPL, or other open-source license applies to any other Zyvor-shipped source or binaries.
 

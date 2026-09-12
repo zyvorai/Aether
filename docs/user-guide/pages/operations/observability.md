@@ -1,4 +1,9 @@
-# Observability
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Observability
+  tone: sky
+---
 
 ## Purpose
 

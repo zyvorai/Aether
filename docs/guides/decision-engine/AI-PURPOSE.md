@@ -1,7 +1,9 @@
-# AI and Decision Engine Purpose
-
-> What the "AI" layer actually does — and what is rule-based vs learned vs LLM-assisted.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: AI and Decision Engine Purpose
+  tone: violet
+  lead: What the "AI" layer actually does — and what is rule-based vs learned vs LLM-assisted.
 ---
 
 ## Shipped capabilities

@@ -1,7 +1,9 @@
-# 🚀 Deployment Patterns
-
-> Common deployment patterns and best practices for Aether workloads.
-
+---
+hero:
+  eyebrow: DEPLOYMENT
+  title: 🚀 Deployment Patterns
+  tone: violet
+  lead: Common deployment patterns and best practices for Aether workloads.
 ---
 
 ## 📑 Table of Contents

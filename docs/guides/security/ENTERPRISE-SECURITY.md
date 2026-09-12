@@ -1,6 +1,10 @@
-# Enterprise Security
-
-> Production security narrative for regulated environments.
+---
+hero:
+  eyebrow: GUIDES
+  title: Enterprise Security
+  tone: violet
+  lead: Production security narrative for regulated environments.
+---
 
 See also: [Security Features](../../features/security.md)
 

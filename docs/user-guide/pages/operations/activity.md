@@ -1,4 +1,9 @@
-# Activity Monitor
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Activity Monitor
+  tone: sky
+---
 
 ## Purpose
 

@@ -1,7 +1,9 @@
-# Production Reference Architecture
-
-> Scale, upgrades, recovery, and controller failure handling.
-
+---
+hero:
+  eyebrow: DEPLOYMENT
+  title: Production Reference Architecture
+  tone: emerald
+  lead: Scale, upgrades, recovery, and controller failure handling.
 ---
 
 ## Reference stack

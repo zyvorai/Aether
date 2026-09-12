@@ -1,4 +1,9 @@
-# Migrations
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Migrations
+  tone: sky
+---
 
 ## Purpose
 

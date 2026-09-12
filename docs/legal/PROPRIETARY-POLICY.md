@@ -1,4 +1,9 @@
-# Proprietary software policy (draft)
+---
+hero:
+  eyebrow: LEGAL
+  title: Proprietary software policy (draft)
+  tone: pink
+---
 
 ## Position
 

@@ -1,4 +1,9 @@
-# Audit Trail
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Audit Trail
+  tone: sky
+---
 
 ## Purpose
 

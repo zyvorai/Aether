@@ -1,4 +1,9 @@
-# Using the Dashboard
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Using the Dashboard
+  tone: sky
+---
 
 Aether is organized by navigation groups (GlobalNav flyouts, desktop nav, or CLI command groups). Use search / command palette when available.
 

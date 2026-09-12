@@ -1,4 +1,9 @@
-# AI Engine
+---
+hero:
+  eyebrow: USER GUIDE
+  title: AI Engine
+  tone: sky
+---
 
 ## Purpose
 

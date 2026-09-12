@@ -1,4 +1,9 @@
-# Aether feature test plan
+---
+hero:
+  eyebrow: TEST PLAN
+  title: Aether feature test plan
+  tone: sky
+---
 
 End-to-end validation for the universal runtime control plane API, React dashboard, labs (Kubernetes / KubeVirt), and Playwright UI — aligned with Zyvor platform staging workflows.
 

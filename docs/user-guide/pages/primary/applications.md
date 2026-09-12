@@ -1,4 +1,9 @@
-# Applications
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Applications
+  tone: sky
+---
 
 ## Purpose
 

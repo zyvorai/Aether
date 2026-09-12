@@ -1,9 +1,11 @@
-# 🚀 Tutorial 1: Your First Deployment with Aether
-
-> **Estimated time:** 30--45 minutes
-> **Level:** Beginner
-> **License:** Proprietary HyperSDK
-
+---
+hero:
+  eyebrow: TUTORIALS
+  title: '🚀 Tutorial 1: Your First Deployment with Aether'
+  tone: amber
+  swatches:
+    - {label: "30–45 min", tone: amber}
+    - {label: "Level: Beginner", tone: sky}
 ---
 
 ## 📑 Table of Contents

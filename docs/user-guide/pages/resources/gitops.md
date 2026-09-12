@@ -1,4 +1,9 @@
-# GitOps
+---
+hero:
+  eyebrow: USER GUIDE
+  title: GitOps
+  tone: sky
+---
 
 ## Purpose
 

@@ -1,4 +1,9 @@
-# Zyra
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Zyra
+  tone: sky
+---
 
 ## Purpose
 

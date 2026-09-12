@@ -1,10 +1,12 @@
-# 🔄 Tutorial 2: Intermediate Workflows
-
-> **Estimated time:** 45--60 minutes
-> **Level:** Intermediate
-> **Prerequisites:** [Tutorial 1 - Beginner Deployment](./01-beginner-deployment.md)
-> **License:** Proprietary HyperSDK
-
+---
+hero:
+  eyebrow: TUTORIALS
+  title: '🔄 Tutorial 2: Intermediate Workflows'
+  tone: amber
+  swatches:
+    - {label: "45–60 min", tone: amber}
+    - {label: "Level: Intermediate", tone: sky}
+    - {label: "Prereq: Tutorial 1", tone: violet}
 ---
 
 ## 📑 Table of Contents

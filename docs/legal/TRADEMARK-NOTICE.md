@@ -1,4 +1,9 @@
-# Trademark notice (draft)
+---
+hero:
+  eyebrow: LEGAL
+  title: Trademark notice (draft)
+  tone: pink
+---
 
 ZyvorAI Labs Private Limited claims rights in the following marks (registered or unregistered, as applicable):
 

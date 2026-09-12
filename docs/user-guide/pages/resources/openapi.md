@@ -1,4 +1,9 @@
-# API Explorer
+---
+hero:
+  eyebrow: USER GUIDE
+  title: API Explorer
+  tone: sky
+---
 
 ## Purpose
 

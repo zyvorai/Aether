@@ -1,4 +1,9 @@
-# Aether — Complete page index
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Aether — Complete page index
+  tone: sky
+---
 
 Every primary navigable dashboard route.
 

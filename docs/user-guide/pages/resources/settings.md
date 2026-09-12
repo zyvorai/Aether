@@ -1,4 +1,9 @@
-# Settings
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Settings
+  tone: sky
+---
 
 ## Purpose
 

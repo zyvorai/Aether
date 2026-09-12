@@ -1,4 +1,9 @@
-# Export compliance addendum (template)
+---
+hero:
+  eyebrow: LEGAL
+  title: Export compliance addendum (template)
+  tone: pink
+---
 
 **DRAFT — NOT FOR EXECUTION WITHOUT LEGAL REVIEW**
 

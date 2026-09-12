@@ -1,4 +1,9 @@
-# Cost Estimation Guide
+---
+hero:
+  eyebrow: GUIDES
+  title: Cost Estimation Guide
+  tone: violet
+---
 
 Aether provides cost estimation for workloads across multiple cloud providers, helping you optimize spending and make informed deployment decisions.
 

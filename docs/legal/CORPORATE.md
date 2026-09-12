@@ -1,4 +1,9 @@
-# ZyvorAI Labs — corporate reference
+---
+hero:
+  eyebrow: LEGAL
+  title: ZyvorAI Labs — corporate reference
+  tone: pink
+---
 
 Licensor for PacketWolf and the zyvor.dev product suite. See [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE) and the [commercial legal framework](README.md).
 

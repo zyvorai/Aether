@@ -1,7 +1,10 @@
-# 🛠️ Installation Guide
-
-> Install aether -- the Universal Runtime Control Plane -- from source, packages, containers, or Helm.
-
+---
+hero:
+  eyebrow: GETTING STARTED
+  title: 🛠️ Installation Guide
+  tone: emerald
+  lead: Install aether -- the Universal Runtime Control Plane -- from source, packages,
+    containers, or Helm.
 ---
 
 ## 📖 Table of Contents

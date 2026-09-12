@@ -1,6 +1,11 @@
-# 🏛️ Aether Architecture
-
-> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
+---
+hero:
+  eyebrow: ARCHITECTURE
+  title: 🏛️ Aether Architecture
+  tone: sky
+  lead: Universal runtime portability — Deploy once. Move workloads across Podman,
+    Kubernetes, and KubeVirt without rewriting infrastructure.
+---
 
 See [Deployment Topologies](DEPLOYMENT-TOPOLOGIES.md) for HA (Postgres + Redis + API replicas) and [PRODUCT.md](../PRODUCT.md) for the product narrative.
 

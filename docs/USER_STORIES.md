@@ -1,4 +1,9 @@
-# Aether User Stories
+---
+hero:
+  eyebrow: USER STORIES
+  title: Aether User Stories
+  tone: sky
+---
 
 **Product:** Universal runtime portability — deploy once, run anywhere
 

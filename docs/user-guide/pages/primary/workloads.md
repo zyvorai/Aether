@@ -1,4 +1,9 @@
-# Workloads
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Workloads
+  tone: sky
+---
 
 ## Purpose
 

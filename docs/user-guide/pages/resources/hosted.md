@@ -1,4 +1,9 @@
-# Hosted SaaS
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Hosted SaaS
+  tone: sky
+---
 
 ## Purpose
 

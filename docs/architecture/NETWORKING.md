@@ -1,7 +1,9 @@
-# Networking Architecture
-
-> How network settings translate across runtimes and what breaks on migrate.
-
+---
+hero:
+  eyebrow: ARCHITECTURE
+  title: Networking Architecture
+  tone: teal
+  lead: How network settings translate across runtimes and what breaks on migrate.
 ---
 
 ## Model

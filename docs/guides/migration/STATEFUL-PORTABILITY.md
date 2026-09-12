@@ -1,7 +1,9 @@
-# Stateful Portability
-
-> Honest guide to volumes, databases, and persistence across runtime migrations.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: Stateful Portability
+  tone: violet
+  lead: Honest guide to volumes, databases, and persistence across runtime migrations.
 ---
 
 ## What Aether does

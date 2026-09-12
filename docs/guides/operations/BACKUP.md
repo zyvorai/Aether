@@ -1,4 +1,9 @@
-# Backup and Restore Guide
+---
+hero:
+  eyebrow: GUIDES
+  title: Backup and Restore Guide
+  tone: violet
+---
 
 Aether provides comprehensive backup and restore functionality for workload state management.
 

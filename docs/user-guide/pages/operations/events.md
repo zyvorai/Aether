@@ -1,4 +1,9 @@
-# Events
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Events
+  tone: sky
+---
 
 ## Purpose
 

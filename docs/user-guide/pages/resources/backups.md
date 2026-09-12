@@ -1,4 +1,9 @@
-# Backups
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Backups
+  tone: sky
+---
 
 ## Purpose
 

@@ -1,7 +1,10 @@
-# 🌐 REST API Reference
-
-> Complete reference for the aether REST API -- 46+ endpoints across workloads, AI, security, RBAC, and operations.
-
+---
+hero:
+  eyebrow: REFERENCE
+  title: 🌐 REST API Reference
+  tone: rust
+  lead: Complete reference for the aether REST API -- 46+ endpoints across workloads,
+    AI, security, RBAC, and operations.
 ---
 
 ## 📑 Table of Contents

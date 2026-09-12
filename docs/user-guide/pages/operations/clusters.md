@@ -1,4 +1,9 @@
-# Cluster Browser
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Cluster Browser
+  tone: sky
+---
 
 ## Purpose
 

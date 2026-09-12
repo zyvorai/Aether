@@ -1,7 +1,9 @@
-# Decision Engine Examples
-
-> Sample `aether decide --explain` style traces for common workload shapes.
-
+---
+hero:
+  eyebrow: GUIDES
+  title: Decision Engine Examples
+  tone: violet
+  lead: Sample aether decide --explain style traces for common workload shapes.
 ---
 
 ## ML inference (GPU, low latency)

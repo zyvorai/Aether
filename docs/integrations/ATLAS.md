@@ -1,5 +1,11 @@
+---
+hero:
+  eyebrow: INTEGRATIONS
+  title: Atlas storage integration
+  tone: teal
+---
+
 <!-- Copyright 2026 ZyvorAI Labs Private Limited -- SPDX-License-Identifier: Apache-2.0 -->
-# Atlas storage integration
 
 [Atlas](https://github.com/ssahani/atlas) is the Zyvor **storage control plane**. When
 enabled, Aether provisions persistent storage for a workload through Atlas — which maps

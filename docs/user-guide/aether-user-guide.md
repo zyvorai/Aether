@@ -1,6 +1,10 @@
-# Aether — User Guide
-
-> **Universal runtime portability.**
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Aether — User Guide
+  tone: sky
+  lead: Universal runtime portability.
+---
 
 Aether is a universal runtime control plane: one workload spec describes what to run, and Aether deploys it to the right runtime, explains why, and migrates it between runtimes with production strategies. It ships a Rust CLI, an interactive TUI, and a React web dashboard over a shared control plane — think of it as Terraform for where your workloads run, not just what they are.
 

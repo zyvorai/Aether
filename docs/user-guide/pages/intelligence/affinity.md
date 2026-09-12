@@ -1,4 +1,9 @@
-# Runtime Affinity
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Runtime Affinity
+  tone: sky
+---
 
 ## Purpose
 

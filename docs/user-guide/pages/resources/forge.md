@@ -1,4 +1,9 @@
-# GPU / Forge
+---
+hero:
+  eyebrow: USER GUIDE
+  title: GPU / Forge
+  tone: sky
+---
 
 ## Purpose
 

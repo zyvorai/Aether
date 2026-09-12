@@ -1,4 +1,9 @@
-# Alerts
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Alerts
+  tone: sky
+---
 
 ## Purpose
 

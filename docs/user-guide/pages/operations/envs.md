@@ -1,4 +1,9 @@
-# Environments
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Environments
+  tone: sky
+---
 
 ## Purpose
 

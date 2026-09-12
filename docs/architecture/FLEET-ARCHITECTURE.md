@@ -1,7 +1,9 @@
-# Fleet Architecture
-
-> Multi-cluster inventory today and federation roadmap.
-
+---
+hero:
+  eyebrow: ARCHITECTURE
+  title: Fleet Architecture
+  tone: violet
+  lead: Multi-cluster inventory today and federation roadmap.
 ---
 
 ## Now (shipped)

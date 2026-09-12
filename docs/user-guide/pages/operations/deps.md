@@ -1,4 +1,9 @@
-# Dependencies
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Dependencies
+  tone: sky
+---
 
 ## Purpose
 
