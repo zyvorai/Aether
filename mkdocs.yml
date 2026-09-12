@@ -10,8 +10,8 @@ exclude_docs: |
   /README.md
 theme:
   name: material
-  logo: material/transit-connection-variant
-  favicon: material/transit-connection-variant
+  logo: assets/readme/zyvor-logo.svg
+  favicon: assets/readme/zyvor-logo.png
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
