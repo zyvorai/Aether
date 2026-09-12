@@ -10,7 +10,6 @@ exclude_docs: |
   /README.md
 theme:
   name: material
-  custom_dir: docs/overrides
   logo: material/transit-connection-variant
   favicon: material/transit-connection-variant
   palette:

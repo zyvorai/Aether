@@ -19,6 +19,6 @@
     {% for a in actions %}<a class="btn-{{ a.variant | default('primary') }}" href="{{ a.href }}">{{ a.label }}</a>{% endfor %}
   </div>
   {% endif %}
-  {{ highlights_html | safe }}
 </section>
+{{ highlights_html | safe }}
 {% endmacro %}
