@@ -2,7 +2,7 @@
 
 Universal runtime portability — deploy once, run on Podman, Kubernetes, or KubeVirt.
 
-**License:** [Apache License 2.0](../LICENSE) · **Version:** 0.4.0 · **Repo:** [zyvorai/Aether](https://github.com/zyvorai/Aether)
+**License:** [Apache License 2.0](https://github.com/zyvorai/Aether/blob/main/LICENSE) · **Version:** 0.4.0 · **Repo:** [zyvorai/Aether](https://github.com/zyvorai/Aether)
 
 ## Start here
 
@@ -10,7 +10,7 @@ Universal runtime portability — deploy once, run on Podman, Kubernetes, or Kub
 |------|----------|
 | Install | [Getting started — Installation](getting-started/01-Installation.md) |
 | Quick start | [Getting started — Quick Start](getting-started/02-Quick-Start.md) |
-| Container image (GHCR) | `ghcr.io/zyvorai/aether` — see [Installation § Container](getting-started/01-Installation.md#-option-4-container-image) and [README](../README.md#run-from-ghcr-container) |
+| Container image (GHCR) | `ghcr.io/zyvorai/aether` — see [Installation § Container](getting-started/01-Installation.md#-option-4-container-image) and [README](https://github.com/zyvorai/Aether/blob/main/README.md#run-from-ghcr-container) |
 | User guide (feature map) | [User Guide](user-guide/aether-user-guide.md) · [PDF](user-guide/aether-user-guide.pdf) |
 | Dashboard manual | [User guide hub](user-guide/README.md) |
 | Product overview | [PRODUCT.md](PRODUCT.md) |

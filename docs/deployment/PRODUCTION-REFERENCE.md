@@ -58,7 +58,7 @@ Workload **runtime** state lives on target clusters — Aether control plane los
 - `~/.aether` (dev): copy off-host weekly
 - GitOps repo: source of truth for specs
 
-See [RUNBOOK.md](../RUNBOOK.md), [BACKUP.md](../BACKUP.md).
+See [RUNBOOK.md](../guides/operations/RUNBOOK.md), [BACKUP.md](../guides/operations/BACKUP.md).
 
 ---
 

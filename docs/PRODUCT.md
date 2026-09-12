@@ -18,7 +18,7 @@ Teams run the same application on Podman locally, Kubernetes in production, and 
 
 ## Three proof points
 
-1. **One spec, three runtimes** — Validate once, deploy anywhere. See [Schema Reference](SCHEMA.md) and [Quick Start](getting-started/02-Quick-Start.md).
+1. **One spec, three runtimes** — Validate once, deploy anywhere. See [Schema Reference](reference/SCHEMA.md) and [Quick Start](getting-started/02-Quick-Start.md).
 
 2. **Production migration** — 16 runtime pairs, rollback on failure, health gates, connection draining. See [Migration Guide](guides/migration/MIGRATION-GUIDE.md) and [Migration Internals](guides/migration/MIGRATION-INTERNALS.md).
 

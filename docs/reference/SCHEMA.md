@@ -391,4 +391,4 @@ When adding new fields:
 - [JSON Schema Specification](https://json-schema.org/)
 - [YAML Language Server](https://github.com/redhat-developer/yaml-language-server)
 - [VS Code YAML Extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
-- [Aether Documentation](../README.md)
+- [Aether Documentation](https://github.com/zyvorai/Aether/blob/main/docs/README.md)

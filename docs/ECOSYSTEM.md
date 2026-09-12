@@ -44,7 +44,7 @@
 | Product | Role |
 |---------|------|
 | **Aether** | Universal runtime portability — deploy, migrate, intent placement |
-| **Zyra** | AI infrastructure operating layer built into Aether — multi-LLM, multi-agent, ambient intelligence (see [ZYRA.md](ZYRA.md)) |
+| **Zyra** | AI infrastructure operating layer built into Aether — multi-LLM, multi-agent, ambient intelligence (see [ZYRA.md](reference/ZYRA.md)) |
 | **Ragnarok** | Confidential execution layer — attestation, measured images, attest-gated secrets; standalone binary + UI, optional composite with Aether via `RAGNAROK_URL` |
 | **PacketWolf** | Network/workload observability |
 | **GuestKit** | Guest VM inspection and tooling |
@@ -63,5 +63,5 @@ Use Aether when you need **one spec** across dev (Podman), prod (K8s), and isola
 ## Links
 
 - [Product overview](PRODUCT.md)
-- [README](../README.md) — Zyvor stack note
+- [README](https://github.com/zyvorai/Aether/blob/main/README.md) — Zyvor stack note
 - [zyvor.dev](https://zyvor.dev) — Confidential computing (**Ragnarok**) is a separate product

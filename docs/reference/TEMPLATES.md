@@ -738,7 +738,7 @@ For template-related issues:
 
 ## Related Documentation
 
-- [Workload Specification](../README.md#workload-specification)
-- [Deployment Guide](DEPLOYMENT.md)
-- [Security Best Practices](../README.md#security)
-- [Cost Estimation](COST.md)
+- [Workload Specification](../reference/SCHEMA.md)
+- [Deployment Guide](../deployment/DEPLOYMENT.md)
+- [Security Best Practices](../features/security.md)
+- [Cost Estimation](../guides/operations/COST.md)

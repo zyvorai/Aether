@@ -47,7 +47,7 @@ Developer laptop / VM
                target clusters  clusters
 ```
 
-**Ship today:** Helm values for Postgres, Redis, OIDC/SAML, TLS — see [Enterprise security](../guides/security/ENTERPRISE-SECURITY.md) and [helm/aether](../../helm/aether/).
+**Ship today:** Helm values for Postgres, Redis, OIDC/SAML, TLS — see [Enterprise security](../guides/security/ENTERPRISE-SECURITY.md) and [helm/aether](https://github.com/zyvorai/Aether/tree/main/helm/aether).
 
 ---
 

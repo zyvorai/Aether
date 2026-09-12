@@ -37,7 +37,7 @@ Customer
    → Acceptable Use Policy (AUP) + Export Compliance (incorporated by reference)
 ```
 
-Quick deploy / self-hosted tarball: [LICENSE](../../LICENSE) + install acceptance (`scripts/lib/license-accept.sh`). Enterprise deals should still execute the full stack above.
+Quick deploy / self-hosted tarball: [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE) + install acceptance (`scripts/lib/license-accept.sh`). Enterprise deals should still execute the full stack above.
 
 ---
 
@@ -46,7 +46,7 @@ Quick deploy / self-hosted tarball: [LICENSE](../../LICENSE) + install acceptanc
 | Document | File | Purpose |
 |----------|------|---------|
 | Corporate facts | [CORPORATE.md](CORPORATE.md) | MCA, directors, filing references |
-| Source PDF manifest | [SOURCE-DOCUMENTS.md](SOURCE-DOCUMENTS.md) | Incorporation & board docs on file |
+| Source PDF manifest | SOURCE-DOCUMENTS.md | Incorporation & board docs on file |
 | Licensing model | [LICENSING-MODEL.md](LICENSING-MODEL.md) | Proprietary tiers, metrics |
 | Product matrix | [PRODUCT-MATRIX.md](PRODUCT-MATRIX.md) | License per product |
 | Trademark | [TRADEMARK-NOTICE.md](TRADEMARK-NOTICE.md) | Brand rights |
@@ -58,7 +58,7 @@ Quick deploy / self-hosted tarball: [LICENSE](../../LICENSE) + install acceptanc
 | Order Form | [templates/ORDER-FORM.md](templates/ORDER-FORM.md) | Commercial terms |
 | AUP | [templates/ACCEPTABLE-USE.md](templates/ACCEPTABLE-USE.md) | Abuse, lawful use |
 | Export | [templates/EXPORT-COMPLIANCE.md](templates/EXPORT-COMPLIANCE.md) | Sanctions, export control |
-| Deploy EULA | [../../LICENSE](../../LICENSE) | Self-hosted / deploy acceptance |
+| Deploy EULA | [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE) | Self-hosted / deploy acceptance |
 
 ---
 

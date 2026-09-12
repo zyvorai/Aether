@@ -48,13 +48,13 @@ See also: [Security Features](../../features/security.md)
 | Admission controller bundle | Roadmap |
 | FIPS-validated crypto module | Roadmap |
 
-Tag issues: `security`, `compliance` in [ROADMAP.md](../ROADMAP.md).
+Tag issues: `security`, `compliance` in [ROADMAP.md](../../ROADMAP.md).
 
 ---
 
 ## Air-gapped
 
-See [AIR-GAPPED.md](../deployment/AIR-GAPPED.md) for offline bundle install without external registries.
+See [AIR-GAPPED.md](../../deployment/AIR-GAPPED.md) for offline bundle install without external registries.
 
 ---
 

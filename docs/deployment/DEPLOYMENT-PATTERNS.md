@@ -211,5 +211,5 @@ Watch mode:
 |----------|-------------|
 | [Quick Start](../getting-started/02-Quick-Start.md) | 5-minute getting started |
 | [Compose Guide](../features/compose.md) | Multi-workload deployment details |
-| [CI/CD Guide](../CICD.md) | Pipeline integration |
-| [Templates](../TEMPLATES.md) | Template catalog |
+| [CI/CD Guide](../guides/operations/CICD.md) | Pipeline integration |
+| [Templates](../reference/TEMPLATES.md) | Template catalog |

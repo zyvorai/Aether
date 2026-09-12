@@ -1,6 +1,6 @@
 # Licensing model (draft)
 
-**Aether-core is the one exception to an otherwise all-proprietary lineup.** Since 2026 the Aether orchestration engine (CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0, open source — see [LICENSE](../../LICENSE). Everything else — PacketWolf, Ragnarok (confidential computing; separate proprietary repository), HyperSDK, and GuestKit — remains proprietary with no open-source (Apache, MIT, LGPL, or similar) distribution. Access to the proprietary products is by written agreement or the applicable EULA.
+**Aether-core is the one exception to an otherwise all-proprietary lineup.** Since 2026 the Aether orchestration engine (CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0, open source — see [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE). Everything else — PacketWolf, Ragnarok (confidential computing; separate proprietary repository), HyperSDK, and GuestKit — remains proprietary with no open-source (Apache, MIT, LGPL, or similar) distribution. Access to the proprietary products is by written agreement or the applicable EULA.
 
 ## License types
 

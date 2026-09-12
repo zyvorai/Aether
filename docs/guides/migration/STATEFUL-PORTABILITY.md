@@ -28,7 +28,7 @@ Migration moves the **workload definition and process**, not the bytes on disk.
 | Snapshot | Manual | CSI snapshot* | VM snapshot* |
 | Cross-runtime copy | Not automatic | Not automatic | Not automatic |
 
-\* Via platform tooling + [BACKUP.md](../../BACKUP.md), not migration engine.
+\* Via platform tooling + [BACKUP.md](../operations/BACKUP.md), not migration engine.
 
 ---
 
@@ -74,4 +74,4 @@ See `examples/workload-full-featured.yaml` for persistence block. After migrate 
 ## Related
 
 - [Migration Internals](MIGRATION-INTERNALS.md)
-- [BACKUP.md](../../BACKUP.md)
+- [BACKUP.md](../operations/BACKUP.md)

@@ -118,4 +118,4 @@ Copilot LLM: `OPENAI_API_KEY`, `AETHER_LLM_MODEL`, or `AETHER_OLLAMA_URL`
 
 - [SCORING.md](SCORING.md)
 - [EXAMPLES.md](EXAMPLES.md)
-- [COST.md](../../COST.md)
+- [COST.md](../operations/COST.md)

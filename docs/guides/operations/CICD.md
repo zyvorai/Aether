@@ -39,7 +39,7 @@ curl -f https://app.example.com/health
 
 ### Complete Example
 
-See [`examples/cicd/github-actions.yml`](../examples/cicd/github-actions.yml) for a full production pipeline.
+See [`examples/cicd/github-actions.yml`](https://github.com/zyvorai/Aether/blob/main/examples/cicd/github-actions.yml) for a full production pipeline.
 
 ### Key Features
 
@@ -116,7 +116,7 @@ on:
 
 ### Complete Example
 
-See [`examples/cicd/gitlab-ci.yml`](../examples/cicd/gitlab-ci.yml) for a full production pipeline.
+See [`examples/cicd/gitlab-ci.yml`](https://github.com/zyvorai/Aether/blob/main/examples/cicd/gitlab-ci.yml) for a full production pipeline.
 
 ### Key Features
 
@@ -187,7 +187,7 @@ environment:
 
 ### Complete Example
 
-See [`examples/cicd/Jenkinsfile`](../examples/cicd/Jenkinsfile) for a full production pipeline.
+See [`examples/cicd/Jenkinsfile`](https://github.com/zyvorai/Aether/blob/main/examples/cicd/Jenkinsfile) for a full production pipeline.
 
 ### Key Features
 
@@ -685,7 +685,7 @@ For CI/CD integration help:
 
 ## Related Documentation
 
-- [Deployment Guide](DEPLOYMENT.md)
+- [Deployment Guide](../../deployment/DEPLOYMENT.md)
 - [Backup Guide](BACKUP.md)
 - [Cost Estimation](COST.md)
-- [WebUI and API](WEBUI.md)
+- [WebUI and API](../../reference/WEBUI.md)

@@ -2,7 +2,7 @@
 
 **Product:** Universal runtime portability — deploy once, run anywhere
 
-Cross-reference: [Documentation index](README.md) · [Main README](../README.md)
+Cross-reference: [Documentation index](https://github.com/zyvorai/Aether/blob/main/docs/README.md) · [Main README](https://github.com/zyvorai/Aether/blob/main/README.md)
 
 ## Personas
 

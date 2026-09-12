@@ -28,4 +28,4 @@ If the page stays empty, check service health, auth configuration, and that depe
 
 - [Getting Started](../../getting-started.md)
 - [Page index](../../PAGE_INDEX.md)
-- [Dashboard design](../../../web/dashboard/docs/DESIGN.md)
+- [Dashboard design](https://github.com/zyvorai/Aether/blob/main/web/dashboard/docs/DESIGN.md)

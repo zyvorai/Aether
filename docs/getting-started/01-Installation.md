@@ -461,4 +461,4 @@ minikube start
 | Detailed walkthrough tutorial | [Beginner Tutorial](../tutorials/01-beginner-deployment.md) |
 | Explore all commands | `aether help-all` |
 | Full documentation index | [Documentation Index](../index.md) |
-| Documentation hub | [README](../README.md) |
+| Documentation hub | [README](https://github.com/zyvorai/Aether/blob/main/docs/README.md) |

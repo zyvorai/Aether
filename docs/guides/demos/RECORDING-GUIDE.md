@@ -57,5 +57,5 @@ Record wall-clock time for `benchmarks/RESULTS.md`.
 
 ## Related
 
-- [examples/demos/](../../examples/demos/)
+- [examples/demos/](https://github.com/zyvorai/Aether/tree/main/examples/demos)
 - [MIGRATION-INTERNALS.md](../migration/MIGRATION-INTERNALS.md)

@@ -1,6 +1,6 @@
 # ZyvorAI Labs — corporate reference
 
-Licensor for PacketWolf and the zyvor.dev product suite. See [LICENSE](../../LICENSE) and the [commercial legal framework](README.md).
+Licensor for PacketWolf and the zyvor.dev product suite. See [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE) and the [commercial legal framework](README.md).
 
 ## Product portfolio (recommended structure)
 
@@ -67,7 +67,7 @@ Always use **ZyvorAI Labs Private Limited** on licenses, contracts, and customer
 
 ## Customer software licensing
 
-- Deploy EULA: [LICENSE](../../LICENSE) (v1.6+)  
+- Deploy EULA: [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE) (v1.6+)  
 - Framework index: [README.md](README.md) (MSA, ELA, SLA, DPA, Order Form, AUP, export)  
 - Deploy / install acceptance: `scripts/lib/license-accept.sh`  
 - Customer bundles: `LEGAL-INDEX.txt` + `legal/` via `scripts/lib/copy-legal-to-bundle.sh`  

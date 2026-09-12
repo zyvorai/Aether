@@ -46,3 +46,7 @@ keys/
 
 # Local presentation exports
 presentations/
+
+# MkDocs
+.venv-docs/
+/site/

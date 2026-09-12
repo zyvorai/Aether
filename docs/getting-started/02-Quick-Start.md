@@ -488,11 +488,11 @@ aether list
 | Multi-workload compose | [Compose Guide](../features/compose.md) |
 | All CLI commands | [CLI Reference](../guides/cli/CLI-Reference.md) or `aether help-all` |
 | Migration checklist | [Migration Checklist](../guides/operations/MIGRATION_CHECKLIST.md) |
-| REST API and web dashboard | [Web UI Guide](../WEBUI.md) |
+| REST API and web dashboard | [Web UI Guide](../reference/WEBUI.md) |
 | Security and secrets | [Security Guide](../features/security.md) |
-| CI/CD integration | [CI/CD Guide](../CICD.md) |
+| CI/CD integration | [CI/CD Guide](../guides/operations/CICD.md) |
 | Full documentation index | [Documentation Index](../index.md) |
-| Documentation hub | [README](../README.md) |
+| Documentation hub | [README](https://github.com/zyvorai/Aether/blob/main/docs/README.md) |
 
 ---
 

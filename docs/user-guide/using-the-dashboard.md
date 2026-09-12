@@ -2,7 +2,7 @@
 
 Aether is organized by navigation groups (GlobalNav flyouts, desktop nav, or CLI command groups). Use search / command palette when available.
 
-Visual shell: **Aurora / Apple.com** — paper backdrop, editorial page heroes (`PageHero` via `AuroraPage`), optional ink highlight bands, pill primary CTAs. Details: [DESIGN.md](../web/dashboard/docs/DESIGN.md).
+Visual shell: **Aurora / Apple.com** — paper backdrop, editorial page heroes (`PageHero` via `AuroraPage`), optional ink highlight bands, pill primary CTAs. Details: [DESIGN.md](https://github.com/zyvorai/Aether/blob/main/web/dashboard/docs/DESIGN.md).
 
 ## Surfaces
 

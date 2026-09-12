@@ -48,4 +48,4 @@ Each lab README lists prerequisites and honest limitations.
 ## Related
 
 - [ROADMAP.md](../ROADMAP.md)
-- [COST.md](../COST.md) — provider estimates
+- [COST.md](../guides/operations/COST.md) — provider estimates

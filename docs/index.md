@@ -2,9 +2,9 @@
 
 > **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
 >
-> Version **0.4.0** | License: [Apache-2.0](../LICENSE) | **[Product overview](PRODUCT.md)**
+> Version **0.4.0** | License: [Apache-2.0](https://github.com/zyvorai/Aether/blob/main/LICENSE) | **[Product overview](PRODUCT.md)**
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-orange)](../LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-orange)](https://github.com/zyvorai/Aether/blob/main/LICENSE)
 
 ---
 
@@ -31,7 +31,7 @@
 | [Fleet Architecture](architecture/FLEET-ARCHITECTURE.md) | Multi-cluster now vs roadmap |
 | [Networking](architecture/NETWORKING.md) | Runtime translation, DNS, ingress |
 | [Production Reference](deployment/PRODUCTION-REFERENCE.md) | Scale, recovery, upgrades |
-| [Benchmarks](../benchmarks/RESULTS.md) | Deploy/migrate/API baselines |
+| [Benchmarks](https://github.com/zyvorai/Aether/blob/main/benchmarks/RESULTS.md) | Deploy/migrate/API baselines |
 | [Cloud Matrix](integrations/CLOUD-MATRIX.md) | Vendor support levels |
 | [Atlas Storage](integrations/ATLAS.md) | Atlas-backed persistent volumes |
 | [Forge GPU / AI](integrations/FORGE.md) | GPU capacity, nodes, placement, cost |
@@ -69,7 +69,7 @@
 | Topic | Document | What You Learn | Time |
 |-------|----------|----------------|------|
 | First Deployment | [Beginner Tutorial](tutorials/01-beginner-deployment.md) | Create, deploy, monitor, and delete a workload | 30 min |
-| Templates | [Templates Guide](TEMPLATES.md) | Generate workload specs from 8 built-in templates (`web-app`, `rest-api`, `database`, `cache`, `worker`, `cron-job`, `ml-training`, `microservice`) | 15 min |
+| Templates | [Templates Guide](reference/TEMPLATES.md) | Generate workload specs from 8 built-in templates (`web-app`, `rest-api`, `database`, `cache`, `worker`, `cron-job`, `ml-training`, `microservice`) | 15 min |
 | Shell Completions | [Installation Guide](getting-started/01-Installation.md#-shell-completions) | Tab completion for bash, zsh, fish, PowerShell, elvish | 5 min |
 
 ### Intermediate
@@ -77,8 +77,8 @@
 | Topic | Document | What You Learn | Time |
 |-------|----------|----------------|------|
 | Workflows | [Intermediate Workflows](tutorials/02-intermediate-workflows.md) | Compose files, migrations, output formats, watch mode | 45 min |
-| Workload Schema | [Schema Reference](SCHEMA.md) | Full YAML specification: metadata, build, requirements, runtime, network, persistence, health, config, ingress, scaling | 20 min |
-| Cost Analysis | [Cost Estimation](COST.md) | Compare costs across AWS, Azure, GCP, DigitalOcean, Linode | 15 min |
+| Workload Schema | [Schema Reference](reference/SCHEMA.md) | Full YAML specification: metadata, build, requirements, runtime, network, persistence, health, config, ingress, scaling | 20 min |
+| Cost Analysis | [Cost Estimation](guides/operations/COST.md) | Compare costs across AWS, Azure, GCP, DigitalOcean, Linode | 15 min |
 
 ### Advanced
 
@@ -86,7 +86,7 @@
 |-------|----------|----------------|------|
 | Advanced Features | [Advanced Tutorial](tutorials/03-advanced-features.md) | Policies, AES-256 secrets, drift reconciliation, plugins | 60 min |
 | How It Works | [Deep Dive Tutorial](tutorials/04-how-it-works.md) | Internal architecture, decision engine, runtime adapters, state management, security model | 90 min |
-| CI/CD Integration | [CI/CD Guide](CICD.md) | GitHub Actions, GitLab CI, Jenkins pipelines | 30 min |
+| CI/CD Integration | [CI/CD Guide](guides/operations/CICD.md) | GitHub Actions, GitLab CI, Jenkins pipelines | 30 min |
 
 ---
 
@@ -229,8 +229,8 @@
 | Guide | Description |
 |-------|-------------|
 | [Migration Checklist](guides/operations/MIGRATION_CHECKLIST.md) | Pre/post migration steps, strategy selection, rollback procedures |
-| [Operational Runbook](RUNBOOK.md) | Troubleshooting playbooks and recovery procedures |
-| [Backup & Restore](BACKUP.md) | State backup, disaster recovery, merge restore |
+| [Operational Runbook](guides/operations/RUNBOOK.md) | Troubleshooting playbooks and recovery procedures |
+| [Backup & Restore](guides/operations/BACKUP.md) | State backup, disaster recovery, merge restore |
 
 ---
 
@@ -250,8 +250,8 @@
 | Webhook Notifications | -- | Push-based alerting with severity filtering and retry queues |
 | Environment Management | -- | dev/staging/production tiers, promote, parity checking |
 | Workload Scheduling | -- | 4 strategies: balanced, cost, performance, bin-packing |
-| Cost Estimation | [Cost Guide](COST.md) | Multi-cloud analysis across AWS, Azure, GCP, DigitalOcean, Linode |
-| Templates | [Templates Guide](TEMPLATES.md) | 8 built-in templates: web-app, rest-api, database, cache, worker, cron-job, ml-training, microservice |
+| Cost Estimation | [Cost Guide](guides/operations/COST.md) | Multi-cloud analysis across AWS, Azure, GCP, DigitalOcean, Linode |
+| Templates | [Templates Guide](reference/TEMPLATES.md) | 8 built-in templates: web-app, rest-api, database, cache, worker, cron-job, ml-training, microservice |
 
 ---
 
@@ -259,9 +259,9 @@
 
 | Document | Description |
 |----------|-------------|
-| [Deployment Guide](DEPLOYMENT.md) | Kubernetes manifests, Helm chart, container image deployment |
-| [CI/CD Integration](CICD.md) | GitHub Actions, GitLab CI, Jenkins pipeline recipes |
-| [Backup & Restore](BACKUP.md) | State backup, disaster recovery, merge restore |
+| [Deployment Guide](deployment/DEPLOYMENT.md) | Kubernetes manifests, Helm chart, container image deployment |
+| [CI/CD Integration](guides/operations/CICD.md) | GitHub Actions, GitLab CI, Jenkins pipeline recipes |
+| [Backup & Restore](guides/operations/BACKUP.md) | State backup, disaster recovery, merge restore |
 
 ---
 
@@ -269,13 +269,13 @@
 
 | Document | Description |
 |----------|-------------|
-| [Workload Spec Schema](SCHEMA.md) | Complete YAML specification reference with all fields |
+| [Workload Spec Schema](reference/SCHEMA.md) | Complete YAML specification reference with all fields |
 | [REST API Reference](reference/api/API-Reference.md) | 40+ REST API endpoints, request/response schemas |
-| [Prometheus Metrics](METRICS.md) | All exported metrics, labels, and types |
-| [Cost Models](COST.md) | Provider-specific cost models and formulas |
-| [Templates Catalog](TEMPLATES.md) | Built-in template catalog and customization |
-| [Operational Runbook](RUNBOOK.md) | Troubleshooting playbooks and recovery procedures |
-| [Web Dashboard](WEBUI.md) | REST API server and browser-based UI |
+| [Prometheus Metrics](guides/operations/METRICS.md) | All exported metrics, labels, and types |
+| [Cost Models](guides/operations/COST.md) | Provider-specific cost models and formulas |
+| [Templates Catalog](reference/TEMPLATES.md) | Built-in template catalog and customization |
+| [Operational Runbook](guides/operations/RUNBOOK.md) | Troubleshooting playbooks and recovery procedures |
+| [Web Dashboard](reference/WEBUI.md) | REST API server and browser-based UI |
 
 ### REST API Endpoints (Summary)
 
@@ -332,7 +332,7 @@
 | Item | Document | Description |
 |------|----------|-------------|
 | Cheat Sheet | [Quick Reference Card](quick-reference/QUICK_REFERENCE.md) | One-page command cheat sheet |
-| Hub | [Documentation Hub](README.md) | Landing page with role-based quick access |
+| Hub | [Documentation Hub](https://github.com/zyvorai/Aether/blob/main/docs/README.md) | Landing page with role-based quick access |
 
 ### Glossary
 
@@ -365,7 +365,7 @@ A: Yes. All 12 runtime-pair combinations are supported (4 source x 3 target).
 A: The aether spec is its own format (`apiVersion: aether/v1`). Use `aether template` to generate specs from common patterns.
 
 **Q: How do I run aether in CI/CD?**
-A: Use `--yes --quiet --json` flags for non-interactive, machine-readable output. See the [CI/CD Guide](CICD.md).
+A: Use `--yes --quiet --json` flags for non-interactive, machine-readable output. See the [CI/CD Guide](guides/operations/CICD.md).
 
 **Q: Where is state stored?**
 A: In `~/.aether/` by default. Use `aether backup` and `aether restore` for portability.
@@ -395,7 +395,7 @@ Workflows  -->  Compose  -->  Health  -->  CLI Reference  -->  Cost
 2. [Compose Guide](features/compose.md)
 3. [Health Monitoring](features/health-monitoring.md)
 4. [CLI Reference](guides/cli/CLI-Reference.md)
-5. [Cost Estimation](COST.md)
+5. [Cost Estimation](guides/operations/COST.md)
 
 ### Advanced Path
 
@@ -407,7 +407,7 @@ Advanced Features  -->  Security  -->  Plugins  -->  REST API  -->  CI/CD
 2. [Security Guide](features/security.md)
 3. [Plugin System](features/plugins.md)
 4. [REST API Reference](reference/api/API-Reference.md)
-5. [CI/CD Integration](CICD.md)
+5. [CI/CD Integration](guides/operations/CICD.md)
 
 ### Enterprise Path
 
@@ -417,9 +417,9 @@ Migration Checklist  -->  Security  -->  Deployment  -->  REST API  -->  Runbook
 
 1. [Migration Checklist](guides/operations/MIGRATION_CHECKLIST.md)
 2. [Security Guide](features/security.md)
-3. [Deployment Guide](DEPLOYMENT.md)
+3. [Deployment Guide](deployment/DEPLOYMENT.md)
 4. [REST API Reference](reference/api/API-Reference.md)
-5. [Operational Runbook](RUNBOOK.md)
+5. [Operational Runbook](guides/operations/RUNBOOK.md)
 
 ---
 

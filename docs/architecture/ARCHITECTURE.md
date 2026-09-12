@@ -808,13 +808,13 @@ integrity hash will not match a recomputation. The hash is stored in the
 
 | Document | Relevance |
 |---|---|
-| [Workload Schema](../SCHEMA.md) | Complete YAML specification reference |
+| [Workload Schema](../reference/SCHEMA.md) | Complete YAML specification reference |
 | [API Reference](../reference/api/API-Reference.md) | Full REST API documentation |
 | [Plugin System](../features/plugins.md) | Plugin development guide |
 | [Security Guide](../features/security.md) | Security best practices |
-| [Metrics & Monitoring](../METRICS.md) | Prometheus integration |
+| [Metrics & Monitoring](../guides/operations/METRICS.md) | Prometheus integration |
 | [Migration Checklist](../guides/operations/MIGRATION_CHECKLIST.md) | Operational migration procedures |
-| [Backup & Restore](../BACKUP.md) | State backup and disaster recovery |
+| [Backup & Restore](../guides/operations/BACKUP.md) | State backup and disaster recovery |
 | [CLI Reference](../guides/cli/CLI-Reference.md) | Complete command documentation |
 
 ---

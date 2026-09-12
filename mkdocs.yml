@@ -1,0 +1,183 @@
+site_name: Aether
+site_description: The universal runtime control plane — one workload spec that scores and migrates across Podman, Kubernetes, and KubeVirt.
+site_url: https://zyvorai.github.io/Aether/
+repo_url: https://github.com/zyvorai/Aether
+repo_name: zyvorai/Aether
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+exclude_docs: |
+  /README.md
+theme:
+  name: material
+  logo: material/transit-connection-variant
+  favicon: material/transit-connection-variant
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: orange
+      toggle: {icon: material/brightness-7, name: Switch to dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep orange
+      accent: orange
+      toggle: {icon: material/brightness-4, name: Switch to light mode}
+  features: [navigation.tabs, navigation.sections, navigation.top, navigation.footer, content.code.copy, search.suggest, search.highlight, toc.follow]
+plugins: [search]
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - {name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
+  - pymdownx.tabbed: {alternate_style: true}
+  - pymdownx.tasklist: {custom_checkbox: true}
+  - tables
+  - toc: {permalink: true}
+nav:
+  - Home: index.md
+  - Product overview: PRODUCT.md
+  - Ecosystem: ECOSYSTEM.md
+  - Roadmap: ROADMAP.md
+  - User stories: USER_STORIES.md
+  - Test plan: TEST_PLAN.md
+  - Getting Started:
+      - Installation: getting-started/01-Installation.md
+      - Quick Start: getting-started/02-Quick-Start.md
+  - Tutorials:
+      - "1. Beginner deployment": tutorials/01-beginner-deployment.md
+      - "2. Intermediate workflows": tutorials/02-intermediate-workflows.md
+      - "3. Advanced features": tutorials/03-advanced-features.md
+      - "4. How it works": tutorials/04-how-it-works.md
+  - Guides:
+      - AWS to Kubernetes: guides/AWS-TO-KUBERNETES.md
+      - CLI Reference: guides/cli/CLI-Reference.md
+      - Decision Engine:
+          - AI purpose: guides/decision-engine/AI-PURPOSE.md
+          - Examples: guides/decision-engine/EXAMPLES.md
+          - Scoring: guides/decision-engine/SCORING.md
+      - Demos:
+          - Recording guide: guides/demos/RECORDING-GUIDE.md
+      - Kubernetes:
+          - Cilium: guides/kubernetes/CILIUM.md
+      - Migration:
+          - Migration guide: guides/migration/MIGRATION-GUIDE.md
+          - Migration internals: guides/migration/MIGRATION-INTERNALS.md
+          - Stateful portability: guides/migration/STATEFUL-PORTABILITY.md
+      - Operations:
+          - Backup: guides/operations/BACKUP.md
+          - CI/CD: guides/operations/CICD.md
+          - Cost: guides/operations/COST.md
+          - Metrics: guides/operations/METRICS.md
+          - Migration checklist: guides/operations/MIGRATION_CHECKLIST.md
+          - Runbook: guides/operations/RUNBOOK.md
+      - Security:
+          - Enterprise security: guides/security/ENTERPRISE-SECURITY.md
+          - Security profiles: guides/security/SECURITY-PROFILES.md
+  - Features:
+      - Compose: features/compose.md
+      - Health monitoring: features/health-monitoring.md
+      - Plugins: features/plugins.md
+      - Security: features/security.md
+  - Architecture:
+      - Overview: architecture/ARCHITECTURE.md
+      - Deployment topologies: architecture/DEPLOYMENT-TOPOLOGIES.md
+      - Fleet architecture: architecture/FLEET-ARCHITECTURE.md
+      - Networking: architecture/NETWORKING.md
+  - Deployment:
+      - Deployment guide: deployment/DEPLOYMENT.md
+      - Deployment patterns: deployment/DEPLOYMENT-PATTERNS.md
+      - Air-gapped: deployment/AIR-GAPPED.md
+      - Production reference: deployment/PRODUCTION-REFERENCE.md
+  - Integrations:
+      - Atlas storage: integrations/ATLAS.md
+      - Cloud matrix: integrations/CLOUD-MATRIX.md
+      - Forge GPU / AI: integrations/FORGE.md
+  - Reference:
+      - Workload schema: reference/SCHEMA.md
+      - Templates: reference/TEMPLATES.md
+      - Web UI: reference/WEBUI.md
+      - Zyra: reference/ZYRA.md
+      - REST API reference: reference/api/API-Reference.md
+  - Quick Reference: quick-reference/QUICK_REFERENCE.md
+  - User Guide:
+      - Overview: user-guide/README.md
+      - Getting started: user-guide/getting-started.md
+      - Admin basics: user-guide/admin-basics.md
+      - Using the dashboard: user-guide/using-the-dashboard.md
+      - Workflows: user-guide/workflows.md
+      - Full user guide: user-guide/aether-user-guide.md
+      - Page index: user-guide/PAGE_INDEX.md
+      - Page-by-page guides:
+          - Overview: user-guide/pages/README.md
+          - Primary:
+              - Overview: user-guide/pages/primary/home.md
+              - Runtime fabric: user-guide/pages/primary/fabric.md
+              - Applications: user-guide/pages/primary/applications.md
+              - Workloads: user-guide/pages/primary/workloads.md
+          - Intelligence:
+              - Migrations: user-guide/pages/intelligence/migrations.md
+              - AI engine: user-guide/pages/intelligence/ai.md
+              - Zyra: user-guide/pages/intelligence/zyra.md
+              - Cost estimation: user-guide/pages/intelligence/cost.md
+              - Runtime affinity: user-guide/pages/intelligence/affinity.md
+              - Drift detection: user-guide/pages/intelligence/drift.md
+              - Intelligence layer: user-guide/pages/intelligence/intelligence.md
+              - Policy check: user-guide/pages/intelligence/policy.md
+              - Security center: user-guide/pages/intelligence/security.md
+          - Operations:
+              - Observability: user-guide/pages/operations/observability.md
+              - Cluster browser: user-guide/pages/operations/clusters.md
+              - Fleet overview: user-guide/pages/operations/fleet.md
+              - Activity monitor: user-guide/pages/operations/activity.md
+              - Helm app store: user-guide/pages/operations/helm.md
+              - Compose import: user-guide/pages/operations/compose.md
+              - Visual editor: user-guide/pages/operations/editor.md
+              - Scheduler: user-guide/pages/operations/scheduler.md
+              - Health monitor: user-guide/pages/operations/health-monitor.md
+              - Events: user-guide/pages/operations/events.md
+              - Alerts: user-guide/pages/operations/alerts.md
+              - Platform: user-guide/pages/operations/platform.md
+              - SLA compliance: user-guide/pages/operations/sla.md
+              - Dependencies: user-guide/pages/operations/deps.md
+              - Environments: user-guide/pages/operations/envs.md
+          - Resources:
+              - Labs: user-guide/pages/resources/labs.md
+              - Settings: user-guide/pages/resources/settings.md
+              - AI providers: user-guide/pages/resources/settings-ai-providers.md
+              - Hosted SaaS: user-guide/pages/resources/hosted.md
+              - Secrets: user-guide/pages/resources/secrets.md
+              - Backups: user-guide/pages/resources/backups.md
+              - Storage: user-guide/pages/resources/storage.md
+              - GPU / Forge: user-guide/pages/resources/forge.md
+              - Templates: user-guide/pages/resources/templates.md
+              - Plugins: user-guide/pages/resources/plugins.md
+              - Access control: user-guide/pages/resources/rbac.md
+              - Audit trail: user-guide/pages/resources/audit.md
+              - GitOps: user-guide/pages/resources/gitops.md
+              - Metrics: user-guide/pages/resources/metrics.md
+              - API explorer: user-guide/pages/resources/openapi.md
+  - Examples & Labs:
+      - KubeVirt lab: examples/labs/kubevirt/README.md
+      - OPA lab: examples/labs/opa/README.md
+  - Legal:
+      - Overview: legal/README.md
+      - Corporate reference: legal/CORPORATE.md
+      - Licensing model: legal/LICENSING-MODEL.md
+      - Product matrix: legal/PRODUCT-MATRIX.md
+      - Proprietary policy: legal/PROPRIETARY-POLICY.md
+      - Trademark notice: legal/TRADEMARK-NOTICE.md
+      - Templates:
+          - Acceptable use: legal/templates/ACCEPTABLE-USE.md
+          - DPA: legal/templates/DPA.md
+          - ELA: legal/templates/ELA.md
+          - Export compliance: legal/templates/EXPORT-COMPLIANCE.md
+          - MSA: legal/templates/MSA.md
+          - Order form: legal/templates/ORDER-FORM.md
+          - SLA: legal/templates/SLA.md
+extra:
+  social:
+    - {icon: fontawesome/brands/github, link: https://github.com/zyvorai/Aether}

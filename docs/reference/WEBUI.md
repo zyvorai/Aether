@@ -75,7 +75,7 @@ When enabled, all API requests must include:
 Authorization: Bearer my-secure-api-key
 ```
 
-The `/health` endpoint and dashboard (`/`) remain public. See [Security Features](features/security.md#-api-authentication) for details.
+The `/health` endpoint and dashboard (`/`) remain public. See [Security Features](../features/security.md#-api-authentication) for details.
 
 ### Access the Dashboard
 
@@ -805,7 +805,7 @@ The API server exposes metrics that can be scraped by Prometheus:
 curl http://localhost:5090/metrics
 ```
 
-See [METRICS.md](METRICS.md) for full Prometheus integration guide.
+See [METRICS.md](../guides/operations/METRICS.md) for full Prometheus integration guide.
 
 ### Health Checks
 
@@ -895,7 +895,7 @@ For WebUI/API issues:
 
 ## Related Documentation
 
-- [Deployment Guide](DEPLOYMENT.md)
-- [Metrics Guide](METRICS.md)
-- [Backup Guide](BACKUP.md)
-- [Helm Chart](../helm/aether/README.md)
+- [Deployment Guide](../deployment/DEPLOYMENT.md)
+- [Metrics Guide](../guides/operations/METRICS.md)
+- [Backup Guide](../guides/operations/BACKUP.md)
+- [Helm Chart](https://github.com/zyvorai/Aether/blob/main/helm/aether/README.md)

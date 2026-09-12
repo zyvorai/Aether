@@ -518,7 +518,7 @@ Alerts also trigger any configured webhook notification channels.
 
 | Document | Relevance |
 |---|---|
-| [Kubernetes Guide](../../KUBERNETES.md) | Kubernetes health probes and volume mounts |
+| [Kubernetes Guide](https://github.com/zyvorai/Aether/blob/main/KUBERNETES.md) | Kubernetes health probes and volume mounts |
 | [Security Guide](./security.md) | Secrets and policy enforcement |
 | [Compose Guide](./compose.md) | Multi-workload deployments |
 | [Plugin System](./plugins.md) | Custom runtime health checks |
