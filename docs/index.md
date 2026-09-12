@@ -9,16 +9,52 @@ hero:
     - {label: "Apache-2.0", tone: emerald}
   highlights:
     - {value: "3", label: "Runtimes unified"}
-    - {value: "16", label: "Migration pairs"}
-    - {value: "40+", label: "CLI commands"}
-    - {value: "40+", label: "REST API endpoints"}
+    - {value: "12", label: "Migration pairs", footnote: "1"}
+    - {value: "40+", label: "CLI commands", footnote: "2"}
+    - {value: "40+", label: "REST API endpoints", footnote: "3"}
   hub_bands:
     - {icon: "◆", title: "Product overview", description: "Why Aether exists and where it fits.", href: "PRODUCT.md", tone: sky}
     - {icon: "⇄", title: "Migration credibility", description: "State machine, rollback, and the limits matrix.", href: "guides/migration/MIGRATION-INTERNALS.md", tone: violet}
     - {icon: "◎", title: "Runtime decisions", description: "Scoring engine weights, intent, and explain output.", href: "guides/decision-engine/SCORING.md", tone: amber}
     - {icon: "▣", title: "Enterprise trust", description: "Deployment topologies and the production reference.", href: "architecture/DEPLOYMENT-TOPOLOGIES.md", tone: emerald}
     - {icon: "◈", title: "Ecosystem", description: "Where Aether fits in the Zyvor suite.", href: "ECOSYSTEM.md", tone: teal}
+footnotes:
+  - {marker: "1", text: "4 runtime kinds (Podman, Docker, Kubernetes, KubeVirt) × 3 valid targets each, source ≠ target.", href: "guides/migration/MIGRATION-INTERNALS.md#limits-matrix", href_label: "See the limits matrix."}
+  - {marker: "2", text: "Counted from this page's own CLI command tables below.", href: "guides/cli/CLI-Reference.md", href_label: "See the full CLI Reference."}
+  - {marker: "3", text: "Counted from this page's own REST API endpoint summary below.", href: "reference/api/API-Reference.md", href_label: "See the full REST API Reference."}
 ---
+
+## Take a closer look
+
+=== "Podman"
+
+    Local dev and edge containers. Fast iteration, single-host, no cluster required.
+
+    **Best for:** laptops, edge nodes, CI runners, and quick local testing before a workload ever touches a cluster.
+
+=== "Kubernetes"
+
+    Cluster orchestration, services, scaling. The production default for multi-node workloads.
+
+    **Best for:** horizontally-scaled services, anything needing Ingress/Service networking, HPA, or multi-replica health gates.
+
+=== "KubeVirt"
+
+    VM isolation and GPU passthrough on top of Kubernetes.
+
+    **Best for:** legacy VM workloads, hardware-bound GPU jobs, and anything that needs a full guest OS rather than a container.
+
+## Performance
+
+Baseline latency ranges from `benchmarks/aether-bench.sh` — numbers vary by hardware, published as honest modest ranges rather than a single cherry-picked figure.
+
+| Command | Typical range |
+|---------|---------------|
+| `aether validate` | 5–50 ms |
+| `aether decide --explain` | 10–80 ms |
+| `aether migrate` (blue-green) | 30s–5m (runtime-dependent) |
+
+[Full benchmark methodology and latest run →](https://github.com/zyvorai/Aether/blob/main/benchmarks/RESULTS.md)
 
 ## Trust and proof
 

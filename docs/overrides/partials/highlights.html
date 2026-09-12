@@ -7,7 +7,7 @@
     <ul class="apple-highlights-grid">
       {% for item in capped %}
       <li class="apple-highlight-item">
-        <div class="apple-highlight-value">{{ item.value }}</div>
+        <div class="apple-highlight-value">{{ item.value }}{% if item.footnote %}<a class="hero-footnote" href="#fn-{{ item.footnote }}" id="fnref-{{ item.footnote }}">{{ item.footnote }}</a>{% endif %}</div>
         <div class="apple-highlight-label">{{ item.label }}</div>
       </li>
       {% endfor %}

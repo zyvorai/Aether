@@ -21,7 +21,14 @@ A page opts in with front matter like:
         - {value: "3", label: "Runtimes, one spec"}
       hub_bands:
         - {title: Compose, description: "...", href: features/compose.md, tone: sky}
+    footnotes:
+      - {marker: "1", text: "16 runtime migration pairs.", href: "guides/migration/MIGRATION-INTERNALS.md", href_label: "See Migration Internals."}
     ---
+
+A highlight item that cites a footnote adds `footnote: "1"` and the macro
+renders a superscript link back to the matching `footnotes` entry, which is
+appended at the very end of the page (not under the hero) -- every number
+in a highlights band should be traceable to the doc that proves it.
 
 Keeping markdown as data (front matter), not markup, means one template
 change updates every hero page at once, and lets the macros mechanically
@@ -38,7 +45,11 @@ _env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(PARTIALS_DIR)), aut
 
 def on_page_markdown(markdown, page, config, files):
     hero_data = page.meta.get("hero")
+    footnote_items = page.meta.get("footnotes")
+
     if not hero_data:
+        if footnote_items:
+            markdown += "\n\n" + _env.get_template("footnotes.html").module.footnotes(footnote_items)
         return markdown
 
     tone = hero_data.get("tone", "sky")
@@ -63,4 +74,8 @@ def on_page_markdown(markdown, page, config, files):
     if bands:
         hub_html = _env.get_template("hub_band.html").module.hub_band(bands)
 
-    return f"{hero_html}\n\n{hub_html}\n\n{markdown}"
+    footnotes_html = ""
+    if footnote_items:
+        footnotes_html = "\n\n" + _env.get_template("footnotes.html").module.footnotes(footnote_items)
+
+    return f"{hero_html}\n\n{hub_html}\n\n{markdown}{footnotes_html}"

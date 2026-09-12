@@ -10,8 +10,11 @@ hero:
     - {label: "KubeVirt — VM isolation, GPU", tone: teal}
   highlights:
     - {value: "3", label: "Runtimes, one spec"}
-    - {value: "16", label: "Runtime migration pairs"}
-    - {value: "4", label: "Migration strategies"}
+    - {value: "12", label: "Runtime migration pairs", footnote: "1"}
+    - {value: "4", label: "Migration strategies", footnote: "2"}
+footnotes:
+  - {marker: "1", text: "4 runtime kinds (Podman, Docker, Kubernetes, KubeVirt) × 3 valid targets each, source ≠ target — enforced in the migration engine's guard clause.", href: "guides/migration/MIGRATION-INTERNALS.md#limits-matrix", href_label: "See the limits matrix."}
+  - {marker: "2", text: "Immediate, Blue-Green, Rolling, and Canary.", href: "guides/migration/MIGRATION-INTERNALS.md", href_label: "See Migration Internals."}
 ---
 
 ## The problem
@@ -32,9 +35,61 @@ Teams run the same application on Podman locally, Kubernetes in production, and 
 
 1. **One spec, three runtimes** — Validate once, deploy anywhere. See [Schema Reference](reference/SCHEMA.md) and [Quick Start](getting-started/02-Quick-Start.md).
 
-2. **Production migration** — 16 runtime pairs, rollback on failure, health gates, connection draining. See [Migration Guide](guides/migration/MIGRATION-GUIDE.md) and [Migration Internals](guides/migration/MIGRATION-INTERNALS.md).
+2. **Production migration** — 12 runtime pairs, rollback on failure, health gates, connection draining. See [Migration Guide](guides/migration/MIGRATION-GUIDE.md) and [Migration Internals](guides/migration/MIGRATION-INTERNALS.md).
 
 3. **Explainable placement** — Intent-driven scoring ranks runtimes with reasons, not black-box picks. Run `aether decide --spec workload.yaml --explain` or use the dashboard AI Engine.
+
+## Compare runtimes
+
+<div class="compare-cards" markdown="1">
+- **Podman**<br>Local dev and edge containers. No cluster required; fastest path from spec to running workload.
+- **Kubernetes**<br>Cluster orchestration, services, scaling. The production default for multi-node, horizontally-scaled workloads.
+- **KubeVirt**<br>VM isolation and GPU passthrough on top of Kubernetes, for legacy VM workloads and hardware-bound GPU jobs.
+</div>
+
+## Security
+
+<div class="icon-badge-list" markdown="1">
+- 🔒 AES-256-GCM encryption
+- 🔑 RBAC API integration
+- 📜 Audit trail integrity
+- 🛡️ Policy engine
+- ⏱️ Rate limiting
+- 🔗 Webhook delivery security
+</div>
+
+[Full security reference →](features/security.md)
+
+## Zyra — the AI layer
+
+Zyra is Aether's ambient AI layer, not a bolt-on chatbot — present throughout the CLI and dashboard.
+
+- **Multi-LLM** — OpenAI, Anthropic, Gemini, xAI Grok, Azure, Ollama, vLLM, and OpenAI-compatible endpoints
+- **Multi-agent** — Auto, Architect, DevOps, Kubernetes, Security, SRE, Cost, Observability, AI Engineer, Database Expert
+- **Intelligent routing** — Task-class based provider and agent selection
+- **Approval-gated actions** — Mutations require explicit user confirmation
+
+[Full Zyra reference →](reference/ZYRA.md)
+
+## Integrations
+
+=== "Atlas (storage)"
+
+    [Atlas](https://github.com/ssahani/atlas) is the Zyvor storage control plane. When enabled, Aether provisions persistent storage for a workload through Atlas instead of creating a native Kubernetes PVC itself.
+
+    [Atlas integration guide →](integrations/ATLAS.md)
+
+=== "Cloud Matrix"
+
+    Vendor support levels for Aether's target runtimes across AWS EKS, Google GKE, and other managed Kubernetes offerings.
+
+    [Cloud Integration Matrix →](integrations/CLOUD-MATRIX.md)
+
+=== "Forge (GPU / AI)"
+
+    [Forge](https://github.com/ssahani/forge) is the Zyvor AI infrastructure control plane. Aether reads GPU capacity, node inventory, placement recommendations, and cost from the Forge API gateway — read-only.
+
+    [Forge integration guide →](integrations/FORGE.md)
 
 ## Who it's for
 

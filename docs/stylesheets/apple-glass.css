@@ -591,3 +591,128 @@
   background: transparent;
   color: var(--muted-foreground);
 }
+
+/* ---------------------------------------------------------------------- */
+/* macbook-pro-style flagship chapters — tabs, compare cards, icon badges */
+/* ---------------------------------------------------------------------- */
+
+/* "Take a closer look" — reskin pymdownx.tabbed as a glass segmented
+   control. Material's own :checked/sibling logic keeps working untouched;
+   this only restyles the container/label chrome, and the active-tab
+   indicator already inherits var(--primary) via the --md-accent-fg-color
+   reassignment above. */
+.md-typeset .tabbed-set {
+  margin: 2rem 0;
+}
+.md-typeset .tabbed-labels {
+  background: var(--glass-bg);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  padding: 0.3rem;
+  gap: 0.25rem;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .md-typeset .tabbed-labels {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+.md-typeset .tabbed-labels > label {
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+}
+.md-typeset .tabbed-content {
+  background: var(--glass-bg);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  margin-top: 1rem;
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .md-typeset .tabbed-content {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+
+/* "Keep exploring" — 3-up comparison cards. Author as a plain markdown
+   list inside `<div class="compare-cards" markdown="1">` (md_in_html,
+   already enabled) -- attr_list can't target a whole <ul>, only its last
+   <li>, so the class goes on a wrapper div instead. */
+.md-typeset .compare-cards ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+.md-typeset .compare-cards li {
+  background: var(--glass-bg);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .md-typeset .compare-cards li {
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+.md-typeset .compare-cards li > strong:first-child {
+  font-size: 1.125rem;
+  line-height: 2;
+  color: var(--foreground);
+}
+
+/* Security-style icon badge row — a wrapping pill list, smaller than a
+   hub-band, for a flat set of feature names rather than linked destinations.
+   Same wrapper-div technique as .compare-cards above. */
+.md-typeset .icon-badge-list ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+.md-typeset .icon-badge-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 1rem;
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+/* Footnotes — ties every highlight stat back to the doc that proves it,
+   the same way Apple's own disclaimer numbers work. */
+.hero-footnote {
+  font-size: 0.625rem;
+  vertical-align: super;
+  margin-left: 2px;
+  color: var(--primary);
+  text-decoration: none;
+}
+.apple-footnotes {
+  margin-top: var(--section-gap);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+.apple-footnotes ol {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+.apple-footnotes li {
+  margin-bottom: 0.5rem;
+}
+.apple-footnotes a {
+  color: var(--muted-foreground);
+  text-decoration: underline;
+}

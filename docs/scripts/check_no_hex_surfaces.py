@@ -21,7 +21,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOKEN_FILE = REPO_ROOT / "docs" / "stylesheets" / "apple-glass.css"
 
-COLOR_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b|rgba?\(")
+COLOR_RE = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b|rgba?\(")
 FRONT_MATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 
 SCAN_GLOBS = [
