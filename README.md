@@ -57,6 +57,39 @@ CLI, TUI, glass web dashboard, and REST + SSE API — same control plane, same s
 
 ---
 
+## Is this for you?
+
+Aether is a small, open-source (Apache-2.0 core) **runtime portability
+plane** — one workload spec that scores and migrates across Podman,
+Kubernetes, and KubeVirt. It's not a container orchestrator competing with
+Kubernetes itself, not a generic config-management tool, and its
+confidential-computing product (Ragnarok) is explicitly a separate,
+proprietary Zyvor product not shipped in this repository.
+
+| | **Aether** | Docker Compose | HashiCorp Nomad | Crossplane | Score (score.dev spec) |
+|---|---|---|---|---|---|
+| Primary scope | One spec, score + migrate across Podman/Kubernetes/KubeVirt | Single-host/single-runtime container orchestration | Its own cluster scheduler (not multi-runtime-portable) | Cloud infra provisioning via Kubernetes CRDs | A workload spec standard, not a runtime/migration engine itself |
+| Cross-runtime migration | Yes — 9 runtime-pair paths, immediate/blue-green/rolling, KubeVirt live migration | No | No | No | No — Score defines the spec; implementations vary |
+| Intent-based runtime selection | Yes — declare cost/performance/reliability, Aether scores and recommends/selects | No | No | No | No |
+| License | Apache-2.0 (Aether-core); Enterprise/Ragnarok proprietary, separate | Apache-2.0 | Business Source License (Nomad) | Apache-2.0 | Apache-2.0 (spec) |
+
+*(General characterizations as of writing — verify current features
+against each project's own docs.)*
+
+**Maturity, stated honestly**: current release is v0.4.0. See
+[`docs/ROADMAP.md`](docs/ROADMAP.md), which explicitly separates
+"Shipped" from "Q3–Q4 targets" rather than making inflated claims.
+
+Already has an FAQ: see [`docs/index.md`](docs/index.md#faq) for general
+questions and [`docs/guides/migration/MIGRATION-INTERNALS.md`](docs/guides/migration/MIGRATION-INTERNALS.md#buyer-faq-10-questions)
+for a dedicated 10-question buyer FAQ (e.g. "Does migration copy my
+database?"). Troubleshooting sections exist per-topic across the docs
+tree (`KUBEVIRT.md`, `MIGRATION.md`, `TUI.md`,
+`docs/guides/operations/RUNBOOK.md`'s "Common Issues", and more) rather
+than one consolidated file.
+
+---
+
 ## Quick Start
 
 ### Install a release binary
