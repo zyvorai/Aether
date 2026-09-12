@@ -1,23 +1,23 @@
-# Aether -- Complete Documentation Index
-
-> **Universal runtime portability** — Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure.
->
-> Version **0.4.0** | License: [Apache-2.0](https://github.com/zyvorai/Aether/blob/main/LICENSE) | **[Product overview](PRODUCT.md)**
-
-[![License](https://img.shields.io/badge/license-Apache%202.0-orange)](https://github.com/zyvorai/Aether/blob/main/LICENSE)
-
 ---
-
-## Why Aether
-
-| Theme | Document |
-|-------|----------|
-| Product narrative | [Product overview](PRODUCT.md) |
-| Migration credibility | [Migration Internals](guides/migration/MIGRATION-INTERNALS.md), [Stateful portability](guides/migration/STATEFUL-PORTABILITY.md) |
-| Runtime decisions | [Scoring engine](guides/decision-engine/SCORING.md), `aether decide --explain` |
-| Enterprise trust | [Deployment topologies](architecture/DEPLOYMENT-TOPOLOGIES.md), [Production reference](deployment/PRODUCTION-REFERENCE.md) |
-| Ecosystem | [Zyvor platform map](ECOSYSTEM.md) |
-
+hero:
+  eyebrow: "AETHER"
+  title: "Universal runtime portability."
+  lead: "Deploy once. Move workloads across Podman, Kubernetes, and KubeVirt without rewriting infrastructure."
+  tone: sky
+  swatches:
+    - {label: "v0.4.0", tone: sky}
+    - {label: "Apache-2.0", tone: emerald}
+  highlights:
+    - {value: "3", label: "Runtimes unified"}
+    - {value: "16", label: "Migration pairs"}
+    - {value: "40+", label: "CLI commands"}
+    - {value: "40+", label: "REST API endpoints"}
+  hub_bands:
+    - {icon: "◆", title: "Product overview", description: "Why Aether exists and where it fits.", href: "PRODUCT.md", tone: sky}
+    - {icon: "⇄", title: "Migration credibility", description: "State machine, rollback, and the limits matrix.", href: "guides/migration/MIGRATION-INTERNALS.md", tone: violet}
+    - {icon: "◎", title: "Runtime decisions", description: "Scoring engine weights, intent, and explain output.", href: "guides/decision-engine/SCORING.md", tone: amber}
+    - {icon: "▣", title: "Enterprise trust", description: "Deployment topologies and the production reference.", href: "architecture/DEPLOYMENT-TOPOLOGIES.md", tone: emerald}
+    - {icon: "◈", title: "Ecosystem", description: "Where Aether fits in the Zyvor suite.", href: "ECOSYSTEM.md", tone: teal}
 ---
 
 ## Trust and proof

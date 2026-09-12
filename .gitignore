@@ -50,3 +50,4 @@ presentations/
 # MkDocs
 .venv-docs/
 /site/
+docs/overrides/__pycache__/

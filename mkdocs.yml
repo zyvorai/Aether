@@ -10,6 +10,7 @@ exclude_docs: |
   /README.md
 theme:
   name: material
+  custom_dir: docs/overrides
   logo: material/transit-connection-variant
   favicon: material/transit-connection-variant
   palette:
@@ -25,6 +26,10 @@ theme:
       toggle: {icon: material/brightness-4, name: Switch to light mode}
   features: [navigation.tabs, navigation.sections, navigation.top, navigation.footer, content.code.copy, search.suggest, search.highlight, toc.follow]
 plugins: [search]
+hooks:
+  - docs/overrides/hooks.py
+extra_css:
+  - stylesheets/apple-glass.css
 markdown_extensions:
   - admonition
   - attr_list
@@ -78,16 +83,19 @@ nav:
           - Enterprise security: guides/security/ENTERPRISE-SECURITY.md
           - Security profiles: guides/security/SECURITY-PROFILES.md
   - Features:
+      - Features: features/index.md
       - Compose: features/compose.md
       - Health monitoring: features/health-monitoring.md
       - Plugins: features/plugins.md
       - Security: features/security.md
   - Architecture:
+      - Architecture: architecture/index.md
       - Overview: architecture/ARCHITECTURE.md
       - Deployment topologies: architecture/DEPLOYMENT-TOPOLOGIES.md
       - Fleet architecture: architecture/FLEET-ARCHITECTURE.md
       - Networking: architecture/NETWORKING.md
   - Deployment:
+      - Deployment: deployment/index.md
       - Deployment guide: deployment/DEPLOYMENT.md
       - Deployment patterns: deployment/DEPLOYMENT-PATTERNS.md
       - Air-gapped: deployment/AIR-GAPPED.md

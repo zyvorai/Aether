@@ -34,6 +34,8 @@ jobs:
           cache-dependency-path: requirements-docs.txt
       - name: Install MkDocs
         run: pip install -r requirements-docs.txt
+      - name: Check for hardcoded surface colors
+        run: python3 docs/scripts/check_no_hex_surfaces.py
       - name: Build site
         run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v5

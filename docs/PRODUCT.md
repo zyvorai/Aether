@@ -1,6 +1,18 @@
-# Aether — Universal Runtime Portability
-
-> **Deploy once. Move workloads across containers, Kubernetes, and VMs without rewriting infrastructure.**
+---
+hero:
+  eyebrow: "PRODUCT"
+  title: "Universal Runtime Portability"
+  lead: "Deploy once. Move workloads across containers, Kubernetes, and VMs without rewriting infrastructure."
+  tone: violet
+  swatches:
+    - {label: "Podman — local dev & edge", tone: sky}
+    - {label: "Kubernetes — cluster orchestration", tone: violet}
+    - {label: "KubeVirt — VM isolation, GPU", tone: teal}
+  highlights:
+    - {value: "3", label: "Runtimes, one spec"}
+    - {value: "16", label: "Runtime migration pairs"}
+    - {value: "4", label: "Migration strategies"}
+---
 
 ## The problem
 

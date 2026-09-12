@@ -1,7 +1,12 @@
-# Zyvor Platform Ecosystem
-
-> Where Aether fits alongside HyperSDK suite products.
-
+---
+hero:
+  eyebrow: "ECOSYSTEM"
+  title: "Where Aether fits in the Zyvor suite."
+  lead: "Aether is the control plane. Zyra, Ragnarok, PacketWolf, and GuestKit plug in around it."
+  tone: teal
+  highlights:
+    - {value: "5", label: "Suite products"}
+    - {value: "1", label: "Control plane"}
 ---
 
 ## Role diagram
