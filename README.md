@@ -306,6 +306,8 @@ Conventional Commits (`feat:`, `fix:`, `docs:`). PRs welcome — see [CONTRIBUTI
 
 ## License
 
+Commercial subscriptions and support: see [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md).
+
 **Apache License 2.0** — see [LICENSE](LICENSE).
 
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
