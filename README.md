@@ -4,34 +4,58 @@
 
 # Aether
 
-<img src="docs/social/aether-hero-dark.jpg" alt="Aether - One YAML. Three runtimes. Zero lock-in." width="100%">
-
-
-### One YAML. Three runtimes. Zero lock-in.
-
-The universal runtime control plane — deploy the same workload to **Podman**, **Kubernetes**, and **KubeVirt**, then migrate between them without rewriting infrastructure.
-
-[Releases](https://github.com/zyvorai/Aether/releases) · [Quick Start](#quick-start) · [User Guide](docs/user-guide/aether-user-guide.md) · [Docs](docs/README.md)
-
-[![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=Aether&utm_campaign=readme_hero)
-[![30-day PoC](https://img.shields.io/badge/30--day_PoC-1d1d1f?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=Aether&utm_campaign=readme_hero)
-
 [![License](https://img.shields.io/badge/license-Apache%202.0-orange?style=for-the-badge)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/zyvorai/Aether?style=for-the-badge&color=f97316)](https://github.com/zyvorai/Aether/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/Aether/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/zyvorai/Aether/actions/workflows/ci.yml)
 [![Rust](https://img.shields.io/badge/rust-2021-dea584?style=for-the-badge&logo=rust&logoColor=white)](Cargo.toml)
 
-<br/>
+[![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=aether&utm_campaign=readme_hero)
+[![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=aether&utm_campaign=readme_hero)
+[![Quickstart](https://img.shields.io/badge/Quickstart_one_binary_or_GHCR-bf5af2?style=for-the-badge)](#quickstart)
 
-<img src="docs/assets/readme/portability-spine.png" alt="Aether portability: one Workload YAML to Podman, Kubernetes, and KubeVirt" width="880"/>
+![Aether - One YAML. Three runtimes. Zero lock-in.](docs/social/aether-hero-dark.jpg)
+
+### One YAML. Three runtimes. Zero lock-in.
+
+**The universal runtime control plane: deploy the same workload to Podman, Kubernetes and KubeVirt, then migrate between them without rewriting infrastructure.** Declare what you care about (cost, performance, reliability), let the intent engine score the lanes, and move running workloads with immediate, blue-green, rolling or canary strategies.
+
+**3 runtimes, 1 workload YAML** · **4 migration strategies** · **KubeVirt live migration** · **CLI · TUI · web · REST + SSE** · **Apache-2.0, Rust**
+
+[Releases](https://github.com/zyvorai/Aether/releases) · [User Guide](docs/user-guide/aether-user-guide.md) · [Docs](docs/README.md)
 
 </div>
 
 ---
 
+## What's new in 0.4.0
+
+| | |
+|---|---|
+| **Apache-2.0 open source** | Aether-core is fully Apache-2.0; confidential computing (Ragnarok) moved to a separate product |
+| **KubeVirt live migration** | `kubevirt.liveMigration` renders `evictionStrategy: LiveMigrate`; `aether live-migrate <name>` creates a `VirtualMachineInstanceMigration` and watches it |
+| **KubeVirt vGPU** | `requirements.gpu.vgpuProfile` attaches mediated vGPU slices instead of VFIO passthrough |
+| **Logs and Shell for discovered pods and VMs** | Pods, Deployments, StatefulSets, DaemonSets, VirtualMachines and VMIs, gated to Operator / Admin |
+| **RBAC API** | Admin / Operator / Viewer roles enforced in middleware, with key create / list / revoke endpoints |
+| **NetworkPolicy and custom-metric HPA** | Generated from the workload spec |
+
+Full list: [CHANGELOG.md](CHANGELOG.md).
+
+---
+
 ## Why Aether
 
-Most teams write the app once — then rewrite the **deploy story** three times.
+Most teams write the app once, then rewrite the **deploy story** three times.
+
+| When this happens… | Aether gives you… |
+|---|---|
+| The same app needs a Podman host, a Kubernetes cluster and a KubeVirt VM | One `aether/v1` Workload YAML with `runtime.allow: [kube, podman, kubevirt]` |
+| Nobody can say *why* a workload runs where it does | An intent engine that scores Podman / Kubernetes / KubeVirt on cost, performance and reliability, and `aether decide --explain` |
+| Moving between runtimes means a rewrite and a maintenance window | Migration between runtime pairs with immediate, blue-green, rolling or canary strategies, drain, health gates and rollback paths |
+| A VM has to move hosts without downtime | KubeVirt live migration with vGPU-aware validation |
+| Every tool has its own console | CLI, TUI, web dashboard and REST + SSE API on the same control plane and state |
+| Read-only users can do more than read | Admin / Operator / Viewer RBAC and an HMAC-verified audit trail |
+
+![Capabilities at a glance: Deploy, Decide, Migrate, Operate](docs/ux/readme-capabilities.jpg)
 
 <table>
 <tr>
@@ -44,9 +68,9 @@ Declare what you care about — cost, performance, reliability. Aether **scores*
 </td>
 <td width="33%" valign="top">
 
-### Nine migration paths
+### Every runtime pair
 
-Every runtime pair. Immediate, blue-green, or rolling. KubeVirt **live migration** with vGPU-aware validation.
+Immediate, blue-green, rolling or canary. KubeVirt **live migration** with vGPU-aware validation.
 
 </td>
 <td width="33%" valign="top">
@@ -63,7 +87,22 @@ CLI, TUI, glass web dashboard, and REST + SSE API — same control plane, same s
 
 ---
 
-## Is this for you?
+## Aether vs HashiCorp Nomad
+
+![Aether vs HashiCorp Nomad: move between runtimes instead of picking one scheduler](docs/ux/readme-vs.jpg)
+
+| | **Aether** | **HashiCorp Nomad** |
+|---|---|---|
+| What it is | A portability plane over runtimes you already run | Its own cluster scheduler (servers + client agents) |
+| Workload definition | One `aether/v1` Workload YAML | HCL jobspec |
+| Where workloads run | Podman, Kubernetes, KubeVirt | Nomad clients, through task drivers (Docker, exec, QEMU, Java, …) |
+| Kubernetes and KubeVirt | First-class deploy targets | Not deploy targets |
+| Cross-runtime migration | Between runtime pairs, immediate / blue-green / rolling / canary, plus KubeVirt live migration | No |
+| Intent-based runtime selection | Scores runtimes on cost, performance, reliability | No |
+| License | Apache-2.0 (Aether-core) | Business Source License |
+| **Choose Nomad when** | | You want one scheduler for containers, VMs and binaries and do not run Kubernetes |
+
+### Is this for you?
 
 Aether is a small, open-source (Apache-2.0 core) **runtime portability
 plane** — one workload spec that scores and migrates across Podman,
@@ -82,10 +121,6 @@ proprietary Zyvor product not shipped in this repository.
 *(General characterizations as of writing — verify current features
 against each project's own docs.)*
 
-**Maturity, stated honestly**: current release is v0.4.0. See
-[`docs/ROADMAP.md`](docs/ROADMAP.md), which explicitly separates
-"Shipped" from "Q3–Q4 targets" rather than making inflated claims.
-
 Already has an FAQ: see [`docs/index.md`](docs/index.md#faq) for general
 questions and [`docs/guides/migration/MIGRATION-INTERNALS.md`](docs/guides/migration/MIGRATION-INTERNALS.md#buyer-faq-10-questions)
 for a dedicated 10-question buyer FAQ (e.g. "Does migration copy my
@@ -96,7 +131,66 @@ than one consolidated file.
 
 ---
 
-## Quick Start
+## How it fits together
+
+![One control plane, three places to run](docs/ux/readme-how-it-works.jpg)
+
+<div align="center">
+<img src="docs/assets/readme/portability-spine.png" alt="Aether portability: one Workload YAML to Podman, Kubernetes, and KubeVirt" width="880"/>
+</div>
+
+```mermaid
+flowchart TB
+  subgraph Surfaces
+    W[Web Dashboard]
+    T[TUI]
+    C[CLI]
+  end
+  subgraph ControlPlane[Control Plane]
+    API[Axum API + SSE]
+    I[Intent Engine]
+    M[Migration Engine]
+    P[Policy · RBAC · Audit]
+  end
+  subgraph Runtimes
+    Podman
+    K8s[Kubernetes]
+    KV[KubeVirt]
+  end
+  W --> API
+  T --> API
+  C --> API
+  API --> I
+  API --> M
+  API --> P
+  I --> Podman
+  I --> K8s
+  I --> KV
+  M --> Podman
+  M --> K8s
+  M --> KV
+```
+
+| Path | Purpose |
+|------|---------|
+| `src/` | Control plane — CLI, API, adapters, intelligence |
+| `web/dashboard/` | React 18 + TypeScript + Tailwind glass UI |
+| `examples/` | Specs you can run today |
+| `helm/` · `packaging/` | Cluster & OS packaging |
+| `docs/` | Guides, architecture, user manuals |
+
+| Interface | How |
+|-----------|-----|
+| CLI | `aether run` · `migrate` · `serve` · `live-migrate` · … |
+| API | `http://localhost:5090/api/*` |
+| TUI | `aether ui` |
+| Web | `aether serve` → browser |
+
+---
+
+## Quickstart
+
+Requirements: a Linux or macOS host, plus whichever runtimes you target (Podman, a Kubernetes cluster, KubeVirt on that cluster).
 
 ### Install a release binary
 
@@ -205,7 +299,7 @@ aether live-migrate my-vm --watch-timeout 120
 aether score --spec workload.yaml
 ```
 
-Strategies: `immediate` · `blue-green` · `rolling` — with drain, health gates, and rollback paths.
+Strategies: `immediate` · `blue-green` · `rolling` · `canary` — with drain, health gates, and rollback paths.
 
 ---
 
@@ -228,57 +322,6 @@ Demo login (local): `admin` / `Admin@321`
 
 ---
 
-## Architecture
-
-```mermaid
-flowchart TB
-  subgraph Surfaces
-    W[Web Dashboard]
-    T[TUI]
-    C[CLI]
-  end
-  subgraph ControlPlane[Control Plane]
-    API[Axum API + SSE]
-    I[Intent Engine]
-    M[Migration Engine]
-    P[Policy · RBAC · Audit]
-  end
-  subgraph Runtimes
-    Podman
-    K8s[Kubernetes]
-    KV[KubeVirt]
-  end
-  W --> API
-  T --> API
-  C --> API
-  API --> I
-  API --> M
-  API --> P
-  I --> Podman
-  I --> K8s
-  I --> KV
-  M --> Podman
-  M --> K8s
-  M --> KV
-```
-
-| Path | Purpose |
-|------|---------|
-| `src/` | Control plane — CLI, API, adapters, intelligence |
-| `web/dashboard/` | React 18 + TypeScript + Tailwind glass UI |
-| `examples/` | Specs you can run today |
-| `helm/` · `packaging/` | Cluster & OS packaging |
-| `docs/` | Guides, architecture, user manuals |
-
-| Interface | How |
-|-----------|-----|
-| CLI | `aether run` · `migrate` · `serve` · `live-migrate` · … |
-| API | `http://localhost:5090/api/*` |
-| TUI | `aether ui` |
-| Web | `aether serve` → browser |
-
----
-
 ## Documentation
 
 | Want… | Go here |
@@ -289,8 +332,6 @@ flowchart TB
 | Scoring / intent | [Decision engine](docs/guides/decision-engine/SCORING.md) |
 | Docs index | [docs/README.md](docs/README.md) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
-
-Part of the [Zyvor](https://zyvor.dev/?utm_source=github&utm_medium=Aether&utm_campaign=readme_suite) private-cloud stack — Aether is the universal runtime portability plane.
 
 ---
 
@@ -307,13 +348,38 @@ Conventional Commits (`feat:`, `fix:`, `docs:`). PRs welcome — see [CONTRIBUTI
 
 ---
 
+## Maturity
+
+> **Maturity, stated honestly**: current release is v0.4.0. See
+> [`docs/ROADMAP.md`](docs/ROADMAP.md), which explicitly separates
+> "Shipped" from "Q3–Q4 targets" rather than making inflated claims.
+
+---
+
+## Part of the Zyvor stack
+
+Part of the [Zyvor](https://zyvor.dev/?utm_source=github&utm_medium=aether&utm_campaign=readme_suite) private-cloud stack — Aether is the universal runtime portability plane.
+
+| Product | Role next to Aether |
+|---|---|
+| **Aether** | Runtime portability plane: one workload spec across Podman, Kubernetes and KubeVirt |
+| **[Atlas](https://github.com/zyvorai/zyvor-atlas)** | Storage control plane; a `persistence.storage_class` of `atlas/<policy>` provisions the volume through Atlas (`AETHER_ATLAS_URL`) |
+| **[GuestKit](https://github.com/zyvorai/zyvor-guestkit)** | Guest VM inspection and tooling, listed in Aether's [ecosystem](docs/ECOSYSTEM.md) |
+| **[Zorvia](https://github.com/zyvorai/zyvor-zorvia)** | KubeVirt VM platform; pairs with Aether's KubeVirt lane |
+
+→ [zyvor.dev](https://zyvor.dev)
+
+---
+
 ## License
 
-Commercial subscriptions and support: see [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md).
-
-**Apache License 2.0** — see [LICENSE](LICENSE).
+Aether is **free and open source** under the [Apache License 2.0](LICENSE) (see [NOTICE](NOTICE)). That does not change.
 
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
+
+**Zyvor Enterprise** adds what production teams ask for: supported releases, deployment and upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake. Plans and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=aether&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
+
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -321,9 +387,11 @@ Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not**
 
 ### Stop rewriting deploys. Start moving runtimes.
 
-**[Star Aether](https://github.com/zyvorai/Aether)** · **[Releases](https://github.com/zyvorai/Aether/releases)** · **[zyvor.dev](https://zyvor.dev/?utm_source=github&utm_medium=Aether&utm_campaign=readme_footer)**
-
-Evaluate with the team: [Book a demo](https://zyvor.dev/schedule?utm_source=github&utm_medium=Aether&utm_campaign=readme_footer) · [30-day PoC](https://zyvor.dev/poc?utm_source=github&utm_medium=Aether&utm_campaign=readme_footer).
+[![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=aether&utm_campaign=readme_footer)
+[![30-day PoC](https://img.shields.io/badge/Start_a_30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=aether&utm_campaign=readme_footer)
+[![Pricing](https://img.shields.io/badge/Pricing-1d1d1f?style=for-the-badge)](https://zyvor.dev/pricing?utm_source=github&utm_medium=aether&utm_campaign=readme_footer)
+[![Contact sales](https://img.shields.io/badge/Contact_sales-bf5af2?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Aether)
+[![Star on GitHub](https://img.shields.io/github/stars/zyvorai/Aether?style=for-the-badge&logo=github&label=Star&color=2997ff)](https://github.com/zyvorai/Aether)
 
 <sub>Built with Rust · Glass · Intent · by ZyvorAI Labs</sub>
 
