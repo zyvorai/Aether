@@ -4,6 +4,9 @@
 
 # Aether
 
+<img src="docs/social/aether-hero-dark.jpg" alt="Aether - One YAML. Three runtimes. Zero lock-in." width="100%">
+
+
 ### One YAML. Three runtimes. Zero lock-in.
 
 The universal runtime control plane — deploy the same workload to **Podman**, **Kubernetes**, and **KubeVirt**, then migrate between them without rewriting infrastructure.
