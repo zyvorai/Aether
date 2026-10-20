@@ -12,7 +12,7 @@ fi
 check() {
   local path="$1"
   local code
-  code="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' "${AUTH[@]}" "${BASE}${path}")"
+  code="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' "${AUTH[@]+"${AUTH[@]}"}" "${BASE}${path}")"
   if [ "${code}" = "200" ]; then
     echo "OK  ${path} (${code})"
   else

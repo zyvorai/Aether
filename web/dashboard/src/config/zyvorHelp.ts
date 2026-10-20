@@ -28,6 +28,6 @@ export type ProductHelpMeta = {
 export const AETHER_HELP: ProductHelpMeta = {
   name: 'Aether',
   tagline: 'Universal Runtime Control Plane',
-  version: '0.3.0',
+  version: '0.4.0',
   productUrl: 'https://zyvor.dev/aether',
 };
