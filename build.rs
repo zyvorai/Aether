@@ -47,6 +47,9 @@ fn ensure_dashboard_assets() {
         }
     }
 
+    println!(
+        "cargo:warning=dashboard assets were not built; embedding placeholder stubs (run `npm run build` in web/dashboard)"
+    );
     write_dashboard_stubs();
 }
 

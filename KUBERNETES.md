@@ -869,7 +869,7 @@ Create the secret with kubectl or `kubernetes.dockerRegistrySecret`, then refere
 # Forward local port to pod
 kubectl port-forward web-app 8080:80
 
-# Access at http://localhost:5090
+# Access at http://localhost:8080
 ```
 
 ### Execute Commands
