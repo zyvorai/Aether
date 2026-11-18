@@ -13,6 +13,8 @@
 [![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=aether&utm_campaign=readme_hero)
 [![Quickstart](https://img.shields.io/badge/Quickstart_one_binary_or_GHCR-bf5af2?style=for-the-badge)](#quickstart)
 
+[Client overview (PDF)](docs/Aether-Client-Overview.pdf)
+
 ![Aether - One YAML. Three runtimes. Zero lock-in.](docs/social/aether-hero-dark.jpg)
 
 ### One YAML. Three runtimes. Zero lock-in.
