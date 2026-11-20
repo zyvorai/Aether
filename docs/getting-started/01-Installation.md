@@ -169,6 +169,8 @@ aether --version
 
 Run aether as a container without installing anything on the host:
 
+> The `ghcr.io/zyvorai/aether` container image and Helm chart are not publicly available. To request access, write to sales@zyvor.dev. Release binaries are on the [Releases](https://github.com/zyvorai/Aether/releases) page.
+
 ```bash
 # Pull from GitHub Container Registry
 podman pull ghcr.io/zyvorai/aether:latest
@@ -208,10 +210,7 @@ aether --version
 Deploy aether as a Kubernetes service with the API server and web dashboard:
 
 ```bash
-# From OCI (when charts are published to GHCR)
-helm install aether oci://ghcr.io/zyvorai/charts/aether --version 0.4.0
-
-# Or from a local checkout of this repository
+# The OCI chart is not public; use a local checkout of this repository
 helm install aether ./helm/aether
 ```
 

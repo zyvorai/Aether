@@ -767,6 +767,8 @@ kubectl apply -f aether-api-deployment.yaml
 
 Run the API server in Docker:
 
+> The `ghcr.io/zyvorai/aether` image is private; request access at sales@zyvor.dev.
+
 ```bash
 docker run -d \
   --name aether-api \

@@ -26,6 +26,8 @@ Aether can be deployed in multiple ways:
 
 ### Quick Start
 
+> The `ghcr.io/zyvorai/aether` container image and Helm chart are not publicly available. To request access, write to sales@zyvor.dev. Release binaries are on the [Releases](https://github.com/zyvorai/Aether/releases) page.
+
 ```bash
 # Pull latest image
 docker pull ghcr.io/zyvorai/aether:latest

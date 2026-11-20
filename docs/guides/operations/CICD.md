@@ -675,12 +675,6 @@ else
 fi
 ```
 
-## Example Repositories
-
-- [aether-demo-app](https://github.com/zyvorai/Aether-demo-app) - Sample application with full CI/CD
-- [aether-templates](https://github.com/zyvorai/Aether-templates) - Template repository with pipelines
-- [aether-kubernetes](https://github.com/zyvorai/Aether-kubernetes) - Kubernetes-focused examples
-
 ## Support
 
 For CI/CD integration help:

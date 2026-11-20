@@ -185,7 +185,7 @@ Also available: **macOS amd64** (`aether-macos-amd64`) and `.sha256` checksums o
 
 ### Run from GHCR (container)
 
-Official images publish from the Release workflow to GitHub Container Registry:
+The container image is private to the Zyvor organisation. To request access, write to sales@zyvor.dev; the commands below assume access. Release binaries are on the [Releases](https://github.com/zyvorai/Aether/releases) page.
 
 ```bash
 # Pull
@@ -205,7 +205,7 @@ docker run --rm -p 5090:5090 \
   ghcr.io/zyvorai/aether:0.4.0 serve --host 0.0.0.0 --port 5090
 ```
 
-Tags: `latest`, `0.4.0`, `0.4`, `0` — image: [`ghcr.io/zyvorai/aether`](https://github.com/zyvorai/Aether/pkgs/container/aether).
+Tags: `latest`, `0.4.0`, `0.4`, `0` — image: `ghcr.io/zyvorai/aether` (private).
 
 ### Run a workload
 
@@ -319,7 +319,7 @@ cargo clippy --all-targets --all-features
 cd web/dashboard && npm run test && npm run check:hex-surfaces
 ```
 
-Conventional Commits (`feat:`, `fix:`, `docs:`). PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Conventional Commits (`feat:`, `fix:`, `docs:`). Please contact sales@zyvor.dev before sending a contribution; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 

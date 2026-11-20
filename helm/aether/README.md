@@ -11,10 +11,7 @@ This Helm chart deploys Aether as a Kubernetes operator for managing workloads a
 ## Installation
 
 ```bash
-# From OCI (when charts are published)
-helm install aether oci://ghcr.io/zyvorai/charts/aether --version 0.4.0
-
-# From a local checkout
+# From a local checkout (the OCI chart is not public; request access at sales@zyvor.dev)
 helm install aether ./helm/aether
 
 # Custom values / namespace
