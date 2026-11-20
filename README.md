@@ -383,7 +383,7 @@ Aether is **free and open source** under the [Apache License 2.0](LICENSE) (see 
 
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
 
-**Zyvor Enterprise** adds what production teams ask for: supported releases, deployment and upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake. Plans and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=aether&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
+**Zyvor Enterprise** adds what production teams ask for: supported releases, deployment and upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake. One Zyvor Support meter per node per year: USD 600 (INR 59,999 in India incl. 18% GST), Supported Plus USD 1,200 (INR 119,999). Plans and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Buy / get a quote](https://zyvor.dev/buy) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=aether&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
 
