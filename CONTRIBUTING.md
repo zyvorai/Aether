@@ -446,7 +446,7 @@ Include:
 
 ## License
 
-Aether-core is licensed under the Apache License, Version 2.0 — see [LICENSE](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
+Aether is licensed under the Zyvor Production License v1.0 — see [LICENSE](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
 
 Confidential computing (Ragnarok) is a separate Zyvor product and is not part of this repository. Contact licensing@zyvor.dev for commercial terms.
 

@@ -2,7 +2,7 @@
 
 Universal runtime portability — deploy once, run on Podman, Kubernetes, or KubeVirt.
 
-**License:** [Apache License 2.0](https://github.com/zyvorai/Aether/blob/main/LICENSE) · **Version:** 0.4.0 · **Repo:** [zyvorai/Aether](https://github.com/zyvorai/Aether)
+**License:** [Zyvor Production License v1.0](https://github.com/zyvorai/Aether/blob/main/LICENSE) · **Version:** 0.4.0 · **Repo:** [zyvorai/Aether](https://github.com/zyvorai/Aether)
 
 ## Start here
 

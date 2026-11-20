@@ -7,7 +7,7 @@
 //! This module only VERIFIES. Keys are issued by Zyvor and no signing key is in this repository.
 //!
 //! Soft enforcement: the status is information only. Nothing in Aether is ever disabled, limited or deleted because a
-//! trial or licence ended, or because there is no key. Aether stays free under the Apache License 2.0; the 30-day trial key
+//! trial or licence ended, or because there is no key. Aether never disables anything when a trial ends; non-production use stays free under the Zyvor Production License v1.0; the 30-day trial key
 //! applies to the paid production licence and support, not to the software.
 //!
 //! Key source: `AETHER_LICENCE_KEY`, else the file named by `AETHER_LICENCE_FILE`, else `licence.key` in the Aether
@@ -92,7 +92,7 @@ pub fn evaluate(key: Option<&str>, now: i64, pk: &VerifyingKey) -> Status {
         edition: None,
         days_left: None,
         nodes: None,
-        message: "No licence key. Aether keeps working (Apache-2.0); a 30-day trial key for the paid production licence and support is available from sales@zyvor.dev.".into(),
+        message: "No licence key. Aether keeps working (Zyvor Production License v1.0; non-production use is free); a 30-day trial key for the paid production licence and support is available from sales@zyvor.dev.".into(),
     }
 }
 

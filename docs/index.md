@@ -6,7 +6,7 @@ hero:
   tone: sky
   swatches:
     - {label: "v0.4.0", tone: sky}
-    - {label: "Apache-2.0", tone: emerald}
+    - {label: "Zyvor Production License", tone: emerald}
   highlights:
     - {value: "3", label: "Runtimes unified"}
     - {value: "12", label: "Migration pairs", footnote: "1"}
@@ -461,4 +461,4 @@ Migration Checklist  -->  Security  -->  Deployment  -->  REST API  -->  Runbook
 
 ## 📄 License
 
-Proprietary - Copyright (c) 2024-2026 HyperSDK. All rights reserved.
+Zyvor Production License v1.0 (SPDX: LicenseRef-Zyvor-Production-1.0). See [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE).

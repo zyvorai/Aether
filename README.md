@@ -4,7 +4,7 @@
 
 # Aether
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-orange?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/license-Zyvor%20Production-orange?style=for-the-badge)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/zyvorai/Aether?style=for-the-badge&color=f97316)](https://github.com/zyvorai/Aether/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/zyvorai/Aether/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/zyvorai/Aether/actions/workflows/ci.yml)
 [![Rust](https://img.shields.io/badge/rust-2021-dea584?style=for-the-badge&logo=rust&logoColor=white)](Cargo.toml)
@@ -21,7 +21,7 @@
 
 **The universal runtime control plane: deploy the same workload to Podman, Kubernetes and KubeVirt, then migrate between them without rewriting infrastructure.** Declare what you care about (cost, performance, reliability), let the intent engine score the lanes, and move running workloads with immediate, blue-green, rolling or canary strategies.
 
-**3 runtimes, 1 workload YAML** · **4 migration strategies** · **KubeVirt live migration** · **CLI · TUI · web · REST + SSE** · **Apache-2.0, Rust**
+**3 runtimes, 1 workload YAML** · **4 migration strategies** · **KubeVirt live migration** · **CLI · TUI · web · REST + SSE** · **Zyvor Production License, Rust**
 
 [Releases](https://github.com/zyvorai/Aether/releases) · [User Guide](docs/user-guide/aether-user-guide.md) · [Docs](docs/README.md)
 
@@ -33,7 +33,7 @@
 
 | | |
 |---|---|
-| **Apache-2.0 open source** | Aether-core is fully Apache-2.0; confidential computing (Ragnarok) moved to a separate product |
+| **Source-available** | Aether is under the Zyvor Production License v1.0 (free for non-production use); confidential computing (Ragnarok) moved to a separate product |
 | **KubeVirt live migration** | `kubevirt.liveMigration` renders `evictionStrategy: LiveMigrate`; `aether live-migrate <name>` creates a `VirtualMachineInstanceMigration` and watches it |
 | **KubeVirt vGPU** | `requirements.gpu.vgpuProfile` attaches mediated vGPU slices instead of VFIO passthrough |
 | **Logs and Shell for discovered pods and VMs** | Pods, Deployments, StatefulSets, DaemonSets, VirtualMachines and VMIs, gated to Operator / Admin |
@@ -101,12 +101,12 @@ CLI, TUI, glass web dashboard, and REST + SSE API — same control plane, same s
 | Kubernetes and KubeVirt | First-class deploy targets | Not deploy targets |
 | Cross-runtime migration | Between runtime pairs, immediate / blue-green / rolling / canary, plus KubeVirt live migration | No |
 | Intent-based runtime selection | Scores runtimes on cost, performance, reliability | No |
-| License | Apache-2.0 (Aether-core) | Business Source License |
+| License | Zyvor Production 1.0 (free non-production) | Business Source License |
 | **Choose Nomad when** | | You want one scheduler for containers, VMs and binaries and do not run Kubernetes |
 
 ### Is this for you?
 
-Aether is a small, open-source (Apache-2.0 core) **runtime portability
+Aether is a small, source-available (Zyvor Production License) **runtime portability
 plane** — one workload spec that scores and migrates across Podman,
 Kubernetes, and KubeVirt. It's not a container orchestrator competing with
 Kubernetes itself, not a generic config-management tool, and its
@@ -118,7 +118,7 @@ proprietary Zyvor product not shipped in this repository.
 | Primary scope | One spec, score + migrate across Podman/Kubernetes/KubeVirt | Single-host/single-runtime container orchestration | Its own cluster scheduler (not multi-runtime-portable) | Cloud infra provisioning via Kubernetes CRDs | A workload spec standard, not a runtime/migration engine itself |
 | Cross-runtime migration | Yes — 9 runtime-pair paths, immediate/blue-green/rolling, KubeVirt live migration | No | No | No | No — Score defines the spec; implementations vary |
 | Intent-based runtime selection | Yes — declare cost/performance/reliability, Aether scores and recommends/selects | No | No | No | No |
-| License | Apache-2.0 (Aether-core); Enterprise/Ragnarok proprietary, separate | Apache-2.0 | Business Source License (Nomad) | Apache-2.0 | Apache-2.0 (spec) |
+| License | Zyvor Production 1.0 (free non-production); Enterprise/Ragnarok proprietary, separate | Apache-2.0 | Business Source License (Nomad) | Apache-2.0 | Apache-2.0 (spec) |
 
 *(General characterizations as of writing — verify current features
 against each project's own docs.)*
@@ -375,13 +375,13 @@ Part of the [Zyvor](https://zyvor.dev/?utm_source=github&utm_medium=aether&utm_c
 
 ## Support
 
-Free under Apache-2.0. If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
+Non-production use is free under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ## License
 
-Aether is **free and open source** under the [Apache License 2.0](LICENSE) (see [NOTICE](NOTICE)). That does not change.
+Aether is source-available under the [Zyvor Production License v1.0](LICENSE) (see [NOTICE](NOTICE)). Non-production use (evaluation, development, testing, research, education) is free; Production Use requires a commercial license from Zyvor AI Labs Private Limited ([sales@zyvor.dev](mailto:sales@zyvor.dev), [zyvor.dev/buy](https://zyvor.dev/buy)).
 
-**Licence key (30-day trial).** Aether verifies a signed licence key (`ZYV1.`, checked offline against a public key built in; nothing is sent to Zyvor). A 30-day trial key from [sales@zyvor.dev](mailto:sales@zyvor.dev) applies to the paid production licence and support, not to the free Apache-2.0 software; nothing is disabled when it ends. Set `AETHER_LICENCE_KEY` or put the key in `~/.config/aether/licence.key` (or the file named by `AETHER_LICENCE_FILE`); `GET /api/licence` reports `licensed`, `trial`, `licence_expired`, `unlicensed` or `invalid`.
+**Licence key (30-day trial).** Aether verifies a signed licence key (`ZYV1.`, checked offline against a public key built in; nothing is sent to Zyvor). A 30-day trial key from [sales@zyvor.dev](mailto:sales@zyvor.dev) lets you evaluate the software in production for 30 days; nothing is disabled when it ends. Set `AETHER_LICENCE_KEY` or put the key in `~/.config/aether/licence.key` (or the file named by `AETHER_LICENCE_FILE`); `GET /api/licence` reports `licensed`, `trial`, `licence_expired`, `unlicensed` or `invalid`.
 
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
 

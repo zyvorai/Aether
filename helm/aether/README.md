@@ -462,7 +462,7 @@ Contributions welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelin
 
 ## License
 
-Proprietary (HyperSDK)
+Zyvor Production License v1.0 (SPDX: LicenseRef-Zyvor-Production-1.0). See [LICENSE](../../LICENSE).
 
 ## Support
 

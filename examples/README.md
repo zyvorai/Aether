@@ -11,4 +11,4 @@ Sample YAML specs for validation, demos, and feature walkthroughs.
 
 Demos with scripts: [demos/](demos/)
 
-> **Confidential computing (TEE attestation, measured images, sovereign policy)** is provided by **Ragnarok**, a separate Zyvor proprietary product — not part of this open-source Aether tree.
+> **Confidential computing (TEE attestation, measured images, sovereign policy)** is provided by **Ragnarok**, a separate Zyvor proprietary product — not part of this source-available Aether tree.

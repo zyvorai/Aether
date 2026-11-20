@@ -3,7 +3,7 @@ Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Universal runtime control plane
 
-License:        MIT OR Apache-2.0
+License:        LicenseRef-Zyvor-Production-1.0
 URL:            https://github.com/zyvorai/Aether
 Source0:        %{name}-%{version}.tar.gz
 
@@ -66,7 +66,7 @@ install -D -m 0644 examples/workload-full-featured.yaml \
 cargo test --all
 
 %files
-%license LICENSE-MIT LICENSE-APACHE
+%license LICENSE
 %doc %{_docdir}/aether/
 
 %{_bindir}/aether

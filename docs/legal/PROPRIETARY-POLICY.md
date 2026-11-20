@@ -7,7 +7,7 @@ hero:
 
 ## Position
 
-ZyvorAI Labs does **not** distribute product source or binaries under Apache 2.0, MIT, LGPL, or other open-source licenses, with one approved exception: **Aether-core** (the orchestration engine — CLI, runtime adapters, REST API, web dashboard) is Apache License 2.0. Everything else — **PacketWolf**, **Ragnarok** (confidential computing; separate repository), **GuestKit**, **HyperSDK**, and related commercial extensions — remains fully proprietary.
+ZyvorAI Labs does **not** distribute product source or binaries under Apache 2.0, MIT, LGPL, or other open-source licenses, with one approved exception: **Aether-core** (the orchestration engine — CLI, runtime adapters, REST API, web dashboard) is source-available under the Zyvor Production License v1.0. Everything else — **PacketWolf**, **Ragnarok** (confidential computing; separate repository), **GuestKit**, **HyperSDK**, and related commercial extensions — remains fully proprietary.
 
 ## Third-party dependencies
 
@@ -25,7 +25,7 @@ Agreements should state:
 
 ## Repositories
 
-- Do not add `LICENSE` files implying Apache/MIT for Zyvor-owned code — **except Aether**, which is the approved Apache-2.0 exception.
+- Do not add `LICENSE` files implying Apache/MIT for Zyvor-owned code — **except Aether**, which is under the Zyvor Production License v1.0.
 - Use the company **proprietary LICENSE** (synced via `scripts/sync-proprietary-license.sh`) for every other repo — Aether is deliberately excluded from that script's repo list so it doesn't get overwritten back to a proprietary EULA.
 - Keep confidential materials out of public repos. **Ragnarok** lives in its own private repository; it must not be vendored into the public Aether tree.
 
