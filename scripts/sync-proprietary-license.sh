@@ -18,8 +18,8 @@ if [ ! -f "$SOURCE_LICENSE" ]; then
 fi
 
 # Ssahani-owned repos under tt/ (exclude third-party mirrors and guestkit).
-# NOTE: Aether is deliberately NOT in this list as of 2026 — Aether-core went
-# Apache 2.0 and has its own LICENSE (see Aether/LICENSE); this script must not
+# NOTE: Aether is deliberately NOT in this list as of 2026 — Aether-core is under
+# the Zyvor Production License v1.0 and has its own LICENSE (see Aether/LICENSE); this script must not
 # overwrite it with the PacketWolf proprietary EULA. Ragnarok (confidential
 # computing) is a separate proprietary repo and is listed below on its own.
 REPOS=(

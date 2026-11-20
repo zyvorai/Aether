@@ -13,8 +13,6 @@
 [![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=aether&utm_campaign=readme_hero)
 [![Quickstart](https://img.shields.io/badge/Quickstart_one_binary_or_GHCR-bf5af2?style=for-the-badge)](#quickstart)
 
-[Client overview (PDF)](docs/Aether-Client-Overview.pdf)
-
 ![Aether - One YAML. Three runtimes. Zero lock-in.](docs/social/aether-hero-dark.jpg)
 
 ### One YAML. Three runtimes. Zero lock-in.
@@ -89,21 +87,6 @@ CLI, TUI, glass web dashboard, and REST + SSE API — same control plane, same s
 
 ---
 
-## Aether vs HashiCorp Nomad
-
-![Aether vs HashiCorp Nomad: move between runtimes instead of picking one scheduler](docs/ux/readme-vs.jpg)
-
-| | **Aether** | **HashiCorp Nomad** |
-|---|---|---|
-| What it is | A portability plane over runtimes you already run | Its own cluster scheduler (servers + client agents) |
-| Workload definition | One `aether/v1` Workload YAML | HCL jobspec |
-| Where workloads run | Podman, Kubernetes, KubeVirt | Nomad clients, through task drivers (Docker, exec, QEMU, Java, …) |
-| Kubernetes and KubeVirt | First-class deploy targets | Not deploy targets |
-| Cross-runtime migration | Between runtime pairs, immediate / blue-green / rolling / canary, plus KubeVirt live migration | No |
-| Intent-based runtime selection | Scores runtimes on cost, performance, reliability | No |
-| License | Zyvor Production 1.0 (free non-production) | Business Source License |
-| **Choose Nomad when** | | You want one scheduler for containers, VMs and binaries and do not run Kubernetes |
-
 ### Is this for you?
 
 Aether is a small, source-available (Zyvor Production License) **runtime portability
@@ -112,16 +95,6 @@ Kubernetes, and KubeVirt. It's not a container orchestrator competing with
 Kubernetes itself, not a generic config-management tool, and its
 confidential-computing product (Ragnarok) is explicitly a separate,
 proprietary Zyvor product not shipped in this repository.
-
-| | **Aether** | Docker Compose | HashiCorp Nomad | Crossplane | Score (score.dev spec) |
-|---|---|---|---|---|---|
-| Primary scope | One spec, score + migrate across Podman/Kubernetes/KubeVirt | Single-host/single-runtime container orchestration | Its own cluster scheduler (not multi-runtime-portable) | Cloud infra provisioning via Kubernetes CRDs | A workload spec standard, not a runtime/migration engine itself |
-| Cross-runtime migration | Yes — 9 runtime-pair paths, immediate/blue-green/rolling, KubeVirt live migration | No | No | No | No — Score defines the spec; implementations vary |
-| Intent-based runtime selection | Yes — declare cost/performance/reliability, Aether scores and recommends/selects | No | No | No | No |
-| License | Zyvor Production 1.0 (free non-production); Enterprise/Ragnarok proprietary, separate | Apache-2.0 | Business Source License (Nomad) | Apache-2.0 | Apache-2.0 (spec) |
-
-*(General characterizations as of writing — verify current features
-against each project's own docs.)*
 
 Already has an FAQ: see [`docs/index.md`](docs/index.md#faq) for general
 questions and [`docs/guides/migration/MIGRATION-INTERNALS.md`](docs/guides/migration/MIGRATION-INTERNALS.md#buyer-faq-10-questions)

@@ -15,7 +15,7 @@ fi
 
 mkdir -p "${STAGE}/docs/legal" "${STAGE}/legal/templates"
 
-# Code license (LGPL, Apache, or proprietary LICENSE)
+# Code license (LGPL or proprietary LICENSE)
 if [[ -f "${ROOT}/LICENSE" ]]; then
   cp "${ROOT}/LICENSE" "${STAGE}/LICENSE"
 fi

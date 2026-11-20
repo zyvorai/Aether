@@ -42,7 +42,7 @@ OPEN_SOURCE_REPO_PATHS = {
     "tt/hypersdk-org-profile",
     "tt/netctl",
     "tt/netevd",
-    # Aether-core went Apache 2.0 (2026) — do not re-stamp proprietary headers/
+    # Aether-core is under the Zyvor Production License v1.0 — do not re-stamp proprietary headers/
     # license metadata over it. Ragnarok (confidential computing) is a separate
     # proprietary repository and is not part of the Aether tree.
     "Aether",
