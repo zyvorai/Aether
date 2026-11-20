@@ -381,6 +381,8 @@ Free under Apache-2.0. If it helps you, you can donate any amount you like: <htt
 
 Aether is **free and open source** under the [Apache License 2.0](LICENSE) (see [NOTICE](NOTICE)). That does not change.
 
+**Licence key (30-day trial).** Aether verifies a signed licence key (`ZYV1.`, checked offline against a public key built in; nothing is sent to Zyvor). A 30-day trial key from [sales@zyvor.dev](mailto:sales@zyvor.dev) applies to the paid production licence and support, not to the free Apache-2.0 software; nothing is disabled when it ends. Set `AETHER_LICENCE_KEY` or put the key in `~/.config/aether/licence.key` (or the file named by `AETHER_LICENCE_FILE`); `GET /api/licence` reports `licensed`, `trial`, `licence_expired`, `unlicensed` or `invalid`.
+
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
 
 **Zyvor Enterprise** adds what production teams ask for: supported releases, deployment and upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake. One Zyvor Support meter per node per year: USD 600 (INR 59,999 in India incl. 18% GST), Supported Plus USD 1,200 (INR 119,999). Plans and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Buy / get a quote](https://zyvor.dev/buy) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=aether&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).

@@ -64,6 +64,7 @@ dependencies = [
  "crossterm 0.28.1",
  "deadpool-postgres",
  "dirs",
+ "ed25519-dalek",
  "flate2",
  "futures",
  "http",

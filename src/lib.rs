@@ -36,6 +36,7 @@ pub mod forge;
 pub mod gitops;
 pub mod ha;
 pub mod health;
+pub mod licence;
 pub mod helm;
 pub mod hosted;
 pub mod intelligence;

@@ -89,6 +89,7 @@ deadpool-postgres = "0.14"
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 url = "2"
 base64 = "0.22"
+ed25519-dalek = "2"
 flate2 = "1.0"
 rsa = { version = "0.9", features = ["sha2", "pem"] }
 x509-parser = "0.16"
