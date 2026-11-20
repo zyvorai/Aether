@@ -1,0 +1,122 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { GitBranch, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import Badge from './Badge';
+import { SectionHeader } from './layout/SectionHeader';
+
+interface GitOpsChangeRow {
+  file_path: string;
+  change_type: string;
+  commit: string;
+}
+
+interface GitOpsCenterProps {
+  configured: boolean;
+  repoUrl?: string | null;
+  branch?: string | null;
+  lastSync?: string | null;
+  status?: string | null;
+  changes: GitOpsChangeRow[];
+  onSync: () => void;
+  onPreview: () => void;
+  syncing: boolean;
+}
+
+function humanChange(c: GitOpsChangeRow): string {
+  const file = c.file_path.split('/').pop() ?? c.file_path;
+  switch (c.change_type.toLowerCase()) {
+    case 'added':
+      return `Added ${file}`;
+    case 'modified':
+      return `Updated ${file}`;
+    case 'deleted':
+      return `Removed ${file}`;
+    default:
+      return `${c.change_type} ${file}`;
+  }
+}
+
+export default function GitOpsCenter({
+  configured,
+  repoUrl,
+  branch,
+  lastSync,
+  status,
+  changes,
+  onPreview,
+  syncing: _syncing,
+}: GitOpsCenterProps) {
+  const synced = changes.length === 0 && configured;
+  const outOfSync = changes.length > 0;
+  const failed = status?.toLowerCase().includes('fail') ?? false;
+
+  return (
+    <section className="glass mb-6 p-6 sm:p-8" data-testid="gitops-center">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+        <SectionHeader
+          label="GitOps"
+          title="Repository sync status"
+          description={repoUrl ? `${repoUrl} @ ${branch ?? 'main'}` : undefined}
+        />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onPreview}
+            className="btn-secondary"
+          >
+            View Diff
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="glass border-success/20 bg-success/20 py-4">
+          <div className="flex items-center gap-2 text-success">
+            <CheckCircle2 size={18} />
+            <span className="text-sm font-medium">Synced</span>
+          </div>
+          <p className="text-2xl font-semibold text-foreground mt-2">{synced ? 'Yes' : outOfSync ? 'Partial' : '—'}</p>
+        </div>
+        <div className="glass border-warning/20 bg-warning/20 py-4">
+          <div className="flex items-center gap-2 text-warning">
+            <AlertTriangle size={18} />
+            <span className="text-sm font-medium">Out of sync</span>
+          </div>
+          <p className="text-2xl font-semibold text-foreground mt-2">{changes.length}</p>
+        </div>
+        <div className="glass border-danger/20 bg-danger/20 py-4">
+          <div className="flex items-center gap-2 text-danger">
+            <XCircle size={18} />
+            <span className="text-sm font-medium">Failed</span>
+          </div>
+          <p className="text-2xl font-semibold text-foreground mt-2">{failed ? 1 : 0}</p>
+        </div>
+      </div>
+
+      {!configured ? (
+        <p className="text-sm text-subtle">
+          GitOps is not configured. Run <code className="text-muted">aether git-ops init</code> to connect a repository.
+        </p>
+      ) : changes.length === 0 ? (
+        <div className="flex items-center gap-2 text-sm text-success">
+          <GitBranch size={16} />
+          All apps synced{lastSync ? ` · Last sync ${lastSync}` : ''}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wide text-subtle mb-2">Pending changes</p>
+          {changes.slice(0, 8).map((c) => (
+            <div
+              key={`${c.file_path}-${c.commit}`}
+              className="flex items-center justify-between gap-3 rounded-xl border glass px-3 py-2 backdrop-blur-sm"
+            >
+              <span className="text-sm text-foreground">{humanChange(c)}</span>
+              <Badge text={c.change_type} variant="yellow" />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

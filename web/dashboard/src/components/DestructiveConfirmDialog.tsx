@@ -1,0 +1,73 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useState } from 'react';
+import Modal from './Modal';
+
+interface DestructiveConfirmDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  resourceName: string;
+  description?: string;
+  confirmLabel?: string;
+}
+
+export default function DestructiveConfirmDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  resourceName,
+  description,
+  confirmLabel = 'Delete',
+}: DestructiveConfirmDialogProps) {
+  const [typed, setTyped] = useState('');
+  const matches = typed === resourceName;
+
+  const close = () => {
+    setTyped('');
+    onClose();
+  };
+
+  const commit = () => {
+    if (!matches) return;
+    onConfirm();
+    setTyped('');
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={close} title={title}>
+      <p className="mb-4 text-sm text-muted">
+        {description ?? 'This action cannot be undone.'} Type{' '}
+        <span className="font-mono text-foreground">{resourceName}</span> to confirm.
+      </p>
+      <input
+        value={typed}
+        autoFocus
+        placeholder={resourceName}
+        onChange={(e) => setTyped(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        className="w-full rounded-lg border border-rule-strong bg-surface px-3 py-2 font-mono text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+      />
+      <div className="mt-5 flex justify-end gap-2.5">
+        <button
+          type="button"
+          onClick={close}
+          className="rounded-full border border-rule-strong px-4 py-1.5 text-[13px] text-muted hover:bg-hover"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={commit}
+          disabled={!matches}
+          className="rounded-full bg-danger px-4 py-1.5 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-danger"
+        >
+          {confirmLabel}
+        </button>
+      </div>
+    </Modal>
+  );
+}

@@ -1,0 +1,1857 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { withAuroraPage } from '../layout/AuroraPage';
+import SectionHubPage from '../SectionHubPage';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Container, LayoutGrid, List, Plus, RefreshCw, Save, Trash2, Network, Server} from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery } from '../../utils/urlState';
+import { apiFetch, apiFetchSettled, apiPost, apiWebSocketUrl } from '../../utils/api';
+import Modal from '../Modal';
+import LogViewer from '../LogViewer';
+import EmptyState from '../EmptyState';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import DataTable, { type DataTableColumn } from '../ui/DataTable';
+import CardGrid from '../CardGrid';
+import EntityCard from '../EntityCard';
+import PageTabs from '../PageTabs';
+import CodeBlock from '../CodeBlock';
+import EventCorrelationPanel from '../EventCorrelationPanel';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { setClusterContext } from '../../utils/clusterContext';
+import { formatTimestamp } from '../../utils/formatters';
+import Badge from '../Badge';
+import type {
+  AuthStatus,
+  ClusterBrowseItem,
+  ClusterDiffLine,
+  ClusterHealthSummary,
+  ClusterMetricsSummary,
+  ClusterTopMetric,
+  ClusterPortForwardSession,
+  ClusterRelatedEvent,
+  HelmRevisionEntry,
+  ClusterNamespaceSummary,
+  ClusterResourceDetail,
+  ClusterRolloutStatus,
+  ClusterSummary,
+  AuditEvent,
+  CiliumStatusResponse,
+} from '../../types/api';
+
+function statusTone(status: string): 'green' | 'red' | 'amber' | 'muted' | 'sky' {
+  const s = status.toLowerCase();
+  if (s.includes('running') || s.includes('ready') || s.includes('active') || s.includes('bound')) return 'green';
+  if (s.includes('fail') || s.includes('error') || s.includes('crash')) return 'red';
+  if (s.includes('pending') || s.includes('progress') || s.includes('wait')) return 'amber';
+  return 'sky';
+}
+
+const kindOptions = ['Namespace', 'Node', 'PersistentVolume', 'StorageClass', 'Pod', 'ServiceAccount', 'Secret', 'PersistentVolumeClaim', 'ResourceQuota', 'LimitRange', 'Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Service', 'EndpointSlice', 'Ingress', 'NetworkPolicy', 'CiliumNetworkPolicy', 'CiliumClusterwideNetworkPolicy', 'ConfigMap', 'Event', 'HelmRelease', 'DataVolume', 'VirtualMachine', 'VirtualMachineInstance', 'CustomResource'];
+
+function manifestCreationTimestamp(manifest: Record<string, unknown>): string {
+  const metadata = manifest.metadata;
+  if (metadata && typeof metadata === 'object' && 'creationTimestamp' in metadata) {
+    const value = (metadata as { creationTimestamp?: unknown }).creationTimestamp;
+    return typeof value === 'string' ? value : '';
+  }
+  return '';
+}
+
+function defaultApiVersion(kind: string): string {
+  if (['Deployment', 'StatefulSet', 'DaemonSet'].includes(kind)) return 'apps/v1';
+  if (['Job', 'CronJob'].includes(kind)) return 'batch/v1';
+  if (kind === 'HorizontalPodAutoscaler') return 'autoscaling/v2';
+  if (kind === 'Ingress') return 'networking.k8s.io/v1';
+  if (kind === 'NetworkPolicy') return 'networking.k8s.io/v1';
+  if (kind === 'CiliumNetworkPolicy' || kind === 'CiliumClusterwideNetworkPolicy') return 'cilium.io/v2';
+  if (kind === 'HelmRelease') return 'helm.sh/v1';
+  if (['VirtualMachine', 'VirtualMachineInstance'].includes(kind)) return 'kubevirt.io/v1';
+  if (kind === 'DataVolume') return 'cdi.kubevirt.io/v1beta1';
+  return 'v1';
+}
+
+function manifestContainerNames(manifest: Record<string, unknown>): string[] {
+  const typed = manifest as {
+    spec?: {
+      containers?: Array<{ name?: string }>;
+      template?: { spec?: { containers?: Array<{ name?: string }> } };
+    };
+  };
+  return (
+    typed.spec?.containers?.map((container) => container.name).filter(Boolean) ??
+    typed.spec?.template?.spec?.containers?.map((container) => container.name).filter(Boolean) ??
+    []
+  ) as string[];
+}
+
+export type ClustersTab = 'browse' | 'network';
+
+export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) {
+  const navigate = useNavigate();
+  const panelClass = '';
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+  const [summary, setSummary] = useState<ClusterSummary | null>(null);
+  const [metricsSummary, setMetricsSummary] = useState<ClusterMetricsSummary | null>(null);
+  const [cluster, setCluster] = useState('');
+  const [namespace, setNamespace] = useState('all');
+  const [kind, setKind] = useState('Pod');
+  const [customApiVersion, setCustomApiVersion] = useState('');
+  const [customPlural, setCustomPlural] = useState('');
+  const [customNamespaced, setCustomNamespaced] = useState(true);
+  const [namespaces, setNamespaces] = useState<ClusterNamespaceSummary[]>([]);
+  const [resources, setResources] = useState<ClusterBrowseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [bootstrapLoading, setBootstrapLoading] = useState(true);
+  const [resourceView, setResourceView] = useState<'cards' | 'table'>(() => {
+    try {
+      return localStorage.getItem('aether_clusters_view') === 'table' ? 'table' : 'cards';
+    } catch {
+      return 'cards';
+    }
+  });
+  const [bootstrapFailed, setBootstrapFailed] = useState(false);
+  const [selected, setSelected] = useState<ClusterResourceDetail | null>(null);
+  const [selectedEvents, setSelectedEvents] = useState<ClusterRelatedEvent[]>([]);
+  const [relatedAudit, setRelatedAudit] = useState<AuditEvent[]>([]);
+  const [healthSummary, setHealthSummary] = useState<ClusterHealthSummary | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [manifestDraft, setManifestDraft] = useState('');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createManifestDraft, setCreateManifestDraft] = useState('');
+  const [createHelmRelease, setCreateHelmRelease] = useState('');
+  const [createHelmChart, setCreateHelmChart] = useState('');
+  const [createHelmValues, setCreateHelmValues] = useState('');
+  const [actionLoading, setActionLoading] = useState('');
+  const [replicasInput, setReplicasInput] = useState('1');
+  const [watchConnected, setWatchConnected] = useState(false);
+  const [execPod, setExecPod] = useState('');
+  const [execContainer, setExecContainer] = useState('');
+  const [execCommand, setExecCommand] = useState('/bin/sh');
+  const [execInput, setExecInput] = useState('');
+  const [execOutput, setExecOutput] = useState('');
+  const [execConnected, setExecConnected] = useState(false);
+  const [portForwardPod, setPortForwardPod] = useState('');
+  const [portForwardRemotePort, setPortForwardRemotePort] = useState('8080');
+  const [portForwardLocalPort, setPortForwardLocalPort] = useState('');
+  const [portForwardSession, setPortForwardSession] = useState<ClusterPortForwardSession | null>(null);
+  const [rollout, setRollout] = useState<ClusterRolloutStatus | null>(null);
+  const [rolloutRevision, setRolloutRevision] = useState('');
+  const [topMetrics, setTopMetrics] = useState<ClusterTopMetric[]>([]);
+  const [helmHistory, setHelmHistory] = useState<HelmRevisionEntry[]>([]);
+  const [helmChart, setHelmChart] = useState('');
+  const [helmValues, setHelmValues] = useState('');
+  const [helmRevision, setHelmRevision] = useState('');
+  const [serverDiff, setServerDiff] = useState<ClusterDiffLine[]>([]);
+  const [terminalExpanded, setTerminalExpanded] = useState(false);
+  const [detailTab, setDetailTab] = useState<'overview' | 'events' | 'logs' | 'terminal' | 'manifest'>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [pageTabState, setPageTab] = useState<'browse' | 'network'>(() =>
+    forcedTab ?? (searchParams.get('tab') === 'network' ? 'network' : 'browse'),
+  );
+  const pageTab: ClustersTab = forcedTab ?? pageTabState;
+  const [ciliumStatus, setCiliumStatus] = useState<CiliumStatusResponse | null>(null);
+
+  useEffect(() => {
+    if (forcedTab) return;
+    const tab = searchParams.get('tab') === 'network' ? 'network' : 'browse';
+    setPageTab((current) => (current === tab ? current : tab));
+  }, [searchParams, forcedTab]);
+  function setPageTabWithUrl(tab: 'browse' | 'network') {
+    if (forcedTab) return;
+    setPageTab(tab);
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        if (tab === 'browse') copy.delete('tab');
+        else copy.set('tab', tab);
+        return copy;
+      },
+      { replace: true },
+    );
+  }
+
+  function syncClusterFilters(params: { cluster?: string; namespace?: string; kind?: string }) {
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        if (params.cluster !== undefined) {
+          if (params.cluster) copy.set('cluster', params.cluster);
+          else copy.delete('cluster');
+        }
+        if (params.namespace !== undefined) {
+          if (params.namespace && params.namespace !== 'all') copy.set('namespace', params.namespace);
+          else copy.delete('namespace');
+        }
+        if (params.kind !== undefined) {
+          if (params.kind && params.kind !== 'Pod') copy.set('kind', params.kind);
+          else copy.delete('kind');
+        }
+        return copy;
+      },
+      { replace: true },
+    );
+  }
+
+  const watchSocketRef = useRef<WebSocket | null>(null);
+  const execSocketRef = useRef<WebSocket | null>(null);
+
+  const selectedContainers = useMemo(() => {
+    if (!selected) return [];
+    return manifestContainerNames(selected.manifest);
+  }, [selected]);
+
+  const canMutateCluster = authStatus?.role === 'admin' || authStatus?.role === 'operator' || authStatus === null;
+  const canDeleteCluster = authStatus?.role === 'admin' || authStatus === null;
+
+  function toast(message: string, type: 'success' | 'error') {
+    window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+  }
+
+  async function loadNetworkPolicies(targetCluster = cluster, targetNamespace = namespace) {
+    if (!targetCluster) return;
+    setLoading(true);
+    const ns = encodeURIComponent(targetNamespace);
+    const cl = encodeURIComponent(targetCluster);
+    const [np, cnp, ccnp] = await Promise.all([
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=${ns}&kind=NetworkPolicy`),
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=${ns}&kind=CiliumNetworkPolicy`),
+      apiFetch<ClusterBrowseItem[]>(`/cluster/browse?cluster=${cl}&namespace=_cluster&kind=CiliumClusterwideNetworkPolicy`),
+    ]);
+    setResources([...(np ?? []), ...(cnp ?? []), ...(ccnp ?? [])]);
+    setLoading(false);
+  }
+
+  async function loadResources(targetCluster = cluster, targetNamespace = namespace, targetKind = kind) {
+    if (!targetCluster) return;
+    setLoading(true);
+    const customParams = targetKind === 'CustomResource'
+      ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}`
+      : '';
+    const data = await apiFetch<ClusterBrowseItem[]>(
+      `/cluster/browse?cluster=${encodeURIComponent(targetCluster)}&namespace=${encodeURIComponent(targetNamespace)}&kind=${encodeURIComponent(targetKind)}${customParams}`
+    );
+    setResources(data ?? []);
+    setLoading(false);
+  }
+
+  const loadBootstrap = useCallback(async () => {
+    setBootstrapLoading(true);
+    setBootstrapFailed(false);
+    const [authRes, summaryRes] = await Promise.all([
+      apiFetchSettled<AuthStatus>('/auth/me'),
+      apiFetchSettled<ClusterSummary>('/cluster/summary'),
+    ]);
+    if (authRes.ok) setAuthStatus(authRes.data);
+    if (summaryRes.ok) {
+      const data = summaryRes.data;
+      setSummary(data);
+      const urlCluster = searchParams.get('cluster');
+      const urlNamespace = searchParams.get('namespace');
+      const urlKind = searchParams.get('kind');
+      const urlTab = searchParams.get('tab');
+      const firstCluster = urlCluster && data?.clusters.some((c) => c.name === urlCluster)
+        ? urlCluster
+        : data?.clusters.find((item) => item.reachable)?.name ?? data?.clusters[0]?.name ?? '';
+      setCluster(firstCluster);
+      if (urlNamespace) setNamespace(urlNamespace);
+      if (urlKind && kindOptions.includes(urlKind)) setKind(urlKind);
+      if (urlTab === 'network') setPageTab('network');
+    } else {
+      setBootstrapFailed(true);
+      setSummary(null);
+    }
+    setBootstrapLoading(false);
+    setLoading(false);
+  }, [searchParams]);
+
+  useEffect(() => {
+    void loadBootstrap();
+  }, [loadBootstrap]);
+
+  useEffect(() => {
+    if (!cluster) return;
+    apiFetch<ClusterNamespaceSummary[]>(`/cluster/namespaces?cluster=${encodeURIComponent(cluster)}`).then((data) => {
+      setNamespaces(data ?? []);
+    });
+  }, [cluster]);
+
+  useEffect(() => {
+    if (!cluster) return;
+    apiFetch<ClusterMetricsSummary>(`/cluster/metrics/summary?cluster=${encodeURIComponent(cluster)}&namespace=${encodeURIComponent(namespace)}`).then((data) => {
+      setMetricsSummary(data);
+    });
+  }, [cluster, namespace]);
+
+  useEffect(() => {
+    if (!cluster) return;
+    apiFetch<CiliumStatusResponse>(
+      `/cluster/cilium/status?cluster=${encodeURIComponent(cluster)}&namespace=${encodeURIComponent(namespace === 'all' ? 'aether-system' : namespace)}`
+    ).then((data) => setCiliumStatus(data ?? null));
+  }, [cluster, namespace]);
+
+  useEffect(() => {
+    if (!selected) {
+      setServerDiff([]);
+      return;
+    }
+
+    try {
+      const draftManifest = JSON.parse(manifestDraft);
+      apiPost<ClusterDiffLine[]>('/cluster/diff', {
+        cluster: selected.cluster,
+        namespace: selected.namespace,
+        kind: selected.kind,
+        name: selected.name,
+        draft_manifest: draftManifest,
+        api_version: selected.kind === 'CustomResource' ? customApiVersion : undefined,
+        plural: selected.kind === 'CustomResource' ? customPlural : undefined,
+        namespaced: selected.kind === 'CustomResource' ? customNamespaced : undefined,
+      }).then((response) => {
+        if (response.success) {
+          setServerDiff(response.data ?? []);
+        }
+      });
+    } catch {
+      setServerDiff([{ kind: 'remove', text: '- invalid JSON draft' }]);
+    }
+  }, [selected, manifestDraft]);
+
+  useEffect(() => {
+    if (!cluster) return;
+    setLoading(true);
+    if (pageTab === 'network') {
+      void loadNetworkPolicies();
+      watchSocketRef.current?.close();
+      setWatchConnected(false);
+      return;
+    }
+    loadResources();
+
+    watchSocketRef.current?.close();
+    if (kind === 'HelmRelease' || (kind === 'CustomResource' && (!customApiVersion || !customPlural))) {
+      setWatchConnected(false);
+      return;
+    }
+
+    const customWatchParams = kind === 'CustomResource'
+      ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}`
+      : '';
+    const socket = new WebSocket(
+      apiWebSocketUrl(
+        `/cluster/ws/watch?cluster=${encodeURIComponent(cluster)}&namespace=${encodeURIComponent(namespace)}&kind=${encodeURIComponent(kind)}${customWatchParams}`
+      )
+    );
+    watchSocketRef.current = socket;
+
+    socket.onopen = () => setWatchConnected(true);
+    socket.onclose = () => setWatchConnected(false);
+    socket.onerror = () => setWatchConnected(false);
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as ClusterBrowseItem[] | { type: string; message: string };
+        if (Array.isArray(payload)) {
+          setResources(payload);
+          setLoading(false);
+          if (selected && selected.cluster === cluster && selected.kind === kind) {
+            const manifestMatchesLive = manifestDraft === JSON.stringify(selected.manifest, null, 2);
+            const next = payload.find((item) => item.name === selected.name && item.namespace === selected.namespace);
+            if (manifestMatchesLive && next) {
+              void openDetail(next);
+            }
+            if (!next) {
+              setSelected(null);
+              setSelectedEvents([]);
+            }
+          }
+        }
+      } catch {
+        // ignore malformed watch payloads
+      }
+    };
+
+    return () => {
+      socket.close();
+      if (watchSocketRef.current === socket) {
+        watchSocketRef.current = null;
+      }
+      setWatchConnected(false);
+    };
+  }, [cluster, namespace, kind, customApiVersion, customPlural, customNamespaced, pageTab]);
+
+  const selectedLogsPath = useMemo(() => {
+    if (!selected) return undefined;
+    if (!['Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'Service', 'VirtualMachine', 'VirtualMachineInstance', 'HelmRelease'].includes(selected.kind)) return undefined;
+    return `/cluster/logs?cluster=${encodeURIComponent(selected.cluster)}&namespace=${encodeURIComponent(selected.namespace)}&kind=${encodeURIComponent(selected.kind)}&name=${encodeURIComponent(selected.name)}`;
+  }, [selected]);
+
+  useEffect(() => {
+    const nextNamespace = kind === 'Namespace' ? '_cluster' : namespace === '_cluster' ? 'all' : namespace;
+    if (nextNamespace !== namespace) {
+      setNamespace(nextNamespace);
+    }
+  }, [kind, namespace]);
+
+  async function openDetail(resource: ClusterBrowseItem) {
+    setDetailLoading(true);
+    setSelected(null);
+    const canRollout = ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind);
+    const shouldLoadTop = ['Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'Service', 'HelmRelease'].includes(resource.kind);
+    const shouldLoadHelm = resource.kind === 'HelmRelease';
+    const auditFilter = encodeURIComponent(resource.name);
+    const [detail, events, rolloutStatus, top, helmRevisions, health, auditResp] = await Promise.all([
+      apiFetch<ClusterResourceDetail>(
+        `/cluster/resource?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}${resource.kind === 'CustomResource' ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}` : ''}`
+      ),
+      apiFetch<ClusterRelatedEvent[]>(
+        `/cluster/events?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}`
+      ),
+      canRollout
+        ? apiFetch<ClusterRolloutStatus>(
+            `/cluster/rollout?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}`
+          )
+        : Promise.resolve(null),
+      shouldLoadTop
+        ? apiFetch<ClusterTopMetric[]>(
+            `/cluster/top?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}`
+          )
+        : Promise.resolve(null),
+      shouldLoadHelm
+        ? apiFetch<HelmRevisionEntry[]>(
+            `/cluster/helm/history?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&release=${encodeURIComponent(resource.name)}`
+          )
+        : Promise.resolve(null),
+      apiFetch<ClusterHealthSummary>(
+        `/cluster/health?cluster=${encodeURIComponent(resource.cluster)}&namespace=${encodeURIComponent(resource.namespace)}&kind=${encodeURIComponent(resource.kind)}&name=${encodeURIComponent(resource.name)}${resource.kind === 'CustomResource' ? `&api_version=${encodeURIComponent(customApiVersion)}&plural=${encodeURIComponent(customPlural)}&namespaced=${customNamespaced ? 'true' : 'false'}` : ''}`
+      ),
+      apiFetch<{ recent_events: AuditEvent[] }>(`/audit?workload=${auditFilter}&limit=30`),
+    ]);
+    setSelected(detail);
+    setSelectedEvents(events ?? []);
+    setRelatedAudit(auditResp?.recent_events ?? []);
+    setRollout(rolloutStatus);
+    setRolloutRevision(rolloutStatus?.history[0]?.revision ?? '');
+    setTopMetrics(top ?? []);
+    setHelmHistory(helmRevisions ?? []);
+    setHelmRevision(helmRevisions?.[0]?.revision ?? '');
+    setHealthSummary(health);
+    if (detail) {
+      setManifestDraft(JSON.stringify(detail.manifest, null, 2));
+      const replicas = (detail.manifest?.spec as { replicas?: number } | undefined)?.replicas;
+      if (typeof replicas === 'number') {
+        setReplicasInput(String(replicas));
+      }
+      const defaultPod = detail.kind === 'Pod' ? detail.name : detail.pods[0]?.name ?? '';
+      setExecPod(defaultPod);
+      setPortForwardPod(defaultPod);
+      setExecContainer(manifestContainerNames(detail.manifest)[0] ?? '');
+      type ManifestPorts = {
+        ports?: Array<{ port?: number }>;
+        containers?: Array<{ ports?: Array<{ containerPort?: number }> }>;
+        template?: { spec?: { containers?: Array<{ ports?: Array<{ containerPort?: number }> }> } };
+      };
+      const manifestSpec = detail.manifest?.spec as ManifestPorts | undefined;
+      const defaultRemotePort = detail.kind === 'Service'
+        ? manifestSpec?.ports?.[0]?.port
+        : detail.kind === 'Pod'
+          ? manifestSpec?.containers?.[0]?.ports?.[0]?.containerPort
+          : manifestSpec?.template?.spec?.containers?.[0]?.ports?.[0]?.containerPort;
+      if (typeof defaultRemotePort === 'number') {
+        setPortForwardRemotePort(String(defaultRemotePort));
+      }
+      if (detail.kind === 'HelmRelease') {
+        const manifest = detail.manifest as { status?: { chart?: { metadata?: { name?: string; version?: string } } }; valuesYaml?: string };
+        const chartName = manifest.status?.chart?.metadata?.name;
+        const chartVersion = manifest.status?.chart?.metadata?.version;
+        setHelmChart(chartName ? `${chartName}${chartVersion ? ` --version ${chartVersion}` : ''}` : '');
+        setHelmValues(typeof manifest.valuesYaml === 'string' ? manifest.valuesYaml : '');
+      }
+    }
+    setDetailLoading(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      watchSocketRef.current?.close();
+      execSocketRef.current?.close();
+    };
+  }, []);
+
+  async function handleApply() {
+    if (!selected) return;
+    if (!canMutateCluster) {
+      toast('Your role cannot apply cluster changes', 'error');
+      return;
+    }
+    setActionLoading('apply');
+    try {
+      const manifest = JSON.parse(manifestDraft);
+      const response = await apiPost<string>('/cluster/apply', {
+        cluster: selected.cluster,
+        namespace: selected.namespace,
+        kind: selected.kind,
+        manifest,
+        api_version: selected.kind === 'CustomResource' ? customApiVersion : undefined,
+        plural: selected.kind === 'CustomResource' ? customPlural : undefined,
+        namespaced: selected.kind === 'CustomResource' ? customNamespaced : undefined,
+      });
+      if (!response.success) {
+        throw new Error(response.error ?? 'apply failed');
+      }
+      toast(`Applied ${selected.kind} ${selected.name}`, 'success');
+        await openDetail({
+          cluster: selected.cluster,
+          namespace: selected.namespace,
+          kind: selected.kind,
+          name: selected.name,
+          status: '',
+          created_at: manifestCreationTimestamp(selected.manifest),
+          detail: null,
+        });
+      await loadResources();
+    } catch (error) {
+      toast(`Apply failed: ${String(error)}`, 'error');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function handleResourceAction(action: 'start' | 'stop' | 'restart' | 'delete' | 'scale' | 'suspend' | 'resume' | 'cordon' | 'uncordon' | 'drain') {
+    if (!selected) return;
+    if (action === 'delete' && !canDeleteCluster) {
+      toast('Your role cannot delete cluster resources', 'error');
+      return;
+    }
+    if (action !== 'delete' && !canMutateCluster) {
+      toast(`Your role cannot ${action} cluster resources`, 'error');
+      return;
+    }
+    setActionLoading(action);
+    const response = await apiPost<string>('/cluster/action', {
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      kind: selected.kind,
+      name: selected.name,
+      action,
+      replicas: action === 'scale' ? Number.parseInt(replicasInput, 10) : undefined,
+      api_version: selected.kind === 'CustomResource' ? customApiVersion : undefined,
+      plural: selected.kind === 'CustomResource' ? customPlural : undefined,
+      namespaced: selected.kind === 'CustomResource' ? customNamespaced : undefined,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`${action} failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`${action} ${selected.kind} ${selected.name}`, 'success');
+    if (action === 'delete') {
+      setSelected(null);
+    } else {
+      await openDetail({
+        cluster: selected.cluster,
+        namespace: selected.namespace,
+        kind: selected.kind,
+        name: selected.name,
+        status: '',
+        created_at: manifestCreationTimestamp(selected.manifest),
+        detail: null,
+      });
+    }
+    await loadResources();
+  }
+
+  function disconnectExec() {
+    execSocketRef.current?.close();
+    execSocketRef.current = null;
+    setExecConnected(false);
+  }
+
+  function connectExec() {
+    if (!selected || !execPod) return;
+    disconnectExec();
+    setExecOutput('');
+
+    const socket = new WebSocket(
+      apiWebSocketUrl(
+        `/cluster/ws/exec?cluster=${encodeURIComponent(selected.cluster)}&namespace=${encodeURIComponent(selected.namespace)}&pod=${encodeURIComponent(execPod)}&command=${encodeURIComponent(execCommand)}${execContainer ? `&container=${encodeURIComponent(execContainer)}` : ''}`
+      )
+    );
+    execSocketRef.current = socket;
+
+    socket.onopen = () => {
+      setExecConnected(true);
+      setExecOutput((current) => `${current}[aether] connected to ${execPod}\n`);
+    };
+    socket.onclose = () => setExecConnected(false);
+    socket.onerror = () => {
+      setExecConnected(false);
+      toast('Terminal connection failed', 'error');
+    };
+    socket.onmessage = (event) => {
+      setExecOutput((current) => `${current}${String(event.data)}`);
+    };
+  }
+
+  function sendExecLine() {
+    if (!execSocketRef.current || execSocketRef.current.readyState !== WebSocket.OPEN || !execInput) return;
+    execSocketRef.current.send(`${execInput}\n`);
+    setExecInput('');
+  }
+
+  async function handlePortForwardStart() {
+    if (!selected || (selected.kind !== 'Service' && !portForwardPod)) return;
+    setActionLoading('port-forward');
+    const response = await apiPost<ClusterPortForwardSession>('/cluster/port-forward', {
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      target_kind: selected.kind === 'Service' ? 'Service' : 'Pod',
+      target_name: selected.kind === 'Service' ? selected.name : portForwardPod,
+      pod: selected.kind === 'Service' ? undefined : portForwardPod,
+      remote_port: Number.parseInt(portForwardRemotePort, 10),
+      local_port: portForwardLocalPort ? Number.parseInt(portForwardLocalPort, 10) : undefined,
+    });
+    setActionLoading('');
+    if (!response.success || !response.data) {
+      toast(`Port-forward failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    setPortForwardSession(response.data);
+    setPortForwardLocalPort(String(response.data.local_port));
+    toast(`Forwarding ${response.data.target_name}:${response.data.remote_port} to localhost:${response.data.local_port}`, 'success');
+  }
+
+  async function handlePortForwardStop() {
+    if (!portForwardSession) return;
+    setActionLoading('port-forward-stop');
+    const response = await apiPost<string>('/cluster/port-forward/stop', {
+      session_id: portForwardSession.session_id,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Stop failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    setPortForwardSession(null);
+    toast('Port-forward stopped', 'success');
+  }
+
+  async function handleRolloutAction(action: 'pause' | 'resume' | 'undo' | 'restart') {
+    if (!selected) return;
+    if (!canMutateCluster) {
+      toast(`Your role cannot ${action} rollouts`, 'error');
+      return;
+    }
+    setActionLoading(`rollout-${action}`);
+    const response = await apiPost<string>('/cluster/rollout/action', {
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      kind: selected.kind,
+      name: selected.name,
+      action,
+      revision: action === 'undo' ? rolloutRevision : undefined,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Rollout ${action} failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`Rollout ${action} triggered`, 'success');
+    await openDetail({
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      kind: selected.kind,
+      name: selected.name,
+      status: '',
+      created_at: manifestCreationTimestamp(selected.manifest),
+      detail: null,
+    });
+  }
+
+  async function handleHelmAction(action: 'upgrade' | 'install' | 'rollback') {
+    if (!selected) return;
+    if (!canMutateCluster) {
+      toast(`Your role cannot ${action} Helm releases`, 'error');
+      return;
+    }
+    setActionLoading(`helm-${action}`);
+    const response = await apiPost<string>('/cluster/helm/action', {
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      release: selected.name,
+      action,
+      chart: action === 'rollback' ? undefined : helmChart,
+      values_yaml: action === 'rollback' ? undefined : helmValues,
+      revision: action === 'rollback' ? helmRevision : undefined,
+    });
+    setActionLoading('');
+    if (!response.success) {
+      toast(`Helm ${action} failed: ${response.error ?? 'unknown error'}`, 'error');
+      return;
+    }
+    toast(`Helm ${action} triggered`, 'success');
+    await openDetail({
+      cluster: selected.cluster,
+      namespace: selected.namespace,
+      kind: selected.kind,
+      name: selected.name,
+      status: '',
+      created_at: manifestCreationTimestamp(selected.manifest),
+      detail: null,
+    });
+  }
+
+  async function handleCreateResource() {
+    if (!canMutateCluster) {
+      toast('Your role cannot create cluster resources', 'error');
+      return;
+    }
+    setActionLoading('create');
+    try {
+      if (kind === 'HelmRelease') {
+        const response = await apiPost<string>('/cluster/helm/action', {
+          cluster,
+          namespace: namespace === 'all' ? 'default' : namespace,
+          release: createHelmRelease,
+          action: 'install',
+          chart: createHelmChart,
+          values_yaml: createHelmValues,
+        });
+        if (!response.success) {
+          throw new Error(response.error ?? 'helm install failed');
+        }
+        toast(`Installed Helm release ${createHelmRelease}`, 'success');
+        setCreateModalOpen(false);
+        setCreateHelmRelease('');
+        setCreateHelmChart('');
+        setCreateHelmValues('');
+        await loadResources(cluster, namespace, kind);
+        return;
+      }
+
+      const manifest = JSON.parse(createManifestDraft);
+      const manifestKind = typeof manifest.kind === 'string' ? manifest.kind : kind;
+      const manifestNamespace = manifestKind === 'Namespace'
+        ? '_cluster'
+        : (typeof manifest?.metadata?.namespace === 'string' ? manifest.metadata.namespace : (namespace === 'all' ? 'default' : namespace));
+      const response = await apiPost<string>('/cluster/apply', {
+        cluster,
+        namespace: manifestNamespace,
+        kind: manifestKind,
+        manifest,
+        api_version: manifestKind === 'CustomResource' ? customApiVersion : undefined,
+        plural: manifestKind === 'CustomResource' ? customPlural : undefined,
+        namespaced: manifestKind === 'CustomResource' ? customNamespaced : undefined,
+      });
+      if (!response.success) {
+        throw new Error(response.error ?? 'create failed');
+      }
+      toast(`Applied ${manifestKind}`, 'success');
+      setCreateModalOpen(false);
+      setCreateManifestDraft('');
+      await loadResources(cluster, namespace, kind);
+    } catch (error) {
+      toast(`Create failed: ${String(error)}`, 'error');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  if (bootstrapLoading) {
+    return (
+      <div>
+        <PageLoading rows={6} />
+      </div>
+    );
+  }
+
+  if (bootstrapFailed) {
+    return (
+      <div>
+        <PageLoadError
+          title="Cluster browser unavailable"
+          description="Could not load Kubernetes cluster summary from the API."
+          onRetry={() => void loadBootstrap()}
+        />
+      </div>
+    );
+  }
+
+  if (!summary || !summary.enabled) {
+    return (
+      <div>
+        <EmptyState
+          icon={<Container size={48} />}
+          title="No Kubernetes contexts"
+          description="Aether could not find any kubeconfig contexts to browse. Configure cluster access on Platform & HA."
+          action={
+            <Link to={viewToPath('platform')} className="btn-primary inline-flex items-center gap-2">
+              Open Platform setup
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const clusterResourceColumns: DataTableColumn<ClusterBrowseItem>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (resource) => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => openDetail(resource)} className="text-left font-medium text-foreground hover:text-primary transition-colors">
+            {resource.name}
+          </button>
+          {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) && (
+            <Link
+              to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+              className="text-xs text-primary hover:underline"
+              title="Open in workloads"
+            >
+              →
+            </Link>
+          )}
+        </div>
+      ),
+    },
+    ...(pageTab === 'network'
+      ? [{ key: 'kind', header: 'Kind', render: (resource: ClusterBrowseItem) => <span className="text-sm text-muted">{resource.kind}</span> }]
+      : []),
+    { key: 'namespace', header: 'Namespace', render: (resource) => <span className="text-sm text-muted">{resource.namespace}</span> },
+    { key: 'status', header: 'Status', render: (resource) => <span className="text-sm text-foreground">{resource.status}</span> },
+    { key: 'detail', header: 'Detail', render: (resource) => <span className="text-sm text-subtle">{resource.detail ?? '—'}</span> },
+    { key: 'created', header: 'Created', render: (resource) => <span className="text-sm text-muted">{formatTimestamp(resource.created_at)}</span> },
+  ];
+
+  const workloadFocus = (searchParams.get('workload') ?? '').trim();
+
+  return (
+    <div>
+    <div className="space-y-10">
+      {workloadFocus ? (
+        <WorkloadContextBanner testId="clusters-workload-context" workload={workloadFocus} description="Cluster browse context">
+          <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('health'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-context-health-link"
+          >
+            Health →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('openapi'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-openapi-link"
+          >
+            OpenAPI →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('fleet'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="clusters-context-fleet-link"
+          >
+            Fleet →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Cluster context for ${workloadFocus}` })}
+            className="text-primary hover:underline"
+            data-testid="clusters-context-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('intelligence'), { workload: workloadFocus, tab: 'predictions' })}
+            className="text-primary hover:underline"
+            data-testid="clusters-context-intelligence-link"
+          >
+            Intelligence →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
+      <section className="flex flex-wrap gap-x-10 gap-y-2 text-sm text-muted">
+        <button
+          type="button"
+          onClick={() =>
+            navigate(
+              workloadFocus
+                ? pathWithQuery(viewToPath('health'), { workload: workloadFocus })
+                : viewToPath('health'),
+            )
+          }
+          className="hover:text-foreground"
+          data-testid="clusters-health-link"
+        >
+          Health monitor
+        </button>
+      </section>
+
+      {ciliumStatus && (
+        <p className="text-sm text-muted">
+          CNI {ciliumStatus.cni}
+          <span className="text-subtle"> · </span>
+          Egress {ciliumStatus.egress_mode}
+          <span className="text-subtle"> · </span>
+          metrics-server{' '}
+          <span className={ciliumStatus.metrics_server ? 'text-success' : 'text-warning'}>
+            {ciliumStatus.metrics_server ? 'ok' : 'missing'}
+          </span>
+        </p>
+      )}
+
+      {!forcedTab ? (
+      <div data-testid="clusters-page-tabs">
+      <PageTabs
+        tabs={[
+          { id: 'browse', label: 'Browse' },
+          { id: 'network', label: 'Network' },
+        ]}
+        active={pageTab}
+        onChange={(tab) => setPageTabWithUrl(tab as 'browse' | 'network')}
+      />
+      </div>
+      ) : null}
+
+      {metricsSummary && (
+        <div className="flex flex-wrap gap-x-12 gap-y-4 text-sm">
+          <div>
+            <div className="text-muted">Metrics scope</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.scope}</div>
+          </div>
+          <div>
+            <div className="text-muted">CPU</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.total_cpu_millicores}m</div>
+            <div className="mt-1 text-xs text-subtle">{metricsSummary.pod_count} pods</div>
+          </div>
+          <div>
+            <div className="text-muted">Memory</div>
+            <div className="mt-1 text-lg font-semibold text-foreground">{metricsSummary.total_memory_mib} Mi</div>
+          </div>
+        </div>
+      )}
+
+      {authStatus && (
+        <div className="glass px-4 py-3 text-sm text-muted">
+          Cluster role: <span className="text-foreground">{authStatus.role}</span>
+          <span className="text-subtle"> · </span>
+          Signed in as <span className="text-foreground">{authStatus.username}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <select
+          value={cluster}
+          onChange={(e) => {
+            setCluster(e.target.value);
+            setClusterContext(e.target.value);
+            syncClusterFilters({ cluster: e.target.value });
+          }}
+          data-testid="clusters-cluster-select"
+          className="glass-select"
+        >
+          {summary.clusters.map((item) => (
+            <option key={item.name} value={item.name}>
+              {item.name} {item.reachable ? '' : '(offline)'}
+            </option>
+          ))}
+        </select>
+        <select
+          value={namespace}
+          onChange={(e) => {
+            setNamespace(e.target.value);
+            syncClusterFilters({ namespace: e.target.value });
+          }}
+          data-testid="clusters-namespace-select"
+          className="glass-select"
+        >
+          <option value="all">All namespaces</option>
+          {namespaces.map((item) => (
+            <option key={item.name} value={item.name}>{item.name}</option>
+          ))}
+        </select>
+        <select
+          value={kind}
+          onChange={(e) => {
+            setKind(e.target.value);
+            syncClusterFilters({ kind: e.target.value });
+          }}
+          data-testid="clusters-kind-select"
+          className="glass-select"
+          disabled={pageTab === 'network'}
+        >
+          {kindOptions.map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </select>
+        <div className="glass-select text-muted">
+          {cluster || 'No cluster selected'} · {watchConnected ? 'watching live' : 'watch offline'}
+        </div>
+      </div>
+
+      {kind === 'CustomResource' && pageTab === 'browse' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <input
+            value={customApiVersion}
+            onChange={(e) => setCustomApiVersion(e.target.value)}
+            className="glass-select"
+            placeholder="apiVersion e.g. example.com/v1"
+          />
+          <input
+            value={customPlural}
+            onChange={(e) => setCustomPlural(e.target.value)}
+            className="glass-select"
+            placeholder="plural e.g. widgets"
+          />
+          <label className="flex items-center gap-2 glass-select text-foreground">
+            <input type="checkbox" checked={customNamespaced} onChange={(e) => setCustomNamespaced(e.target.checked)} />
+            Namespaced resource
+          </label>
+        </div>
+      )}
+
+      {pageTab === 'browse' && (
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            if (kind === 'HelmRelease') {
+              setCreateHelmRelease('');
+              setCreateHelmChart('');
+              setCreateHelmValues('');
+            } else {
+              setCreateManifestDraft(JSON.stringify({
+                apiVersion: defaultApiVersion(kind),
+                kind,
+                metadata: {
+                  name: '',
+                  ...(kind !== 'Namespace' && namespace !== 'all' ? { namespace } : {}),
+                },
+              }, null, 2));
+            }
+            setCreateModalOpen(true);
+          }}
+          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20"
+        >
+          <Plus size={16} />
+          Create Resource
+        </button>
+      </div>
+      )}
+
+      {loading ? (
+        <PageLoading rows={4} />
+      ) : resources.length === 0 ? (
+        <EmptyState
+          icon={<Container size={48} />}
+          title="No resources found"
+          description={pageTab === 'network' ? 'No NetworkPolicy or Cilium policies in this scope.' : 'Try a different cluster, namespace, or resource kind.'}
+        />
+      ) : (
+        <div className={panelClass} data-testid="clusters-resource-table">
+          <div className="mb-3 flex items-center justify-end gap-1 rounded-xl border glass-divider p-1 w-fit ml-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setResourceView('cards');
+                try { localStorage.setItem('aether_clusters_view', 'cards'); } catch { /* ignore */ }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            >
+              <LayoutGrid size={14} />
+              Cards
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setResourceView('table');
+                try { localStorage.setItem('aether_clusters_view', 'table'); } catch { /* ignore */ }
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            >
+              <List size={14} />
+              Table
+            </button>
+          </div>
+          {resourceView === 'cards' ? (
+            <CardGrid columns="compact">
+              {resources.map((resource, i) => (
+                <EntityCard
+                  key={`${resource.kind}/${resource.namespace}/${resource.name}`}
+                  index={i}
+                  icon={<Container size={18} />}
+                  statusTone={statusTone(resource.status)}
+                  title={resource.name}
+                  subtitle={[resource.kind, resource.namespace].filter(Boolean).join(' · ')}
+                  onClick={() => openDetail(resource)}
+                  body={
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge text={resource.status || '—'} variant="muted" />
+                      {resource.detail ? (
+                        <span className="truncate rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-muted" title={resource.detail}>
+                          {resource.detail}
+                        </span>
+                      ) : null}
+                      <span className="rounded-md glass-inset-surface border glass-divider px-2 py-0.5 text-[11px] text-subtle">
+                        {formatTimestamp(resource.created_at)}
+                      </span>
+                    </div>
+                  }
+                  footer={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openDetail(resource)}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                      >
+                        Open
+                      </button>
+                      {pageTab === 'browse' && ['Deployment', 'StatefulSet', 'DaemonSet'].includes(resource.kind) ? (
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: resource.name, source: 'cluster' })}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/10"
+                        >
+                          Workloads
+                        </Link>
+                      ) : null}
+                    </>
+                  }
+                />
+              ))}
+            </CardGrid>
+          ) : (
+            <DataTable<ClusterBrowseItem>
+              items={resources}
+              columns={clusterResourceColumns}
+              getId={(resource) => `${resource.kind}/${resource.namespace}/${resource.name}`}
+              sortBySeverityDefault={false}
+              emptyTitle="No resources found"
+              emptyBody="Try a different cluster, namespace, or resource kind."
+            />
+          )}
+        </div>
+      )}
+
+      <Modal
+        isOpen={detailLoading || selected !== null}
+        onClose={() => {
+          disconnectExec();
+          if (portForwardSession) {
+            void handlePortForwardStop();
+          }
+          setSelected(null);
+          setSelectedEvents([]);
+          setHealthSummary(null);
+          setRollout(null);
+          setDetailTab('overview');
+          setDetailLoading(false);
+        }}
+        title={selected ? `${selected.kind}: ${selected.name}` : 'Loading resource'}
+        size="wide"
+      >
+        {detailLoading || !selected ? (
+          <PageLoading label="Loading resource details…" className="h-48" />
+        ) : (
+          <div className="space-y-4">
+            <PageTabs
+              tabs={[
+                { id: 'overview', label: 'Overview' },
+                { id: 'events', label: 'Events' },
+                { id: 'logs', label: 'Logs' },
+                { id: 'terminal', label: 'Terminal' },
+                { id: 'manifest', label: 'Manifest' },
+              ]}
+              active={detailTab}
+              onChange={setDetailTab}
+            />
+            {detailTab === 'overview' && (
+            <div className="flex flex-wrap gap-2">
+              {selected.kind === 'Node' && (
+                <>
+                  <button
+                    onClick={() => handleResourceAction('drain')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-danger bg-danger/20 px-3 py-2 text-sm text-danger hover:bg-danger/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'drain' ? 'Draining...' : 'Drain'}
+                  </button>
+                  <button
+                    onClick={() => handleResourceAction('cordon')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'cordon' ? 'Cordoning...' : 'Cordon'}
+                  </button>
+                  <button
+                    onClick={() => handleResourceAction('uncordon')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'uncordon' ? 'Uncordoning...' : 'Uncordon'}
+                  </button>
+                </>
+              )}
+              {selected.kind === 'VirtualMachine' && (
+                <>
+                  <button
+                    onClick={() => handleResourceAction('start')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'start' ? 'Starting...' : 'Start'}
+                  </button>
+                  <button
+                    onClick={() => handleResourceAction('stop')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
+                  </button>
+                </>
+              )}
+              {selected.kind === 'CronJob' && (
+                <>
+                  <button
+                    onClick={() => handleResourceAction('suspend')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'suspend' ? 'Suspending...' : 'Suspend'}
+                  </button>
+                  <button
+                    onClick={() => handleResourceAction('resume')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'resume' ? 'Resuming...' : 'Resume'}
+                  </button>
+                </>
+              )}
+              {['Deployment', 'StatefulSet'].includes(selected.kind) && (
+                <>
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
+                    <span className="text-xs text-subtle">Replicas</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={replicasInput}
+                      onChange={(e) => setReplicasInput(e.target.value)}
+                      className="glass-input w-20"
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleResourceAction('scale')}
+                    disabled={!!actionLoading || !canMutateCluster}
+                    className="flex items-center gap-2 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'scale' ? 'Scaling...' : 'Scale'}
+                  </button>
+                </>
+              )}
+              {['Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'VirtualMachine', 'VirtualMachineInstance'].includes(selected.kind) && (
+                <button
+                  onClick={() => handleResourceAction('restart')}
+                  disabled={!!actionLoading || !canMutateCluster}
+                  className="flex items-center gap-2 rounded-lg border glass-divider glass-inset-surface px-3 py-2 text-sm text-foreground glass-inset-hover disabled:opacity-50"
+                >
+                  <RefreshCw size={14} />
+                  {actionLoading === 'restart' ? 'Restarting...' : 'Restart'}
+                </button>
+              )}
+              <button
+                onClick={() => handleResourceAction('delete')}
+                disabled={!!actionLoading || selected.kind === 'Node' || !canDeleteCluster}
+                className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/20 disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+                {selected.kind === 'Node' ? 'Delete Disabled' : actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+            )}
+
+            {(detailTab === 'overview' || detailTab === 'manifest') && (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-subtle">Cluster</span><p className="text-foreground">{selected.cluster}</p></div>
+              <div><span className="text-subtle">Namespace</span><p className="text-foreground">{selected.namespace}</p></div>
+              <div><span className="text-subtle">Kind</span><p className="text-foreground">{selected.kind}</p></div>
+              <div><span className="text-subtle">API Version</span><p className="text-foreground">{selected.api_version ?? 'unknown'}</p></div>
+            </div>
+            )}
+
+            {detailTab === 'overview' && ((selected.owner_references?.length ?? 0) > 0 || (selected.owned_resources?.length ?? 0) > 0) && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Owner graph</h4>
+                {(selected.owner_references?.length ?? 0) > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-subtle mb-2">Owned by</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selected.owner_references!.map((owner) => (
+                        <span
+                          key={`${owner.kind}/${owner.name}`}
+                          className="quick-link-chip rounded-full px-3 py-1 text-xs"
+                        >
+                          {owner.kind}/{owner.name}
+                          {owner.controller ? ' (controller)' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(selected.owned_resources?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-xs text-subtle mb-2">Owns</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selected.owned_resources!.map((child) => (
+                        <span
+                          key={`${child.kind}/${child.name}`}
+                          className="rounded-full border border-warning/40 bg-warning/30 px-3 py-1 text-xs text-warning"
+                        >
+                          {child.kind}/{child.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {detailTab === 'overview' && healthSummary && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Health</h4>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 text-sm">
+                  <div>
+                    <div className="text-subtle">Level</div>
+                    <div className={healthSummary.level === 'healthy' ? 'text-success' : healthSummary.level === 'degraded' ? 'text-warning' : 'text-danger'}>{healthSummary.level}</div>
+                  </div>
+                  <div>
+                    <div className="text-subtle">Pods</div>
+                    <div className="text-foreground">{healthSummary.ready_pods}/{healthSummary.total_pods} ready</div>
+                  </div>
+                  <div>
+                    <div className="text-subtle">Warnings</div>
+                    <div className="text-foreground">{healthSummary.warning_events}</div>
+                  </div>
+                  <div>
+                    <div className="text-subtle">Summary</div>
+                    <div className="text-foreground">{healthSummary.summary}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && selected.conditions.length > 0 && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Conditions</h4>
+                <div className="space-y-2">
+                  {selected.conditions.map((condition) => (
+                    <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-foreground">{condition.type_}</span>
+                        <span className={condition.status === 'True' ? 'text-success' : 'text-warning'}>{condition.status}</span>
+                      </div>
+                      {condition.reason && <div className="mt-1 text-xs text-muted">{condition.reason}</div>}
+                      {condition.message && <div className="mt-1 text-xs text-subtle">{condition.message}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && selected.pods.length > 0 && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Pods</h4>
+                <div className="space-y-2">
+                  {selected.pods.map((pod) => (
+                    <div key={pod.name} className="grid grid-cols-5 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="col-span-2">
+                        <div className="text-foreground">{pod.name}</div>
+                        <div className="text-xs text-subtle">{pod.node ?? 'node unknown'}</div>
+                      </div>
+                      <div className="text-muted">{pod.phase}</div>
+                      <div className="text-muted">{pod.ready}/{pod.total_containers} ready</div>
+                      <div className="text-muted">{pod.restarts} restarts</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'events' && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Event correlation</h4>
+                <EventCorrelationPanel events={selectedEvents} resourceName={selected.name} />
+              </div>
+            )}
+
+            {detailTab === 'events' && selectedEvents.length > 0 && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Cluster events</h4>
+                <div className="space-y-2 max-h-64 overflow-auto">
+                  {selectedEvents.map((event, index) => (
+                    <div key={`${event.timestamp}:${event.reason}:${index}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-foreground">{event.reason}</div>
+                        <div className={event.type_ === 'Warning' ? 'text-warning text-xs' : 'text-success text-xs'}>
+                          {event.type_}
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs text-muted">{event.message || 'No event message'}</div>
+                      <div className="mt-1 text-xs text-subtle">{formatTimestamp(event.timestamp)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && relatedAudit.length > 0 && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Related audit trail</h4>
+                <div className="space-y-2 max-h-48 overflow-auto">
+                  {relatedAudit.map((entry) => (
+                    <div key={entry.id} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-foreground">{String(entry.action)}</span>
+                        <span className="text-xs text-subtle">{String(entry.result)}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted">{entry.message}</div>
+                      <div className="mt-1 text-xs text-subtle truncate" title={entry.workload}>
+                        {entry.workload}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && topMetrics.length > 0 && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Metrics</h4>
+                <div className="space-y-2">
+                  {topMetrics.map((metric) => (
+                    <div key={metric.name} className="grid grid-cols-3 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="text-foreground">{metric.name}</div>
+                      <div className="text-muted">CPU {metric.cpu}</div>
+                      <div className="text-muted">Memory {metric.memory}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && rollout && (
+              <div className="glass-drawer p-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">Rollout</h4>
+                  <div className="text-xs text-muted">{rollout.status}</div>
+                </div>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleRolloutAction('pause')}
+                    disabled={!!actionLoading}
+                    className="rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'rollout-pause' ? 'Pausing...' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={() => handleRolloutAction('resume')}
+                    disabled={!!actionLoading}
+                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'rollout-resume' ? 'Resuming...' : 'Resume'}
+                  </button>
+                  <button
+                    onClick={() => handleRolloutAction('restart')}
+                    disabled={!!actionLoading}
+                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
+                  </button>
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
+                    <span className="text-xs text-subtle">Revision</span>
+                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
+                      {rollout.history.map((entry) => (
+                        <option key={entry.revision} value={entry.revision}>
+                          {entry.revision}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => handleRolloutAction('undo')}
+                      disabled={!!actionLoading || !rolloutRevision}
+                      className="rounded-lg border glass-divider glass-inset-surface px-3 py-1 text-sm text-foreground glass-inset-hover disabled:opacity-50"
+                    >
+                      {actionLoading === 'rollout-undo' ? 'Undoing...' : 'Undo'}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {rollout.history.length === 0 ? (
+                    <div className="text-sm text-subtle">No rollout revisions reported.</div>
+                  ) : (
+                    rollout.history.map((entry) => (
+                      <div key={entry.revision} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                        <div className="text-foreground">Revision {entry.revision}</div>
+                        <div className="mt-1 text-xs text-subtle">{entry.change_cause}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'overview' && selected.kind === 'HelmRelease' && (
+              <div className="glass-drawer p-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">Helm</h4>
+                  <div className="text-xs text-muted">{helmHistory.length} revisions</div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <input
+                    value={helmChart}
+                    onChange={(e) => setHelmChart(e.target.value)}
+                    className="glass-select"
+                    placeholder="repo/chart or chart reference"
+                  />
+                  <div className="flex items-center gap-2 glass-drawer px-3 py-2">
+                    <span className="text-xs text-subtle">Revision</span>
+                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
+                      {helmHistory.map((entry) => (
+                        <option key={entry.revision} value={entry.revision}>{entry.revision}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <textarea
+                  value={helmValues}
+                  onChange={(e) => setHelmValues(e.target.value)}
+                  rows={10}
+                  className="glass-code-block-body mt-3 w-full text-xs"
+                  spellCheck={false}
+                  placeholder="Helm values YAML"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleHelmAction('upgrade')}
+                    disabled={!!actionLoading || !helmChart}
+                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'helm-upgrade' ? 'Upgrading...' : 'Upgrade'}
+                  </button>
+                  <button
+                    onClick={() => handleHelmAction('install')}
+                    disabled={!!actionLoading || !helmChart}
+                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    {actionLoading === 'helm-install' ? 'Installing...' : 'Install'}
+                  </button>
+                  <button
+                    onClick={() => handleHelmAction('rollback')}
+                    disabled={!!actionLoading || !helmRevision}
+                    className="glass-select text-foreground glass-inset-hover disabled:opacity-50"
+                  >
+                    {actionLoading === 'helm-rollback' ? 'Rolling Back...' : 'Rollback'}
+                  </button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {helmHistory.map((entry) => (
+                    <div key={entry.revision} className="glass-table-row rounded-md px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-foreground">Revision {entry.revision}</span>
+                        <span className="text-muted">{entry.status}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-subtle">{entry.chart}{entry.app_version ? ` · ${entry.app_version}` : ''}</div>
+                      <div className="mt-1 text-xs text-subtle">{entry.description ?? 'No description'} · {formatTimestamp(entry.updated)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'logs' && selectedLogsPath && (
+              <div className="glass-drawer p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Logs</h4>
+                <LogViewer workloadName={selected.name} logsPath={selectedLogsPath} />
+              </div>
+            )}
+
+            {detailTab === 'terminal' && ((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) && (
+              <div className="glass-drawer p-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-foreground">Terminal</h4>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTerminalExpanded((value) => !value)}
+                      className="quick-link-chip px-3 py-1 text-xs"
+                    >
+                      {terminalExpanded ? 'Compact' : 'Expand'}
+                    </button>
+                    <div className={`text-xs ${execConnected ? 'text-success' : 'text-subtle'}`}>
+                      {execConnected ? 'connected' : 'disconnected'}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                  <select value={execPod} onChange={(e) => setExecPod(e.target.value)} className="glass-select">
+                    {(selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name)).map((podName) => (
+                      <option key={podName} value={podName}>{podName}</option>
+                    ))}
+                  </select>
+                  <select value={execContainer} onChange={(e) => setExecContainer(e.target.value)} disabled={selectedContainers.length === 0} className="glass-select disabled:opacity-60">
+                    <option value="">default container</option>
+                    {selectedContainers.map((containerName) => (
+                      <option key={containerName} value={containerName}>{containerName}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={execCommand}
+                    onChange={(e) => setExecCommand(e.target.value)}
+                    className="glass-select"
+                    placeholder="/bin/sh"
+                  />
+                  <div className="flex gap-2 lg:col-span-3">
+                    <button
+                      onClick={connectExec}
+                      disabled={!execPod}
+                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                    >
+                      Connect
+                    </button>
+                    <button
+                      onClick={disconnectExec}
+                      disabled={!execConnected}
+                      className="flex-1 glass-select text-foreground glass-inset-hover disabled:opacity-50"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                </div>
+                <pre className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-success ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={execInput}
+                    onChange={(e) => setExecInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendExecLine();
+                      }
+                    }}
+                    className="flex-1 glass-select"
+                    placeholder="Type a command and press Enter"
+                  />
+                  <button
+                    onClick={sendExecLine}
+                    disabled={!execConnected || !execInput}
+                    className="rounded-lg border border-success bg-success/20 px-4 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {detailTab === 'terminal' && (((selected.kind === 'Pod' && selected.name) || selected.pods.length > 0) || selected.kind === 'Service') && (
+              <div className="glass-drawer p-3" data-testid="clusters-port-forward-panel">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Port Forward</h4>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+                  <select data-testid="clusters-port-forward-pod" value={selected.kind === 'Service' ? selected.name : portForwardPod} onChange={(e) => setPortForwardPod(e.target.value)} disabled={selected.kind === 'Service'} className="glass-select disabled:opacity-60">
+                    {((selected.kind === 'Service') ? [selected.name] : (selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name))).map((podName) => (
+                      <option key={podName} value={podName}>{podName}</option>
+                    ))}
+                  </select>
+                  <input
+                    data-testid="clusters-port-forward-remote"
+                    type="number"
+                    value={portForwardRemotePort}
+                    onChange={(e) => setPortForwardRemotePort(e.target.value)}
+                    className="glass-select"
+                    placeholder="Remote port"
+                  />
+                  <input
+                    data-testid="clusters-port-forward-local"
+                    type="number"
+                    value={portForwardLocalPort}
+                    onChange={(e) => setPortForwardLocalPort(e.target.value)}
+                    className="glass-select"
+                    placeholder="Local port (optional)"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      data-testid="clusters-port-forward-start"
+                      onClick={handlePortForwardStart}
+                      disabled={!portForwardPod || !portForwardRemotePort || !!portForwardSession}
+                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                    >
+                      {actionLoading === 'port-forward' ? 'Starting...' : 'Start'}
+                    </button>
+                    <button
+                      data-testid="clusters-port-forward-stop"
+                      onClick={handlePortForwardStop}
+                      disabled={!portForwardSession}
+                      className="flex-1 glass-select text-foreground glass-inset-hover disabled:opacity-50"
+                    >
+                      {actionLoading === 'port-forward-stop' ? 'Stopping...' : 'Stop'}
+                    </button>
+                  </div>
+                </div>
+                {portForwardSession && (
+                  <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-muted">
+                    Active: <span className="text-success">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {detailTab === 'manifest' && (
+            <div className="glass-drawer p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-foreground">Manifest</h4>
+                <button
+                  onClick={handleApply}
+                  disabled={!!actionLoading || selected.kind === 'HelmRelease'}
+                  className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
+                >
+                  <Save size={14} />
+                  {actionLoading === 'apply' ? 'Applying...' : selected.kind === 'HelmRelease' ? 'Managed by Helm' : 'Apply Changes'}
+                </button>
+              </div>
+              <textarea
+                value={manifestDraft}
+                onChange={(e) => setManifestDraft(e.target.value)}
+                rows={18}
+                className="glass-code-block-body w-full text-xs"
+                spellCheck={false}
+              />
+              <div className="mt-3">
+                <CodeBlock title="Current Resource">{JSON.stringify(selected.manifest, null, 2)}</CodeBlock>
+              </div>
+              <div className="glass-drawer mt-3 p-3">
+                <h4 className="mb-3 text-sm font-semibold text-foreground">Diff Preview</h4>
+                <pre className="max-h-80 overflow-auto text-xs">
+                  {serverDiff.map((line, index) => (
+                    <div
+                      key={`${line.kind}:${index}`}
+                      className={
+                        line.kind === 'add'
+                          ? 'text-success'
+                          : line.kind === 'remove'
+                            ? 'text-danger'
+                            : 'text-subtle'
+                      }
+                    >
+                      {line.text}
+                    </div>
+                  ))}
+                </pre>
+              </div>
+            </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title={`Create ${kind}`}
+      >
+        <div data-testid="clusters-create-modal" className="space-y-4">
+          {kind === 'HelmRelease' ? (
+            <>
+              <p className="text-sm text-muted">
+                Install a Helm release into the selected cluster and namespace.
+              </p>
+              <input
+                value={createHelmRelease}
+                onChange={(e) => setCreateHelmRelease(e.target.value)}
+                className="glass-input"
+                placeholder="release name"
+              />
+              <input
+                value={createHelmChart}
+                onChange={(e) => setCreateHelmChart(e.target.value)}
+                className="glass-input"
+                placeholder="repo/chart or chart path"
+              />
+              <textarea
+                value={createHelmValues}
+                onChange={(e) => setCreateHelmValues(e.target.value)}
+                rows={14}
+                className="glass-code-block-body w-full text-xs"
+                spellCheck={false}
+                placeholder="Helm values YAML"
+              />
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted">
+                Provide a JSON manifest. Aether will apply it directly to the selected cluster.
+              </p>
+              <textarea
+                value={createManifestDraft}
+                onChange={(e) => setCreateManifestDraft(e.target.value)}
+                rows={18}
+                className="glass-code-block-body w-full text-xs"
+                spellCheck={false}
+              />
+            </>
+          )}
+          <div className="flex justify-end">
+            <button
+              onClick={handleCreateResource}
+              disabled={!!actionLoading || (kind === 'HelmRelease' && (!createHelmRelease || !createHelmChart))}
+              className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
+            >
+              <Save size={14} />
+              {actionLoading === 'create' ? (kind === 'HelmRelease' ? 'Installing...' : 'Applying...') : (kind === 'HelmRelease' ? 'Install Release' : 'Create / Apply')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+    </div>
+  );
+}
+
+function ClustersHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'clusters-browse', title: 'Browse', description: 'Browse and manage Kubernetes resources.', icon: <Server className="h-5 w-5" /> },
+        { view: 'clusters-network', title: 'Network', description: 'NetworkPolicy and Cilium policies.', icon: <Network className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('clusters', ClustersHubPage);

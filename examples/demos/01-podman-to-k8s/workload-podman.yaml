@@ -1,0 +1,30 @@
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: demo-podman-k8s
+  owner: demo
+  project: aether-demos
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+requirements:
+  cpu: "500m"
+  memory: 256Mi
+  storage: 1Gi
+runtime:
+  preferred: container
+  allow:
+    - container
+    - kube
+network:
+  service: true
+  ports:
+    - containerPort: 8080
+      servicePort: 8080
+      protocol: TCP
+health:
+  http:
+    path: /
+    port: 8080
+    intervalSeconds: 10

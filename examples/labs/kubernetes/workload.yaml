@@ -1,0 +1,32 @@
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: nginx
+  owner: platform
+  project: labs
+  labels:
+    lab: kubernetes
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+requirements:
+  cpu: "100m"
+  memory: 128Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+network:
+  service: true
+  ports:
+    - containerPort: 80
+      servicePort: 80
+      protocol: TCP
+health:
+  readiness:
+    tcpSocket:
+      port: 80
+    initialDelaySeconds: 5
+    periodSeconds: 5

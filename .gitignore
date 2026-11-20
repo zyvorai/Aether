@@ -1,0 +1,53 @@
+# Client packages
+/dist/
+
+# Dashboard
+web/dashboard/node_modules/
+web/dashboard/dist/
+web/dashboard/test-results/
+web/dashboard/playwright/.auth/
+web/dashboard/playwright-report/
+
+# Rust
+/target/
+**/target/
+**/*.rs.bk
+*.pdb
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Aether
+.aether/
+state.json
+
+# Local TLS / signing material (never commit)
+certs/
+keys/
+*.pem
+*.key
+!packaging/mock-idp/cert.pem
+!packaging/mock-idp/key.pem
+
+# Claude
+.claude/
+
+# Local AI caches
+.grok/
+**/.DS_Store
+
+# Local presentation exports
+presentations/
+
+# MkDocs
+.venv-docs/
+/site/
+docs/overrides/__pycache__/

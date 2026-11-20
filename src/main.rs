@@ -1,0 +1,391 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+//! Aether CLI entrypoint
+
+mod cli;
+mod commands;
+
+use aether::state::StateStore;
+use anyhow::Result;
+use clap::Parser;
+use colored::Colorize;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
+
+use cli::{Cli, Commands, HealthAction, NodeAction};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Install rustls crypto provider before any TLS operations
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
+    let cli = Cli::parse();
+
+    // Initialize tracing (suppress default fmt for non-verbose to keep output clean)
+    let filter = if cli.verbose {
+        tracing_subscriber::EnvFilter::new("debug")
+    } else {
+        tracing_subscriber::EnvFilter::new("warn")
+    };
+
+    // Support structured JSON logs via AETHER_LOG_FORMAT=json or config
+    let log_format = std::env::var("AETHER_LOG_FORMAT").unwrap_or_default();
+    let fmt_layer = if log_format == "json" {
+        tracing_subscriber::fmt::layer().json().boxed()
+    } else {
+        tracing_subscriber::fmt::layer().boxed()
+    };
+    // Optional OTLP distributed-tracing layer (opt-in via AETHER_OTLP_ENDPOINT).
+    let otel_layer = aether::observability::otel_trace_layer();
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(fmt_layer)
+        .with(otel_layer)
+        .init();
+
+    // Set output modes
+    aether::output::set_quiet(cli.quiet);
+    let json_mode = cli.json || matches!(cli.output, cli::OutputFormat::Json);
+    aether::output::set_json(json_mode);
+    aether::output::set_yaml(matches!(cli.output, cli::OutputFormat::Yaml));
+    aether::output::set_wide(matches!(cli.output, cli::OutputFormat::Wide));
+    aether::output::set_yes(cli.yes);
+    commands::set_skip_policy(cli.skip_policy);
+    commands::set_namespace(cli.namespace.clone());
+
+    // Initialize metrics
+    aether::metrics::init();
+
+    // Ensure state directory exists
+    StateStore::ensure_state_dir()?;
+
+    // Record command start time
+    let start = std::time::Instant::now();
+    let command_name = cli.command.name();
+
+    let result = match cli.command {
+        Commands::Validate => commands::validate_command(&cli.spec).await,
+        Commands::Build => commands::build_command(&cli.spec).await,
+        Commands::Run { runtime } => {
+            if cli.dry_run {
+                commands::dry_run_command(&cli.spec, runtime).await
+            } else {
+                commands::run_command(&cli.spec, runtime).await
+            }
+        }
+        Commands::Stop { name, cascade } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would stop workload '{}'{}",
+                    name,
+                    if cascade { " (cascade)" } else { "" }
+                ));
+                return Ok(());
+            }
+            commands::stop_command(&name, cascade).await
+        }
+        Commands::Status { name } => commands::status_command(&name).await,
+        Commands::Logs { name, follow } => commands::logs_command(&name, follow).await,
+        Commands::Delete { name } => {
+            if cli.dry_run {
+                aether::output::info(&format!("[dry-run] Would delete workload '{}'", name));
+                return Ok(());
+            }
+            commands::delete_command(&name).await
+        }
+        Commands::Update { name, image, tag } => {
+            commands::update_command(&name, &cli.spec, image, tag).await
+        }
+        Commands::List => commands::list_command().await,
+        Commands::Migrate {
+            name,
+            target,
+            strategy,
+            no_validation,
+            no_rollback,
+            verbose_trace,
+        } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would migrate '{}' to {} using {} strategy",
+                    name, target, strategy
+                ));
+                return Ok(());
+            }
+            commands::migrate_command(
+                &name,
+                &target,
+                &strategy,
+                no_validation,
+                no_rollback,
+                verbose_trace,
+            )
+            .await
+        }
+        Commands::LiveMigrate {
+            name,
+            watch_timeout,
+        } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would live-migrate KubeVirt VM '{}' to another node",
+                    name
+                ));
+                return Ok(());
+            }
+            commands::live_migrate_command(&name, watch_timeout).await
+        }
+        Commands::Tui => commands::tui_command().await,
+        Commands::Ask { message } => commands::ask_command(message).await,
+        Commands::Completions { shell } => commands::completions_command(&shell),
+        Commands::Metrics => {
+            commands::metrics_command().await;
+            Ok(())
+        }
+        Commands::Backup { name, description } => {
+            commands::backup_command(name.clone(), description.clone()).await
+        }
+        Commands::Restore { backup, merge } => commands::restore_command(&backup, merge).await,
+        Commands::ListBackups => commands::list_backups_command().await,
+        Commands::Cost { provider } => commands::cost_command(&cli.spec, &provider).await,
+        Commands::Serve {
+            host,
+            port,
+            tls_cert,
+            tls_key,
+        } => commands::serve_command(host, port, tls_cert, tls_key).await,
+        Commands::Recommend { .. } => commands::recommend_command(&cli.spec).await,
+        Commands::Profile { name } => commands::profile_command(&cli.spec, name).await,
+        Commands::AnalyzeLogs { name } => commands::analyze_logs_command(&name).await,
+        Commands::MigrationAdvice { name, target } => {
+            commands::migration_advice_command(&name, &target).await
+        }
+        Commands::ScalingAdvice => commands::scaling_advice_command().await,
+        Commands::Config { show, init } => commands::config_command(show, init).await,
+        Commands::Drift { name, reconcile } => commands::drift_command(&name, reconcile).await,
+        Commands::PolicyCheck { policy } => {
+            commands::policy_check_command(&cli.spec, &policy).await
+        }
+        Commands::Deps { action } => commands::deps_command(action).await,
+        Commands::Audit {
+            last,
+            workload,
+            summary,
+        } => commands::audit_command(last, workload, summary).await,
+        Commands::Template {
+            name,
+            workload_name,
+            owner,
+            project,
+            registry,
+            output,
+            list,
+        } => {
+            commands::template_command(
+                &name,
+                workload_name,
+                &owner,
+                &project,
+                &registry,
+                output,
+                list,
+            )
+            .await
+        }
+        Commands::Sla { action } => commands::sla_command(action).await,
+        Commands::Secrets { action } => commands::secrets_command(action).await,
+        Commands::Events {
+            last,
+            severity,
+            summary,
+        } => commands::events_command(last, severity, summary).await,
+        Commands::Env { action } => commands::env_command(action).await,
+        Commands::GitOps { action } => commands::gitops_command(action).await,
+        Commands::Schedule { action } => commands::schedule_command(action).await,
+        Commands::Orchestrate { action } => commands::orchestrate_command(action).await,
+        Commands::Affinity { action } => commands::affinity_command(action).await,
+        Commands::Webhook { action } => commands::webhook_command(action).await,
+        Commands::HelpAll => {
+            aether::completions::show_help();
+            Ok(())
+        }
+        Commands::Diff { name } => commands::diff_command(&name).await,
+        Commands::Rollback {
+            name,
+            version,
+            list,
+        } => commands::rollback_command(&name, version, list).await,
+        Commands::Deploy {
+            dir,
+            runtime,
+            fail_fast,
+            dry_run,
+        } => commands::deploy_command(&dir, runtime, fail_fast, dry_run).await,
+        Commands::Exec {
+            name,
+            command,
+            interactive,
+            timeout,
+        } => commands::exec_command(&name, &command, interactive, timeout).await,
+        Commands::PortForward {
+            name,
+            ports,
+            timeout,
+        } => commands::port_forward_command(&name, &ports, timeout).await,
+        Commands::Cp {
+            name,
+            src,
+            dest,
+            timeout,
+        } => commands::cp_command(&name, &src, &dest, timeout).await,
+        Commands::Watch { runtime } => commands::watch_command(&cli.spec, runtime).await,
+        Commands::Compare => commands::compare_command(&cli.spec).await,
+        Commands::Decide { explain } => commands::decide_command(&cli.spec, explain).await,
+        Commands::Intent => commands::intent_command(&cli.spec).await,
+        Commands::Init => commands::init_command().await,
+        Commands::Compose { action } => commands::compose_command(action).await,
+        Commands::Plugin { action } => commands::plugin_command(action).await,
+        Commands::Health { action } => match action {
+            HealthAction::Show {
+                name,
+                last,
+                summary,
+            } => commands::health_command(&name, last, summary).await,
+            HealthAction::Collect => commands::health_collect_command().await,
+        },
+        Commands::HelmExport {
+            output_dir,
+            chart_version,
+        } => commands::helm_export_command(&cli.spec, &output_dir, chart_version.as_deref()).await,
+        Commands::Sbom { action } => commands::sbom_command(action).await,
+        Commands::EdgeAgent {
+            control_plane,
+            site,
+            token,
+            kube_context,
+            dry_run,
+            interval_secs,
+        } => {
+            commands::edge_agent_command(
+                &control_plane,
+                &site,
+                token.as_deref(),
+                kube_context.as_deref(),
+                dry_run,
+                interval_secs,
+            )
+            .await
+        }
+        Commands::Scale { name, replicas } => {
+            if cli.dry_run {
+                aether::output::info(&format!(
+                    "[dry-run] Would scale workload '{}' to {} replica(s)",
+                    name, replicas
+                ));
+                return Ok(());
+            }
+            commands::scale_command(&name, replicas).await
+        }
+        Commands::Restart { name } => {
+            if cli.dry_run {
+                aether::output::info(&format!("[dry-run] Would restart workload '{}'", name));
+                return Ok(());
+            }
+            commands::restart_command(&name).await
+        }
+        Commands::Node { action } => {
+            let (verb, node) = match &action {
+                NodeAction::Cordon { node } => ("cordon", node),
+                NodeAction::Uncordon { node } => ("uncordon", node),
+                NodeAction::Drain { node } => ("drain", node),
+            };
+            if cli.dry_run {
+                aether::output::info(&format!("[dry-run] Would {} node '{}'", verb, node));
+                return Ok(());
+            }
+            commands::node_command(verb, node).await
+        }
+        Commands::Storage { action } => commands::storage_command(action).await,
+        Commands::Connection { action } => commands::connection_command(action).await,
+        Commands::Discover { action } => commands::discover_command(action).await,
+        Commands::Inventory { action } => commands::inventory_command(action).await,
+        Commands::Dependency { action } => commands::dependency_command(action).await,
+        Commands::Assess {
+            connection,
+            app,
+            target,
+        } => commands::assess_command(&connection, &app, target.as_deref()).await,
+        Commands::Plan { action } => commands::plan_command(action).await,
+        Commands::Report {
+            connection,
+            format,
+            output,
+        } => commands::report_command(&connection, &format, output).await,
+        Commands::Move { action } => commands::move_command(action).await,
+        Commands::Forge { action } => commands::forge_command(action).await,
+    };
+
+    // Record command execution time
+    let duration = start.elapsed().as_secs_f64();
+    aether::metrics::record_command(command_name, duration);
+
+    // Show elapsed time for commands that take noticeable time
+    if duration >= 0.1 && !cli.quiet && !cli.json {
+        let elapsed = if duration < 1.0 {
+            format!("{:.0}ms", duration * 1000.0)
+        } else if duration < 60.0 {
+            format!("{:.1}s", duration)
+        } else {
+            let mins = (duration / 60.0).floor() as u64;
+            let secs = duration % 60.0;
+            format!("{}m {:.0}s", mins, secs)
+        };
+        eprintln!(
+            "\n{}",
+            format!("  ⏱ {} | {}", elapsed, command_name).truecolor(
+                aether::output::COLOR_MUTED.0,
+                aether::output::COLOR_MUTED.1,
+                aether::output::COLOR_MUTED.2,
+            )
+        );
+    }
+
+    // Flush any buffered OTLP spans before the process exits.
+    aether::observability::otel_shutdown();
+
+    // Styled error display — print our styled version, then return a
+    // minimal error so the runtime doesn't re-print the full message.
+    // Add contextual help suggestions to errors.
+    let result = result.map_err(commands::suggest_on_error);
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            if cli.json {
+                eprintln!(
+                    r#"{{"status":"error","command":"{}","message":{}}}"#,
+                    command_name,
+                    serde_json::to_string(&e.to_string()).unwrap_or_else(|_| format!("\"{}\"", e))
+                );
+            } else if !cli.quiet {
+                eprintln!(
+                    "\n{} {} {}\n",
+                    "Error:"
+                        .truecolor(
+                            aether::output::COLOR_ERROR.0,
+                            aether::output::COLOR_ERROR.1,
+                            aether::output::COLOR_ERROR.2,
+                        )
+                        .bold(),
+                    e,
+                    format!("({})", command_name).truecolor(
+                        aether::output::COLOR_MUTED.0,
+                        aether::output::COLOR_MUTED.1,
+                        aether::output::COLOR_MUTED.2,
+                    ),
+                );
+            }
+            // Return a minimal error so the runtime doesn't re-print the full message
+            Err(anyhow::anyhow!(""))
+        }
+    }
+}

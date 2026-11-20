@@ -1,0 +1,37 @@
+---
+hero:
+  eyebrow: USER GUIDE
+  title: Using the Dashboard
+  tone: sky
+---
+
+Aether is organized by navigation groups (GlobalNav flyouts, desktop nav, or CLI command groups). Use search / command palette when available.
+
+Visual shell: **Aurora / Apple.com** — paper backdrop, editorial page heroes (`PageHero` via `AuroraPage`), optional ink highlight bands, pill primary CTAs. Details: [DESIGN.md](https://github.com/zyvorai/Aether/blob/main/web/dashboard/docs/DESIGN.md).
+
+## Surfaces
+
+| Need | Path |
+|------|------|
+| Command Center | `/` |
+| Fabric | `/fabric` |
+| Migrations | `/migrations` |
+| Zyra | `/zyra` |
+| Settings | `/settings` |
+
+## Browse vs act
+
+Inventory and status views are safe to explore. Mutating actions (deploy, migrate, sign, remediate) follow role gates and confirmation dialogs — review impact first.
+
+## Related
+
+- [Getting Started](getting-started.md)
+- [Page-by-page guides](pages/README.md)
+
+## Operate from the console (UX)
+
+1. Open this route from the nav or command palette and wait for live API data.
+2. Use filters/search when present; drill into a row for detail.
+3. For mutating actions: confirm role gates and impact before applying.
+4. **Empty / fail:** Check service health, auth, and that required CRDs/backends for this domain are installed.
+5. **Success:** Live data loads; created/updated objects appear without error toasts.

@@ -1,0 +1,28 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+interface PageLoadingProps {
+  rows?: number;
+  variant?: 'skeleton' | 'spinner';
+  label?: string;
+  className?: string;
+}
+
+export default function PageLoading({ rows = 4, variant = 'skeleton', label, className }: PageLoadingProps) {
+  if (variant === 'spinner' || label) {
+    return (
+      <div className={`flex flex-col items-center justify-center gap-3 ${className ?? 'py-16'}`}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        {label ? <p className="text-sm text-subtle">{label}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass space-y-4 p-6">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="skeleton h-20 rounded-xl" />
+      ))}
+    </div>
+  );
+}

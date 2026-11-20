@@ -1,0 +1,20 @@
+{{- if .Values.opa.bundle.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether.fullname" . }}-opa-bundle
+  labels:
+    {{- include "aether.labels" . | nindent 4 }}
+  annotations:
+    aether.dev/opa-bundle-version: {{ .Values.opa.bundle.version | quote }}
+data:
+  policy.rego: |
+    package {{ .Values.opa.package }}
+    # Stub admission policy — mount this bundle into OPA and set AETHER_OPA_URL on Aether.
+    default allow = true
+    deny[msg] {
+      input.kind == "Secret"
+      not input.metadata.namespace
+      msg := "Secrets must declare a namespace"
+    }
+{{- end }}

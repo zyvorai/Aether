@@ -1,0 +1,42 @@
+# Atlas-backed persistent storage example.
+#
+# When `persistence.storageClass` is `atlas/<policy>` and the gateway/CLI has
+# AETHER_ATLAS_URL set, Aether provisions the volume through the Atlas storage
+# control plane (Ceph RBD / CephFS / NFS / ZFS) instead of creating a native
+# Kubernetes PVC. Atlas creates the PVC (`{name}-pvc`) which this workload's pod
+# then references. Built-in policies: production, database, development, shared, ai.
+#
+#   AETHER_ATLAS_URL=http://atlas:5110 \
+#   AETHER_ATLAS_TOKEN=<product.service.aether JWT> \
+#   AETHER_ATLAS_TENANT=default \
+#   aether run --spec examples/workload-atlas-storage.yaml
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: atlas-db
+  owner: sus
+  project: aether-demo
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+requirements:
+  cpu: "500m"
+  memory: 512Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+persistence:
+  enabled: true
+  size: 20Gi
+  accessMode: ReadWriteOnce
+  # `atlas/database` → Atlas "database" policy (Ceph RBD, RWO). Use `atlas/` with
+  # an intent.storage.tier to pick the policy from intent, or `atlas/shared` for RWX.
+  storageClass: atlas/database
+# Optional: drive the Atlas policy from intent instead of the storageClass suffix.
+# intent:
+#   goal: balanced
+#   storage:
+#     tier: database

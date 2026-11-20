@@ -1,0 +1,30 @@
+{{- if .Values.auth.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether.fullname" . }}-auth-config
+  labels:
+    {{- include "aether.labels" . | nindent 4 }}
+data:
+  {{- if .Values.oidc.groupsClaim }}
+  AETHER_OIDC_GROUPS_CLAIM: {{ .Values.oidc.groupsClaim | quote }}
+  {{- end }}
+  {{- if .Values.oidc.defaultRole }}
+  AETHER_OIDC_DEFAULT_ROLE: {{ .Values.oidc.defaultRole | quote }}
+  {{- end }}
+  {{- if .Values.saml.defaultRole }}
+  AETHER_SAML_DEFAULT_ROLE: {{ .Values.saml.defaultRole | quote }}
+  {{- end }}
+  {{- if .Values.ldap.userFilter }}
+  AETHER_LDAP_USER_FILTER: {{ .Values.ldap.userFilter | quote }}
+  {{- end }}
+  {{- if .Values.ldap.defaultRole }}
+  AETHER_LDAP_DEFAULT_ROLE: {{ .Values.ldap.defaultRole | quote }}
+  {{- end }}
+  {{- if .Values.ldap.tlsSkipVerify }}
+  AETHER_LDAP_TLS_SKIP_VERIFY: "1"
+  {{- end }}
+  {{- range $key, $value := .Values.auth.configMap.extra }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

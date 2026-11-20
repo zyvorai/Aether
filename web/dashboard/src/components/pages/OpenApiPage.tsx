@@ -1,0 +1,310 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
+import { BookOpen, Copy } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { copyToClipboard } from '../../utils/clipboard';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import CodeBlock from '../CodeBlock';
+
+interface OpenApiDoc {
+  openapi?: string;
+  info?: { title?: string; version?: string; description?: string };
+  paths?: Record<string, Record<string, { summary?: string; description?: string }>>;
+}
+
+function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
+  const navigate = useNavigate();
+  const [doc, setDoc] = useState<OpenApiDoc | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [workloadFocus] = useQueryParam('workload');
+  const focusedWorkload = workloadFocus.trim();
+  const [search, setSearch] = useWorkloadOrSearchFilter();
+  const [methodFilter, setMethodFilter] = useState('all');
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const res = await fetch('/api/openapi.json', { credentials: 'include' });
+      if (!res.ok) {
+        setLoadFailed(true);
+        setDoc(null);
+        setLoading(false);
+        return;
+      }
+      const json = (await res.json()) as OpenApiDoc | { success?: boolean; data?: OpenApiDoc };
+      const data =
+        json && typeof json === 'object' && 'success' in json && json.success && json.data
+          ? json.data
+          : (json as OpenApiDoc);
+      if (data?.paths) {
+        setDoc(data);
+      } else {
+        setLoadFailed(true);
+        setDoc(null);
+      }
+    } catch {
+      setLoadFailed(true);
+      setDoc(null);
+    }
+    setLoading(false);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const paths = useMemo(() => {
+    if (!doc?.paths) return [];
+    const q = search.trim().toLowerCase();
+    return Object.entries(doc.paths).flatMap(([path, methods]) =>
+      Object.entries(methods).map(([method, meta]) => ({
+        path,
+        method: method.toUpperCase(),
+        summary: meta.summary ?? meta.description ?? '',
+      })),
+    ).filter((row) => {
+      if (methodFilter !== 'all' && row.method !== methodFilter) return false;
+      if (!q) return true;
+      return (
+        row.path.toLowerCase().includes(q)
+        || row.method.toLowerCase().includes(q)
+        || row.summary.toLowerCase().includes(q)
+      );
+    });
+  }, [doc, search, methodFilter]);
+
+  async function copyPath(path: string) {
+    try {
+      if (!(await copyToClipboard(path))) throw new Error('clipboard unavailable');
+      setCopiedPath(path);
+      setTimeout(() => setCopiedPath(null), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function downloadOpenApiJson() {
+    if (!doc) return;
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aether-openapi.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (loading && !doc && !loadFailed) {
+    return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="OpenAPI document unavailable" onRetry={() => void load()} />;
+  }
+
+  return (
+    <div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Filter routes…"
+        searchTestId="openapi-route-search"
+        onRefresh={() => void load()}
+        refreshing={loading}
+        filters={
+          <select
+            value={methodFilter}
+            onChange={(e) => setMethodFilter(e.target.value)}
+            className="glass-select"
+            style={{ width: 'auto', minWidth: '9rem' }}
+            aria-label="HTTP method filter"
+            data-testid="openapi-method-filter"
+          >
+            <option value="all">All methods</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+        }
+      />
+
+      {focusedWorkload ? (
+        <WorkloadContextBanner testId="openapi-workload-context" workload={focusedWorkload} description="OpenAPI context">
+          <WorkloadScopedCrossLinks workload={focusedWorkload} prefix="openapi" showAudit />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('policy'), { workload: focusedWorkload })}
+            className="text-primary hover:underline"
+            data-testid="openapi-policy-link"
+          >
+            Policy →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('secrets'), { workload: focusedWorkload })}
+            className="text-primary hover:underline"
+            data-testid="openapi-secrets-link"
+          >
+            Secrets →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('rbac'), { workload: focusedWorkload })}
+            className="text-primary hover:underline"
+            data-testid="openapi-context-rbac-link"
+          >
+            RBAC →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('zyra'), { workload: focusedWorkload, q: `API usage for ${focusedWorkload}` })}
+            className="text-primary hover:underline"
+            data-testid="openapi-context-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('editor'), { workload: focusedWorkload })}
+            className="text-primary hover:underline"
+            data-testid="openapi-context-editor-link"
+          >
+            Editor →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: focusedWorkload })}
+            className="text-primary hover:underline"
+            data-testid="openapi-context-gitops-link"
+          >
+            GitOps →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
+
+      <section className="glass mb-6 p-6 sm:p-8">
+      <div className="glass mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <BookOpen className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">
+            {doc?.info?.title ?? 'Aether API'} {doc?.info?.version ? `v${doc.info.version}` : ''}
+          </h2>
+        </div>
+        {doc?.info?.description && (
+          <p className="text-sm text-muted mb-4">{doc.info.description}</p>
+        )}
+        <p className="text-xs text-subtle">
+          Raw document: <code className="text-primary/90">GET /api/openapi.json</code>
+        </p>
+        <button
+          type="button"
+          data-testid="openapi-download-json"
+          onClick={downloadOpenApiJson}
+          className="mt-3 inline-flex items-center gap-2 btn-secondary"
+        >
+          <Copy size={14} />
+          Download JSON
+        </button>
+      </div>
+
+      <div className="glass overflow-hidden mb-6" data-testid="openapi-routes-list">
+        <h3 className="text-sm font-semibold text-foreground mb-4 px-1">Notable routes ({paths.length})</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="glass-divider-b text-left text-xs uppercase tracking-wider text-subtle">
+                <th className="py-2 px-4">Method</th>
+                <th className="py-2 px-4">Path</th>
+                <th className="py-2 px-4">Summary</th>
+                <th className="py-2 px-4 w-16">Copy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paths.map((row) => {
+                const workloadRoute =
+                  focusedWorkload &&
+                  (row.path.includes(`/workloads/${focusedWorkload}`) ||
+                    row.path.includes(`/workloads/{name}`));
+                return (
+                <tr
+                  key={`${row.method}-${row.path}`}
+                  data-testid={workloadRoute ? 'openapi-workload-route-highlight' : undefined}
+                  className={`glass-table-row glass-inset-hover ${workloadRoute ? 'bg-primary/5' : ''}`}
+                >
+                  <td className="py-2 px-4 font-mono text-xs text-primary">{row.method}</td>
+                  <td className="py-2 px-4 font-mono text-xs text-muted">
+                    {row.path.includes('/rbac/keys') ? (
+                      <button
+                        type="button"
+                        data-testid="openapi-rbac-link"
+                        onClick={() => navigate(viewToPath('rbac'))}
+                        className="text-primary hover:underline"
+                      >
+                        {row.path}
+                      </button>
+                    ) : row.path.includes('/workloads/') && focusedWorkload ? (
+                      <button
+                        type="button"
+                        data-testid="openapi-workloads-link"
+                        onClick={() =>
+                          navigate(pathWithQuery(viewToPath('workloads'), { workload: focusedWorkload }))
+                        }
+                        className="text-primary hover:underline"
+                      >
+                        {row.path}
+                      </button>
+                    ) : (
+                      row.path
+                    )}
+                  </td>
+                  <td className="py-2 px-4 text-muted">{row.summary || '—'}</td>
+                  <td className="py-2 px-4">
+                    <button
+                      type="button"
+                      data-testid={`openapi-copy-${row.method}-${row.path}`}
+                      onClick={() => void copyPath(row.path)}
+                      className="rounded-lg p-1.5 text-subtle glass-inset-hover hover:text-primary"
+                      title="Copy path"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    {copiedPath === row.path ? (
+                      <span className="ml-1 text-[10px] text-success">Copied</span>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+              })}
+            </tbody>
+          </table>
+          {paths.length === 0 && (
+            <p className="text-sm text-subtle py-6 text-center">No routes match your search.</p>
+          )}
+        </div>
+      </div>
+
+      {doc && (
+        <div className="glass">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Full OpenAPI JSON</h3>
+          <CodeBlock title="openapi.json">{JSON.stringify(doc, null, 2)}</CodeBlock>
+        </div>
+      )}
+      </section>
+    </div>
+  );
+}
+
+export default withAuroraPage('openapi', OpenApiPage);

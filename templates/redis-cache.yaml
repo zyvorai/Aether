@@ -1,0 +1,133 @@
+# Redis Cache Template
+# High-performance in-memory cache with persistence
+
+metadata:
+  name: redis-cache
+  owner: platform-team
+  project: production
+  description: "Production Redis cache with persistence and monitoring"
+  labels:
+    app: redis
+    tier: cache
+    environment: production
+
+image:
+  registry: docker.io
+  repository: redis
+  tag: "7-alpine"
+  pullPolicy: IfNotPresent
+
+requirements:
+  cpu: "2"
+  memory: "8Gi"
+  storage: "100Gi"
+  gpu: null
+
+runtime:
+  preferred: Kube
+  allowed:
+    - Kube
+    - Container
+  disallowed: []
+
+scaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+    - name: metrics
+      port: 9121
+      targetPort: 9121
+      protocol: TCP
+
+persistence:
+  enabled: true
+  storageClass: fast-ssd
+  accessMode: ReadWriteOnce
+  mountPath: /data
+  subPath: redis-data
+
+health:
+  liveness:
+    enabled: true
+    exec:
+      command:
+        - redis-cli
+        - ping
+    initialDelay: 30
+    period: 10
+    timeout: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: true
+    exec:
+      command:
+        - redis-cli
+        - ping
+    initialDelay: 10
+    period: 5
+    timeout: 3
+    failureThreshold: 3
+
+env:
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretRef:
+        name: redis-credentials
+        key: password
+  - name: REDIS_MAXMEMORY
+    value: "7gb"
+  - name: REDIS_MAXMEMORY_POLICY
+    value: "allkeys-lru"
+
+configMaps:
+  - name: redis-config
+    mountPath: /usr/local/etc/redis
+    items:
+      - key: redis.conf
+        path: redis.conf
+
+secrets:
+  - name: redis-credentials
+    mountPath: /etc/secrets
+    items:
+      - key: password
+        path: password
+
+resources:
+  limits:
+    cpu: "4"
+    memory: "16Gi"
+  requests:
+    cpu: "2"
+    memory: "8Gi"
+
+security:
+  runAsNonRoot: true
+  runAsUser: 999
+  fsGroup: 999
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+monitoring:
+  enabled: true
+  path: /metrics
+  port: 9121
+  interval: 30s
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9121"
+  backup.velero.io/backup-volumes: "redis-data"

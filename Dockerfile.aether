@@ -1,0 +1,61 @@
+# Multi-stage build for Aether CLI
+FROM rust:1.88-slim AS builder
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock build.rs ./
+
+# Copy source
+COPY src ./src
+COPY web ./web
+COPY packaging ./packaging
+
+# Build release binary
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies + kubectl (used by cluster watch/exec/port-forward
+# subprocess sessions in src/api/handlers.rs) + helm (used by the Helm App Store /
+# release management handlers in src/kubecluster.rs and src/helm.rs)
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    tar \
+    && rm -rf /var/lib/apt/lists/* \
+    && KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)" \
+    && curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/$(dpkg --print-architecture)/kubectl" \
+    && chmod +x /usr/local/bin/kubectl \
+    && ARCH="$(dpkg --print-architecture)" \
+    && HELM_VERSION="$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep -oP '"tag_name":\s*"\K[^"]+')" \
+    && curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-${ARCH}.tar.gz" | tar -xz -C /tmp \
+    && mv "/tmp/linux-${ARCH}/helm" /usr/local/bin/helm \
+    && chmod +x /usr/local/bin/helm \
+    && rm -rf "/tmp/linux-${ARCH}"
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/aether /usr/local/bin/aether
+
+# Create state directory
+RUN mkdir -p /root/.aether
+
+# Set entrypoint
+ENTRYPOINT ["aether"]
+
+# Default command
+CMD ["--help"]
+
+# Labels
+LABEL org.opencontainers.image.title="Aether"
+LABEL org.opencontainers.image.description="Universal Runtime Control Plane"
+LABEL org.opencontainers.image.source="https://github.com/zyvorai/Aether"
+LABEL org.opencontainers.image.licenses="LicenseRef-Zyvor-Production-1.0"

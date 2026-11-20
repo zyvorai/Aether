@@ -1,0 +1,22 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import type { AppView } from '../types/api';
+import { VIEW_TO_PATH as NAV_VIEW_TO_PATH } from './dashboardNav';
+
+export const VIEW_TO_PATH = NAV_VIEW_TO_PATH;
+
+const PATH_TO_VIEW = new Map<string, AppView>();
+for (const [view, path] of Object.entries(VIEW_TO_PATH) as [AppView, string][]) {
+  PATH_TO_VIEW.set(path, view);
+}
+
+export function viewToPath(view: AppView): string {
+  return VIEW_TO_PATH[view];
+}
+
+export function pathToView(pathname: string): AppView | null {
+  const normalized = pathname.replace(/\/+$/, '') || '/';
+  if (normalized === '/copilot') return 'zyra';
+  return PATH_TO_VIEW.get(normalized) ?? null;
+}

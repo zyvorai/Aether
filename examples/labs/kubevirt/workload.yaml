@@ -1,0 +1,29 @@
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: kubevirt-lab-vm
+  owner: platform
+  project: labs
+  labels:
+    lab: kubevirt
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+requirements:
+  cpu: "4"
+  memory: 8Gi
+  storage: 50Gi
+  gpu:
+    vendor: nvidia
+    count: 1
+runtime:
+  preferred: kubevirt
+  allow:
+    - kubevirt
+network:
+  service: true
+  ports:
+    - containerPort: 22
+      servicePort: 22
+      protocol: TCP

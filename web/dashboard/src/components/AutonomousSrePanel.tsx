@@ -1,0 +1,101 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useCallback, useEffect, useState } from 'react';
+import { Copy, FileText, Loader2, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../utils/api';
+import { copyToClipboard } from '../utils/clipboard';
+import Badge, { SeverityBadge } from './Badge';
+import type { SreRunbookReport } from '../types/api';
+import GlassSection from './GlassSection';
+
+export default function AutonomousSrePanel() {
+  const [report, setReport] = useState<SreRunbookReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const data = await apiFetch<SreRunbookReport>('/intelligence/sre/runbook');
+    setReport(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function copyRunbook() {
+    if (!report) return;
+    try {
+      if (!(await copyToClipboard(report.runbook_markdown))) throw new Error('clipboard unavailable');
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message: 'Copy failed', type: 'error' } }));
+    }
+  }
+
+  return (
+        <GlassSection
+      accent="purple"
+      testId="autonomous-sre-panel"
+      title="Autonomous SRE Runbook"
+      subtitle="AI-generated operational brief from fleet health, healing, remediation, and FinOps."
+      icon={<FileText className="h-5 w-5 text-warning" />}
+      actions={<div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => void copyRunbook()}
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {copied ? 'Copied' : 'Copy markdown'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-2 rounded-xl border glass-divider px-3 py-2 text-xs text-muted hover:border-primary/40"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Refresh
+          </button>
+        </div>}
+    >{report ? (
+        <>
+          <p className="mb-6 rounded-2xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
+            {report.summary}
+          </p>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {report.sections.map((section) => (
+              <div key={section.title} className="glass p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="font-medium text-foreground">{section.title}</span>
+                  <SeverityBadge severity={section.severity} />
+                </div>
+                <ul className="space-y-2">
+                  {section.items.map((item) => (
+                    <li key={item} className="text-sm text-muted">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <details className="mt-6">
+            <summary className="cursor-pointer text-sm text-primary">View full markdown</summary>
+            <pre className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
+              {report.runbook_markdown}
+            </pre>
+          </details>
+        </>
+      ) : loading ? (
+        <div className="flex items-center gap-2 text-sm text-subtle">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Generating runbook…
+        </div>
+      ) : null}
+    </GlassSection>
+  );
+}

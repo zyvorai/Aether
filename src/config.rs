@@ -1,0 +1,588 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+//! Configuration system for Aether
+//!
+//! Loads tunable parameters from `~/.aether/config.yaml`
+
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+/// Top-level configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Config {
+    #[serde(default)]
+    pub engine: EngineConfig,
+    #[serde(default)]
+    pub migration: MigrationConfig,
+    #[serde(default)]
+    pub cost: CostConfig,
+    #[serde(default)]
+    pub scaling: ScalingConfig,
+    #[serde(default)]
+    pub profiler: ProfilerConfig,
+    #[serde(default)]
+    pub analyzer: AnalyzerConfig,
+    #[serde(default)]
+    pub webhook: WebhookConfig,
+    #[serde(default)]
+    pub policy: PolicyConfig,
+    #[serde(default)]
+    pub reconciliation: ReconciliationConfig,
+    #[serde(default)]
+    pub logging: LoggingConfig,
+    #[serde(default)]
+    pub notifications: NotificationsConfig,
+    #[serde(default)]
+    pub backup: BackupConfig,
+}
+
+impl Config {
+    /// Load configuration from default path
+    pub fn load() -> Self {
+        Self::load_from(&Self::default_path())
+    }
+
+    /// Load configuration from a specific path
+    pub fn load_from(path: &std::path::Path) -> Self {
+        if !path.exists() {
+            return Self::default();
+        }
+
+        match std::fs::read_to_string(path) {
+            Ok(content) => match serde_yaml::from_str(&content) {
+                Ok(config) => config,
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to parse config {}: {}. Using defaults. \
+                         Fix the config file to apply your settings.",
+                        path.display(),
+                        e
+                    );
+                    Self::default()
+                }
+            },
+            Err(e) => {
+                tracing::warn!(
+                    "Failed to read config {}: {}, using defaults",
+                    path.display(),
+                    e
+                );
+                Self::default()
+            }
+        }
+    }
+
+    /// Save configuration to default path
+    pub fn save(&self) -> anyhow::Result<()> {
+        self.save_to(&Self::default_path())
+    }
+
+    /// Save configuration to a specific path
+    pub fn save_to(&self, path: &std::path::Path) -> anyhow::Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let content = serde_yaml::to_string(self)?;
+        std::fs::write(path, content)?;
+        Ok(())
+    }
+
+    /// Default config file path
+    pub fn default_path() -> PathBuf {
+        crate::resources::aether_path("config.yaml")
+    }
+}
+
+/// Decision engine configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EngineConfig {
+    /// Enable AI scoring engine for runtime selection
+    pub enable_scoring: bool,
+    /// Scoring weights for multi-factor decisions
+    pub scoring_weights: ScoringWeights,
+}
+
+impl Default for EngineConfig {
+    fn default() -> Self {
+        Self {
+            enable_scoring: true,
+            scoring_weights: ScoringWeights::default(),
+        }
+    }
+}
+
+/// Scoring weights for runtime selection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoringWeights {
+    /// Weight for cost efficiency (0.0 - 1.0)
+    pub cost: f64,
+    /// Weight for performance characteristics (0.0 - 1.0)
+    pub performance: f64,
+    /// Weight for reliability (0.0 - 1.0)
+    pub reliability: f64,
+    /// Weight for availability (0.0 - 1.0)
+    pub availability: f64,
+}
+
+impl Default for ScoringWeights {
+    fn default() -> Self {
+        Self {
+            cost: 0.30,
+            performance: 0.30,
+            reliability: 0.25,
+            availability: 0.15,
+        }
+    }
+}
+
+impl ScoringWeights {
+    /// Normalize weights to sum to 1.0
+    pub fn normalized(&self) -> Self {
+        let total = self.cost + self.performance + self.reliability + self.availability;
+        if total.abs() < 0.001 {
+            tracing::warn!(
+                "Scoring weights sum to near-zero ({:.6}); using defaults",
+                total
+            );
+            return Self::default();
+        }
+        Self {
+            cost: self.cost / total,
+            performance: self.performance / total,
+            reliability: self.reliability / total,
+            availability: self.availability / total,
+        }
+    }
+
+    /// Validate that all weights are in the valid range [0.0, 1.0]
+    pub fn validate(&self) -> anyhow::Result<()> {
+        for (name, val) in [
+            ("cost", self.cost),
+            ("performance", self.performance),
+            ("reliability", self.reliability),
+            ("availability", self.availability),
+        ] {
+            if !(0.0..=1.0).contains(&val) {
+                anyhow::bail!(
+                    "Scoring weight '{}' must be between 0.0 and 1.0, got {}",
+                    name,
+                    val
+                );
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Migration configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrationConfig {
+    /// Graceful shutdown wait in seconds
+    pub graceful_shutdown_secs: u64,
+    /// Blue-green traffic switch delay in seconds
+    pub traffic_switch_delay_secs: u64,
+    /// Rolling traffic percentages
+    pub rolling_steps: Vec<u32>,
+    /// Interval between rolling steps in seconds
+    pub rolling_interval_secs: u64,
+    /// Maximum validation retries
+    pub max_validation_retries: u32,
+    /// Retry wait interval in seconds
+    pub retry_wait_secs: u64,
+    /// Error rate threshold (0.0 - 1.0) to trigger rollback during canary
+    pub canary_error_threshold: f64,
+    /// Enable adaptive timing
+    pub enable_adaptive_timing: bool,
+}
+
+impl Default for MigrationConfig {
+    fn default() -> Self {
+        Self {
+            graceful_shutdown_secs: 5,
+            traffic_switch_delay_secs: 10,
+            rolling_steps: vec![25, 50, 75, 100],
+            rolling_interval_secs: 5,
+            max_validation_retries: 3,
+            retry_wait_secs: 5,
+            canary_error_threshold: 0.05,
+            enable_adaptive_timing: true,
+        }
+    }
+}
+
+/// Cost estimation configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CostConfig {
+    /// Include GPU cost in estimates
+    pub include_gpu: bool,
+    /// Include network egress cost
+    pub include_network: bool,
+    /// Estimated monthly network egress in GB
+    pub estimated_egress_gb: f64,
+    /// Include load balancer cost
+    pub include_load_balancer: bool,
+    /// Hours per month for cost calculation
+    pub hours_per_month: f64,
+    /// Enable right-sizing recommendations
+    pub enable_recommendations: bool,
+}
+
+impl Default for CostConfig {
+    fn default() -> Self {
+        Self {
+            include_gpu: true,
+            include_network: true,
+            estimated_egress_gb: 100.0,
+            include_load_balancer: true,
+            hours_per_month: 730.0,
+            enable_recommendations: true,
+        }
+    }
+}
+
+/// Scaling configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScalingConfig {
+    /// Enable predictive scaling
+    pub enable_predictive: bool,
+    /// Lookback window for trend analysis in minutes
+    pub lookback_minutes: u64,
+    /// Forecast horizon in minutes
+    pub forecast_minutes: u64,
+    /// Scale-up threshold (percentage above forecast)
+    pub scale_up_threshold: f64,
+    /// Scale-down threshold (percentage below forecast)
+    pub scale_down_threshold: f64,
+    /// Cooldown period in seconds between scale actions
+    pub cooldown_secs: u64,
+    /// Enable cost-aware scaling decisions
+    pub cost_aware: bool,
+}
+
+impl Default for ScalingConfig {
+    fn default() -> Self {
+        Self {
+            enable_predictive: true,
+            lookback_minutes: 60,
+            forecast_minutes: 15,
+            scale_up_threshold: 0.80,
+            scale_down_threshold: 0.30,
+            cooldown_secs: 300,
+            cost_aware: true,
+        }
+    }
+}
+
+/// Workload profiler configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfilerConfig {
+    /// Enable workload classification
+    pub enable_classification: bool,
+    /// Resource waste threshold (percentage of over-provisioning)
+    pub waste_threshold: f64,
+    /// History retention in days
+    pub history_days: u32,
+    /// Enable right-sizing suggestions
+    pub enable_right_sizing: bool,
+}
+
+impl Default for ProfilerConfig {
+    fn default() -> Self {
+        Self {
+            enable_classification: true,
+            waste_threshold: 0.50,
+            history_days: 30,
+            enable_right_sizing: true,
+        }
+    }
+}
+
+/// Log analyzer configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalyzerConfig {
+    /// Enable anomaly detection
+    pub enable_anomaly_detection: bool,
+    /// Z-score threshold for anomaly detection
+    pub anomaly_z_threshold: f64,
+    /// Sliding window size for error rate calculation
+    pub window_size: usize,
+    /// Maximum patterns to track
+    pub max_patterns: usize,
+    /// Enable error correlation
+    pub enable_correlation: bool,
+}
+
+impl Default for AnalyzerConfig {
+    fn default() -> Self {
+        Self {
+            enable_anomaly_detection: true,
+            anomaly_z_threshold: 2.5,
+            window_size: 100,
+            max_patterns: 1000,
+            enable_correlation: true,
+        }
+    }
+}
+
+/// Webhook notification configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookConfig {
+    /// Enable webhook notifications
+    pub enabled: bool,
+    /// HTTP request timeout in seconds
+    pub timeout_secs: u64,
+    /// Maximum retry attempts for failed deliveries
+    pub max_retries: u32,
+    /// User-Agent header for webhook requests
+    pub user_agent: String,
+}
+
+impl Default for WebhookConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            timeout_secs: 10,
+            max_retries: 3,
+            user_agent: format!("aether/{}", env!("CARGO_PKG_VERSION")),
+        }
+    }
+}
+
+/// Policy enforcement configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PolicyConfig {
+    /// Enforce policies on every deploy (run, compose up, deploy)
+    pub enforce_on_deploy: bool,
+    /// Policy set to use: "production", "development", or a file path
+    pub policy_set: String,
+}
+
+impl Default for PolicyConfig {
+    fn default() -> Self {
+        Self {
+            enforce_on_deploy: true,
+            policy_set: "production".to_string(),
+        }
+    }
+}
+
+/// Background reconciliation loop configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReconciliationConfig {
+    /// Health check interval in seconds
+    pub health_interval_secs: u64,
+    /// Drift detection interval in seconds
+    pub drift_interval_secs: u64,
+    /// SLA evaluation interval in seconds
+    pub sla_interval_secs: u64,
+    /// Automatically reconcile detected drift
+    pub auto_reconcile: bool,
+}
+
+impl Default for ReconciliationConfig {
+    fn default() -> Self {
+        Self {
+            health_interval_secs: 30,
+            drift_interval_secs: 300,
+            sla_interval_secs: 60,
+            auto_reconcile: false,
+        }
+    }
+}
+
+/// Scheduled-backup configuration used by the `aether serve` control loop.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupConfig {
+    /// Take automatic state backups on an interval while `aether serve` runs.
+    pub enabled: bool,
+    /// Interval between scheduled backups, in hours (minimum 1).
+    pub interval_hours: u64,
+    /// Number of most-recent backups to retain; older ones are pruned.
+    pub keep: usize,
+}
+
+impl Default for BackupConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            interval_hours: 24,
+            keep: 7,
+        }
+    }
+}
+
+/// Logging configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoggingConfig {
+    /// Output format: "text" (default) or "json" (structured)
+    #[serde(default = "default_log_format")]
+    pub format: String,
+    /// Log level: "error", "warn", "info", "debug", "trace"
+    #[serde(default = "default_log_level")]
+    pub level: String,
+    /// Log forwarding endpoint (Loki, Elasticsearch, etc.)
+    /// When set, logs from `aether logs` are also forwarded here.
+    #[serde(default)]
+    pub forward_url: Option<String>,
+    /// Labels to attach to forwarded log entries
+    #[serde(default)]
+    pub labels: std::collections::HashMap<String, String>,
+}
+
+fn default_log_format() -> String {
+    "text".to_string()
+}
+
+fn default_log_level() -> String {
+    "warn".to_string()
+}
+
+impl Default for LoggingConfig {
+    fn default() -> Self {
+        Self {
+            format: default_log_format(),
+            level: default_log_level(),
+            forward_url: None,
+            labels: std::collections::HashMap::new(),
+        }
+    }
+}
+
+/// Notification channel configuration (Slack, email, etc.)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationsConfig {
+    /// Slack webhook URL (optional)
+    #[serde(default)]
+    pub slack_webhook_url: Option<String>,
+    /// Slack channel name for display purposes
+    #[serde(default)]
+    pub slack_channel: Option<String>,
+    /// Minimum severity for Slack notifications (info, warning, error, critical)
+    #[serde(default = "default_notification_severity")]
+    pub min_severity: String,
+}
+
+fn default_notification_severity() -> String {
+    "warning".to_string()
+}
+
+impl Default for NotificationsConfig {
+    fn default() -> Self {
+        Self {
+            slack_webhook_url: None,
+            slack_channel: None,
+            min_severity: default_notification_severity(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = Config::default();
+        assert!(config.engine.enable_scoring);
+        assert_eq!(config.migration.max_validation_retries, 3);
+        assert!(config.cost.include_gpu);
+        assert!(config.scaling.enable_predictive);
+    }
+
+    #[test]
+    fn test_scoring_weights_normalized() {
+        let weights = ScoringWeights {
+            cost: 2.0,
+            performance: 2.0,
+            reliability: 2.0,
+            availability: 2.0,
+        };
+        let normalized = weights.normalized();
+        let total = normalized.cost
+            + normalized.performance
+            + normalized.reliability
+            + normalized.availability;
+        assert!((total - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_config_roundtrip() {
+        let config = Config::default();
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        let parsed: Config = serde_yaml::from_str(&yaml).unwrap();
+        assert!(parsed.engine.enable_scoring);
+    }
+
+    #[test]
+    fn test_load_missing_file() {
+        let config = Config::load_from(&PathBuf::from("/nonexistent/config.yaml"));
+        assert!(config.engine.enable_scoring);
+    }
+
+    #[test]
+    fn test_webhook_config_defaults() {
+        let config = WebhookConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.timeout_secs, 10);
+        assert_eq!(config.max_retries, 3);
+        assert!(config.user_agent.starts_with("aether/"));
+    }
+
+    #[test]
+    fn test_notifications_config_defaults() {
+        let config = NotificationsConfig::default();
+        assert!(config.slack_webhook_url.is_none());
+        assert!(config.slack_channel.is_none());
+        assert_eq!(config.min_severity, "warning");
+    }
+
+    #[test]
+    fn test_backup_config_defaults() {
+        let config = BackupConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.interval_hours, 24);
+        assert_eq!(config.keep, 7);
+        // The overall Config carries the backup section.
+        assert_eq!(Config::default().backup.keep, 7);
+    }
+
+    #[test]
+    fn test_notifications_config_roundtrip() {
+        let config = NotificationsConfig {
+            slack_webhook_url: Some("https://hooks.slack.com/services/T00/B00/xxx".to_string()),
+            slack_channel: Some("ops-alerts".to_string()),
+            min_severity: "error".to_string(),
+        };
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        let parsed: NotificationsConfig = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(
+            parsed.slack_webhook_url.as_deref(),
+            Some("https://hooks.slack.com/services/T00/B00/xxx")
+        );
+        assert_eq!(parsed.slack_channel.as_deref(), Some("ops-alerts"));
+        assert_eq!(parsed.min_severity, "error");
+    }
+
+    #[test]
+    fn test_config_with_notifications_roundtrip() {
+        let config = Config::default();
+        let yaml = serde_yaml::to_string(&config).unwrap();
+        let parsed: Config = serde_yaml::from_str(&yaml).unwrap();
+        assert!(parsed.notifications.slack_webhook_url.is_none());
+        assert_eq!(parsed.notifications.min_severity, "warning");
+    }
+}

@@ -1,0 +1,99 @@
+.gnav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  height: var(--hs-nav-h);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-edge);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.gnav[data-open='true'] { background: var(--glass-bg-strong); border-bottom-color: transparent; }
+.gnavInner {
+  max-width: var(--hs-max-width);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--hs-gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--hs-s1);
+}
+.mark { display: flex; align-items: center; gap: 7px; color: var(--foreground); text-decoration: none; background: none; border: 0; cursor: pointer; }
+.markBadge {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--hs-radius-sm);
+  background: linear-gradient(155deg, var(--primary), color-mix(in srgb, var(--primary) 65%, var(--tone-violet)));
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 11px;
+}
+.word { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: var(--tracking-display, -0.03em); }
+.envBadge {
+  align-items: center;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border-radius: var(--hs-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow, 0.08em);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  cursor: default;
+}
+.utils { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: rgba(20, 22, 26, 0.82);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+:global(html.dark-theme) .icon,
+:global(html[data-theme='dark']) .icon { color: rgba(241, 245, 249, 0.82); }
+.icon:hover { background: rgba(20, 22, 26, 0.05); color: var(--foreground); }
+:global(html.dark-theme) .icon:hover,
+:global(html[data-theme='dark']) .icon:hover { background: rgba(255, 255, 255, 0.08); }
+.searchBtn { display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 7px; font: inherit; font-size: 12px; color: rgba(20, 22, 26, 0.82); background: none; border: 0; cursor: pointer; }
+:global(html.dark-theme) .searchBtn,
+:global(html[data-theme='dark']) .searchBtn { color: rgba(241, 245, 249, 0.82); }
+.searchBtn:hover { background: rgba(20, 22, 26, 0.05); color: var(--foreground); }
+.searchKbd { font-family: var(--hs-font-mono); font-size: 10px; opacity: .6; }
+.accountWrap { position: relative; }
+.accountBtn { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 7px; background: none; border: 0; cursor: pointer; color: var(--foreground); }
+.accountBtn:hover { background: rgba(20, 22, 26, 0.05); }
+.accountAvatar { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 61;
+  min-width: 200px;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.accountMenuItem { display: block; width: 100%; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--foreground); text-align: left; background: none; border: 0; cursor: pointer; }
+.accountMenuItem:hover { background: rgba(20, 22, 26, 0.05); }
+.accountMenuDanger { composes: accountMenuItem; color: var(--danger); }
+.accountMenuDivider { height: 1px; background: var(--border); margin: 4px 0; }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 2px color-mix(in srgb, var(--success) 18%, transparent); }
+.statusDot[data-connected='false'] { background: var(--warning); }
+.burger { display: none; }
+.subnav { border-top: 1px solid var(--nav-border); }
+@media (max-width: 1023px) {
+  .burger { display: grid; place-items: center; width: 30px; height: 30px; margin-right: 4px; background: none; border: 0; cursor: pointer; color: var(--foreground); border-radius: var(--hs-radius-sm); }
+}

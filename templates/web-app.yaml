@@ -1,0 +1,161 @@
+# Production Web Application Template
+# A scalable web application with health checks, resource limits, and persistence
+
+metadata:
+  name: web-app
+  owner: platform-team
+  project: production
+  description: "Production web application with auto-scaling and monitoring"
+  labels:
+    app: web
+    tier: frontend
+    environment: production
+
+image:
+  registry: ghcr.io
+  repository: myorg/web-app
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+requirements:
+  cpu: "2"
+  memory: "4Gi"
+  storage: "50Gi"
+  gpu: null
+
+runtime:
+  preferred: Kube
+  allowed:
+    - Kube
+    - Container
+  disallowed: []
+
+scaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPU: 70
+  targetMemory: 80
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: app.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: app-tls
+        hosts:
+          - app.example.com
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/rate-limit: "100"
+
+persistence:
+  enabled: true
+  storageClass: fast-ssd
+  accessMode: ReadWriteOnce
+  mountPath: /data
+  subPath: web-app-data
+
+health:
+  liveness:
+    enabled: true
+    path: /health/live
+    port: 8080
+    initialDelay: 30
+    period: 10
+    timeout: 5
+    failureThreshold: 3
+
+  readiness:
+    enabled: true
+    path: /health/ready
+    port: 8080
+    initialDelay: 10
+    period: 5
+    timeout: 3
+    failureThreshold: 3
+
+env:
+  - name: APP_ENV
+    value: production
+  - name: LOG_LEVEL
+    value: info
+  - name: CACHE_ENABLED
+    value: "true"
+  - name: DATABASE_HOST
+    valueFrom:
+      secretRef:
+        name: db-credentials
+        key: host
+  - name: DATABASE_PASSWORD
+    valueFrom:
+      secretRef:
+        name: db-credentials
+        key: password
+
+configMaps:
+  - name: app-config
+    mountPath: /etc/config
+    items:
+      - key: app.yaml
+        path: app.yaml
+      - key: logging.yaml
+        path: logging.yaml
+
+secrets:
+  - name: api-keys
+    mountPath: /etc/secrets
+    items:
+      - key: stripe-key
+        path: stripe.key
+      - key: aws-access-key
+        path: aws.key
+
+resources:
+  limits:
+    cpu: "4"
+    memory: "8Gi"
+  requests:
+    cpu: "2"
+    memory: "4Gi"
+
+security:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  seccompProfile:
+    type: RuntimeDefault
+
+monitoring:
+  enabled: true
+  path: /metrics
+  port: 9090
+  interval: 30s
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"

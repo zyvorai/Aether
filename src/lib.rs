@@ -1,0 +1,79 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+//! Aether - Universal Runtime Control Plane
+//!
+//! One spec. Three runtimes. One tool.
+
+pub mod adapters;
+pub mod ai;
+pub mod api;
+pub mod assessment;
+pub mod atlas;
+pub mod audit;
+pub mod backup;
+pub mod backup_remote;
+pub mod completions;
+pub mod compose;
+pub mod config;
+pub mod zyra;
+#[deprecated(note = "use crate::zyra")]
+pub mod copilot {
+    pub use crate::zyra::*;
+}
+pub mod autoscale;
+pub mod certs;
+pub mod cost;
+pub mod dependencies;
+pub mod discovery;
+pub mod drift;
+pub mod ecosystem;
+pub mod engine;
+pub mod environments;
+pub mod events;
+pub mod fleet;
+pub mod forge;
+pub mod gitops;
+pub mod ha;
+pub mod health;
+pub mod licence;
+pub mod helm;
+pub mod hosted;
+pub mod intelligence;
+pub mod inventory;
+pub mod kubecluster;
+pub mod ldap;
+pub mod local_auth;
+pub mod legacy_workload_yaml;
+pub mod maintenance;
+pub mod metrics;
+pub mod migration;
+pub mod mock_idp;
+pub mod observability;
+pub mod oidc;
+pub mod opa;
+pub mod orchestrator;
+pub mod output;
+pub mod plugin;
+pub mod policy;
+pub mod rbac;
+pub mod resources;
+pub mod runtime;
+pub mod saml;
+pub mod saml_c14n;
+pub mod saml_decrypt;
+pub mod saml_verify;
+pub mod sbom;
+pub mod scheduler;
+pub mod secrets;
+pub mod sla;
+pub mod spec;
+pub mod state;
+pub mod state_postgres;
+pub mod templates;
+pub mod ui;
+pub use runtime::Runtime;
+pub use spec::Workload;
+
+/// Result type alias for Aether
+pub type Result<T> = anyhow::Result<T>;

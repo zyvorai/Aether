@@ -1,0 +1,141 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>Getting Started — Aether</title>
+<style>
+@page{size:A4;margin:15mm 16mm}*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:#1f2937;line-height:1.58;font-size:10.5pt}
+.cover{height:262mm;margin:-15mm -16mm 0;background:linear-gradient(135deg,#0f0a1a,#312e81,#0d1b2a);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;page-break-after:always;position:relative}
+.cover .kicker{letter-spacing:5px;text-transform:uppercase;opacity:.72;margin-bottom:1.4em}
+.cover h1{font-size:3.2em;font-weight:800;letter-spacing:-2px}
+.cover h1 span{color:#818cf8}
+.cover .sub{font-size:1.3em;font-weight:300;opacity:.93;margin:1em 0;max-width:24em}
+.cover .badge{display:inline-block;background:rgba(96,165,250,.2);border:1px solid #818cf8;padding:8px 22px;border-radius:20px;margin-top:2em}
+.cover .foot{position:absolute;bottom:34px;font-size:.82em;opacity:.6}
+h2{page-break-before:always;margin:0 0 .35em;font-size:1.55em;font-weight:750;color:#12203a;border-bottom:2px solid #e5edfb;padding-bottom:.28em}
+h2:first-of-type{page-break-before:avoid}
+h3{margin:1.1em 0 .4em;font-size:1.12em;font-weight:700}
+p,li{margin:.4em 0}ul,ol{margin:.5em 0 .9em 1.4em}
+a{color:#2563eb;text-decoration:none}
+code{background:#eef2f7;padding:1px 6px;border-radius:4px;font-size:.86em;font-family:ui-monospace,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:12px 15px;border-radius:9px;overflow-x:auto;margin:.8em 0}
+table{width:100%;border-collapse:collapse;margin:.8em 0 1.1em;font-size:9.5pt}
+th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left;vertical-align:top}th{background:#f1f5f9}
+hr{border:none;border-top:1px solid #e5e7eb;margin:1.2em 0}
+</style></head><body>
+<section class="cover"><div class="kicker">ZyvorAI Labs · User Guide</div>
+<h1>Ae<span>ther</span></h1>
+<div class="sub">Getting Started</div>
+<div class="badge">2026-08-29</div>
+<div class="foot">zyvor.dev · Zyvor Production License v1.0</div></section>
+<main><h2>What you need</h2>
+<p>See <a href="admin-basics.md">Admin basics</a> for ports and auth. Summary:</p>
+<p>Open <code>http://&lt;host&gt;:5090</code> (or your deploy URL).</p>
+<h2>1. Open the product</h2>
+<p>Open <code>http://&lt;host&gt;:5090</code> (or your deploy URL).</p>
+<h2>2. Sign in / authenticate</h2>
+<p>OIDC + SAML + LDAP as configured.</p>
+<h2>3. Orient yourself</h2>
+<p>Use the quick map on the <a href="README.md">customer docs home</a>, then open the home surface (<code>/</code>).</p>
+<h2>4. First workflows</h2>
+<p>Follow <a href="workflows.md">Common workflows</a> for the shortest useful paths.</p>
+<h2>Next steps</h2>
+<ul>
+<li><a href="using-the-dashboard.md">Using the Dashboard</a></li>
+<li><a href="admin-basics.md">Admin basics</a></li>
+<li><a href="pages/README.md">Page guides</a></li>
+</ul>
+<h2>Operate from the console (UX)</h2>
+<ol>
+<li>Open this route from the nav or command palette and wait for live API data.</li>
+<li>Use filters/search when present; drill into a row for detail.</li>
+<li>For mutating actions: confirm role gates and impact before applying.</li>
+<li><strong>Empty / fail:</strong> Check service health, auth, and that required CRDs/backends for this domain are installed.</li>
+<li><strong>Success:</strong> Live data loads; created/updated objects appear without error toasts.</li>
+</ol>
+<hr>
+<p>Aether is organized by navigation groups (sidebar, desktop nav, or CLI command groups). Use search / command palette when available.</p>
+<h2>Surfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Command Center</td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td>Fabric</td>
+<td><code>/fabric</code></td>
+</tr>
+<tr>
+<td>Migrations</td>
+<td><code>/migrations</code></td>
+</tr>
+<tr>
+<td>Zyra</td>
+<td><code>/zyra</code></td>
+</tr>
+<tr>
+<td>Settings</td>
+<td><code>/settings</code></td>
+</tr>
+</tbody></table>
+<h2>Browse vs act</h2>
+<p>Inventory and status views are safe to explore. Mutating actions (deploy, migrate, sign, remediate) follow role gates and confirmation dialogs — review impact first.</p>
+<h2>Related</h2>
+<ul>
+<li><a href="getting-started.md">Getting Started</a></li>
+<li><a href="pages/README.md">Page-by-page guides</a></li>
+</ul>
+<h2>Operate from the console (UX)</h2>
+<ol>
+<li>Open this route from the nav or command palette and wait for live API data.</li>
+<li>Use filters/search when present; drill into a row for detail.</li>
+<li>For mutating actions: confirm role gates and impact before applying.</li>
+<li><strong>Empty / fail:</strong> Check service health, auth, and that required CRDs/backends for this domain are installed.</li>
+<li><strong>Success:</strong> Live data loads; created/updated objects appear without error toasts.</li>
+</ol>
+<hr>
+<h2>Purpose</h2>
+<ol>
+<li>Open the home surface (<code>/</code>) from <a href="getting-started.md">Getting Started</a>.</li>
+<li>Use the <a href="PAGE_INDEX.md">page index</a> to jump to the domain you need.</li>
+<li>Complete the job, then confirm status on Jobs / Activity / Audit surfaces when present.</li>
+</ol>
+<h2>Related</h2>
+<ul>
+<li><a href="getting-started.md">Getting Started</a></li>
+<li><a href="pages/README.md">Page-by-page guides</a></li>
+</ul>
+<h2>When to use it</h2>
+<ul>
+<li>Open <strong>Common workflows</strong> when the job matches this screen</li>
+<li>Prefer the product home / Get started panel if you are unsure where to begin</li>
+<li>Confirm health and auth tokens if probes fail</li>
+</ul>
+<h2>How to get there</h2>
+<ul>
+<li>UI path: <code>/ui/</code> → <strong>Common workflows</strong> (or matching nav tab)</li>
+<li>Spotlight / in-app links when available</li>
+</ul>
+<h2>Operate from the console (UX)</h2>
+<ol>
+<li>Open the Aether UI (<code>/ui/</code>) on <code>https://&lt;host&gt;:…</code> (see Admin basics for the default port).</li>
+<li>Navigate to <strong>Common workflows</strong>.</li>
+<li>Complete the on-screen fields / actions for this surface (1. Open the home surface (<code>/</code>) from <a href="getting-started.md">Getting Started</a>.</li>
+<li>Use the <a href="PAGE_INDEX.md">page index</a> to jum…).</li>
+<li>Use <strong>Probe</strong> / <strong>Save</strong> / <strong>Send</strong> (or the primary button on the page) and watch status chips.</li>
+<li><strong>Empty / fail:</strong> Check Admin basics env vars, JWT/<code>API_TOKEN</code>, TLS insecure for lab certs, and backend reachability.</li>
+<li><strong>Success:</strong> Status shows healthy / accepted; related Lab or Logs surfaces reflect the change.</li>
+</ol>
+<p>Never publish lab IPs — use <code>&lt;host&gt;</code>.</p>
+<h2>Related pages</h2>
+<ul>
+<li><a href="../../getting-started.md">Getting Started</a></li>
+<li><a href="../../using-the-dashboard.md">Using the Dashboard</a></li>
+<li><a href="../../admin-basics.md">Admin basics</a></li>
+<li><a href="../../PAGE_INDEX.md">Page index</a></li>
+</ul>
+</main></body></html>

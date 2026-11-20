@@ -1,0 +1,371 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aether.fullname" . }}
+  labels:
+    {{- include "aether.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aether.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.opa.bundle.enabled }}
+        checksum/opa-bundle: {{ include (print $.Template.BasePath "/opa-bundle-configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "aether.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "aether.serviceAccountName" . }}
+      {{- if .Values.topologySpreadConstraints.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
+          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey | quote }}
+          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              {{- include "aether.selectorLabels" . | nindent 14 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.apiServer.enabled }}
+        args:
+          {{- toYaml .Values.apiServer.args | nindent 10 }}
+        {{- end }}
+        env:
+        - name: AETHER_NAMESPACE
+          value: {{ .Values.aether.namespace | quote }}
+        - name: RUST_LOG
+          value: {{ .Values.aether.logging.level | quote }}
+        - name: AETHER_LOG_FORMAT
+          value: {{ .Values.aether.logging.format | quote }}
+        {{- if .Values.aether.metrics.enabled }}
+        - name: AETHER_METRICS_ENABLED
+          value: "true"
+        {{- end }}
+        {{- if .Values.apiKey.existingSecret }}
+        - name: AETHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.apiKey.existingSecret }}
+              key: {{ .Values.apiKey.secretKey }}
+        {{- else }}
+        - name: AETHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "aether.fullname" . }}-secrets
+              key: api-key
+        {{- end }}
+        {{- /* src/secrets.rs falls back to a low-entropy key derived from the pod's
+               HOSTNAME (predictable/visible to anyone with pod-list RBAC) whenever this
+               is unset — always source it from the auto-generated Secret. */}}
+        {{- if .Values.secretKey.existingSecret }}
+        - name: AETHER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretKey.existingSecret }}
+              key: {{ .Values.secretKey.secretKey }}
+        {{- else }}
+        - name: AETHER_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "aether.fullname" . }}-secrets
+              key: encryption-key
+        {{- end }}
+        {{- if .Values.postgresql.enabled }}
+        - name: AETHER_STATE_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.postgresql.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: {{ .Values.postgresql.secretKey }}
+        {{- if .Values.postgresql.pollSecs }}
+        - name: AETHER_STATE_POLL_SECS
+          value: {{ .Values.postgresql.pollSecs | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.redis.enabled }}
+        - name: AETHER_REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redis.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: {{ .Values.redis.secretKey }}
+        {{- end }}
+        {{- if .Values.oidc.enabled }}
+        - name: AETHER_OIDC_ISSUER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: issuer
+        - name: AETHER_OIDC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: client-id
+        - name: AETHER_OIDC_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: redirect-uri
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: session-secret
+        {{- if .Values.oidc.clientSecret }}
+        - name: AETHER_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: client-secret
+        {{- end }}
+        {{- if .Values.oidc.roleMap }}
+        - name: AETHER_OIDC_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oidc.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: oidc-role-map
+        {{- end }}
+        {{- if .Values.oidc.groupsClaim }}
+        - name: AETHER_OIDC_GROUPS_CLAIM
+          value: {{ .Values.oidc.groupsClaim | quote }}
+        {{- end }}
+        {{- if .Values.oidc.defaultRole }}
+        - name: AETHER_OIDC_DEFAULT_ROLE
+          value: {{ .Values.oidc.defaultRole | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.saml.enabled }}
+        - name: AETHER_SAML_IDP_SSO_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-sso-url
+        - name: AETHER_SAML_IDP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-entity-id
+        - name: AETHER_SAML_ACS_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-acs-url
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-session-secret
+        {{- if .Values.saml.spEntityId }}
+        - name: AETHER_SAML_SP_ENTITY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-sp-entity-id
+        {{- end }}
+        {{- if .Values.saml.idpCert }}
+        - name: AETHER_SAML_IDP_CERT
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-idp-cert
+        {{- end }}
+        {{- if .Values.saml.roleMap }}
+        - name: AETHER_SAML_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.saml.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: saml-role-map
+        {{- end }}
+        {{- if .Values.saml.defaultRole }}
+        - name: AETHER_SAML_DEFAULT_ROLE
+          value: {{ .Values.saml.defaultRole | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.ldap.enabled }}
+        - name: AETHER_LDAP_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-url
+        - name: AETHER_LDAP_BASE_DN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-base-dn
+        - name: AETHER_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-session-secret
+        {{- if .Values.ldap.domain }}
+        - name: AETHER_LDAP_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-domain
+        {{- end }}
+        {{- if .Values.ldap.bindDn }}
+        - name: AETHER_LDAP_BIND_DN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-bind-dn
+        - name: AETHER_LDAP_BIND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-bind-password
+        {{- end }}
+        {{- if .Values.ldap.userFilter }}
+        - name: AETHER_LDAP_USER_FILTER
+          value: {{ .Values.ldap.userFilter | quote }}
+        {{- end }}
+        {{- if .Values.ldap.roleMap }}
+        - name: AETHER_LDAP_ROLE_MAP
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ldap.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: ldap-role-map
+        {{- end }}
+        {{- if .Values.ldap.defaultRole }}
+        - name: AETHER_LDAP_DEFAULT_ROLE
+          value: {{ .Values.ldap.defaultRole | quote }}
+        {{- end }}
+        {{- if .Values.ldap.tlsSkipVerify }}
+        - name: AETHER_LDAP_TLS_SKIP_VERIFY
+          value: "1"
+        {{- end }}
+        {{- end }}
+        {{- if .Values.backupRemote.enabled }}
+        - name: AETHER_BACKUP_REMOTE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.backupRemote.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: backup-remote-url
+        {{- if .Values.backupRemote.token }}
+        - name: AETHER_BACKUP_REMOTE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.backupRemote.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: backup-remote-token
+        {{- end }}
+        {{- end }}
+        {{- if .Values.auditWebhook.enabled }}
+        - name: AETHER_AUDIT_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.auditWebhook.existingSecret | default (printf "%s-secrets" (include "aether.fullname" .)) }}
+              key: audit-webhook-url
+        {{- end }}
+        {{- if .Values.opa.enabled }}
+        {{- if .Values.opa.url }}
+        - name: AETHER_OPA_URL
+          value: {{ .Values.opa.url | quote }}
+        {{- end }}
+        - name: AETHER_OPA_PACKAGE
+          value: {{ .Values.opa.package | quote }}
+        {{- if .Values.opa.enforce }}
+        - name: AETHER_OPA_ENFORCE
+          value: "true"
+        {{- end }}
+        {{- end }}
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.auth.configMap.enabled }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "aether.fullname" . }}-auth-config
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.apiServer.port }}
+          protocol: TCP
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.apiServer.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- else }}
+        livenessProbe:
+          exec:
+            command: ["/usr/local/bin/aether", "--help"]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["/usr/local/bin/aether", "--help"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: state
+          mountPath: {{ .Values.aether.stateStorage.mountPath }}
+        {{- if .Values.config.files }}
+        - name: config
+          mountPath: /etc/aether/config
+          readOnly: true
+        {{- end }}
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: state
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "aether.fullname" . }}-state
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- if .Values.config.files }}
+      - name: config
+        configMap:
+          name: {{ include "aether.fullname" . }}-config
+      {{- end }}
+      - name: tmp
+        emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

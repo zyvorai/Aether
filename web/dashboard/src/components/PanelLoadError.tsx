@@ -1,0 +1,30 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { RefreshCw, WifiOff } from 'lucide-react';
+
+interface PanelLoadErrorProps {
+  title: string;
+  description?: string;
+  onRetry: () => void;
+}
+
+export default function PanelLoadError({
+  title,
+  description = 'Could not load this section.',
+  onRetry,
+}: PanelLoadErrorProps) {
+  return (
+    <div className="glass flex flex-col items-center gap-3 rounded-xl border border-danger/20 bg-danger/5 p-6 text-center">
+      <WifiOff className="h-8 w-8 text-danger/80" aria-hidden />
+      <div>
+        <p className="font-medium text-foreground">{title}</p>
+        <p className="mt-1 text-sm text-subtle">{description}</p>
+      </div>
+      <button type="button" onClick={onRetry} className="btn-secondary inline-flex items-center gap-2 text-sm">
+        <RefreshCw className="h-4 w-4" />
+        Retry
+      </button>
+    </div>
+  );
+}

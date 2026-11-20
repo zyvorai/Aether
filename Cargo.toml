@@ -1,0 +1,111 @@
+[package]
+name = "aether"
+version = "0.4.0"
+edition = "2021"
+authors = ["ZyvorAI Labs Private Limited <ssahani@gmail.com>"]
+description = "Universal runtime control plane - One spec, three runtimes (Container, Kubernetes, KubeVirt)"
+license = "LicenseRef-Zyvor-Production-1.0"
+build = "build.rs"
+
+[dependencies]
+# Core async runtime
+tokio = { version = "1.42", features = ["full"] }
+futures = "0.3"
+tokio-stream = { version = "0.1", features = ["sync"] }
+
+# CLI framework
+clap = { version = "4.5", features = ["derive", "cargo", "env"] }
+clap_complete = "4.5"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# TUI framework
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Kubernetes client
+kube = { version = "0.97", features = ["client", "runtime", "derive", "ws"] }
+k8s-openapi = { version = "0.23", features = ["latest"] }
+
+# HTTP client for external APIs
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+
+# API Server
+axum = { version = "0.7", features = ["ws"] }
+axum-server = { version = "0.7", features = ["tls-rustls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
+tower = { version = "0.4", features = ["util", "limit"] }
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Distributed tracing (OTLP export, opt-in via AETHER_OTLP_ENDPOINT)
+opentelemetry = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", default-features = false, features = ["trace", "http-proto", "reqwest-client"] }
+tracing-opentelemetry = "0.28"
+
+# Process execution (for Podman)
+which = "7.0"
+
+# Async trait support
+async-trait = "0.1"
+
+# Date/time
+chrono = "0.4"
+
+# Metrics
+prometheus = "0.13"
+
+# Email (SMTP)
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "builder", "hostname"] }
+
+# Utilities
+dirs = "5.0"
+
+# Pretty terminal output (matching HyperSDK UX)
+colored = "2.1"
+indicatif = "0.17"
+comfy-table = "7.1"
+libc = "0.2.184"
+aes-gcm = "0.10"
+aes = "0.8"
+cbc = "0.1"
+sha2 = "0.10"
+openidconnect = { version = "4", default-features = false, features = ["reqwest"] }
+jsonwebtoken = "9"
+rand = "0.8"
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"] }
+deadpool-postgres = "0.14"
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
+url = "2"
+base64 = "0.22"
+ed25519-dalek = "2"
+flate2 = "1.0"
+rsa = { version = "0.9", features = ["sha2", "pem"] }
+x509-parser = "0.16"
+ldap3 = { version = "0.11", default-features = false, features = ["sync", "tls-rustls"] }
+
+[dev-dependencies]
+tempfile = "3.15"
+tokio-test = "0.4"
+http = "1"
+hyper = "1"
+bytes = "1"
+
+[[bin]]
+name = "aether"
+path = "src/main.rs"
+
+[lib]
+name = "aether"
+path = "src/lib.rs"

@@ -1,0 +1,15 @@
+Aether has been deployed!
+
+Access the API:
+{{- if eq .Values.service.type "NodePort" }}
+  http://<node-ip>:{{ .Values.service.nodePort }}
+{{- else }}
+  kubectl port-forward svc/{{ include "aether.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  http://localhost:8080
+{{- end }}
+
+Check health:
+  kubectl -n {{ .Release.Namespace }} logs deployment/{{ include "aether.fullname" . }} | head -5
+
+For support or enterprise enquiries:
+  https://zyvor.dev/contact

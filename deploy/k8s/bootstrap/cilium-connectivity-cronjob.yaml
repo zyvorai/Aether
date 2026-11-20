@@ -1,0 +1,69 @@
+# Periodic Cilium agent health probe. Applied when Cilium CRDs exist.
+# Result surfaced via ConfigMap aether-cilium-connectivity (updated by Job).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aether-cilium-probe
+  namespace: __AETHER_NAMESPACE__
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aether-cilium-probe
+  namespace: __AETHER_NAMESPACE__
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aether-cilium-probe
+  namespace: __AETHER_NAMESPACE__
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aether-cilium-probe
+subjects:
+  - kind: ServiceAccount
+    name: aether-cilium-probe
+    namespace: __AETHER_NAMESPACE__
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aether-cilium-connectivity
+  namespace: __AETHER_NAMESPACE__
+  labels:
+    app.kubernetes.io/name: aether
+    app.kubernetes.io/component: cilium-probe
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: aether-cilium-probe
+          restartPolicy: OnFailure
+          containers:
+            - name: probe
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  set -e
+                  NS="__AETHER_NAMESPACE__"
+                  if ! kubectl get ds cilium -n kube-system >/dev/null 2>&1; then
+                    STATUS=skipped
+                  else
+                    READY=$(kubectl get ds cilium -n kube-system -o jsonpath='{.status.numberReady}' 2>/dev/null || echo 0)
+                    if [ "${READY:-0}" -gt 0 ]; then STATUS=ok; else STATUS=failed; fi
+                  fi
+                  kubectl create configmap aether-cilium-connectivity -n "${NS}" \
+                    --from-literal=status="${STATUS}" \
+                    --from-literal=checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --dry-run=client -o yaml | kubectl apply -f -

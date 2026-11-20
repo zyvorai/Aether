@@ -1,0 +1,60 @@
+name: macOS DMG
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-notarize-dmg:
+    name: Build & Notarize DMG
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/dashboard/package-lock.json
+
+      - name: Install dashboard deps
+        working-directory: web/dashboard
+        run: npm ci
+
+      - name: Build dashboard
+        working-directory: web/dashboard
+        run: npm run build
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build Tauri DMG
+        working-directory: apps/aether-macos/src-tauri
+        run: cargo tauri build --bundles dmg
+
+      - name: Codesign (when secrets configured)
+        if: env.APPLE_SIGNING_IDENTITY != ''
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          echo "Signing identity configured — run codesign on bundle in release job"
+          ls -la apps/aether-macos/src-tauri/target/release/bundle/dmg/ || true
+
+      - name: Notarize (when profile configured)
+        if: env.APPLE_NOTARIZATION_PROFILE != ''
+        env:
+          APPLE_NOTARIZATION_PROFILE: ${{ secrets.APPLE_NOTARIZATION_PROFILE }}
+        run: echo "Notarization profile present — staple ticket in release pipeline"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aether-macos-dmg
+          path: apps/aether-macos/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: warn

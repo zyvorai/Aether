@@ -1,0 +1,118 @@
+apiVersion: aether/v1
+kind: Workload
+
+metadata:
+  name: api
+  owner: platform
+  project: production
+  labels:
+    tier: backend
+
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: ghcr.io/yourorg
+
+requirements:
+  cpu: "500m"
+  memory: 512Mi
+  storage: 5Gi
+
+runtime:
+  preferred: kube
+  allow:
+    - kube
+
+network:
+  service: true
+  serviceType: ClusterIP
+  ports:
+    - containerPort: 8080
+      servicePort: 80
+      protocol: TCP
+  networkPolicy:
+    denyAllIngress: false
+
+health:
+  liveness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+ingress:
+  enabled: true
+  host: api.example.com
+  tls: true
+  paths:
+    - path: /
+      pathType: Prefix
+      port: 80
+
+scaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - metricType: CPU
+      targetValue: "75%"
+
+kubernetes:
+  workloadKind: deployment
+  serviceAccountName: api-sa
+  imagePullSecrets:
+    - ghcr-pull
+  priorityClassName: production
+  nodeSelector:
+    nodepool: apps
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: apps
+      effect: NoSchedule
+  gateway:
+    enabled: true
+    gatewayName: edge-gateway
+    gatewayNamespace: default
+    host: api.example.com
+    provisionGateway: true
+    gatewayClassName: aether
+    paths:
+      - path: /
+        pathType: Prefix
+        port: 80
+  verticalPodAutoscaler:
+    enabled: true
+    updateMode: Auto
+  keda:
+    enabled: true
+    minReplicaCount: 2
+    maxReplicaCount: 10
+    triggers:
+      - type: prometheus
+        metadata:
+          serverAddress: http://prometheus:9090
+          query: sum(rate(http_requests_total[2m]))
+          threshold: "100"
+  certManager:
+    enabled: true
+    issuerName: letsencrypt-prod
+    issuerKind: ClusterIssuer
+  podDisruptionBudget:
+    minAvailable: "1"
+  serviceAccount:
+    create: true
+    name: api-sa
+  rolloutStrategy:
+    type: RollingUpdate
+    maxSurge: 1
+    maxUnavailable: 0
+  headlessService: false
+  buildAndPush: false

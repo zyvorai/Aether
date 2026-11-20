@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release
+
+override_dh_auto_install:
+	install -D -m 0755 target/release/aether debian/aether/usr/bin/aether
+	install -D -m 0644 schema/workload.schema.json debian/aether/usr/share/aether/schema/workload.schema.json
+
+	# Install shell completions
+	install -D -m 0644 debian/tmp/bash debian/aether/usr/share/bash-completion/completions/aether
+	install -D -m 0644 debian/tmp/zsh debian/aether/usr/share/zsh/site-functions/_aether
+	install -D -m 0644 debian/tmp/fish debian/aether/usr/share/fish/vendor_completions.d/aether.fish
+
+	# Install man page if exists
+	# install -D -m 0644 docs/aether.1 debian/aether/usr/share/man/man1/aether.1
+
+override_dh_auto_test:
+	cargo test --all
+
+override_dh_auto_clean:
+	cargo clean

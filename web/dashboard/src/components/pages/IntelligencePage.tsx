@@ -1,0 +1,606 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { withAuroraPage } from '../layout/AuroraPage';
+import { Link, useNavigate } from 'react-router';
+import { AlertTriangle, Brain, DollarSign, Inbox, MapPin, Sparkles, TrendingUp } from 'lucide-react';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam } from '../../utils/urlState';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import { formatPercent, formatTimestamp, formatUSD } from '../../utils/formatters';
+import PageToolbar from '../PageToolbar';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import PageTabs from '../PageTabs';
+import Badge from '../Badge';
+import EmptyState from '../EmptyState';
+import { SectionHeader } from '../layout/SectionHeader';
+import SectionHubPage from '../SectionHubPage';
+import type {
+  CostOptimizeReport,
+  EvolutionStatus,
+  PlacementRecommendation,
+  PredictionReport,
+  ThreatReport,
+} from '../../types/api';
+
+const PLACE_SAMPLE = `apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: placement-demo
+  owner: dashboard
+  project: default
+build:
+  context: .
+  dockerfile: Dockerfile
+  registry: docker.io/library
+  tag: latest
+requirements:
+  cpu: 500m
+  memory: 512Mi
+  storage: 1Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+`;
+
+function riskVariant(level: string): 'green' | 'yellow' | 'red' | 'muted' {
+  const l = level.toLowerCase();
+  if (l === 'low') return 'green';
+  if (l === 'medium' || l === 'moderate') return 'yellow';
+  if (l === 'high' || l === 'critical') return 'red';
+  return 'muted';
+}
+
+function workloadMatchesFocus(rowWorkload: string, focus: string): boolean {
+  const needle = focus.trim();
+  if (!needle) return false;
+  if (rowWorkload === needle) return true;
+  return rowWorkload.endsWith(`/${needle}`) || rowWorkload.split('/').includes(needle);
+}
+
+export type IntelTab = 'predictions' | 'threats' | 'cost' | 'evolution' | 'place';
+const INTEL_TABS: IntelTab[] = ['predictions', 'threats', 'cost', 'evolution', 'place'];
+
+export function IntelligenceStudio({ refreshKey, forcedTab }: { refreshKey?: number; forcedTab?: IntelTab } = {}) {
+  const navigate = useNavigate();
+  const [tabParam, setTabParam] = useQueryParam('tab', forcedTab ?? 'predictions');
+  const [workloadQuery] = useQueryParam('workload', '');
+  const workloadFocus = workloadQuery.trim() || undefined;
+  const tab: IntelTab = forcedTab
+    ?? (INTEL_TABS.includes(tabParam as IntelTab) ? (tabParam as IntelTab) : 'predictions');
+  const setTab = (next: IntelTab) => {
+    if (forcedTab) return;
+    setTabParam(next);
+  };
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [predictions, setPredictions] = useState<PredictionReport | null>(null);
+  const [threats, setThreats] = useState<ThreatReport | null>(null);
+  const [cost, setCost] = useState<CostOptimizeReport | null>(null);
+  const [evolution, setEvolution] = useState<EvolutionStatus | null>(null);
+  const [placeYaml, setPlaceYaml] = useState(PLACE_SAMPLE);
+  const [placeResults, setPlaceResults] = useState<PlacementRecommendation[] | null>(null);
+  const [placeBusy, setPlaceBusy] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    const [pred, thr, fin, evo] = await Promise.all([
+      apiFetchSettled<PredictionReport>('/intelligence/predictions'),
+      apiFetchSettled<ThreatReport>('/intelligence/threats'),
+      apiFetchSettled<CostOptimizeReport>('/intelligence/cost-optimize'),
+      apiFetchSettled<EvolutionStatus>('/intelligence/evolution/status'),
+    ]);
+    if (!pred.ok && !thr.ok && !fin.ok && !evo.ok) {
+      setLoadFailed(true);
+    } else {
+      setPredictions(pred.ok ? pred.data : null);
+      setThreats(thr.ok ? thr.data : null);
+      setCost(fin.ok ? fin.data : null);
+      setEvolution(evo.ok ? evo.data : null);
+    }
+    setLoading(false);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const focusTab = useMemo((): IntelTab | null => {
+    if (!workloadFocus) return null;
+    if (predictions?.predictions.some((row) => workloadMatchesFocus(row.workload, workloadFocus))) {
+      return 'predictions';
+    }
+    if (threats?.threats.some((t) => workloadMatchesFocus(t.workload, workloadFocus))) return 'threats';
+    if (cost?.recommendations.some((rec) => workloadMatchesFocus(rec.workload, workloadFocus))) return 'cost';
+    if (evolution?.workloads.some((row) => workloadMatchesFocus(row.workload, workloadFocus))) {
+      return 'evolution';
+    }
+    return null;
+  }, [workloadFocus, predictions, threats, cost, evolution]);
+
+  useEffect(() => {
+    if (!workloadFocus || !focusTab) return;
+    setTab(focusTab);
+  }, [workloadFocus, focusTab, setTab]);
+
+  async function runPlacement() {
+    setPlaceBusy(true);
+    setPlaceError(null);
+    const res = await apiPost<PlacementRecommendation[]>('/intelligence/place', { yaml: placeYaml });
+    setPlaceBusy(false);
+    if (res.success && res.data) {
+      setPlaceResults(res.data);
+    } else {
+      setPlaceResults(null);
+      setPlaceError(res.error ?? 'Placement request failed');
+    }
+  }
+
+  if (loading && !predictions && !threats && !cost && !evolution && !loadFailed) {
+    return <PageLoading rows={6} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Intelligence data unavailable" onRetry={() => void load()} />;
+  }
+
+  return (
+    <div>
+      <div className="mb-6 glass-context-banner" data-testid="intelligence-hub-context">
+        Intelligence
+        {' · '}
+        <Link to={viewToPath('health')} className="text-primary hover:underline" data-testid="intelligence-context-orchestrator-link">
+          Orchestrator →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('fleet')} className="text-primary hover:underline" data-testid="intelligence-context-fleet-link">
+          Fleet →
+        </Link>
+        {' · '}
+        <Link
+          to={`${viewToPath('fleet')}?tab=edge`}
+          className="text-primary hover:underline"
+          data-testid="intelligence-context-edge-link"
+        >
+          Edge →
+        </Link>
+        {' · '}
+        <Link to={viewToPath('hosted')} className="text-primary hover:underline" data-testid="intelligence-context-hosted-link">
+          Hosted SaaS →
+        </Link>
+      </div>
+      <PageToolbar onRefresh={() => void load()} refreshing={loading} />
+
+      {workloadFocus ? (
+        <WorkloadContextBanner
+          testId="intelligence-workload-context"
+          workload={workloadFocus}
+          description="Intelligence context"
+        >
+          <WorkloadScopedCrossLinks
+            workload={workloadFocus}
+            prefix="intelligence"
+            showDrift
+            showGitops
+            showMetrics
+          />
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-ai-link"
+          >
+            AI engine →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('zyra'), { workload: workloadFocus, q: `Risk summary for ${workloadFocus}` })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-copilot-link"
+          >
+            Copilot →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('cost'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-context-cost-link"
+          >
+            Cost →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('platform'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-context-platform-link"
+          >
+            Platform →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('gitops'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-context-gitops-link"
+          >
+            GitOps →
+          </Link>
+          {' · '}
+          <Link
+            to={pathWithQuery(viewToPath('drift'), { workload: workloadFocus })}
+            className="text-primary hover:underline"
+            data-testid="intelligence-context-drift-link"
+          >
+            Drift →
+          </Link>
+        </WorkloadContextBanner>
+      ) : null}
+
+      {!forcedTab ? (
+      <section className="mb-10 space-y-8">
+        <div className="flex flex-wrap gap-x-10 gap-y-4">
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}</div>
+            Fleet risk
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{threats?.threats.length ?? 0}</div>
+            Threats
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}</div>
+            Cost saves
+          </div>
+          <div className="text-sm text-muted">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{evolution?.workloads.length ?? 0}</div>
+            Evolution
+          </div>
+        </div>
+      </section>
+      ) : null}
+
+      {!forcedTab ? (
+      <div data-testid="intelligence-tabs">
+      <PageTabs
+        tabs={[
+          { id: 'predictions', label: 'Predictions', icon: <TrendingUp size={14} /> },
+          { id: 'threats', label: 'Threats', icon: <AlertTriangle size={14} /> },
+          { id: 'cost', label: 'Cost optimize', icon: <DollarSign size={14} /> },
+          { id: 'evolution', label: 'Evolution', icon: <Sparkles size={14} /> },
+          { id: 'place', label: 'Placement', icon: <MapPin size={14} /> },
+        ]}
+        active={tab}
+        onChange={(id) => setTab(id as IntelTab)}
+      />
+      </div>
+      ) : null}
+
+      {tab === 'predictions' && (
+        <div className="space-y-4 mt-4" data-testid="intelligence-predictions-panel">
+          {predictions ? (
+            <>
+              <div className="glass flex flex-wrap items-center gap-4">
+                <Brain className="text-primary shrink-0" size={22} />
+                <div>
+                  <p className="text-sm text-muted">Fleet risk score</p>
+                  <p className="text-2xl font-semibold text-foreground">
+                    {formatPercent(predictions.fleet_risk_score, 1)}
+                  </p>
+                </div>
+                <p className="text-xs text-subtle ml-auto">Generated {formatTimestamp(predictions.generated_at)}</p>
+              </div>
+              {predictions.predictions.length === 0 ? (
+                <EmptyState icon={<Inbox size={40} />} title="No predictions" description="No workloads in state store yet." />
+              ) : (
+                <div className="grid gap-3">
+                  {predictions.predictions.map((row) => (
+                    <div
+                      key={row.workload}
+                      className={`glass ${
+                        workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                          ? 'ring-1 ring-aether/40 border-primary/30'
+                          : ''
+                      }`}
+                      data-testid={
+                        workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                          ? 'intelligence-workload-highlight'
+                          : undefined
+                      }
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <Link
+                          to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
+                          className="font-medium text-foreground hover:text-primary"
+                        >
+                          {row.workload}
+                        </Link>
+                        <Link
+                          to={pathWithQuery(viewToPath('events'), { workload: row.workload })}
+                          className="text-xs text-subtle hover:text-primary"
+                        >
+                          Events →
+                        </Link>
+                        <Badge text={row.risk_level} variant={riskVariant(row.risk_level)} />
+                      </div>
+                      <p className="text-xs text-subtle mb-3">Risk score {formatPercent(row.risk_score, 1)}</p>
+                      {row.predictions.length > 0 && (
+                        <ul className="space-y-2 text-sm">
+                          {row.predictions.map((sig, i) => (
+                            <li key={`${sig.kind}-${i}`} className="rounded-lg border glass-divider px-3 py-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-foreground">{sig.kind}</span>
+                                <span className="text-xs text-subtle">{sig.horizon}</span>
+                              </div>
+                              <p className="text-xs text-muted mt-1">{sig.reason}</p>
+                              <p className="text-xs text-primary mt-1">{formatPercent(sig.probability, 0)} probability</p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-subtle">Predictions unavailable.</p>
+          )}
+        </div>
+      )}
+
+      {tab === 'threats' && (
+        <div className="space-y-4 mt-4" data-testid="intelligence-threats-panel">
+          {threats && threats.threats.length > 0 ? (
+            threats.threats.map((t) => (
+              <div
+                key={`${t.workload}-${t.detected_at}`}
+                className={`glass ${
+                  workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
+                    ? 'ring-1 ring-aether/40 border-primary/30'
+                    : ''
+                }`}
+                data-testid={
+                  workloadFocus && workloadMatchesFocus(t.workload, workloadFocus)
+                    ? 'intelligence-workload-highlight'
+                    : undefined
+                }
+              >
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: t.workload })}
+                    className="font-medium text-foreground hover:text-primary"
+                  >
+                    {t.workload}
+                  </Link>
+                  <Badge text={t.severity} variant={riskVariant(t.severity)} />
+                  <Badge text={t.category} variant="muted" />
+                  <Link
+                    to={
+                      workloadFocus
+                        ? pathWithQuery(viewToPath('alerts'), { workload: t.workload })
+                        : viewToPath('alerts')
+                    }
+                    className="text-xs text-primary hover:underline ml-auto"
+                    data-testid="intelligence-alerts-link"
+                  >
+                    Alerts →
+                  </Link>
+                </div>
+                <p className="text-sm text-muted">{t.reason}</p>
+                <p className="text-xs text-subtle mt-2">Score {t.score.toFixed(2)} · {formatTimestamp(t.detected_at)}</p>
+              </div>
+            ))
+          ) : (
+            <EmptyState icon={<AlertTriangle size={40} />} title="No threats detected" description="Security scan found no active threat signals." />
+          )}
+        </div>
+      )}
+
+      {tab === 'cost' && (
+        <div className="space-y-4 mt-4">
+          {cost ? (
+            <>
+              <div className="glass">
+                <p className="text-sm text-muted">Total potential savings</p>
+                <p className="text-2xl font-semibold text-success">
+                  {cost.total_potential_savings_pct.toFixed(1)}%
+                </p>
+              </div>
+              {cost.recommendations.length === 0 ? (
+                <EmptyState icon={<DollarSign size={40} />} title="No cost recommendations" description="Fleet is already well-sized for current profiles." />
+              ) : (
+                cost.recommendations.map((rec) => (
+                  <div
+                    key={rec.workload}
+                    className={`glass ${
+                      workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
+                        ? 'ring-1 ring-aether/40 border-primary/30'
+                        : ''
+                    }`}
+                    data-testid={
+                      workloadFocus && workloadMatchesFocus(rec.workload, workloadFocus)
+                        ? 'intelligence-workload-highlight'
+                        : undefined
+                    }
+                  >
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <Link
+                        to={pathWithQuery(viewToPath('workloads'), { workload: rec.workload })}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {rec.workload}
+                      </Link>
+                      <Badge text={`${rec.savings_pct.toFixed(0)}% savings`} variant="green" />
+                      <Badge text={rec.risk} variant={riskVariant(rec.risk)} />
+                    </div>
+                    <p className="text-sm text-muted">
+                      {rec.current_runtime} → {rec.suggested_runtime}
+                    </p>
+                    <p className="text-xs text-muted mt-1">{rec.reason}</p>
+                    <p className="text-xs text-success mt-2">{formatUSD(rec.savings_monthly_usd)}/mo estimated</p>
+                  </div>
+                ))
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-subtle">Cost optimization unavailable.</p>
+          )}
+        </div>
+      )}
+
+      {tab === 'evolution' && (
+        <div className="space-y-4 mt-4" data-testid="intelligence-evolution-panel">
+          <div className="flex justify-end">
+            <Link
+              to={
+                workloadFocus
+                  ? pathWithQuery(viewToPath('ai'), { workload: workloadFocus, tab: 'analyze' })
+                  : viewToPath('ai')
+              }
+              className="text-xs text-primary hover:underline"
+              data-testid="intelligence-tab-ai-link"
+            >
+              AI engine →
+            </Link>
+          </div>
+          {evolution && evolution.workloads.length > 0 ? (
+            evolution.workloads.map((row) => (
+              <div
+                key={row.workload}
+                className={`glass ${
+                  workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                    ? 'ring-1 ring-aether/40 border-primary/30'
+                    : ''
+                }`}
+                data-testid={
+                  workloadFocus && workloadMatchesFocus(row.workload, workloadFocus)
+                    ? 'intelligence-workload-highlight'
+                    : undefined
+                }
+              >
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Link
+                    to={pathWithQuery(viewToPath('workloads'), { workload: row.workload })}
+                    className="font-medium text-foreground hover:text-primary"
+                  >
+                    {row.workload}
+                  </Link>
+                  {row.auto_eligible && <Badge text="auto-eligible" variant="green" />}
+                  <Badge text={`${row.improvement_pct.toFixed(0)}% improvement`} variant="blue" />
+                </div>
+                <p className="text-sm text-muted">
+                  {row.current_runtime} → {row.recommended_runtime}
+                </p>
+                <p className="text-xs text-subtle mt-1">Confidence {formatPercent(row.confidence, 0)}</p>
+                {row.reasons.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-xs text-muted">
+                    {row.reasons.map((r) => (
+                      <li key={r}>• {r}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))
+          ) : (
+            <EmptyState icon={<Sparkles size={40} />} title="No evolution candidates" description="Runtime evolution has no actionable workloads right now." />
+          )}
+        </div>
+      )}
+
+      {tab === 'place' && (
+        <div className="space-y-4 mt-4" data-testid="intelligence-place-panel">
+          <div className="flex justify-end mb-2">
+            <Link
+              to={
+                workloadFocus
+                  ? pathWithQuery(viewToPath('scheduler'), { workload: workloadFocus })
+                  : viewToPath('scheduler')
+              }
+              className="text-xs text-primary hover:underline"
+              data-testid="intelligence-tab-scheduler-link"
+            >
+              Placement scheduler →
+            </Link>
+          </div>
+          <div className="glass space-y-3">
+            <p className="text-sm text-muted">
+              POST workload YAML to rank clusters and runtimes for global placement.
+            </p>
+            <textarea
+              value={placeYaml}
+              onChange={(e) => setPlaceYaml(e.target.value)}
+              rows={14}
+              className="glass-input font-mono text-xs"
+            />
+            <button
+              type="button"
+              data-testid="intelligence-place-submit"
+              disabled={placeBusy}
+              onClick={() => void runPlacement()}
+              className="btn-primary disabled:opacity-50"
+            >
+              {placeBusy ? 'Ranking…' : 'Recommend placement'}
+            </button>
+            {placeError && <p className="text-sm text-danger">{placeError}</p>}
+          </div>
+          {placeResults && placeResults.length > 0 && (
+            <div className="space-y-3">
+              {placeResults.map((rec, i) => (
+                <div key={`${rec.cluster ?? 'local'}-${rec.runtime}-${i}`} className="glass">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="font-medium text-foreground">{rec.cluster ?? 'default cluster'}</span>
+                    <Badge text={rec.runtime} variant="blue" />
+                    <Badge text={`score ${rec.score.toFixed(2)}`} variant={i === 0 ? 'green' : 'muted'} />
+                    {rec.cluster && (
+                      <Link
+                        to={pathWithQuery(viewToPath('fleet'), { cluster: rec.cluster })}
+                        className="text-xs text-primary hover:underline ml-auto"
+                      >
+                        Fleet →
+                      </Link>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted mb-2">
+                    <span>Latency {rec.latency_score.toFixed(2)}</span>
+                    <span>Cost {rec.cost_score.toFixed(2)}</span>
+                    <span>GPU {rec.gpu_available ? 'available' : 'none'}</span>
+                  </div>
+                  {rec.reasons.length > 0 && (
+                    <ul className="text-xs text-subtle space-y-1">
+                      {rec.reasons.map((r) => (
+                        <li key={r}>• {r}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IntelligenceHubPage() {
+  return (
+    <SectionHubPage
+      links={[
+        { view: 'ai', title: 'AI Engine', description: 'Runtime advisor, intent studio, and optimization.', icon: <Brain className="h-5 w-5" /> },
+        { view: 'zyra', title: 'Zyra', description: 'Multi-agent infrastructure chat.', icon: <Sparkles className="h-5 w-5" /> },
+        { view: 'intel-predictions', title: 'Predictions', description: 'Fleet failure predictions.', icon: <TrendingUp className="h-5 w-5" /> },
+        { view: 'intel-threats', title: 'Threats', description: 'Threat intelligence.', icon: <AlertTriangle className="h-5 w-5" /> },
+        { view: 'intel-cost', title: 'Cost optimize', description: 'Cost optimization recommendations.', icon: <DollarSign className="h-5 w-5" /> },
+        { view: 'intel-placement', title: 'Placement', description: 'Global placement recommendations.', icon: <MapPin className="h-5 w-5" /> },
+      ]}
+    />
+  );
+}
+
+export default withAuroraPage('intelligence', IntelligenceHubPage);
+

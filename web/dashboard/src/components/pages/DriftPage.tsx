@@ -1,0 +1,394 @@
+// Copyright 2026 ZyvorAI Labs Private Limited
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
+import { withAuroraPage } from '../layout/AuroraPage';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router';
+import { Inbox } from 'lucide-react';
+import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { viewToPath } from '../../utils/dashboardRoutes';
+import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
+import PageToolbar from '../PageToolbar';
+import EmptyState from '../EmptyState';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
+import Badge, { SeverityBadge } from '../Badge';
+import StatRibbon from '../StatRibbon';
+import type { WorkloadResponse, DriftReport, DriftReconcileResult, FleetDriftSummary } from '../../types/api';
+
+function toast(message: string, type: 'success' | 'error') {
+  window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
+}
+
+interface BulkScanState {
+  scanning: boolean;
+  total: number;
+  drifted: string[];
+}
+
+function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
+  const navigate = useNavigate();
+  const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [checkLoading, setCheckLoading] = useState<string | null>(null);
+  const [driftResult, setDriftResult] = useState<DriftReport | null>(null);
+  const [reconcileLoading, setReconcileLoading] = useState(false);
+  const [bulkScan, setBulkScan] = useState<BulkScanState | null>(null);
+  const [fleetDrift, setFleetDrift] = useState<FleetDriftSummary | null>(null);
+  const [search, setSearch] = useWorkloadOrSearchFilter();
+  const [workloadParam] = useQueryParam('workload');
+  const scannedWorkloadRef = useRef<string | null>(null);
+  const workloadFocus = workloadParam.trim() || undefined;
+
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadFailed(false);
+    // Fire both requests concurrently, but update state as each settles independently —
+    // /fleet/drift is typically much faster than /workloads (which lists every discovered
+    // cluster resource), and there's no reason to hold its summary hostage to the slower call.
+    void apiFetchSettled<FleetDriftSummary>('/fleet/drift').then((fleetRes) => {
+      setFleetDrift(fleetRes.ok ? fleetRes.data : null);
+    });
+    return apiFetchSettled<WorkloadResponse[]>('/workloads').then((result) => {
+      if (!result.ok) {
+        setLoadFailed(true);
+        setWorkloads([]);
+      } else {
+        setWorkloads(result.data);
+      }
+      setLoading(false);
+    });
+  }, [refreshKey]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!workloadFocus || workloads.length === 0) return;
+    const match = workloads.find((w) => w.name === workloadFocus);
+    if (match && scannedWorkloadRef.current !== workloadFocus) {
+      scannedWorkloadRef.current = workloadFocus;
+      void handleCheckDrift(match.name);
+    }
+  }, [workloadFocus, workloads]);
+
+  async function handleCheckDrift(name: string) {
+    setCheckLoading(name);
+    const data = await apiFetch<DriftReport>(`/drift/${name}`);
+    setDriftResult(data);
+    setCheckLoading(null);
+  }
+
+  async function handleReconcile(name: string) {
+    setReconcileLoading(true);
+    const res = await apiPost<{
+      reconciled: boolean;
+      message?: string;
+      results: DriftReconcileResult[];
+    }>(`/drift/${name}/reconcile`, {});
+    setReconcileLoading(false);
+    if (res.success && res.data) {
+      if (res.data.reconciled) {
+        toast(`Reconciled "${name}": ${res.data.results.length} action(s)`, 'success');
+      } else {
+        toast(res.data.message ?? 'No drift to reconcile', 'success');
+      }
+      void handleCheckDrift(name);
+    } else {
+      toast(res.error ?? 'Reconciliation failed', 'error');
+    }
+  }
+
+  async function handleBulkScan() {
+    const targets = filtered;
+    if (targets.length === 0) return;
+    setBulkScan({ scanning: true, total: targets.length, drifted: [] });
+    const drifted: string[] = [];
+    for (const w of targets) {
+      const data = await apiFetch<DriftReport>(`/drift/${w.name}`);
+      if (data?.has_drift) drifted.push(w.name);
+    }
+    setBulkScan({ scanning: false, total: targets.length, drifted });
+    if (drifted.length === 1) {
+      void handleCheckDrift(drifted[0]);
+    } else if (drifted.length === 0) {
+      setDriftResult(null);
+    }
+  }
+
+  async function handleReconcileAll() {
+    if (!bulkScan?.drifted.length) return;
+    if (!window.confirm(`Reconcile drift for ${bulkScan.drifted.length} workload(s)?`)) return;
+    setReconcileLoading(true);
+    let reconciled = 0;
+    for (const name of bulkScan.drifted) {
+      const res = await apiPost<{ reconciled: boolean }>(`/drift/${name}/reconcile`, {});
+      if (res.success && res.data?.reconciled) reconciled++;
+    }
+    setReconcileLoading(false);
+    toast(`Bulk reconcile: ${reconciled} of ${bulkScan.drifted.length} workload(s)`, 'success');
+    void handleBulkScan();
+  }
+
+  function openWorkloadDrift(name: string) {
+    navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'drift' }));
+  }
+
+  const filtered = workloads.filter((w) =>
+    w.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading && workloads.length === 0 && !loadFailed && !fleetDrift) {
+    return <PageLoading rows={4} />;
+  }
+
+  if (loadFailed) {
+    return <PageLoadError title="Drift data unavailable" onRetry={() => void load()} />;
+  }
+
+  return (
+    <div>
+      <PageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Filter workloads…"
+        onRefresh={() => void load()}
+        refreshing={loading}
+        actions={
+          filtered.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                data-testid="drift-bulk-scan"
+                onClick={() => void handleBulkScan()}
+                disabled={bulkScan?.scanning}
+                className="btn-secondary disabled:opacity-50"
+              >
+                {bulkScan?.scanning ? 'Scanning…' : 'Scan all workloads'}
+              </button>
+              {bulkScan && !bulkScan.scanning && bulkScan.drifted.length > 0 ? (
+                <button
+                  type="button"
+                  data-testid="drift-reconcile-all-confirm"
+                  onClick={() => void handleReconcileAll()}
+                  disabled={reconcileLoading}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {reconcileLoading ? 'Reconciling…' : `Reconcile all (${bulkScan.drifted.length})`}
+                </button>
+              ) : null}
+            </div>
+          ) : undefined
+        }
+      />
+
+      {fleetDrift ? (
+        <StatRibbon
+          testId="fleet-drift-summary"
+          className="mb-6"
+          items={[
+            { label: 'Tracked', value: fleetDrift.total_workloads },
+            { label: 'Drifted', value: fleetDrift.drifted, tone: 'amber' },
+            { label: 'Critical', value: fleetDrift.critical, tone: 'red' },
+            { label: 'Warnings', value: fleetDrift.warning, tone: 'amber' },
+          ]}
+        />
+      ) : null}
+
+      <div className="mb-4">
+        <button
+          type="button"
+          data-testid="drift-events-link"
+          onClick={() =>
+            navigate(
+              pathWithQuery(viewToPath('events'), {
+                category: 'drift',
+                ...(workloadFocus ? { workload: workloadFocus } : {}),
+              }),
+            )
+          }
+          className="text-xs text-primary hover:underline"
+        >
+          Drift events →
+        </button>
+      </div>
+
+      {workloadFocus ? (
+        <WorkloadContextBanner
+          testId="drift-workload-context"
+          workload={workloadFocus}
+          openTestId="drift-open-workload"
+          description="Drift context"
+        >
+          <WorkloadScopedCrossLinks
+            workload={workloadFocus}
+            prefix="drift"
+            eventsCategory="drift"
+            showGitops
+            showAudit
+            showMetrics
+            extraLinks={[
+              { label: 'Platform →', view: 'platform', testId: 'drift-platform-link', query: { workload: workloadFocus } },
+              { label: 'Policy →', view: 'policy', testId: 'drift-policy-link', query: { workload: workloadFocus } },
+              { label: 'Compose →', view: 'compose', testId: 'drift-context-compose-link', query: { workload: workloadFocus } },
+              { label: 'Secrets →', view: 'secrets', testId: 'drift-context-secrets-link', query: { workload: workloadFocus } },
+              { label: 'Editor →', view: 'editor', testId: 'drift-context-editor-link', query: { workload: workloadFocus } },
+              { label: 'OpenAPI →', view: 'openapi', testId: 'drift-context-openapi-link', query: { workload: workloadFocus } },
+              { label: 'Copilot →', view: 'zyra', testId: 'drift-context-copilot-link', query: { workload: workloadFocus, q: `Explain drift for ${workloadFocus}` } },
+            ]}
+          />
+        </WorkloadContextBanner>
+      ) : null}
+
+      {bulkScan && !bulkScan.scanning ? (
+        <div data-testid="drift-bulk-summary" className="glass mb-6 text-sm text-muted">
+          Scanned {bulkScan.total} workload(s) — {bulkScan.drifted.length} with drift
+          {bulkScan.drifted.length > 0 ? (
+            <span className="ml-2 text-subtle">({bulkScan.drifted.join(', ')})</span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                workloadFocus
+                  ? pathWithQuery(viewToPath('gitops'), { workload: workloadFocus })
+                  : viewToPath('gitops'),
+              )
+            }
+            className="ml-3 text-xs text-primary hover:underline"
+            data-testid="drift-bulk-gitops-link"
+          >
+            GitOps sync →
+          </button>
+        </div>
+      ) : null}
+
+      {workloads.length === 0 && loading ? (
+        <PageLoading rows={2} />
+      ) : workloads.length === 0 ? (
+        <EmptyState icon={<Inbox size={48} />} title="No workloads" description="Deploy a workload to check for drift" />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass">
+            <h2 className="text-lg font-semibold text-foreground mb-1">Select workload</h2>
+            <p className="text-sm text-subtle mb-4">Click a workload to check for configuration drift</p>
+            <div className="flex flex-wrap gap-2 max-h-[28rem] overflow-auto" data-testid="drift-workload-select">
+              {filtered.map((w) => (
+                <button
+                  key={w.name}
+                  type="button"
+                  onClick={() => void handleCheckDrift(w.name)}
+                  disabled={checkLoading === w.name}
+                  data-testid={workloadFocus === w.name ? 'drift-workload-highlight' : undefined}
+                  className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors disabled:opacity-50 ${
+                    driftResult?.workload_name === w.name
+                      ? 'border-primary/50 bg-primary/10 text-primary'
+                      : workloadFocus === w.name
+                        ? 'border-primary/60 ring-1 ring-aether/30 bg-primary/5 text-primary'
+                        : bulkScan?.drifted.includes(w.name)
+                          ? 'border-danger/40 bg-danger/10 text-danger'
+                          : 'glass-divider glass text-foreground hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {checkLoading === w.name ? 'Checking…' : w.name}
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-sm text-subtle">No workloads match your search.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="glass min-h-[12rem]">
+            <h3 className="text-sm font-medium text-muted uppercase tracking-wider mb-4">Drift report</h3>
+            {!driftResult ? (
+              <p className="text-sm text-subtle">Select a workload or run a bulk scan to see drift analysis.</p>
+            ) : (
+              <div className="space-y-4" data-testid="drift-result-panel">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge
+                    text={driftResult.has_drift ? 'DRIFT DETECTED' : 'NO DRIFT'}
+                    variant={driftResult.has_drift ? 'red' : 'green'}
+                  />
+                  <SeverityBadge severity={driftResult.severity} />
+                  <button
+                    type="button"
+                    data-testid="drift-open-workload"
+                    onClick={() => openWorkloadDrift(driftResult.workload_name)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {driftResult.workload_name} → detail
+                  </button>
+                </div>
+
+                {driftResult.drifts.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted mb-2">Drifted fields</h4>
+                    <div className="space-y-2 max-h-64 overflow-auto">
+                      {driftResult.drifts.map((d, i) => (
+                        <div key={i} className="glass rounded-lg p-3 border glass-divider">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="text-sm font-medium text-foreground">{d.field}</span>
+                            <SeverityBadge severity={d.severity} />
+                            <Badge text={d.category} variant="muted" />
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
+                            <div>
+                              <span className="text-subtle">Expected: </span>
+                              <span className="text-success">{d.expected}</span>
+                            </div>
+                            <div>
+                              <span className="text-subtle">Actual: </span>
+                              <span className="text-danger">{d.actual}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {driftResult.has_drift && driftResult.reconciliation_plan.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      data-testid="drift-reconcile-button"
+                      onClick={() => void handleReconcile(driftResult.workload_name)}
+                      disabled={reconcileLoading}
+                      className="btn-primary disabled:opacity-50"
+                    >
+                      {reconcileLoading ? 'Reconciling…' : 'Apply reconciliation'}
+                    </button>
+                  </div>
+                )}
+
+                {driftResult.reconciliation_plan.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted mb-2">Reconciliation plan</h4>
+                    <div className="space-y-2">
+                      {driftResult.reconciliation_plan.map((step, i) => (
+                        <div key={i} className="rounded-lg border glass-divider glass p-3 text-sm">
+                          <div className="font-medium text-foreground">{step.action_type}</div>
+                          <p className="text-muted mt-1">{step.description}</p>
+                          <div className="flex gap-3 mt-2 text-xs text-subtle">
+                            <span>Restart: {step.requires_restart ? 'yes' : 'no'}</span>
+                            <span>Risk: {step.risk}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuroraPage('drift', DriftPage);

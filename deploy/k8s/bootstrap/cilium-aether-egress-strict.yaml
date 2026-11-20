@@ -1,0 +1,53 @@
+# Stricter egress than cilium-aether-egress.yaml: Kubernetes API + cluster DNS only.
+# Enable via AETHER_CILIUM_EGRESS_STRICT=1 (see scripts/lib-deploy-cluster.sh).
+# If Aether must call in-cluster Services or Pods directly (not via API), also set
+# AETHER_CILIUM_STRICT_ALLOW_CLUSTER=1 to apply cilium-aether-egress-strict-cluster.yaml.
+# Placeholder __AETHER_NAMESPACE__ is replaced by deploy scripts.
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-aether-egress-strict
+  namespace: __AETHER_NAMESPACE__
+spec:
+  endpointSelector:
+    matchLabels:
+      app: aether
+  egress:
+    # Kubernetes API (in-cluster and kubeadm-style ports)
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+            - port: "8443"
+              protocol: TCP
+    # kube-dns sidecar / legacy kube-dns Service endpoints
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+            - port: "9153"
+              protocol: TCP
+    # CoreDNS (common label set)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:app.kubernetes.io/name: coredns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+            - port: "9153"
+              protocol: TCP

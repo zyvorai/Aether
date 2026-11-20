@@ -1,0 +1,16 @@
+# Optional: use when namespace-scoped CNPs are insufficient (strict cluster-wide defaults).
+# Applied only if ciliumclusterwidenetworkpolicies.cilium.io exists.
+# Placeholder __AETHER_NAMESPACE__ is replaced by deploy scripts.
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: aether-control-plane-egress
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s:app: aether
+      k8s:io.kubernetes.pod.namespace: __AETHER_NAMESPACE__
+  egress:
+    - toEntities:
+        - all

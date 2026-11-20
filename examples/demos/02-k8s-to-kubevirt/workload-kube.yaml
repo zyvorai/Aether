@@ -1,0 +1,28 @@
+apiVersion: aether/v1
+kind: Workload
+metadata:
+  name: demo-k8s-kubevirt
+  owner: demo
+  project: aether-demos
+build:
+  context: "."
+  dockerfile: Dockerfile
+  registry: localhost
+requirements:
+  cpu: "2"
+  memory: 4Gi
+  storage: 20Gi
+runtime:
+  preferred: kube
+  allow:
+    - kube
+    - kubevirt
+network:
+  service: true
+  ports:
+    - containerPort: 8080
+      servicePort: 8080
+intent:
+  goal: balanced
+  compliance:
+    isolation_required: true
