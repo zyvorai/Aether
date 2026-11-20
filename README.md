@@ -31,7 +31,7 @@
 
 | | |
 |---|---|
-| **Source-available** | Aether is under the Zyvor Production License v1.0 (free for non-production use); confidential computing (Ragnarok) moved to a separate product |
+| **Source-available** | Aether is under the Zyvor Production License v1.0 (non-production use permitted); confidential computing (Ragnarok) moved to a separate product |
 | **KubeVirt live migration** | `kubevirt.liveMigration` renders `evictionStrategy: LiveMigrate`; `aether live-migrate <name>` creates a `VirtualMachineInstanceMigration` and watches it |
 | **KubeVirt vGPU** | `requirements.gpu.vgpuProfile` attaches mediated vGPU slices instead of VFIO passthrough |
 | **Logs and Shell for discovered pods and VMs** | Pods, Deployments, StatefulSets, DaemonSets, VirtualMachines and VMIs, gated to Operator / Admin |
@@ -348,7 +348,7 @@ Part of the [Zyvor](https://zyvor.dev/?utm_source=github&utm_medium=aether&utm_c
 
 ## Support
 
-Non-production use is free under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
+Non-production use is permitted under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ## License
 
