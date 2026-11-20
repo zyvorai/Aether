@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 /** Cluster kinds that can open a kubectl exec shell against a related pod. */
 export const SHELLABLE_CLUSTER_KINDS = [

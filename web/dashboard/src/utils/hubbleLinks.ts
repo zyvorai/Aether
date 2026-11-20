@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 /** Build a Hubble UI deep link for a pod (matches backend hubble_workload_url). */
 export function hubbleWorkloadUrl(base: string, namespace: string, pod: string): string {

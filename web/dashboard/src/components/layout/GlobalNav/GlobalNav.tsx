@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 import { useEffect, useState } from 'react';
 import { ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun } from 'lucide-react';

@@ -98,7 +98,7 @@ jobs:
             org.opencontainers.image.title=Aether
             org.opencontainers.image.description=Universal runtime control plane - One spec, three runtimes
             org.opencontainers.image.vendor=ZyvorAI Labs
-            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.licenses=LicenseRef-Zyvor-Production-1.0
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - name: Build and push

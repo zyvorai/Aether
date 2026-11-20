@@ -5,7 +5,7 @@ hero:
   tone: violet
 ---
 
-<!-- Copyright 2026 ZyvorAI Labs Private Limited -- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright 2026 ZyvorAI Labs Private Limited -- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
 
 A repeatable, evidence-based plan for moving an AWS-hosted platform — applications
 **and** managed services — onto a Kubernetes platform (K3s/RKE2/vanilla or KubeVirt),

@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 //! Declarative migration artifacts (`apiVersion: aether.zyvor.dev/v1alpha1`):
 //! `MigrationProject`, `MigrationPlan`, and `Assessment`. These are the

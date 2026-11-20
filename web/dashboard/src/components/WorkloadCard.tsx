@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 import { Box, Container, Cpu, FileText, HardDrive, Info, Server, Star, Terminal } from 'lucide-react';
 import Badge, { RuntimeBadge } from './Badge';

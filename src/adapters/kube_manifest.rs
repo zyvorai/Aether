@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 //! Kubernetes manifest generation helpers (Deployment, StatefulSet, Job, PDB, Gateway, VPA, KEDA).
 
