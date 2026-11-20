@@ -560,6 +560,11 @@ pub(crate) async fn health_check() -> impl IntoResponse {
     Json(ApiResponse::success(response))
 }
 
+/// GET /api/licence - Soft licence status (verify only; Aether never disables anything because of a licence).
+pub(crate) async fn api_licence() -> impl IntoResponse {
+    Json(ApiResponse::success(crate::licence::status_json()))
+}
+
 /// GET /api/auth/me - Return the effective authenticated role for the current request.
 pub(crate) async fn api_auth_me(
     AxumState(app_state): AxumState<AppState>,
