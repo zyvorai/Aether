@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # shellcheck shell=bash
 # Fancy (but optional) terminal output for Aether deploy scripts.
 # Disable with: NO_COLOR=1, CI=true, AETHER_PLAIN_DEPLOY=1, or non-TTY stdout.

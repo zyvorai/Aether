@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 /**
  * Cross-check example workloads against schema/workload.schema.json using ajv.
  * Rust `aether validate` remains the source of truth; this catches IDE-schema drift.

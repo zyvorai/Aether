@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Deploy Aether with mock IdP SSO enabled (see examples/deploy/reference-sso.env.example).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

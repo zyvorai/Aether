@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Validate dashboard-facing APIs on a remote Aether instance and cross-check UX data consistency.
 # Usage: AETHER_API=http://212.8.252.194:30090 ./scripts/remote-api-ux-verify.sh
 set -euo pipefail

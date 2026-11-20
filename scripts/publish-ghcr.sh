@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Publish Aether Docker image (+ optional Helm charts) to ghcr.io/zyvorai.
 #
 # Prefer the Release workflow for images. This script is for manual/lab pushes.

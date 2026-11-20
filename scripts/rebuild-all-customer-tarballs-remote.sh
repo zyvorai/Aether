@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Rebuild customer tarballs on a remote Linux host (fresh HELP.txt, install-everything, UX).
 # Same script in every Zyvor product repo — paths resolve via sibling checkout under tt/.
 #

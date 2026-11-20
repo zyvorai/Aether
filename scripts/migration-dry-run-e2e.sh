@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Migration dry-run E2E — validate demo specs, decide/explain, and dry-run migrate targets.
 #
 # Usage:

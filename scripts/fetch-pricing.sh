@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Fetch cloud pricing and emit JSON suitable for AETHER_PRICING_URL.
 # Usage: ./scripts/fetch-pricing.sh > pricing.json
 set -euo pipefail

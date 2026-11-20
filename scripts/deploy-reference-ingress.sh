@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 # Deploy Aether to a remote k8s host with Ingress + TLS (see examples/deploy/reference-ingress.env.example).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
