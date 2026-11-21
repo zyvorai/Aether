@@ -354,6 +354,8 @@ Evaluation is permitted for 30 days per organization under the Zyvor Production 
 
 Aether is source-available under the [Zyvor Production License v1.0](LICENSE) (see [NOTICE](NOTICE)). Evaluation (evaluation, development, testing, research, education) is free for 30 days per organization; Production Use requires a commercial license from Zyvor AI Labs Private Limited ([sales@zyvor.dev](mailto:sales@zyvor.dev), [zyvor.dev/buy](https://zyvor.dev/buy)).
 
+**Price:** INR 59,999 per node per year incl. 18% GST in India; US$605 per node per year excl. tax elsewhere. Buy: [zyvor.dev/buy](https://zyvor.dev/buy#aether). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo.
+
 **Licence key (30-day trial).** Aether verifies a signed licence key (`ZYV1.`, checked offline against a public key built in; nothing is sent to Zyvor). A 30-day trial key from [sales@zyvor.dev](mailto:sales@zyvor.dev) lets you evaluate the software in production for 30 days; no data is lost when it ends. Set `AETHER_LICENCE_KEY` or put the key in `~/.config/aether/licence.key` (or the file named by `AETHER_LICENCE_FILE`); `GET /api/licence` reports `licensed`, `trial`, `licence_expired`, `unlicensed` or `invalid`.
 
 Confidential computing (**Ragnarok**) is a separate Zyvor product and is **not** shipped in this repository.
