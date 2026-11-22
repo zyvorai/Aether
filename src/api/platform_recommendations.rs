@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 //! Optional platform setup items surfaced on the dashboard Platform page (not inline banners).
 

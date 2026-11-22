@@ -459,7 +459,7 @@ Contributions welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelin
 
 ## License
 
-Zyvor Production License v1.0 (SPDX: LicenseRef-Zyvor-Production-1.0). See [LICENSE](../../LICENSE).
+Zyvor Production Licence v2.0 (SPDX: LicenseRef-Zyvor-Production-2.0). See [LICENSE](../../LICENSE).
 
 ## Support
 

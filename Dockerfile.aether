@@ -58,4 +58,4 @@ CMD ["--help"]
 LABEL org.opencontainers.image.title="Aether"
 LABEL org.opencontainers.image.description="Universal Runtime Control Plane"
 LABEL org.opencontainers.image.source="https://github.com/zyvorai/Aether"
-LABEL org.opencontainers.image.licenses="LicenseRef-Zyvor-Production-1.0"
+LABEL org.opencontainers.image.licenses="LicenseRef-Zyvor-Production-2.0"

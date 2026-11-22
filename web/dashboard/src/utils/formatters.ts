@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 export function formatTimestamp(ts: string): string {
   return (ts || '').substring(0, 19).replace('T', ' ');

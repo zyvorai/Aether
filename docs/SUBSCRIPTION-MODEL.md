@@ -1,6 +1,6 @@
 # Aether: support subscriptions
 
-Aether is source-available under the Zyvor Production License v1.0. Production use requires a commercial license from Zyvor (sales@zyvor.dev).
+Aether is source-available under the Zyvor Production Licence v2.0. Production use requires a commercial license from Zyvor (sales@zyvor.dev).
 
 Teams that want supported releases and defined response targets can buy an annual **support subscription** from Zyvor.
 
@@ -19,6 +19,6 @@ Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or 
 - Annual prepaid subscription is the default, with a 12-month minimum. Multi-year prepay is available.
 - Minimums apply after any discounts.
 - Implementation, migration, training and managed operations are separate services.
-- At expiry, updates, downloads and support end. Non-production rights continue under the licence.
+- At expiry, updates, downloads and support end. Rights under the Zyvor Production Licence v2.0 continue as stated in that licence.
 - Response targets need a contracted scope and are not uptime guarantees.
 - Existing signed agreements keep their agreed terms.
