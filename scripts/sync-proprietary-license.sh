@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 # Copy PacketWolf proprietary LICENSE (ZyvorAI Labs / zyvor.dev) to projects under ../
 set -euo pipefail
@@ -19,7 +19,7 @@ fi
 
 # Ssahani-owned repos under tt/ (exclude third-party mirrors and guestkit).
 # NOTE: Aether is deliberately NOT in this list as of 2026 — Aether-core is under
-# the Zyvor Production License v1.0 and has its own LICENSE (see Aether/LICENSE); this script must not
+# the Zyvor Production Licence v2.0 and has its own LICENSE (see Aether/LICENSE); this script must not
 # overwrite it with the PacketWolf proprietary EULA. Ragnarok (confidential
 # computing) is a separate proprietary repo and is listed below on its own.
 REPOS=(

@@ -6,7 +6,7 @@ hero:
   tone: sky
   swatches:
     - {label: "v0.4.0", tone: sky}
-    - {label: "Zyvor Production License", tone: emerald}
+    - {label: "Zyvor Production Licence v2.0", tone: emerald}
   highlights:
     - {value: "3", label: "Runtimes unified"}
     - {value: "12", label: "Migration pairs", footnote: "1"}
@@ -461,4 +461,4 @@ Migration Checklist  -->  Security  -->  Deployment  -->  REST API  -->  Runbook
 
 ## 📄 License
 
-Zyvor Production License v1.0 (SPDX: LicenseRef-Zyvor-Production-1.0). See [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE).
+Zyvor Production Licence v2.0 (SPDX: LicenseRef-Zyvor-Production-2.0). See [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE).

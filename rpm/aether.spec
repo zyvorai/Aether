@@ -3,7 +3,7 @@ Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Universal runtime control plane
 
-License:        LicenseRef-Zyvor-Production-1.0
+License:        LicenseRef-Zyvor-Production-2.0
 URL:            https://github.com/zyvorai/Aether
 Source0:        %{name}-%{version}.tar.gz
 

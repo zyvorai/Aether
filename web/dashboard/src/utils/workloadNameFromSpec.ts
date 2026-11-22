@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 /** Extract workload name from generated template JSON or YAML-shaped spec. */
 export function workloadNameFromSpec(spec: Record<string, unknown> | null | undefined): string | null {

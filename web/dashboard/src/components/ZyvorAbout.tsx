@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { ExternalLink, Hexagon } from 'lucide-react';
 import { ZYVOR_URL, ZYVOR_BRAND, ZYVOR_COPY, ZYVOR_LINE } from './ZyvorBrand';
@@ -90,7 +90,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
             {ZYVOR_LINE}
           </span>
           <br />
-          Source-available under the Zyvor Production License v1.0 — see the repository LICENSE.
+          Source-available under the Zyvor Production Licence v2.0 — see the repository LICENSE.
           Confidential computing ships as Ragnarok, a separate Zyvor product.
         </p>
       </div>

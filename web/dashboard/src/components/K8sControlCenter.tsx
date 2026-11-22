@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { AlertTriangle, Boxes, Layers, Rocket, Server, Shield } from 'lucide-react';
 import type { AppView, ClusterSummary, WorkloadResponse } from '../types/api';

@@ -5,13 +5,13 @@ hero:
   tone: pink
 ---
 
-**Aether-core is the one exception to an otherwise all-proprietary lineup.** Since 2026 the Aether orchestration engine (CLI, runtime adapters, REST API, web dashboard) is source-available under the Zyvor Production License v1.0 (SPDX `LicenseRef-Zyvor-Production-1.0`; permitted for non-production use, commercial license required for Production Use) — see [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE). Everything else — PacketWolf, Ragnarok (confidential computing; separate proprietary repository), HyperSDK, and GuestKit — remains proprietary with no open-source (Apache, MIT, LGPL, or similar) distribution. Access to the proprietary products is by written agreement or the applicable EULA.
+**Aether-core is the one exception to an otherwise all-proprietary lineup.** Since 2026 the Aether orchestration engine (CLI, runtime adapters, REST API, web dashboard) is source-available under the Zyvor Production Licence v2.0 (SPDX `LicenseRef-Zyvor-Production-2.0`; a paid Order is required; a 30-day trial is available on request) — see [LICENSE](https://github.com/zyvorai/Aether/blob/main/LICENSE). Everything else — PacketWolf, Ragnarok (confidential computing; separate proprietary repository), HyperSDK, and GuestKit — remains proprietary with no open-source (Apache, MIT, LGPL, or similar) distribution. Access to the proprietary products is by written agreement or the applicable EULA.
 
 ## License types
 
 | Layer | License | Products |
 |-------|---------|----------|
-| Source-available | Zyvor Production License v1.0 | Aether-core |
+| Source-available | Zyvor Production Licence v2.0 | Aether-core |
 | Self-hosted / binaries | Proprietary EULA | PacketWolf, Ragnarok, GuestKit, HyperSDK tooling |
 | Enterprise subscription | MSA + ELA + Order Form | Full feature set per tier |
 | Hosted SaaS (if offered) | Proprietary + MSA | zyvor.dev cloud |

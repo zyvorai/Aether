@@ -19,7 +19,7 @@
 
 **The universal runtime control plane: deploy the same workload to Podman, Kubernetes and KubeVirt, then migrate between them without rewriting infrastructure.** Declare what you care about (cost, performance, reliability), let the intent engine score the lanes, and move running workloads with immediate, blue-green, rolling or canary strategies.
 
-**3 runtimes, 1 workload YAML** · **4 migration strategies** · **KubeVirt live migration** · **CLI · TUI · web · REST + SSE** · **Zyvor Production License, Rust**
+**3 runtimes, 1 workload YAML** · **4 migration strategies** · **KubeVirt live migration** · **CLI · TUI · web · REST + SSE** · **Zyvor Production Licence v2.0, Rust**
 
 [Releases](https://github.com/zyvorai/Aether/releases) · [User Guide](docs/user-guide/aether-user-guide.md) · [Docs](docs/README.md)
 
@@ -31,7 +31,7 @@
 
 | | |
 |---|---|
-| **Source-available** | Aether is under the Zyvor Production License v1.0 (30-day evaluation permitted); confidential computing (Ragnarok) moved to a separate product |
+| **Source-available** | Aether is under the Zyvor Production Licence v2.0 (30-day trial on request); confidential computing (Ragnarok) moved to a separate product |
 | **KubeVirt live migration** | `kubevirt.liveMigration` renders `evictionStrategy: LiveMigrate`; `aether live-migrate <name>` creates a `VirtualMachineInstanceMigration` and watches it |
 | **KubeVirt vGPU** | `requirements.gpu.vgpuProfile` attaches mediated vGPU slices instead of VFIO passthrough |
 | **Logs and Shell for discovered pods and VMs** | Pods, Deployments, StatefulSets, DaemonSets, VirtualMachines and VMIs, gated to Operator / Admin |
@@ -89,7 +89,7 @@ CLI, TUI, glass web dashboard, and REST + SSE API — same control plane, same s
 
 ### Is this for you?
 
-Aether is a small, source-available (Zyvor Production License) **runtime portability
+Aether is a small, source-available (Zyvor Production Licence v2.0) **runtime portability
 plane** — one workload spec that scores and migrates across Podman,
 Kubernetes, and KubeVirt. It's not a container orchestrator competing with
 Kubernetes itself, not a generic config-management tool, and its
@@ -348,11 +348,11 @@ Part of the [Zyvor](https://zyvor.dev/?utm_source=github&utm_medium=aether&utm_c
 
 ## Support
 
-Evaluation is permitted for 30 days per organization under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
+A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0. If it helps you, you can donate any amount you like: <https://zyvor.dev/donate>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Support contracts are separate: [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ## License
 
-Aether is source-available under the [Zyvor Production License v1.0](LICENSE) (see [NOTICE](NOTICE)). Evaluation (evaluation, development, testing, research, education) is free for 30 days per organization; Production Use requires a commercial license from Zyvor AI Labs Private Limited ([sales@zyvor.dev](mailto:sales@zyvor.dev), [zyvor.dev/buy](https://zyvor.dev/buy)).
+Aether is source-available under the [Zyvor Production Licence v2.0](LICENSE) (see [NOTICE](NOTICE)). A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0. Buy: [zyvor.dev/buy](https://zyvor.dev/buy).
 
 **Price:** INR 59,999 per node per year incl. 18% GST in India; US$605 per node per year excl. tax elsewhere. Buy: [zyvor.dev/buy](https://zyvor.dev/buy#aether). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo.
 

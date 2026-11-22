@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 # Copyright (c) 2026 ZyvorAI Labs Private Limited. All rights reserved.
 # Proprietary software — see LICENSE in the repository root.
@@ -42,7 +42,7 @@ OPEN_SOURCE_REPO_PATHS = {
     "tt/hypersdk-org-profile",
     "tt/netctl",
     "tt/netevd",
-    # Aether-core is under the Zyvor Production License v1.0 — do not re-stamp proprietary headers/
+    # Aether-core is under the Zyvor Production Licence v2.0 — do not re-stamp proprietary headers/
     # license metadata over it. Ragnarok (confidential computing) is a separate
     # proprietary repository and is not part of the Aether tree.
     "Aether",

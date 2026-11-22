@@ -1,6 +1,6 @@
 # Contributing to Aether
 
-> Aether is under the [Zyvor Production License v1.0](LICENSE). Please contact sales@zyvor.dev before sending a contribution; contributions are accepted only under the terms of that license.
+> Aether is under the [Zyvor Production Licence v2.0](LICENSE). Please contact sales@zyvor.dev before sending a contribution; contributions are accepted only under the terms of that license.
 
 Thank you for your interest in contributing to Aether! This document provides guidelines and instructions for contributing.
 
@@ -448,7 +448,7 @@ Include:
 
 ## License
 
-Aether is licensed under the Zyvor Production License v1.0 — see [LICENSE](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
+Aether is licensed under the Zyvor Production Licence v2.0 — see [LICENSE](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
 
 Confidential computing (Ragnarok) is a separate Zyvor product and is not part of this repository. Contact licensing@zyvor.dev for commercial terms.
 

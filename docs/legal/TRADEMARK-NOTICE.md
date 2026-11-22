@@ -13,7 +13,7 @@ ZyvorAI Labs Private Limited claims rights in the following marks (registered or
 
 ## No trademark license
 
-Aether-core is under the Zyvor Production License v1.0 (source-available) as of 2026, but that grant covers copyright and patent rights only and does not include trademarks. Forking, redistributing, or building on Aether-core does not carry any right to the "Aether" or "Zyvor" names or logos; the same restrictions below apply regardless of license.
+Aether-core is under the Zyvor Production Licence v2.0 (source-available) as of 2026, but that grant covers copyright and patent rights only and does not include trademarks. Forking, redistributing, or building on Aether-core does not carry any right to the "Aether" or "Zyvor" names or logos; the same restrictions below apply regardless of license.
 
 The proprietary software license and enterprise agreements do **not** grant permission to:
 

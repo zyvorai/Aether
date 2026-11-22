@@ -1,5 +1,5 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 //! SAML 2.0 EncryptedAssertion decryption (AES-128-CBC / AES-256-GCM + RSA-OAEP).
 
