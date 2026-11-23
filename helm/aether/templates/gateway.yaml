@@ -45,7 +45,7 @@ spec:
         {{- range $h := .Values.ingress.hosts }}
         {{- range $h.paths }}
         - path:
-            type: {{ .pathType | default "PathPrefix" }}
+            type: {{ if eq (.pathType | default "Prefix") "Exact" }}Exact{{ else }}PathPrefix{{ end }}
             value: {{ .path }}
         {{- end }}
         {{- end }}
