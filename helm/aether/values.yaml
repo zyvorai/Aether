@@ -238,6 +238,19 @@ ingress:
   #    hosts:
   #      - aether.local
 
+# Gateway API alternative to the Ingress above, served by Setura
+# (https://github.com/zyvorai/zyvor-setura-gateway). Off by default. Install the controller once per cluster:
+#   setura gateway install --image ghcr.io/zyvorai/zyvor-setura-gateway:0.7.0 --namespace setura-system | kubectl apply -f -
+# Enable this instead of ingress.enabled, not as well. Hosts and paths come from ingress.hosts.
+gateway:
+  enabled: false
+  className: setura
+  httpPort: 80
+  httpsPort: 443
+  tls:
+    enabled: false
+    secretName: ""
+
 resources:
   limits:
     cpu: 500m

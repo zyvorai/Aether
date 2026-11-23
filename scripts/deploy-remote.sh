@@ -42,6 +42,9 @@
 #   AETHER_INGRESS_CLASS — ingressClassName (e.g. traefik, nginx)
 #   AETHER_INGRESS_TLS_SECRET — TLS secret for Ingress (or set AETHER_INGRESS_TLS_ACME=1 for cert-manager)
 #   AETHER_INGRESS_TLS_ACME=1 — annotate Ingress for cert-manager (issuer: AETHER_INGRESS_ACME_ISSUER)
+#   SETURA_GATEWAY=1 — with AETHER_EXPOSE=ingress|both, apply a Setura Gateway + HTTPRoute instead of the Ingress (default off).
+#     Install the controller first: setura gateway install --image ghcr.io/zyvorai/zyvor-setura-gateway:0.7.0 --namespace setura-system | kubectl apply -f -
+#     SETURA_GATEWAY_CLASS overrides gatewayClassName (default setura). cert-manager ACME annotations do not apply; use AETHER_INGRESS_TLS_SECRET.
 #   AETHER_REGISTRY — image repo (default localhost/aether); set ghcr.io/user/aether with AETHER_PUSH_IMAGE=1
 #   AETHER_PUSH_IMAGE=1 — docker/podman push after build (non-localhost images)
 #   AETHER_STATE_DATABASE_URL — PostgreSQL URI for HA API replicas

@@ -967,3 +967,15 @@ aether -n production run --spec workload-k8s.yaml
 # Or using environment variable
 AETHER_NAMESPACE=production aether run --spec workload-k8s.yaml
 ```
+
+## Gateway API alternative (Setura)
+
+Helm: set `gateway.enabled=true` (instead of `ingress.enabled`; hosts and paths are reused from `ingress.hosts`; optional `gateway.tls.*`). Scripts: with `AETHER_EXPOSE=ingress|both` and `AETHER_INGRESS_HOST`, set `SETURA_GATEWAY=1` to apply a Gateway + HTTPRoute instead of the Ingress (use `AETHER_INGRESS_TLS_SECRET` for HTTPS).
+
+Install the controller once per cluster:
+
+```bash
+setura gateway install --image ghcr.io/zyvorai/zyvor-setura-gateway:0.7.0 --namespace setura-system | kubectl apply -f -
+```
+
+This is optional and off by default; the Ingress is unchanged. Use it instead of the Ingress, not as well.
