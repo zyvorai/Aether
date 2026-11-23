@@ -510,7 +510,7 @@ impl Runtime for KubeVirtRuntime {
                     .metadata
                     .creation_timestamp
                     .as_ref()
-                    .map(|t| t.0.to_rfc3339())
+                    .map(|t| t.0.to_string())
                     .unwrap_or_else(crate::resources::now_rfc3339);
 
                 Instance {

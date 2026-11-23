@@ -12,7 +12,7 @@
 //! (same shape as LDAP/OIDC) when `AETHER_SESSION_SECRET` is set; otherwise a
 //! short-lived bearer API key is minted into the RBAC store.
 
-use crate::rbac::{Role, RbacStore};
+use crate::rbac::{RbacStore, Role};
 use anyhow::Context;
 use axum::http::{header, HeaderMap, HeaderValue};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
@@ -73,13 +73,11 @@ impl LocalAuthRuntime {
     }
 
     pub fn authenticate(&self, username: &str, password: &str) -> bool {
-        constant_time_eq(
-            username.trim().as_bytes(),
-            self.username.as_bytes(),
-        ) && constant_time_eq(
-            hash_password(password).as_bytes(),
-            self.password_hash.as_bytes(),
-        )
+        constant_time_eq(username.trim().as_bytes(), self.username.as_bytes())
+            && constant_time_eq(
+                hash_password(password).as_bytes(),
+                self.password_hash.as_bytes(),
+            )
     }
 
     pub fn session_cookie_for(&self, tls: bool) -> anyhow::Result<Option<String>> {
@@ -98,7 +96,7 @@ impl LocalAuthRuntime {
         let jwt = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(secret.as_bytes()),
+            &EncodingKey::from_secret(secret.as_bytes())?,
         )
         .context("encode local-auth session")?;
         Ok(Some(session_cookie_value(&jwt, tls)?))
@@ -109,7 +107,7 @@ impl LocalAuthRuntime {
         let raw = extract_cookie(headers, SESSION_COOKIE)?;
         let data = decode::<SessionClaims>(
             raw,
-            &DecodingKey::from_secret(secret.as_bytes()),
+            &DecodingKey::from_secret(secret.as_bytes()).ok()?,
             &Validation::default(),
         )
         .ok()?
@@ -153,7 +151,7 @@ fn hash_password(password: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"aether-local-auth-v1:");
     hasher.update(password.as_bytes());
-    format!("{:x}", hasher.finalize())
+    crate::hexfmt::hex_lower(hasher.finalize())
 }
 
 fn load_or_create_local_session_secret() -> Option<String> {
@@ -167,9 +165,9 @@ fn load_or_create_local_session_secret() -> Option<String> {
             return Some(trimmed);
         }
     }
-    use aes_gcm::aead::rand_core::{OsRng, RngCore};
+    use rand::Rng;
     let mut bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     let secret: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);

@@ -11,12 +11,12 @@ jobs:
     name: Build & Notarize DMG
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: web/dashboard/package-lock.json
 
@@ -53,7 +53,7 @@ jobs:
         run: echo "Notarization profile present — staple ticket in release pipeline"
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aether-macos-dmg
           path: apps/aether-macos/src-tauri/target/release/bundle/dmg/*.dmg

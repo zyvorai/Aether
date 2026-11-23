@@ -12,8 +12,7 @@
 
 use colored::Colorize;
 use comfy_table::{
-    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, Color as TableColor,
-    ContentArrangement, Table,
+    presets::UTF8_FULL, Attribute, Cell, Color as TableColor, ContentArrangement, Table,
 };
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde_json;
@@ -413,8 +412,7 @@ pub fn tree_bullet(icon: &str, text: &str) -> String {
 fn base_table() -> Table {
     let mut table = Table::new();
     table
-        .load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS)
+        .load_style(UTF8_FULL.with_rounded_corners())
         .set_content_arrangement(ContentArrangement::Dynamic);
     table
 }

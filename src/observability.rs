@@ -155,17 +155,17 @@ where
         }
     };
 
-    let resource = opentelemetry_sdk::Resource::new(vec![opentelemetry::KeyValue::new(
-        "service.name",
-        "aether",
-    )]);
-    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
+    let resource = opentelemetry_sdk::Resource::builder()
+        .with_service_name("aether")
+        .build();
+    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
         .with_resource(resource)
         .build();
 
     let tracer = provider.tracer("aether");
-    opentelemetry::global::set_tracer_provider(provider);
+    opentelemetry::global::set_tracer_provider(provider.clone());
+    let _ = OTEL_PROVIDER.set(provider);
 
     Some(tracing_opentelemetry::layer().with_tracer(tracer).boxed())
 }
@@ -173,8 +173,15 @@ where
 /// Flush any buffered spans and shut down the global tracer provider.
 /// Safe to call even when tracing was never initialised.
 pub fn otel_shutdown() {
-    opentelemetry::global::shutdown_tracer_provider();
+    if let Some(provider) = OTEL_PROVIDER.get() {
+        let _ = provider.shutdown();
+    }
 }
+
+/// Provider handle kept so otel_shutdown can flush it (opentelemetry 0.33
+/// removed the global shutdown_tracer_provider).
+static OTEL_PROVIDER: std::sync::OnceLock<opentelemetry_sdk::trace::SdkTracerProvider> =
+    std::sync::OnceLock::new();
 
 #[cfg(test)]
 mod tests {

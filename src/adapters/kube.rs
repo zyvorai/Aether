@@ -562,7 +562,7 @@ pub(crate) fn build_networkpolicy_manifest(
             ..Default::default()
         },
         spec: Some(NetworkPolicySpec {
-            pod_selector,
+            pod_selector: Some(pod_selector),
             ingress,
             egress,
             policy_types: Some(policy_types),
@@ -955,7 +955,7 @@ pub(crate) fn build_hpa_manifest(
             labels: Some(labels),
             ..Default::default()
         },
-        spec: Some(HorizontalPodAutoscalerSpec {
+        spec: HorizontalPodAutoscalerSpec {
             scale_target_ref: k8s_openapi::api::autoscaling::v2::CrossVersionObjectReference {
                 api_version: Some("apps/v1".to_string()),
                 kind: target_kind.to_string(),
@@ -965,7 +965,7 @@ pub(crate) fn build_hpa_manifest(
             max_replicas: scaling_spec.max_replicas as i32,
             metrics: Some(metrics),
             behavior,
-        }),
+        },
         ..Default::default()
     })
 }
@@ -1087,7 +1087,7 @@ fn instance_from_controller(
         runtime: RuntimeKind::Kubernetes,
         image: image.unwrap_or_else(|| "unknown".to_string()),
         created_at: created
-            .map(|t| t.0.to_rfc3339())
+            .map(|t| t.0.to_string())
             .unwrap_or_else(crate::resources::now_rfc3339),
     })
 }
@@ -1664,9 +1664,7 @@ impl Runtime for KubernetesRuntime {
                 deploy.metadata.name.clone(),
                 deploy.metadata.uid.clone(),
                 deploy.metadata.creation_timestamp.as_ref(),
-                deploy
-                    .spec
-                    .as_ref()
+                Some(&deploy.spec)
                     .and_then(|s| s.template.spec.as_ref())
                     .and_then(|ps| ps.containers.first())
                     .and_then(|c| c.image.clone()),
@@ -1683,8 +1681,7 @@ impl Runtime for KubernetesRuntime {
                 sts.metadata.name.clone(),
                 sts.metadata.uid.clone(),
                 sts.metadata.creation_timestamp.as_ref(),
-                sts.spec
-                    .as_ref()
+                Some(&sts.spec)
                     .and_then(|s| s.template.spec.as_ref())
                     .and_then(|ps| ps.containers.first())
                     .and_then(|c| c.image.clone()),
@@ -1701,8 +1698,7 @@ impl Runtime for KubernetesRuntime {
                 ds.metadata.name.clone(),
                 ds.metadata.uid.clone(),
                 ds.metadata.creation_timestamp.as_ref(),
-                ds.spec
-                    .as_ref()
+                Some(&ds.spec)
                     .and_then(|s| s.template.spec.as_ref())
                     .and_then(|ps| ps.containers.first())
                     .and_then(|c| c.image.clone()),
@@ -1737,8 +1733,7 @@ impl Runtime for KubernetesRuntime {
                 cj.metadata.name.clone(),
                 cj.metadata.uid.clone(),
                 cj.metadata.creation_timestamp.as_ref(),
-                cj.spec
-                    .as_ref()
+                Some(&cj.spec)
                     .and_then(|s| s.job_template.spec.as_ref())
                     .and_then(|jt| jt.template.spec.as_ref())
                     .and_then(|ps| ps.containers.first())
@@ -2036,7 +2031,7 @@ mod tests {
         assert_eq!(deploy.metadata.name, Some("test-app".to_string()));
         assert_eq!(deploy.metadata.namespace, Some("default".to_string()));
 
-        let deploy_spec = deploy.spec.as_ref().unwrap();
+        let deploy_spec = Some(&deploy.spec).unwrap();
         assert_eq!(deploy_spec.replicas, Some(1));
 
         let pod_spec = deploy_spec.template.spec.as_ref().unwrap();
@@ -2142,9 +2137,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2168,9 +2161,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2190,9 +2181,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2218,9 +2207,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2245,9 +2232,7 @@ mod tests {
         };
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2267,9 +2252,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2287,9 +2270,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2322,9 +2303,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2359,9 +2338,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2405,9 +2382,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2448,9 +2423,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2484,9 +2457,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2517,9 +2488,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2551,9 +2520,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2595,9 +2562,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -2623,9 +2588,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
+        let container = &Some(&deploy.spec)
             .unwrap()
             .template
             .spec
@@ -3286,7 +3249,7 @@ mod tests {
         assert_eq!(hpa.metadata.name, Some("test-app-hpa".to_string()));
         assert_eq!(hpa.metadata.namespace, Some("default".to_string()));
 
-        let hpa_spec = hpa.spec.as_ref().unwrap();
+        let hpa_spec = Some(&hpa.spec).unwrap();
         assert_eq!(hpa_spec.min_replicas, Some(2));
         assert_eq!(hpa_spec.max_replicas, 10);
 
@@ -3324,7 +3287,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let hpa_spec = hpa.spec.as_ref().unwrap();
+        let hpa_spec = Some(&hpa.spec).unwrap();
         let metrics = hpa_spec.metrics.as_ref().unwrap();
 
         assert_eq!(metrics.len(), 1);
@@ -3358,7 +3321,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let hpa_spec = hpa.spec.as_ref().unwrap();
+        let hpa_spec = Some(&hpa.spec).unwrap();
 
         assert_eq!(hpa_spec.min_replicas, Some(3));
         assert_eq!(hpa_spec.max_replicas, 20);
@@ -3400,7 +3363,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
         // Custom metrics without metric_name are filtered out
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].resource.as_ref().unwrap().name, "cpu");
@@ -3446,7 +3409,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
         assert_eq!(
             metrics[0]
                 .resource
@@ -3560,7 +3523,7 @@ mod tests {
         assert_eq!(labels.get("version"), Some(&"v2".to_string()));
 
         // Verify deployment spec
-        let deploy_spec = deploy.spec.as_ref().unwrap();
+        let deploy_spec = Some(&deploy.spec).unwrap();
         assert_eq!(deploy_spec.replicas, Some(1));
 
         // Verify container
@@ -3662,7 +3625,7 @@ mod tests {
         // All generation methods should succeed
         let deploy = build_deployment_manifest("default", &image, &spec);
         assert!(deploy.metadata.name.is_some());
-        assert_eq!(deploy.spec.as_ref().unwrap().replicas, Some(2));
+        assert_eq!(Some(&deploy.spec).unwrap().replicas, Some(2));
 
         let service = build_service_manifest("default", &spec);
         assert!(service.is_some());
@@ -3714,7 +3677,7 @@ mod tests {
 
         let deploy = build_deployment_manifest("default", &image, &spec);
         assert!(deploy.metadata.name.is_some());
-        assert_eq!(deploy.spec.as_ref().unwrap().replicas, Some(1));
+        assert_eq!(Some(&deploy.spec).unwrap().replicas, Some(1));
 
         assert!(build_service_manifest("default", &spec).is_none());
         assert!(build_pvc_manifest("default", &spec).is_none());
@@ -3742,14 +3705,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy
-            .spec
-            .as_ref()
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap();
+        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert_eq!(volumes[0].name, "cm-app-config");
@@ -3776,14 +3732,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy
-            .spec
-            .as_ref()
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap();
+        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert!(volumes[0].persistent_volume_claim.is_some());
@@ -3812,14 +3761,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = deploy
-            .spec
-            .as_ref()
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap();
+        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
         assert!(pod_spec.volumes.is_none());
     }
 
@@ -3844,7 +3786,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].type_, "Pods");
 
@@ -3920,7 +3862,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = hpa.spec.as_ref().unwrap().metrics.as_ref().unwrap();
+        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 2);
 
         // First is CPU Resource metric
@@ -4141,7 +4083,13 @@ mod tests {
         let netpol = build_networkpolicy_manifest("default", &spec).unwrap();
         let np_spec = netpol.spec.as_ref().unwrap();
 
-        let selector_labels = np_spec.pod_selector.match_labels.as_ref().unwrap();
+        let selector_labels = np_spec
+            .pod_selector
+            .as_ref()
+            .unwrap()
+            .match_labels
+            .as_ref()
+            .unwrap();
         assert_eq!(selector_labels.get("app"), Some(&"test-app".to_string()));
         assert_eq!(
             selector_labels.get("managed-by"),

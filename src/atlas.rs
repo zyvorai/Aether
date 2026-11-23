@@ -478,7 +478,7 @@ mod tests {
                 }),
             )
             .route(
-                "/api/atlas/v1/jobs/:id",
+                "/api/atlas/v1/jobs/{id}",
                 get(|Path(_id): Path<String>| async {
                     Json(serde_json::json!({ "id": "job_1", "state": "succeeded" }))
                 }),
@@ -563,7 +563,7 @@ mod tests {
                 }),
             )
             .route(
-                "/api/atlas/v1/jobs/:id",
+                "/api/atlas/v1/jobs/{id}",
                 get(|Path(_id): Path<String>| async {
                     Json(serde_json::json!({ "id": "job_x", "state": "failed", "error": "pool full" }))
                 }),

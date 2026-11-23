@@ -1623,10 +1623,11 @@ pub(crate) async fn ask_command(initial_message: Option<String>) -> Result<()> {
     Ok(())
 }
 
-async fn run_tui<B: ratatui::backend::Backend>(
-    terminal: &mut ratatui::Terminal<B>,
-    app: &mut aether::ui::App,
-) -> Result<()> {
+async fn run_tui<B>(terminal: &mut ratatui::Terminal<B>, app: &mut aether::ui::App) -> Result<()>
+where
+    B: ratatui::backend::Backend,
+    B::Error: Send + Sync + 'static,
+{
     use aether::ui::{render_dashboard, render_logs, Screen};
 
     loop {
@@ -5898,9 +5899,8 @@ pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
         );
     }
     if msg.contains("Unknown runtime") {
-        return err.context(
-            "Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm)."
-        );
+        return err
+            .context("Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm).");
     }
 
     err

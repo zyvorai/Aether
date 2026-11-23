@@ -59,13 +59,12 @@ impl GlobalPlacementEngine {
         for cluster in reachable_clusters {
             for rs in &scoring.scores {
                 let cluster_bonus = if cluster.reachable { 0.05 } else { 0.0 };
-                let gpu_bonus = if workload.requirements.gpu.is_some()
-                    && rs.runtime == RuntimeKind::KubeVirt
-                {
-                    0.1
-                } else {
-                    0.0
-                };
+                let gpu_bonus =
+                    if workload.requirements.gpu.is_some() && rs.runtime == RuntimeKind::KubeVirt {
+                        0.1
+                    } else {
+                        0.0
+                    };
                 let mut score = (rs.total_score + cluster_bonus + gpu_bonus).min(1.0);
                 let mut reasons = rs.reasons.clone();
                 if conf_runtime == Some(rs.runtime) {

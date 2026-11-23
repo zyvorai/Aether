@@ -201,7 +201,7 @@ impl LdapRuntime {
         validation.validate_exp = true;
         let data = decode::<SessionClaims>(
             &raw,
-            &DecodingKey::from_secret(&self.session_secret),
+            &DecodingKey::from_secret(&self.session_secret).ok()?,
             &validation,
         )
         .ok()?;
@@ -249,7 +249,7 @@ impl LdapRuntime {
         encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&self.session_secret),
+            &EncodingKey::from_secret(&self.session_secret)?,
         )
         .context("session jwt encode")
     }

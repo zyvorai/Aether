@@ -138,13 +138,12 @@ impl Default for RotationPolicy {
 }
 
 /// Generate a cryptographically-random alphanumeric credential of `len`
-/// characters, drawn from the OS CSPRNG. Used for auto-rotating secrets whose
+/// characters, drawn from rand's thread-local ChaCha CSPRNG (seeded from the OS). Used for auto-rotating secrets whose
 /// value Aether owns (`RotationPolicy.generate == true`).
 pub fn generate_secret_value(len: usize) -> String {
-    use rand::distributions::Alphanumeric;
-    use rand::rngs::OsRng;
-    use rand::Rng;
-    OsRng
+    use rand::distr::Alphanumeric;
+    use rand::RngExt;
+    rand::rng()
         .sample_iter(&Alphanumeric)
         .take(len.max(1))
         .map(char::from)
@@ -578,9 +577,9 @@ impl SecretStore {
     }
 
     fn aes_encrypt(&self, plaintext: &str) -> anyhow::Result<String> {
-        use aes_gcm::aead::rand_core::RngCore;
-        use aes_gcm::aead::{Aead, KeyInit, OsRng};
+        use aes_gcm::aead::{Aead, KeyInit};
         use aes_gcm::{Aes256Gcm, Nonce};
+        use rand::Rng;
         use sha2::{Digest, Sha256};
 
         // Derive 32-byte key from user key via SHA-256
@@ -590,11 +589,11 @@ impl SecretStore {
 
         // Generate random 12-byte nonce
         let mut nonce_bytes = [0u8; 12];
-        OsRng.fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        rand::rng().fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext.as_bytes())
+            .encrypt(&nonce, plaintext.as_bytes())
             .map_err(|e| anyhow::anyhow!("AES-256-GCM encryption failed: {}", e))?;
 
         // Prepend nonce to ciphertext, then base64 encode
@@ -616,9 +615,10 @@ impl SecretStore {
         let (nonce_bytes, encrypted) = combined.split_at(12);
         let key_bytes: [u8; 32] = Sha256::digest(&self.encryption_key).into();
         let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
-        let nonce = Nonce::from_slice(nonce_bytes);
+        let nonce = Nonce::try_from(nonce_bytes)
+            .map_err(|_| anyhow::anyhow!("invalid AES-GCM nonce length"))?;
 
-        let plaintext = cipher.decrypt(nonce, encrypted).map_err(|_| {
+        let plaintext = cipher.decrypt(&nonce, encrypted).map_err(|_| {
             anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)")
         })?;
 
@@ -652,9 +652,9 @@ impl SecretStore {
 /// `base64(nonce || ciphertext)`. Shared with the backup subsystem so backups
 /// can be encrypted at rest with the same scheme as secrets.
 pub fn encrypt_blob(plaintext: &str) -> anyhow::Result<String> {
-    use aes_gcm::aead::rand_core::RngCore;
-    use aes_gcm::aead::{Aead, KeyInit, OsRng};
+    use aes_gcm::aead::{Aead, KeyInit};
     use aes_gcm::{Aes256Gcm, Nonce};
+    use rand::Rng;
     use sha2::{Digest, Sha256};
 
     let key = SecretStore::default_key();
@@ -663,11 +663,11 @@ pub fn encrypt_blob(plaintext: &str) -> anyhow::Result<String> {
         .map_err(|e| anyhow::anyhow!("Failed to initialize AES-256-GCM cipher: {}", e))?;
 
     let mut nonce_bytes = [0u8; 12];
-    OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    rand::rng().fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(nonce, plaintext.as_bytes())
+        .encrypt(&nonce, plaintext.as_bytes())
         .map_err(|e| anyhow::anyhow!("AES-256-GCM encryption failed: {}", e))?;
 
     let mut combined = nonce_bytes.to_vec();
@@ -690,9 +690,10 @@ pub fn decrypt_blob(ciphertext: &str) -> anyhow::Result<String> {
     let (nonce_bytes, encrypted) = combined.split_at(12);
     let key_bytes: [u8; 32] = Sha256::digest(&key).into();
     let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("32-byte key");
-    let nonce = Nonce::from_slice(nonce_bytes);
+    let nonce = Nonce::try_from(nonce_bytes)
+        .map_err(|_| anyhow::anyhow!("invalid AES-GCM nonce length"))?;
 
-    let plaintext = cipher.decrypt(nonce, encrypted).map_err(|_| {
+    let plaintext = cipher.decrypt(&nonce, encrypted).map_err(|_| {
         anyhow::anyhow!("AES-256-GCM decryption failed (wrong key or corrupted data)")
     })?;
     String::from_utf8(plaintext)

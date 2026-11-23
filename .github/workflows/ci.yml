@@ -16,10 +16,10 @@ jobs:
     name: Dashboard build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: web/dashboard/package-lock.json
       - name: Build embedded dashboard
@@ -30,7 +30,7 @@ jobs:
           npm run test
           npm run validate:schema
           AETHER_DASHBOARD_BUILD="${{ env.AETHER_DASHBOARD_BUILD }}" npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dashboard-dist
           path: web/dashboard/dist
@@ -41,14 +41,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: dashboard
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: web/dashboard/dist
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: web/dashboard/package-lock.json
       - name: Install Rust
@@ -87,8 +87,8 @@ jobs:
           - os: macos-latest
             target: x86_64-apple-darwin
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: web/dashboard/dist
@@ -101,7 +101,7 @@ jobs:
         env:
           AETHER_DASHBOARD_BUILD: ${{ env.AETHER_DASHBOARD_BUILD }}
         run: cargo build --release --target ${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: aether-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/aether
@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -139,7 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -162,7 +162,7 @@ jobs:
     continue-on-error: true
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -182,14 +182,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [dashboard, test]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: web/dashboard/dist
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: web/dashboard/package-lock.json
       - name: Install Rust
@@ -308,14 +308,14 @@ jobs:
     continue-on-error: true
     needs: [dashboard, test]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: web/dashboard/dist
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: web/dashboard/package-lock.json
       - name: Install Rust
@@ -357,7 +357,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: [test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run smoke tier on staging host
         env:
           AETHER_STAGING_HOST: ${{ secrets.AETHER_STAGING_HOST }}
@@ -378,8 +378,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: dashboard
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: web/dashboard/dist
@@ -392,7 +392,7 @@ jobs:
         env:
           AETHER_DASHBOARD_BUILD: ${{ env.AETHER_DASHBOARD_BUILD }}
         run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           files: ./cobertura.xml
           fail_ci_if_error: false
@@ -401,7 +401,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-audit

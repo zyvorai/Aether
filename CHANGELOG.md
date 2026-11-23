@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (dependency upgrades)
+- **Rust majors:** kube 0.97 -> 5.1 and k8s-openapi 0.23 -> 0.29 (required spec fields are no longer `Option`, jiff timestamps replace chrono, new `GRPCAction.mode` / `Lifecycle.stop_signal` fields; the RFC 3339 `Z` suffix replaces `+00:00` in discovery timestamps), axum 0.7 -> 0.8 (`/{name}` route syntax, `Utf8Bytes` WebSocket text), axum-server 0.7 -> 0.9, tower 0.4 -> 0.5, tower-http 0.5 -> 0.7, ratatui 0.29 -> 0.30 and crossterm 0.28 -> 0.29 (`Backend::Error: Send + Sync + 'static` bound), opentelemetry / sdk / otlp 0.27 -> 0.33 and tracing-opentelemetry 0.28 -> 0.34 (`SdkTracerProvider`, blocking OTLP HTTP client, provider kept for shutdown), jsonwebtoken 9 -> 12 (fallible key constructors, explicit `rust_crypto` backend), rand 0.8 -> 0.10 (`rand::rng`, `RngExt`), redis 0.27 -> 1.8, ldap3 0.11 -> 0.12 (`tls-rustls-ring`, keeping the repo's ring preference), x509-parser 0.16 -> 0.18, which 7 -> 8, dirs 5 -> 7, colored 2 -> 3, indicatif 0.17 -> 0.18, comfy-table 7 -> 8 (`TableStyle` replaces presets/modifiers), prometheus 0.13 -> 0.14, base64 0.22 -> 0.23.
+- **RustCrypto 0.11 generation, upgraded together:** sha2 0.10 -> 0.11, aes-gcm 0.10 -> 0.11, aes 0.8 -> 0.9, cbc 0.1 -> 0.2, rsa 0.9 -> 0.10, ed25519-dalek 2 -> 3. Digests no longer implement `LowerHex`, so a small `hexfmt::hex_lower` helper replaces `format!("{:x}", digest)`. SAML/secrets round-trip tests pass.
+- **Held back: reqwest 0.12** (0.13 is out). `openidconnect` 4.1 (latest) still takes a `reqwest` 0.12 client in `src/oidc.rs`, so a 0.13 bump does not compile until openidconnect moves. reqwest 0.13 would also switch its default TLS to rustls with aws-lc-rs.
+- **Held back: tailwindcss 3 -> 4** in the dashboard. v4 replaces the PostCSS plugin and `tailwind.config.js` and rewrites the `@tailwind` directives; the Aurora glass theme and hex-surface guard cannot be visually verified without a browser.
+- **Dashboard npm:** react / react-dom 18 -> 19 (with @types), react-router 7 -> 8, vite 6 -> 8, @vitejs/plugin-react 4 -> 6, vitest 3 -> 5, lucide-react 0.468 -> 1.x, typescript 5.9 -> 7.0, plus in-range updates (codemirror, playwright, postcss, ...). `npm run build`, `tsc` and `npm run test` pass; Playwright e2e was not run (no browser on the build host).
+- **Docker:** `Dockerfile.aether` builds on `rust:1.100-slim-trixie` (the previous 1.88 is below the MSRV of several upgraded crates) and runs on `debian:trixie-slim`; `Dockerfile` moves to `debian:trixie-slim` with `libssl3t64` (the Debian 13 package name). Tags verified against Docker Hub.
+- **GitHub Actions:** checkout v7, setup-node v7, setup-python 3.14, upload-artifact v7, download-artifact v8, docker/build-push-action v7, setup-buildx v4, login v4, metadata v6, softprops/action-gh-release v3, codecov-action v7 (all verified against each repo's latest release); the archived `actions-rs/toolchain` is replaced by `dtolnay/rust-toolchain@stable`. Node pins 20 -> 24. `Swatinem/rust-cache@v2`, `dtolnay/rust-toolchain@stable`, `upload-pages-artifact@v5` and `deploy-pages@v5` already track their latest major.
+- **Docs toolchain:** `requirements-docs.txt` floors raised to `mkdocs>=1.6.1`, `mkdocs-material>=9.8`.
+- **Unchanged on purpose:** `bitnami/kubectl:latest` in the Cilium probe CronJob is a floating tag (not pinned in this change); `apps/aether-macos` already uses Tauri 2.
+- `cargo fmt` is applied to files that had drifted from rustfmt.
+
+### Fixed
+- The `/api/workloads/{name}` family of routes uses axum 0.8 path syntax (the old `/:name` form panics at router build time on axum 0.8).
+
 ## [0.4.0] - 2026-09-09
 
 ### Changed

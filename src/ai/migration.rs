@@ -231,7 +231,8 @@ impl MigrationAdvisor {
         // Cross-category migration (e.g., container to VM) is higher risk
         let category_change = matches!(
             (source, target),
-            (RuntimeKind::Podman, RuntimeKind::KubeVirt) | (RuntimeKind::KubeVirt, RuntimeKind::Podman)
+            (RuntimeKind::Podman, RuntimeKind::KubeVirt)
+                | (RuntimeKind::KubeVirt, RuntimeKind::Podman)
         );
         if category_change {
             risk_score += 3;

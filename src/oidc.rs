@@ -283,7 +283,7 @@ impl OidcRuntime {
         let token = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&self.session_secret),
+            &EncodingKey::from_secret(&self.session_secret)?,
         )?;
         Ok(token)
     }
@@ -294,7 +294,7 @@ impl OidcRuntime {
         validation.validate_exp = true;
         let data = decode::<SessionClaims>(
             &raw,
-            &DecodingKey::from_secret(&self.session_secret),
+            &DecodingKey::from_secret(&self.session_secret).ok()?,
             &validation,
         )
         .ok()?;

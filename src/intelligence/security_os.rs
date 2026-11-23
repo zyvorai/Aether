@@ -652,7 +652,7 @@ pub fn build_security_score_trend(
 }
 
 pub fn sbom_fingerprint(data: &str) -> String {
-    format!("{:x}", Sha256::digest(data.as_bytes()))
+    crate::hexfmt::hex_lower(Sha256::digest(data.as_bytes()))
 }
 
 #[cfg(test)]

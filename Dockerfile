@@ -1,10 +1,10 @@
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # kubectl is used by cluster watch/exec/port-forward subprocess sessions
 # in src/api/handlers.rs. helm is used by the Helm App Store / release
 # management handlers in src/kubecluster.rs and src/helm.rs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 libgcc-s1 curl tar && \
+    ca-certificates libssl3t64 libgcc-s1 curl tar && \
     KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)" && \
     curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/$(dpkg --print-architecture)/kubectl" && \
     chmod +x /usr/local/bin/kubectl && \

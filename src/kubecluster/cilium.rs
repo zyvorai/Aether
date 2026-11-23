@@ -456,7 +456,7 @@ pub async fn list_cilium_network_policies(
                     .meta()
                     .creation_timestamp
                     .clone()
-                    .map(|t| t.0.to_rfc3339())
+                    .map(|t| t.0.to_string())
                     .unwrap_or_default(),
                 detail: Some("cilium.io/v2".to_string()),
             }
@@ -490,7 +490,7 @@ pub async fn list_cilium_clusterwide_network_policies(
                     .meta()
                     .creation_timestamp
                     .clone()
-                    .map(|t| t.0.to_rfc3339())
+                    .map(|t| t.0.to_string())
                     .unwrap_or_default(),
                 detail: Some("cilium.io/v2 clusterwide".to_string()),
             }

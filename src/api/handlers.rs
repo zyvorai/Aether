@@ -1130,11 +1130,10 @@ async fn deploy_workload_spec(
             let explicit_context = std::env::var("AETHER_CONTEXT")
                 .ok()
                 .filter(|c| !c.is_empty());
-            let cluster_context = crate::kubecluster::resolve_reachable_cluster(
-                explicit_context.as_deref(),
-            )
-            .await
-            .ok();
+            let cluster_context =
+                crate::kubecluster::resolve_reachable_cluster(explicit_context.as_deref())
+                    .await
+                    .ok();
             let namespace = std::env::var("AETHER_NAMESPACE")
                 .ok()
                 .filter(|n| !n.is_empty())
@@ -1152,8 +1151,11 @@ async fn deploy_workload_spec(
     let mut state = app_state.state.write().await;
     state.upsert(
         name.clone(),
-        WorkloadState::new(name.clone(), runtime_kind, instance, spec_path)
-            .with_cluster_info(namespace, cluster_context, k8s_kind),
+        WorkloadState::new(name.clone(), runtime_kind, instance, spec_path).with_cluster_info(
+            namespace,
+            cluster_context,
+            k8s_kind,
+        ),
     );
 
     if let Err(e) = persist_workload_api(app_state, &state).await {
@@ -1610,7 +1612,9 @@ pub(crate) async fn list_backups(Query(page): Query<PaginationQuery>) -> impl In
                     Err(e) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiResponse::<Vec<backup::BackupSummary>>::error(e.to_string())),
+                            Json(ApiResponse::<Vec<backup::BackupSummary>>::error(
+                                e.to_string(),
+                            )),
                         )
                             .into_response();
                     }
@@ -3061,12 +3065,8 @@ async fn handle_cluster_exec_socket(
         .await
         .with_context(|| format!("failed to exec into pod {}", query.pod))?;
 
-    let mut stdin = attached
-        .stdin()
-        .context("exec session missing stdin")?;
-    let stdout = attached
-        .stdout()
-        .context("exec session missing stdout")?;
+    let mut stdin = attached.stdin().context("exec session missing stdin")?;
+    let stdout = attached.stdout().context("exec session missing stdout")?;
 
     let (mut ws_sender, mut ws_receiver) = socket.split();
     let (output_tx, mut output_rx) = mpsc::unbounded_channel::<String>();
@@ -3077,7 +3077,7 @@ async fn handle_cluster_exec_socket(
 
     let writer = tokio::spawn(async move {
         while let Some(chunk) = output_rx.recv().await {
-            if ws_sender.send(Message::Text(chunk)).await.is_err() {
+            if ws_sender.send(Message::Text(chunk.into())).await.is_err() {
                 break;
             }
         }
@@ -3132,7 +3132,7 @@ async fn handle_cluster_watch_socket(
 
     let initial = crate::kubecluster::browse_resources(&request).await?;
     socket
-        .send(Message::Text(serde_json::to_string(&initial)?))
+        .send(Message::Text(serde_json::to_string(&initial)?.into()))
         .await?;
 
     let resource_name = if query.kind == "CustomResource" {
@@ -3140,10 +3140,7 @@ async fn handle_cluster_watch_socket(
             Some(plural) if !plural.is_empty() => plural.to_string(),
             _ => {
                 socket
-                    .send(Message::Text(
-                        json!({ "type": "error", "message": "watch is not supported without plural for CustomResource" })
-                            .to_string(),
-                    ))
+                    .send(Message::Text(json!({ "type": "error", "message": "watch is not supported without plural for CustomResource" }).to_string().into()))
                     .await?;
                 return Ok(());
             }
@@ -3152,10 +3149,7 @@ async fn handle_cluster_watch_socket(
         resource_name.to_string()
     } else {
         socket
-            .send(Message::Text(
-                json!({ "type": "error", "message": format!("watch is not supported for {}", query.kind) })
-                    .to_string(),
-            ))
+            .send(Message::Text(json!({ "type": "error", "message": format!("watch is not supported for {}", query.kind) }).to_string().into()))
             .await?;
         return Ok(());
     };
@@ -3192,7 +3186,7 @@ async fn handle_cluster_watch_socket(
     while let Some(_line) = lines.next_line().await? {
         let resources = crate::kubecluster::browse_resources(&request).await?;
         if socket
-            .send(Message::Text(serde_json::to_string(&resources)?))
+            .send(Message::Text(serde_json::to_string(&resources)?.into()))
             .await
             .is_err()
         {

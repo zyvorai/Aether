@@ -164,15 +164,15 @@ fn hash_key(key: &str) -> String {
     hasher.update(HASH_SALT.as_bytes());
     hasher.update(key.as_bytes());
     let hash = hasher.finalize();
-    format!("{:x}", hash)
+    crate::hexfmt::hex_lower(hash)
 }
 
 /// Generate a cryptographically random API key (48 random bytes, hex-encoded
 /// to produce a 96-character string prefixed with `aether_`).
 fn generate_api_key() -> String {
-    use aes_gcm::aead::rand_core::{OsRng, RngCore};
+    use rand::Rng;
     let mut bytes = [0u8; 48];
-    OsRng.fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     let hex: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
     format!("aether_{}", hex)
 }

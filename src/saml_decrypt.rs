@@ -3,14 +3,14 @@
 
 //! SAML 2.0 EncryptedAssertion decryption (AES-128-CBC / AES-256-GCM + RSA-OAEP).
 
-use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+use aes::cipher::{block_padding::Pkcs7, BlockModeDecrypt, KeyIvInit};
 use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Nonce};
 use anyhow::{bail, Context, Result};
 use base64::Engine;
 use rsa::oaep::Oaep;
 use rsa::pkcs8::DecodePrivateKey;
-use rsa::RsaPrivateKey;
+use rsa::PrivateKey;
 use sha2::Sha256;
 use x509_parser::pem::parse_x509_pem;
 
@@ -45,31 +45,31 @@ fn encrypt_assertion_with_algorithm(
     sp_cert_pem: &str,
     content_algorithm: &str,
 ) -> Result<String> {
-    use rand::RngCore;
+    use rand::Rng;
     use rsa::pkcs8::DecodePublicKey;
-    use rsa::RsaPublicKey;
+    use rsa::PublicKey;
 
     let (_, cert) = parse_x509_pem(sp_cert_pem.as_bytes()).context("parse SP cert")?;
     let parsed = cert.parse_x509().context("parse SP X509")?;
     let public_key =
-        RsaPublicKey::from_public_key_der(parsed.public_key().raw).context("SP cert is not RSA")?;
+        PublicKey::from_public_key_der(parsed.public_key().raw).context("SP cert is not RSA")?;
 
-    let padding = Oaep::new::<Sha256>();
+    let padding = Oaep::<Sha256>::new();
 
     if content_algorithm == AES256_GCM || content_algorithm == AES256_GCM_ALT {
         let mut key = [0u8; 32];
         let mut nonce_bytes = [0u8; 12];
-        rand::thread_rng().fill_bytes(&mut key);
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        rand::rng().fill_bytes(&mut key);
+        rand::rng().fill_bytes(&mut nonce_bytes);
 
         let cipher = Aes256Gcm::new_from_slice(&key).context("aes256-gcm key")?;
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
         let ciphertext = cipher
-            .encrypt(nonce, assertion_xml.as_bytes())
+            .encrypt(&nonce, assertion_xml.as_bytes())
             .map_err(|e| anyhow::anyhow!("AES-GCM encrypt: {e}"))?;
 
         let encrypted_key = public_key
-            .encrypt(&mut rand::thread_rng(), padding, &key)
+            .encrypt(&mut rand::rng(), padding, &key)
             .context("rsa encrypt aes key")?;
 
         let mut payload = nonce_bytes.to_vec();
@@ -82,11 +82,11 @@ fn encrypt_assertion_with_algorithm(
         ));
     }
 
-    use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyIvInit};
+    use aes::cipher::{block_padding::Pkcs7, BlockModeEncrypt, KeyIvInit};
     let mut key = [0u8; 16];
     let mut iv = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut key);
-    rand::thread_rng().fill_bytes(&mut iv);
+    rand::rng().fill_bytes(&mut key);
+    rand::rng().fill_bytes(&mut iv);
 
     let plaintext = assertion_xml.as_bytes();
     let mut buf = plaintext.to_vec();
@@ -94,12 +94,12 @@ fn encrypt_assertion_with_algorithm(
     buf.resize(msg_len + 16, 0);
     let cipher = cbc::Encryptor::<aes::Aes128>::new_from_slices(&key, &iv).context("aes key")?;
     let ciphertext = cipher
-        .encrypt_padded_mut::<Pkcs7>(&mut buf, msg_len)
+        .encrypt_padded::<Pkcs7>(&mut buf, msg_len)
         .map_err(|e| anyhow::anyhow!("AES encrypt: {:?}", e))?
         .to_vec();
 
     let encrypted_key = public_key
-        .encrypt(&mut rand::thread_rng(), padding, &key)
+        .encrypt(&mut rand::rng(), padding, &key)
         .context("rsa encrypt aes key")?;
 
     let mut payload = iv.to_vec();
@@ -134,8 +134,7 @@ fn wrap_encrypted_assertion(
 }
 
 fn decrypt_encrypted_assertion(xml: &str, sp_key_pem: &str) -> Result<String> {
-    let private_key =
-        RsaPrivateKey::from_pkcs8_pem(sp_key_pem).context("parse AETHER_SAML_SP_KEY")?;
+    let private_key = PrivateKey::from_pkcs8_pem(sp_key_pem).context("parse AETHER_SAML_SP_KEY")?;
     let content_algorithm =
         extract_encryption_method(xml).unwrap_or_else(|| AES128_CBC.to_string());
     let enc_key_b64 = extract_cipher_values(xml)
@@ -154,7 +153,7 @@ fn decrypt_encrypted_assertion(xml: &str, sp_key_pem: &str) -> Result<String> {
         .decode(data_b64.trim())
         .context("EncryptedData base64")?;
 
-    let padding = Oaep::new::<Sha256>();
+    let padding = Oaep::<Sha256>::new();
     let aes_key = private_key
         .decrypt(padding, &enc_key)
         .context("RSA-OAEP decrypt session key")?;
@@ -180,7 +179,7 @@ fn decrypt_aes128_cbc(aes_key: &[u8], mut ciphertext: Vec<u8>) -> Result<String>
     ciphertext.drain(..16);
     let cipher = Aes128CbcDec::new_from_slices(aes_key, &iv).context("aes decryptor")?;
     let plaintext = cipher
-        .decrypt_padded_mut::<Pkcs7>(&mut ciphertext)
+        .decrypt_padded::<Pkcs7>(&mut ciphertext)
         .map_err(|e| anyhow::anyhow!("AES-CBC decrypt: {:?}", e))?;
     String::from_utf8(plaintext.to_vec()).context("decrypted assertion UTF-8")
 }
@@ -194,9 +193,10 @@ fn decrypt_aes256_gcm(aes_key: &[u8], ciphertext: &[u8]) -> Result<String> {
     }
     let (nonce_bytes, rest) = ciphertext.split_at(12);
     let cipher = Aes256Gcm::new_from_slice(aes_key).context("aes256-gcm key")?;
-    let nonce = Nonce::from_slice(nonce_bytes);
+    let nonce = Nonce::try_from(nonce_bytes)
+        .map_err(|_| anyhow::anyhow!("invalid AES-GCM nonce length"))?;
     let plaintext = cipher
-        .decrypt(nonce, rest)
+        .decrypt(&nonce, rest)
         .map_err(|e| anyhow::anyhow!("AES-GCM decrypt: {e}"))?;
     String::from_utf8(plaintext).context("decrypted assertion UTF-8")
 }
