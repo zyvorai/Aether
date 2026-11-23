@@ -75,11 +75,13 @@ pub struct Metadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct BuildSpec {
     pub context: PathBuf,
     pub dockerfile: PathBuf,
     pub registry: String,
     #[serde(default)]
+    #[serde(alias = "build_args")]
     pub build_args: HashMap<String, String>,
     /// Image tag (defaults to `latest`).
     #[serde(default)]
@@ -154,32 +156,40 @@ pub enum RuntimeType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkSpec {
     #[serde(default)]
     pub service: bool,
     #[serde(default)]
+    #[serde(alias = "service_type")]
     pub service_type: ServiceType,
     #[serde(default)]
     pub ports: Vec<PortMapping>,
     #[serde(default)]
+    #[serde(alias = "network_policy")]
     pub network_policy: Option<NetworkPolicyConfig>,
     /// Headless ClusterIP service (`clusterIP: None`).
     #[serde(default)]
     pub headless: bool,
     /// ExternalName target when `serviceType: externalName`.
     #[serde(default)]
+    #[serde(alias = "external_name")]
     pub external_name: Option<String>,
     /// Service session affinity: None, ClientIP.
     #[serde(default)]
+    #[serde(alias = "session_affinity")]
     pub session_affinity: Option<String>,
     /// externalTrafficPolicy for LoadBalancer/NodePort: Cluster or Local.
     #[serde(default)]
+    #[serde(alias = "external_traffic_policy")]
     pub external_traffic_policy: Option<String>,
     /// CiliumNetworkPolicy (requires Cilium CNI)
     #[serde(default)]
+    #[serde(alias = "cilium_network_policy")]
     pub cilium_network_policy: Option<CiliumNetworkPolicySpec>,
     /// Calico NetworkPolicy CR (requires Calico CNI)
     #[serde(default)]
+    #[serde(alias = "calico_network_policy")]
     pub calico_network_policy: Option<CalicoNetworkPolicySpec>,
 }
 
@@ -894,28 +904,35 @@ pub enum JobRestartPolicy {
 
 /// Configuration specification (ConfigMaps and Secrets)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ConfigSpec {
     #[serde(default)]
+    #[serde(alias = "config_maps")]
     pub config_maps: Vec<ConfigMapSpec>,
     #[serde(default)]
     pub secrets: Vec<SecretSpec>,
     #[serde(default)]
+    #[serde(alias = "env_from")]
     pub env_from: Vec<EnvFromSource>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ConfigMapSpec {
     pub name: String,
     pub data: HashMap<String, String>,
     #[serde(default)]
+    #[serde(alias = "mount_path")]
     pub mount_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct SecretSpec {
     pub name: String,
     pub data: HashMap<String, String>,
     #[serde(default)]
+    #[serde(alias = "mount_path")]
     pub mount_path: Option<String>,
 }
 
@@ -934,6 +951,7 @@ pub enum EnvSourceType {
 
 /// Ingress specification
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct IngressSpec {
     pub enabled: bool,
     pub host: String,
@@ -945,16 +963,20 @@ pub struct IngressSpec {
     pub annotations: HashMap<String, String>,
     /// Maps to `spec.ingressClassName` (e.g. `nginx`, `traefik`).
     #[serde(default)]
+    #[serde(alias = "ingress_class_name")]
     pub ingress_class_name: Option<String>,
     /// TLS secret name (defaults to `{name}-tls`).
     #[serde(default)]
+    #[serde(alias = "tls_secret_name")]
     pub tls_secret_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct IngressPath {
     pub path: String,
     #[serde(default = "default_path_type")]
+    #[serde(alias = "path_type")]
     pub path_type: String,
     pub port: u16,
 }

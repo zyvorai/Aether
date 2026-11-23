@@ -29,6 +29,7 @@ FROM debian:trixie-slim
 # release management handlers in src/kubecluster.rs and src/helm.rs)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    libssl3t64 \
     curl \
     tar \
     && rm -rf /var/lib/apt/lists/* \
