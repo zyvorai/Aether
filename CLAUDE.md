@@ -10,7 +10,7 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 cd web/dashboard && npm run build   # Build embedded UI assets (see note below)
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 1,238 tests
+cargo test           # Run all 1,268 tests
 cargo clippy --all-targets --all-features  # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
 make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
@@ -72,7 +72,7 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 
 ## Testing
 
-- 1,238 tests (lib + integration)
+- 1,268 tests (lib + integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests

@@ -1464,7 +1464,12 @@ pub enum K8sLifecycleHandler {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct K8sRolloutStrategySpec {
-    #[serde(default = "default_rollout_strategy_type")]
+    #[serde(
+        default = "default_rollout_strategy_type",
+        rename = "type",
+        alias = "strategyType",
+        alias = "strategy_type"
+    )]
     pub strategy_type: String,
     #[serde(default)]
     pub max_surge: Option<String>,
