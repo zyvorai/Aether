@@ -548,6 +548,7 @@ EOF
 }
 
 # Service + optional Ingress. EXPOSE: nodeport | ingress | both (default nodeport).
+# SETURA_GATEWAY=1 swaps the Ingress for a Setura Gateway + HTTPRoute (same host/TLS secret).
 aether_deploy_service_ingress_yaml() {
   local ns="${1:?}"
   local expose="${2:-${AETHER_EXPOSE:-nodeport}}"
@@ -585,7 +586,60 @@ EOF
     nodePort: ${node_port}"
   fi
 
-  if { [ "${expose}" = "ingress" ] || [ "${expose}" = "both" ]; } && [ -n "${ingress_host}" ]; then
+  if [ "${SETURA_GATEWAY:-}" = "1" ] && { [ "${expose}" = "ingress" ] || [ "${expose}" = "both" ]; } && [ -n "${ingress_host}" ]; then
+    # Opt-in: Gateway API (Setura) instead of the Ingress. The controller must already be installed:
+    #   setura gateway install --image ghcr.io/zyvorai/zyvor-setura-gateway:0.7.0 --namespace setura-system | kubectl apply -f -
+    local https_listener=""
+    if [ -n "${tls_secret}" ]; then
+      https_listener="
+  - name: https
+    protocol: HTTPS
+    port: 443
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: ${tls_secret}
+    allowedRoutes:
+      namespaces:
+        from: Same"
+    fi
+    out+="
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: aether
+  namespace: ${ns}
+spec:
+  gatewayClassName: ${SETURA_GATEWAY_CLASS:-setura}
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: Same${https_listener}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: aether
+  namespace: ${ns}
+spec:
+  parentRefs:
+  - name: aether
+  hostnames:
+  - ${ingress_host}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: aether
+      port: 5090
+"
+  elif { [ "${expose}" = "ingress" ] || [ "${expose}" = "both" ]; } && [ -n "${ingress_host}" ]; then
     local tls_block=""
     local annot_yaml=""
     if [ -n "${tls_secret}" ]; then
