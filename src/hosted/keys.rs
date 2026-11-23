@@ -4,7 +4,7 @@
 //! Per-tenant API keys (scoped Operator access).
 
 use anyhow::{bail, Result};
-use rand::RngCore;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -95,7 +95,7 @@ impl TenantKeyStore {
 fn generate_key() -> String {
     use base64::Engine;
     let mut bytes = [0u8; 24];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     format!(
         "aeth_{}",
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
@@ -103,7 +103,7 @@ fn generate_key() -> String {
 }
 
 fn hash_key(key: &str) -> String {
-    format!("{:x}", Sha256::digest(key.as_bytes()))
+    crate::hexfmt::hex_lower(Sha256::digest(key.as_bytes()))
 }
 
 fn atomic_write<T: Serialize>(path: &Path, value: &T) -> Result<()> {

@@ -1,0 +1,45 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations: {}
+  labels:
+    app: kubevirt-lab-vm
+    lab: kubevirt
+    managed-by: aether
+  name: kubevirt-lab-vm
+  namespace: labs
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        app: kubevirt-lab-vm
+        lab: kubevirt
+        managed-by: aether
+    spec:
+      domain:
+        cpu:
+          cores: 4
+        devices:
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+          gpus:
+          - deviceName: nvidia.com/gpu
+            name: gpu0
+          interfaces:
+          - masquerade: {}
+            name: default
+        resources:
+          limits:
+            memory: 8Gi
+          requests:
+            memory: 8Gi
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+      - dataVolume:
+          name: kubevirt-lab-vm-disk
+        name: rootdisk

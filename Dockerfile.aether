@@ -1,5 +1,5 @@
 # Multi-stage build for Aether CLI
-FROM rust:1.88-slim AS builder
+FROM rust:1.100-slim-trixie AS builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -22,13 +22,14 @@ COPY packaging ./packaging
 RUN cargo build --release
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Install runtime dependencies + kubectl (used by cluster watch/exec/port-forward
 # subprocess sessions in src/api/handlers.rs) + helm (used by the Helm App Store /
 # release management handlers in src/kubecluster.rs and src/helm.rs)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    libssl3t64 \
     curl \
     tar \
     && rm -rf /var/lib/apt/lists/* \

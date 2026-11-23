@@ -441,7 +441,7 @@ async fn list_standalone_pod_workloads(
             .metadata
             .creation_timestamp
             .as_ref()
-            .map(|t| t.0.to_rfc3339())
+            .map(|t| t.0.to_string())
             .unwrap_or_default();
         let value = serde_json::to_value(&pod)?;
         let image = value
@@ -514,7 +514,7 @@ async fn list_kubevirt_vmis(client: &Client, cluster: &str) -> Result<Vec<Cluste
             .metadata
             .creation_timestamp
             .as_ref()
-            .map(|t| t.0.to_rfc3339())
+            .map(|t| t.0.to_string())
             .unwrap_or_default();
 
         results.push(ClusterWorkload {
@@ -969,12 +969,12 @@ pub async fn related_events(
             message: event.message.unwrap_or_default(),
             timestamp: event
                 .event_time
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .or_else(|| {
                     event
                         .metadata
                         .creation_timestamp
-                        .map(|time| time.0.to_rfc3339())
+                        .map(|time| time.0.to_string())
                 })
                 .unwrap_or_default(),
         })
@@ -1350,11 +1350,7 @@ pub async fn helm_action(params: HelmActionParams<'_>) -> Result<String> {
     match action {
         "rollback" => {
             let rev = revision.context("revision is required for helm rollback")?;
-            let mut args = vec![
-                "rollback".to_string(),
-                release.to_string(),
-                rev.to_string(),
-            ];
+            let mut args = vec!["rollback".to_string(), release.to_string(), rev.to_string()];
             args.extend(helm_context_args(cluster));
             args.extend(["-n".to_string(), namespace.to_string()]);
             run_helm(args).await?;
@@ -1519,7 +1515,7 @@ pub async fn list_namespaces(cluster: &str) -> Result<Vec<ClusterNamespaceSummar
             created_at: namespace
                 .metadata
                 .creation_timestamp
-                .map(|timestamp| timestamp.0.to_rfc3339())
+                .map(|timestamp| timestamp.0.to_string())
                 .unwrap_or_default(),
         })
         .collect::<Vec<_>>();
@@ -1744,7 +1740,7 @@ where
         let namespace = metadata.namespace.unwrap_or_else(|| "default".to_string());
         let created_at = metadata
             .creation_timestamp
-            .map(|time| time.0.to_rfc3339())
+            .map(|time| time.0.to_string())
             .unwrap_or_default();
 
         let value = serde_json::to_value(&item)?;
@@ -1798,7 +1794,7 @@ where
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: detail_fn(&item),
         })
@@ -1834,7 +1830,7 @@ async fn list_pod_resources(
                     .meta()
                     .creation_timestamp
                     .clone()
-                    .map(|time| time.0.to_rfc3339())
+                    .map(|time| time.0.to_string())
                     .unwrap_or_default(),
                 detail: Some(format!(
                     "{} ready · {} restarts",
@@ -1867,7 +1863,7 @@ async fn list_secret_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} keys",
@@ -1900,7 +1896,7 @@ async fn list_service_account_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} secrets",
@@ -1937,9 +1933,9 @@ async fn list_hpa_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
-            detail: hpa.spec.as_ref().map(|spec| {
+            detail: Some(&hpa.spec).map(|spec| {
                 format!(
                     "min {} · max {}",
                     spec.min_replicas.unwrap_or(1),
@@ -1968,7 +1964,7 @@ async fn list_network_policy_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} policy types",
@@ -2014,7 +2010,7 @@ async fn list_ingress_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: ingress
                 .spec
@@ -2048,7 +2044,7 @@ async fn list_pvc_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} · {}",
@@ -2086,7 +2082,7 @@ async fn list_resource_quota_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} hard limits",
@@ -2121,7 +2117,7 @@ async fn list_limit_range_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} entries",
@@ -2153,9 +2149,12 @@ async fn list_endpoint_slice_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
-            detail: Some(format!("{} endpoints", slice.endpoints.len())),
+            detail: Some(format!(
+                "{} endpoints",
+                slice.endpoints.as_ref().map_or(0, |e| e.len())
+            )),
         })
         .collect())
 }
@@ -2183,7 +2182,7 @@ async fn list_namespace_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: None,
         })
@@ -2226,7 +2225,7 @@ async fn list_node_resources(
                     .meta()
                     .creation_timestamp
                     .clone()
-                    .map(|time| time.0.to_rfc3339())
+                    .map(|time| time.0.to_string())
                     .unwrap_or_default(),
                 detail: Some(format!(
                     "{} · {}",
@@ -2265,7 +2264,7 @@ async fn list_pv_resources(client: &Client, cluster: &str) -> Result<Vec<Cluster
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} · {}",
@@ -2308,7 +2307,7 @@ async fn list_storage_class_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!("provisioner {}", sc.provisioner)),
         })
@@ -2349,7 +2348,7 @@ async fn list_custom_resources(
                 .metadata
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!("{api_version} · {plural}")),
         })
@@ -2374,7 +2373,7 @@ async fn list_event_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: event.reason.clone().or(event.message.clone()),
         })
@@ -2441,7 +2440,7 @@ async fn list_kubevirt_resources(
                     .metadata
                     .creation_timestamp
                     .clone()
-                    .map(|time| time.0.to_rfc3339())
+                    .map(|time| time.0.to_string())
                     .unwrap_or_default(),
                 detail,
             }
@@ -2475,7 +2474,7 @@ async fn list_dynamic_named_resources(
                 .metadata
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: item
                 .data
@@ -2508,7 +2507,7 @@ async fn list_service_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: service
                 .spec
@@ -2538,7 +2537,7 @@ async fn list_configmap_resources(
                 .meta()
                 .creation_timestamp
                 .clone()
-                .map(|time| time.0.to_rfc3339())
+                .map(|time| time.0.to_string())
                 .unwrap_or_default(),
             detail: Some(format!(
                 "{} keys",
@@ -3372,11 +3371,7 @@ async fn scale_workload(client: &Client, req: &ClusterActionRequest) -> Result<(
 }
 
 fn workload_status_deployment(item: &Deployment) -> String {
-    let desired = item
-        .spec
-        .as_ref()
-        .and_then(|spec| spec.replicas)
-        .unwrap_or(1);
+    let desired = Some(&item.spec).and_then(|spec| spec.replicas).unwrap_or(1);
     let ready = item
         .status
         .as_ref()
@@ -3390,11 +3385,7 @@ fn workload_status_deployment(item: &Deployment) -> String {
 }
 
 fn workload_status_statefulset(item: &StatefulSet) -> String {
-    let desired = item
-        .spec
-        .as_ref()
-        .and_then(|spec| spec.replicas)
-        .unwrap_or(1);
+    let desired = Some(&item.spec).and_then(|spec| spec.replicas).unwrap_or(1);
     let ready = item
         .status
         .as_ref()
@@ -3442,9 +3433,7 @@ fn workload_status_job(item: &Job) -> String {
 }
 
 fn workload_status_cronjob(item: &CronJob) -> String {
-    let suspended = item
-        .spec
-        .as_ref()
+    let suspended = Some(&item.spec)
         .and_then(|spec| spec.suspend)
         .unwrap_or(false);
     if suspended {
@@ -3460,11 +3449,7 @@ fn deployment_detail(item: &Deployment) -> Option<String> {
         .as_ref()
         .and_then(|status| status.ready_replicas)
         .unwrap_or(0);
-    let desired = item
-        .spec
-        .as_ref()
-        .and_then(|spec| spec.replicas)
-        .unwrap_or(1);
+    let desired = Some(&item.spec).and_then(|spec| spec.replicas).unwrap_or(1);
     Some(format!("{}/{} ready", ready, desired))
 }
 
@@ -3474,11 +3459,7 @@ fn statefulset_detail(item: &StatefulSet) -> Option<String> {
         .as_ref()
         .and_then(|status| status.ready_replicas)
         .unwrap_or(0);
-    let desired = item
-        .spec
-        .as_ref()
-        .and_then(|spec| spec.replicas)
-        .unwrap_or(1);
+    let desired = Some(&item.spec).and_then(|spec| spec.replicas).unwrap_or(1);
     Some(format!("{}/{} ready", ready, desired))
 }
 
@@ -3507,9 +3488,7 @@ fn job_detail(item: &Job) -> Option<String> {
 }
 
 fn cronjob_detail(item: &CronJob) -> Option<String> {
-    item.spec
-        .as_ref()
-        .map(|spec| format!("schedule {}", spec.schedule))
+    Some(&item.spec).map(|spec| format!("schedule {}", spec.schedule))
 }
 
 fn normalized_namespace(namespace: Option<&str>) -> Option<&str> {

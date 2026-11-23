@@ -13,7 +13,7 @@ use rsa::pkcs8::DecodePrivateKey;
 use rsa::signature::SignatureEncoding;
 use rsa::signature::Signer;
 use rsa::traits::PublicKeyParts;
-use rsa::RsaPrivateKey;
+use rsa::PrivateKey;
 use serde_json::json;
 use sha2::{Digest, Sha256, Sha384};
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ static MOCK_CERT_PEM: &str = include_str!("../packaging/mock-idp/cert.pem");
 static MOCK_KEY_PEM: &str = include_str!("../packaging/mock-idp/key.pem");
 
 struct MockKeys {
-    private_key: RsaPrivateKey,
+    private_key: PrivateKey,
     cert_body_b64: String,
     jwk_n: String,
     jwk_e: String,
@@ -37,14 +37,14 @@ fn keys() -> &'static MockKeys {
     static KEYS: OnceLock<MockKeys> = OnceLock::new();
     KEYS.get_or_init(|| {
         let private_key =
-            RsaPrivateKey::from_pkcs8_pem(MOCK_KEY_PEM).expect("mock IdP private key PEM");
+            PrivateKey::from_pkcs8_pem(MOCK_KEY_PEM).expect("mock IdP private key PEM");
         let cert_body = MOCK_CERT_PEM
             .lines()
             .filter(|l| !l.starts_with("-----"))
             .collect::<String>();
         let public = private_key.to_public_key();
-        let n = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(public.n().to_bytes_be());
-        let e = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(public.e().to_bytes_be());
+        let n = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(public.n_bytes());
+        let e = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(public.e_bytes());
         MockKeys {
             private_key,
             cert_body_b64: cert_body,
@@ -511,10 +511,10 @@ pub async fn oidc_jwks() -> impl IntoResponse {
 }
 
 fn short_id() -> String {
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
+    use rand::RngExt;
+    let mut rng = rand::rng();
     (0..8)
-        .map(|_| format!("{:x}", rng.gen_range(0..16)))
+        .map(|_| format!("{:x}", rng.random_range(0..16)))
         .collect()
 }
 

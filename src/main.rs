@@ -239,6 +239,16 @@ async fn main() -> Result<()> {
             timeout,
         } => commands::cp_command(&name, &src, &dest, timeout).await,
         Commands::Watch { runtime } => commands::watch_command(&cli.spec, runtime).await,
+        Commands::Lint { deny_warnings } => commands::lint_command(&cli.spec, deny_warnings).await,
+        Commands::Portability => commands::portability_command(&cli.spec).await,
+        Commands::SpecPlan {
+            old,
+            new,
+            detailed_exit_code,
+        } => {
+            let new = new.unwrap_or_else(|| cli.spec.clone());
+            commands::spec_plan_command(&old, &new, detailed_exit_code).await
+        }
         Commands::Compare => commands::compare_command(&cli.spec).await,
         Commands::Decide { explain } => commands::decide_command(&cli.spec, explain).await,
         Commands::Intent => commands::intent_command(&cli.spec).await,

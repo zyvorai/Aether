@@ -132,6 +132,7 @@ pub(crate) fn build_k8s_probe(probe: &HealthProbe) -> Probe {
             Some(GRPCAction {
                 port: *port as i32,
                 service: Some(service.clone()),
+                ..Default::default()
             }),
         ),
     };
@@ -613,6 +614,7 @@ fn build_container_lifecycle(spec: &crate::spec::K8sLifecycleSpec) -> Lifecycle 
     Lifecycle {
         pre_stop: spec.pre_stop.as_ref().map(lifecycle_handler),
         post_start: spec.post_start.as_ref().map(lifecycle_handler),
+        ..Default::default()
     }
 }
 
@@ -974,17 +976,17 @@ pub(crate) fn build_statefulset_manifest(
     let vct = volume_claim_template(spec).map(|pvc| vec![pvc]);
     StatefulSet {
         metadata: object_meta(namespace, spec),
-        spec: Some(StatefulSetSpec {
+        spec: StatefulSetSpec {
             replicas: Some(replicas),
             selector: LabelSelector {
                 match_labels: Some(selector_labels(spec)),
                 ..Default::default()
             },
-            service_name: format!("{}-service", spec.metadata.name),
+            service_name: Some(format!("{}-service", spec.metadata.name)),
             volume_claim_templates: vct,
             template: build_pod_template_spec(image, spec, None),
             ..Default::default()
-        }),
+        },
         ..Default::default()
     }
 }
@@ -996,14 +998,14 @@ pub(crate) fn build_daemonset_manifest(
 ) -> DaemonSet {
     DaemonSet {
         metadata: object_meta(namespace, spec),
-        spec: Some(DaemonSetSpec {
+        spec: DaemonSetSpec {
             selector: LabelSelector {
                 match_labels: Some(selector_labels(spec)),
                 ..Default::default()
             },
             template: build_pod_template_spec(image, spec, None),
             ..Default::default()
-        }),
+        },
         ..Default::default()
     }
 }
@@ -1222,7 +1224,7 @@ pub(crate) fn build_deployment_manifest_v2(
         .unwrap_or(1);
     Deployment {
         metadata: object_meta(namespace, spec),
-        spec: Some(DeploymentSpec {
+        spec: DeploymentSpec {
             replicas: Some(replicas),
             selector: LabelSelector {
                 match_labels: Some(selector_labels(spec)),
@@ -1231,7 +1233,7 @@ pub(crate) fn build_deployment_manifest_v2(
             strategy: build_deployment_strategy(spec),
             template: build_pod_template_spec(image, spec, None),
             ..Default::default()
-        }),
+        },
         ..Default::default()
     }
 }
@@ -1345,7 +1347,7 @@ pub(crate) fn build_cronjob_manifest_v2(
     };
     CronJob {
         metadata: object_meta(namespace, spec),
-        spec: Some(CronJobSpec {
+        spec: CronJobSpec {
             schedule: schedule_spec.cron.clone(),
             concurrency_policy: Some(concurrency_policy.to_string()),
             job_template: JobTemplateSpec {
@@ -1361,7 +1363,7 @@ pub(crate) fn build_cronjob_manifest_v2(
                 }),
             },
             ..Default::default()
-        }),
+        },
         ..Default::default()
     }
 }
@@ -1449,15 +1451,7 @@ mod tests {
             startup: None,
         });
         let deploy = build_deployment_manifest_v2("default", &test_image(), &spec);
-        let container = &deploy
-            .spec
-            .as_ref()
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.tcp_socket.is_some());
         assert_eq!(
@@ -1476,16 +1470,7 @@ mod tests {
             ..Default::default()
         });
         let sts = build_statefulset_manifest("default", &test_image(), &spec);
-        assert!(
-            sts.spec
-                .as_ref()
-                .unwrap()
-                .volume_claim_templates
-                .as_ref()
-                .unwrap()
-                .len()
-                == 1
-        );
+        assert!(sts.spec.volume_claim_templates.as_ref().unwrap().len() == 1);
         assert!(!needs_standalone_pvc(&spec));
     }
 
@@ -1505,15 +1490,7 @@ mod tests {
             startup: None,
         });
         let deploy = build_deployment_manifest_v2("default", &test_image(), &spec);
-        let probe = deploy
-            .spec
-            .as_ref()
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0]
+        let probe = &deploy.spec.template.spec.as_ref().unwrap().containers[0]
             .liveness_probe
             .as_ref()
             .unwrap();

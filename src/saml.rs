@@ -230,11 +230,13 @@ impl SamlRuntime {
 
     pub fn verify_session_cookie(&self, headers: &HeaderMap) -> Option<(Role, String)> {
         let raw = extract_cookie(headers, SESSION_COOKIE)?;
-        let mut validation = Validation::default();
-        validation.validate_exp = true;
+        let validation = Validation {
+            validate_exp: true,
+            ..Validation::default()
+        };
         let data = decode::<SessionClaims>(
             &raw,
-            &DecodingKey::from_secret(&self.session_secret),
+            &DecodingKey::from_secret(&self.session_secret).ok()?,
             &validation,
         )
         .ok()?;
@@ -286,17 +288,17 @@ impl SamlRuntime {
         encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&self.session_secret),
+            &EncodingKey::from_secret(&self.session_secret)?,
         )
         .context("session jwt encode")
     }
 }
 
 fn uuid_like() -> String {
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
+    use rand::RngExt;
+    let mut rng = rand::rng();
     (0..16)
-        .map(|_| format!("{:x}", rng.gen_range(0..16)))
+        .map(|_| format!("{:x}", rng.random_range(0..16)))
         .collect()
 }
 

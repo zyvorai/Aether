@@ -220,8 +220,8 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     let deploys: Api<Deployment> = Api::namespaced(client.clone(), ns);
     if let Ok(list) = deploys.list(&ListParams::default()).await {
         for d in list.items {
-            let replicas = d.spec.as_ref().and_then(|s| s.replicas).unwrap_or(1);
-            let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
+            let replicas = Some(&d.spec).and_then(|s| s.replicas).unwrap_or(1);
+            let podspec = Some(&d.spec).and_then(|s| s.template.spec.as_ref());
             let manifest = serde_json::to_value(&d).ok();
             inv.workloads.push(build_workload(
                 ns,
@@ -236,16 +236,12 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     let sts: Api<StatefulSet> = Api::namespaced(client.clone(), ns);
     if let Ok(list) = sts.list(&ListParams::default()).await {
         for s in list.items {
-            let replicas = s.spec.as_ref().and_then(|sp| sp.replicas).unwrap_or(1);
-            let podspec = s.spec.as_ref().and_then(|sp| sp.template.spec.as_ref());
+            let replicas = Some(&s.spec).and_then(|sp| sp.replicas).unwrap_or(1);
+            let podspec = Some(&s.spec).and_then(|sp| sp.template.spec.as_ref());
             let manifest = serde_json::to_value(&s).ok();
             let mut w = build_workload(ns, "StatefulSet", &s.metadata, replicas, podspec, manifest);
             // StatefulSet volumeClaimTemplates count as PVC usage.
-            if let Some(vcts) = s
-                .spec
-                .as_ref()
-                .and_then(|sp| sp.volume_claim_templates.as_ref())
-            {
+            if let Some(vcts) = Some(&s.spec).and_then(|sp| sp.volume_claim_templates.as_ref()) {
                 for vct in vcts {
                     if let Some(n) = &vct.metadata.name {
                         w.pvc_refs.push(n.clone());
@@ -258,7 +254,7 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     let ds: Api<DaemonSet> = Api::namespaced(client.clone(), ns);
     if let Ok(list) = ds.list(&ListParams::default()).await {
         for d in list.items {
-            let podspec = d.spec.as_ref().and_then(|s| s.template.spec.as_ref());
+            let podspec = Some(&d.spec).and_then(|s| s.template.spec.as_ref());
             let manifest = serde_json::to_value(&d).ok();
             inv.workloads.push(build_workload(
                 ns,
@@ -286,9 +282,7 @@ async fn discover_namespace(client: &Client, ns: &str, inv: &mut RawInventory) {
     let cronjobs: Api<CronJob> = Api::namespaced(client.clone(), ns);
     if let Ok(list) = cronjobs.list(&ListParams::default()).await {
         for c in list.items {
-            let podspec = c
-                .spec
-                .as_ref()
+            let podspec = Some(&c.spec)
                 .and_then(|s| s.job_template.spec.as_ref())
                 .and_then(|jt| jt.template.spec.as_ref());
             let manifest = serde_json::to_value(&c).ok();

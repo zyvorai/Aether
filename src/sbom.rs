@@ -125,7 +125,7 @@ pub fn verify_file(path: &Path) -> Result<bool> {
 
 fn hash_file(path: &Path) -> Option<String> {
     let bytes = std::fs::read(path).ok()?;
-    Some(format!("{:x}", Sha256::digest(&bytes)))
+    Some(crate::hexfmt::hex_lower(Sha256::digest(&bytes)))
 }
 
 fn parse_cargo_lock_components(lock: &str) -> Result<Vec<Value>> {

@@ -846,10 +846,7 @@ mod tests {
     #[test]
     fn test_isolation_takes_priority_over_gpu() {
         let engine = Engine::new();
-        let mut spec = create_test_workload(
-            RuntimePreference::Auto,
-            vec![RuntimeType::Kubevirt],
-        );
+        let mut spec = create_test_workload(RuntimePreference::Auto, vec![RuntimeType::Kubevirt]);
         spec.requirements.gpu = Some(GpuRequirements {
             count: 1,
             vendor: "nvidia".to_string(),

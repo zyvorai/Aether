@@ -303,7 +303,7 @@ fn hmac_sha256_hex(key: &[u8], data: &[u8]) -> String {
     let mut outer = Sha256::new();
     outer.update(opad);
     outer.update(inner_hash);
-    format!("{:x}", outer.finalize())
+    crate::hexfmt::hex_lower(outer.finalize())
 }
 
 fn constant_time_eq(a: &str, b: &str) -> bool {

@@ -8,7 +8,7 @@ use base64::Engine;
 use rsa::pkcs1v15::{Signature, VerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
 use rsa::signature::Verifier;
-use rsa::RsaPublicKey;
+use rsa::PublicKey;
 use sha2::{Digest, Sha256, Sha384};
 use x509_parser::pem::parse_x509_pem;
 
@@ -79,7 +79,7 @@ fn digest_b64(bytes: &[u8], algorithm: &str) -> anyhow::Result<String> {
 }
 
 fn verify_rsa_signature(
-    public_key: &RsaPublicKey,
+    public_key: &PublicKey,
     algorithm: &str,
     signed_info: &[u8],
     signature: &Signature,
@@ -108,10 +108,10 @@ fn extract_method_algorithm(xml: &str, element: &str) -> Option<String> {
     extract_xml_attr(&fragment, "Algorithm")
 }
 
-fn public_key_from_pem(pem: &str) -> anyhow::Result<RsaPublicKey> {
+fn public_key_from_pem(pem: &str) -> anyhow::Result<PublicKey> {
     let (_, cert) = parse_x509_pem(pem.as_bytes()).context("parse IdP certificate PEM")?;
     let parsed = cert.parse_x509().context("parse IdP X509 certificate")?;
-    RsaPublicKey::from_public_key_der(parsed.public_key().raw).context("IdP certificate is not RSA")
+    PublicKey::from_public_key_der(parsed.public_key().raw).context("IdP certificate is not RSA")
 }
 
 fn extract_signature_block(xml: &str) -> Option<String> {

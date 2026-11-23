@@ -138,10 +138,7 @@ impl SecurityEngine {
             });
         }
 
-
-        if spec.confidential.as_ref().is_some_and(|c| c.enabled)
-            && network_policy_count(spec) < 2
-        {
+        if spec.confidential.as_ref().is_some_and(|c| c.enabled) && network_policy_count(spec) < 2 {
             return Some(ThreatEntry {
                 workload: spec.metadata.name.clone(),
                 severity: "medium".into(),
@@ -153,7 +150,6 @@ impl SecurityEngine {
                 detected_at: crate::resources::now_rfc3339(),
             });
         }
-
 
         if recent_audit.len() > 20 {
             return Some(ThreatEntry {

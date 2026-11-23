@@ -283,18 +283,20 @@ impl OidcRuntime {
         let token = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(&self.session_secret),
+            &EncodingKey::from_secret(&self.session_secret)?,
         )?;
         Ok(token)
     }
 
     pub fn verify_session_cookie(&self, headers: &HeaderMap) -> Option<(Role, String)> {
         let raw = extract_cookie(headers, SESSION_COOKIE)?;
-        let mut validation = Validation::default();
-        validation.validate_exp = true;
+        let validation = Validation {
+            validate_exp: true,
+            ..Validation::default()
+        };
         let data = decode::<SessionClaims>(
             &raw,
-            &DecodingKey::from_secret(&self.session_secret),
+            &DecodingKey::from_secret(&self.session_secret).ok()?,
             &validation,
         )
         .ok()?;

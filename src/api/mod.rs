@@ -173,7 +173,7 @@ async fn observability_middleware(req: Request<Body>, next: Next) -> Response {
         http.route = %path,
         request.id = %rid,
     );
-    span.set_parent(parent_cx);
+    let _ = span.set_parent(parent_cx);
 
     let mut res = next.run(req).instrument(span).await;
     let status = res.status().as_u16().to_string();
@@ -1077,27 +1077,30 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads", get(list_workloads))
         .route("/api/workloads", post(create_workload))
         .route(
-            "/api/workloads/:name",
+            "/api/workloads/{name}",
             get(get_workload)
                 .put(update_workload)
                 .patch(update_workload)
                 .delete(delete_workload),
         )
-        .route("/api/workloads/:name/logs", get(get_logs))
-        .route("/api/workloads/:name/start", post(start_workload))
-        .route("/api/workloads/:name/stop", post(stop_workload))
-        .route("/api/workloads/:name/restart", post(restart_workload))
+        .route("/api/workloads/{name}/logs", get(get_logs))
+        .route("/api/workloads/{name}/start", post(start_workload))
+        .route("/api/workloads/{name}/stop", post(stop_workload))
+        .route("/api/workloads/{name}/restart", post(restart_workload))
         .route(
-            "/api/workloads/:name/snapshots",
+            "/api/workloads/{name}/snapshots",
             get(api_workload_snapshots),
         )
-        .route("/api/workloads/:name/rollback", post(api_workload_rollback))
-        .route("/api/workloads/:name/migrate", post(migrate_workload))
-        .route("/api/workloads/:name/build", post(build_workload))
+        .route(
+            "/api/workloads/{name}/rollback",
+            post(api_workload_rollback),
+        )
+        .route("/api/workloads/{name}/migrate", post(migrate_workload))
+        .route("/api/workloads/{name}/build", post(build_workload))
         .route("/api/validate", post(validate_workload))
         .route("/api/secrets", get(api_secrets_list).post(create_secret))
-        .route("/api/secrets/:name", get(get_secret))
-        .route("/api/secrets/:name", delete(delete_secret))
+        .route("/api/secrets/{name}", get(get_secret))
+        .route("/api/secrets/{name}", delete(delete_secret))
         .route("/api/metrics", get(get_metrics))
         .route("/api/observability/summary", get(api_observability_summary))
         .route("/api/storage/volumes", get(api_storage_volumes))
@@ -1115,14 +1118,14 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/backups", post(create_backup))
         .route("/api/backups/restore", post(restore_backup))
         .route(
-            "/api/backups/:name",
+            "/api/backups/{name}",
             get(get_backup).delete(delete_backup_api),
         )
         .route("/api/ai/recommend", post(ai_recommend))
-        .route("/api/ai/profile/:name", get(ai_profile))
-        .route("/api/ai/analyze/:name", get(ai_analyze_logs))
+        .route("/api/ai/profile/{name}", get(ai_profile))
+        .route("/api/ai/analyze/{name}", get(ai_analyze_logs))
         .route(
-            "/api/ai/migration-advice/:name/:target",
+            "/api/ai/migration-advice/{name}/{target}",
             get(ai_migration_advice),
         )
         .route("/api/ai/scaling-advice", get(ai_scaling_advice))
@@ -1130,7 +1133,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/ai/right-size", post(ai_right_size))
         .route("/api/ai/tradeoff", post(ai_tradeoff))
         .route(
-            "/api/ai/migration-plan/:name/:target",
+            "/api/ai/migration-plan/{name}/{target}",
             get(api_ai_migration_plan),
         )
         .route(
@@ -1151,7 +1154,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_intelligence_predictions),
         )
         .route(
-            "/api/intelligence/predictions/:name",
+            "/api/intelligence/predictions/{name}",
             get(api_intelligence_prediction_workload),
         )
         .route(
@@ -1268,11 +1271,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_intelligence_intent_gitops_diff),
         )
         .route(
-            "/api/intelligence/intent/versions/:name",
+            "/api/intelligence/intent/versions/{name}",
             get(api_intelligence_intent_versions),
         )
         .route(
-            "/api/intelligence/intent/versions/:name/rollback",
+            "/api/intelligence/intent/versions/{name}/rollback",
             post(api_intelligence_intent_version_rollback),
         )
         .route(
@@ -1466,7 +1469,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_intelligence_evolution_status),
         )
         .route(
-            "/api/intelligence/runtime-evolution/:name",
+            "/api/intelligence/runtime-evolution/{name}",
             get(api_intelligence_runtime_evolution),
         )
         .route("/api/intelligence/place", post(api_intelligence_place))
@@ -1484,8 +1487,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/zyra/troubleshoot/fleet",
             get(api_zyra_troubleshoot_fleet),
         )
-        .route("/api/zyra/sessions/:id", get(api_zyra_session))
-        .route("/api/zyra/confirm/:action_id", post(api_zyra_confirm))
+        .route("/api/zyra/sessions/{id}", get(api_zyra_session))
+        .route("/api/zyra/confirm/{action_id}", post(api_zyra_confirm))
         .route("/api/zyra/confirm-batch", post(api_zyra_confirm_batch))
         .route("/api/zyra/insights", get(api_zyra_insights))
         .route(
@@ -1498,11 +1501,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             post(api_zyra_providers_save_registry),
         )
         .route(
-            "/api/zyra/providers/:id",
+            "/api/zyra/providers/{id}",
             axum::routing::delete(api_zyra_providers_delete),
         )
         .route(
-            "/api/zyra/providers/:id/test",
+            "/api/zyra/providers/{id}/test",
             post(api_zyra_providers_test),
         )
         .route(
@@ -1512,7 +1515,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/zyra/prompts/export", get(api_zyra_prompts_export))
         .route("/api/zyra/prompts/import", post(api_zyra_prompts_import))
         .route(
-            "/api/zyra/prompts/:id",
+            "/api/zyra/prompts/{id}",
             axum::routing::delete(api_zyra_prompts_delete),
         )
         .route("/api/zyra/marketplace", get(api_zyra_marketplace))
@@ -1571,8 +1574,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/copilot/troubleshoot/fleet",
             get(api_copilot_troubleshoot_fleet),
         )
-        .route("/api/copilot/sessions/:id", get(api_copilot_session))
-        .route("/api/copilot/confirm/:action_id", post(api_copilot_confirm))
+        .route("/api/copilot/sessions/{id}", get(api_copilot_session))
+        .route(
+            "/api/copilot/confirm/{action_id}",
+            post(api_copilot_confirm),
+        )
         .route(
             "/api/copilot/confirm-batch",
             post(api_copilot_confirm_batch),
@@ -1907,8 +1913,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/intelligence/livelabs/cluster-exec",
             get(api_intelligence_livelabs_cluster_exec),
         )
-        .route("/api/drift/:name", get(api_drift_check))
-        .route("/api/drift/:name/reconcile", post(api_drift_reconcile))
+        .route("/api/drift/{name}", get(api_drift_check))
+        .route("/api/drift/{name}/reconcile", post(api_drift_reconcile))
         .route("/api/alerts/status", get(api_alerts_status))
         .route("/api/policy/check", post(api_policy_check))
         .route("/api/policy/opa", post(api_policy_opa))
@@ -1921,9 +1927,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/audit", get(api_audit_list))
         .route("/api/audit/events", post(api_audit_append))
         .route("/api/templates", get(api_template_list))
-        .route("/api/templates/:name", post(api_template_generate))
+        .route("/api/templates/{name}", post(api_template_generate))
+        .route("/api/spec/lint", post(api_spec_lint))
+        .route("/api/spec/portability", post(api_spec_portability))
+        .route("/api/spec/plan", post(api_spec_plan))
         .route("/api/sla", get(api_sla_list).post(api_sla_add))
-        .route("/api/sla/:workload", get(api_sla_check))
+        .route("/api/sla/{workload}", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
         .route(
@@ -1994,12 +2003,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route("/api/affinity/matrix", get(api_affinity_matrix))
         .route("/api/affinity/stats", get(api_affinity_stats))
-        .route("/api/affinity/:class", get(api_affinity_recommend))
+        .route("/api/affinity/{class}", get(api_affinity_recommend))
         .route("/api/plugins", get(api_plugins_list))
         .route("/api/plugins/register", post(api_plugins_register))
         .route("/api/plugins/discover", post(api_plugins_discover))
-        .route("/api/plugins/:name", delete(api_plugins_remove))
-        .route("/api/health/:workload", get(api_health_summary))
+        .route("/api/plugins/{name}", delete(api_plugins_remove))
+        .route("/api/health/{workload}", get(api_health_summary))
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
         .route("/api/compose/down", post(api_compose_down))
@@ -2015,7 +2024,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/webhooks/flush", post(api_webhooks_flush))
         .route("/api/webhooks/channels", post(api_webhook_channel_create))
         .route(
-            "/api/webhooks/channels/:name",
+            "/api/webhooks/channels/{name}",
             delete(api_webhook_channel_delete),
         )
         .route("/api/dashboard/version", get(api_dashboard_version))
@@ -2082,25 +2091,25 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_hosted_tenants_list).post(api_hosted_tenants_create),
         )
         .route(
-            "/api/hosted/tenants/:id/deactivate",
+            "/api/hosted/tenants/{id}/deactivate",
             post(api_hosted_tenants_deactivate),
         )
         .route(
-            "/api/hosted/tenants/:id/upgrade",
+            "/api/hosted/tenants/{id}/upgrade",
             post(api_hosted_tenants_upgrade),
         )
         .route("/api/hosted/upgrades", get(api_hosted_upgrades_status))
         .route("/api/hosted/federation", get(api_hosted_federation_status))
         .route(
-            "/api/hosted/tenants/:id/federation/plan",
+            "/api/hosted/tenants/{id}/federation/plan",
             post(api_hosted_tenant_federation_plan),
         )
         .route(
-            "/api/hosted/tenants/:id/keys",
+            "/api/hosted/tenants/{id}/keys",
             get(api_hosted_tenant_keys_list).post(api_hosted_tenant_keys_issue),
         )
         .route(
-            "/api/hosted/tenants/:id/keys/:name/revoke",
+            "/api/hosted/tenants/{id}/keys/{name}/revoke",
             post(api_hosted_tenant_keys_revoke),
         )
         .route("/api/hosted/billing/usage", get(api_hosted_billing_usage))

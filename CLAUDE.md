@@ -10,7 +10,7 @@ Aether is a Universal Runtime Control Plane written in Rust. It deploys workload
 cd web/dashboard && npm run build   # Build embedded UI assets (see note below)
 cargo build          # Debug build
 cargo build --release  # Release build
-cargo test           # Run all 1,238 tests
+cargo test           # Run all 1,268 tests
 cargo clippy --all-targets --all-features  # Lint (must pass with zero warnings)
 cargo check          # Fast type-check
 make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
@@ -51,6 +51,7 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 - **Rate limiting** — Tower middleware limits API to 200 concurrent requests
 - **RBAC** — API middleware enforces Admin/Operator/Viewer roles via RbacStore; falls back to `AETHER_API_KEY`. Viewers get read-only GETs except privileged GETs (`/api/cluster/ws/exec`), which require Operator or Admin
 - **Cluster discovery logs/exec** — `/api/cluster/logs` and `/api/cluster/ws/exec` serve discovered pods and KubeVirt VMs; VM lookups try both `kubevirt.io/vm=` and `vm.kubevirt.io/name=` and prefer a Running virt-launcher pod
+- **Spec tools** — `aether lint` (`src/speclint.rs`: line-numbered diagnostics, input guards for size/aliases/depth), `aether portability` and the field matrix in `src/portability.rs` (update it when an adapter starts or stops honouring a field), `aether spec-plan` (`src/specplan.rs`), `POST /api/spec/{lint,portability,plan}`. Renderer goldens live in `tests/golden/` (`AETHER_UPDATE_GOLDEN=1 cargo test --lib golden`)
 - **Honest apply semantics** — intelligence execute/apply endpoints (remediation, FinOps, security, capacity, evolution, federation, GitOps agent, game-day) report `skipped` with "not implemented" instead of claiming success when no mutation is wired
 - **SSE events** — API handlers emit `ServerEvent` after mutations; web dashboard receives real-time updates via `useEventStream`
 - **Health check loop** — Background tokio task runs health checks every 30s when `aether serve` is running
@@ -71,7 +72,7 @@ make ci              # Full CI pipeline (tests, lint, dashboard build, vitest)
 
 ## Testing
 
-- 1,238 tests (lib + integration)
+- 1,268 tests (lib + integration)
 - Tests use `tempfile::tempdir()` for isolated filesystem state
 - No external services needed (K8s/Podman tests are unit tests against manifest generation)
 - `#[tokio::test]` for async command tests

@@ -110,7 +110,7 @@ impl AuditLog {
             event.id, event.timestamp, event.action, event.workload, event.result, event.message
         );
         let hash = Sha256::digest(format!("aether-audit-integrity-{}", payload).as_bytes());
-        format!("{:x}", hash)
+        crate::hexfmt::hex_lower(hash)
     }
 
     /// Verify the integrity hash of an audit event.
