@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app: demo-webserver
+    managed-by: aether
+  name: demo-webserver
+  namespace: aether-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-webserver
+      managed-by: aether
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app: demo-webserver
+        managed-by: aether
+    spec:
+      containers:
+      - image: demo-webserver:latest:latest
+        name: demo-webserver
+        ports:
+        - containerPort: 2222
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 500m
+            memory: 256Mi

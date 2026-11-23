@@ -13,6 +13,9 @@ pub mod kube_reconcile;
 pub mod kubevirt;
 pub mod podman;
 
+#[cfg(test)]
+mod golden_tests;
+
 pub use docker::DockerRuntime;
 pub use kube::KubernetesRuntime;
 pub use kubevirt::KubeVirtRuntime;

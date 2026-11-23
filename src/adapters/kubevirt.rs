@@ -203,7 +203,7 @@ fn build_datavolume_json(namespace: &str, _image: &Image, spec: &Workload) -> se
 }
 
 /// Build VirtualMachine JSON (standalone, testable without kube::Client)
-fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Value {
+pub(crate) fn build_virtualmachine_json(namespace: &str, spec: &Workload) -> serde_json::Value {
     let labels = common::build_managed_labels(&spec.metadata.name, &spec.metadata.labels);
 
     let cpu_cores = common::parse_cpu_cores(&spec.requirements.cpu);
