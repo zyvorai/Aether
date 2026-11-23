@@ -2031,7 +2031,7 @@ mod tests {
         assert_eq!(deploy.metadata.name, Some("test-app".to_string()));
         assert_eq!(deploy.metadata.namespace, Some("default".to_string()));
 
-        let deploy_spec = Some(&deploy.spec).unwrap();
+        let deploy_spec = &deploy.spec;
         assert_eq!(deploy_spec.replicas, Some(1));
 
         let pod_spec = deploy_spec.template.spec.as_ref().unwrap();
@@ -2137,13 +2137,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert_eq!(ports.len(), 3);
@@ -2161,13 +2155,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let ports = container.ports.as_ref().unwrap();
 
         assert!(ports.is_empty());
@@ -2181,13 +2169,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -2207,13 +2189,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let resources = container.resources.as_ref().unwrap();
 
         let limits = resources.limits.as_ref().unwrap();
@@ -2232,13 +2208,7 @@ mod tests {
         };
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         // full_name() returns "name:tag"
         assert_eq!(
             container.image,
@@ -2252,13 +2222,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_none());
         assert!(container.readiness_probe.is_none());
@@ -2270,13 +2234,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.env_from.is_none());
     }
@@ -2303,13 +2261,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert_eq!(probe.initial_delay_seconds, Some(15));
@@ -2338,13 +2290,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_none());
 
@@ -2382,13 +2328,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         assert!(container.liveness_probe.is_some());
         assert!(container.readiness_probe.is_some());
@@ -2423,13 +2363,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
@@ -2457,13 +2391,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
 
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.http_get.is_none());
@@ -2488,13 +2416,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -2520,13 +2442,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 1);
@@ -2562,13 +2478,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let env_from = container.env_from.as_ref().unwrap();
 
         assert_eq!(env_from.len(), 3);
@@ -2588,13 +2498,7 @@ mod tests {
         let image = create_test_image();
 
         let deploy = build_deployment_manifest("default", &image, &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         // Empty env_from vec results in None
         assert!(container.env_from.is_none());
     }
@@ -3249,7 +3153,7 @@ mod tests {
         assert_eq!(hpa.metadata.name, Some("test-app-hpa".to_string()));
         assert_eq!(hpa.metadata.namespace, Some("default".to_string()));
 
-        let hpa_spec = Some(&hpa.spec).unwrap();
+        let hpa_spec = &hpa.spec;
         assert_eq!(hpa_spec.min_replicas, Some(2));
         assert_eq!(hpa_spec.max_replicas, 10);
 
@@ -3287,7 +3191,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let hpa_spec = Some(&hpa.spec).unwrap();
+        let hpa_spec = &hpa.spec;
         let metrics = hpa_spec.metrics.as_ref().unwrap();
 
         assert_eq!(metrics.len(), 1);
@@ -3321,7 +3225,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let hpa_spec = Some(&hpa.spec).unwrap();
+        let hpa_spec = &hpa.spec;
 
         assert_eq!(hpa_spec.min_replicas, Some(3));
         assert_eq!(hpa_spec.max_replicas, 20);
@@ -3363,7 +3267,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
+        let metrics = &hpa.spec.metrics.as_ref().unwrap();
         // Custom metrics without metric_name are filtered out
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].resource.as_ref().unwrap().name, "cpu");
@@ -3409,7 +3313,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
+        let metrics = &hpa.spec.metrics.as_ref().unwrap();
         assert_eq!(
             metrics[0]
                 .resource
@@ -3523,7 +3427,7 @@ mod tests {
         assert_eq!(labels.get("version"), Some(&"v2".to_string()));
 
         // Verify deployment spec
-        let deploy_spec = Some(&deploy.spec).unwrap();
+        let deploy_spec = &deploy.spec;
         assert_eq!(deploy_spec.replicas, Some(1));
 
         // Verify container
@@ -3625,7 +3529,7 @@ mod tests {
         // All generation methods should succeed
         let deploy = build_deployment_manifest("default", &image, &spec);
         assert!(deploy.metadata.name.is_some());
-        assert_eq!(Some(&deploy.spec).unwrap().replicas, Some(2));
+        assert_eq!(deploy.spec.replicas, Some(2));
 
         let service = build_service_manifest("default", &spec);
         assert!(service.is_some());
@@ -3677,7 +3581,7 @@ mod tests {
 
         let deploy = build_deployment_manifest("default", &image, &spec);
         assert!(deploy.metadata.name.is_some());
-        assert_eq!(Some(&deploy.spec).unwrap().replicas, Some(1));
+        assert_eq!(deploy.spec.replicas, Some(1));
 
         assert!(build_service_manifest("default", &spec).is_none());
         assert!(build_pvc_manifest("default", &spec).is_none());
@@ -3705,7 +3609,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = &deploy.spec.template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert_eq!(volumes[0].name, "cm-app-config");
@@ -3732,7 +3636,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = &deploy.spec.template.spec.as_ref().unwrap();
         let volumes = pod_spec.volumes.as_ref().unwrap();
         assert_eq!(volumes.len(), 1);
         assert!(volumes[0].persistent_volume_claim.is_some());
@@ -3761,7 +3665,7 @@ mod tests {
         let image = create_test_image();
         let deploy = build_deployment_manifest("default", &image, &spec);
 
-        let pod_spec = Some(&deploy.spec).unwrap().template.spec.as_ref().unwrap();
+        let pod_spec = &deploy.spec.template.spec.as_ref().unwrap();
         assert!(pod_spec.volumes.is_none());
     }
 
@@ -3786,7 +3690,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
+        let metrics = &hpa.spec.metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 1);
         assert_eq!(metrics[0].type_, "Pods");
 
@@ -3862,7 +3766,7 @@ mod tests {
         });
 
         let hpa = build_hpa_manifest("default", &spec).unwrap();
-        let metrics = Some(&hpa.spec).unwrap().metrics.as_ref().unwrap();
+        let metrics = &hpa.spec.metrics.as_ref().unwrap();
         assert_eq!(metrics.len(), 2);
 
         // First is CPU Resource metric

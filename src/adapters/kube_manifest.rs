@@ -1451,13 +1451,7 @@ mod tests {
             startup: None,
         });
         let deploy = build_deployment_manifest_v2("default", &test_image(), &spec);
-        let container = &Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0];
+        let container = &&deploy.spec.template.spec.as_ref().unwrap().containers[0];
         let probe = container.liveness_probe.as_ref().unwrap();
         assert!(probe.tcp_socket.is_some());
         assert_eq!(
@@ -1476,15 +1470,7 @@ mod tests {
             ..Default::default()
         });
         let sts = build_statefulset_manifest("default", &test_image(), &spec);
-        assert!(
-            Some(&sts.spec)
-                .unwrap()
-                .volume_claim_templates
-                .as_ref()
-                .unwrap()
-                .len()
-                == 1
-        );
+        assert!(sts.spec.volume_claim_templates.as_ref().unwrap().len() == 1);
         assert!(!needs_standalone_pvc(&spec));
     }
 
@@ -1504,13 +1490,7 @@ mod tests {
             startup: None,
         });
         let deploy = build_deployment_manifest_v2("default", &test_image(), &spec);
-        let probe = Some(&deploy.spec)
-            .unwrap()
-            .template
-            .spec
-            .as_ref()
-            .unwrap()
-            .containers[0]
+        let probe = &deploy.spec.template.spec.as_ref().unwrap().containers[0]
             .liveness_probe
             .as_ref()
             .unwrap();

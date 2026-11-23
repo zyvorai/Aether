@@ -442,7 +442,7 @@ impl LogAnalyzer {
                     description: format!(
                         "New error pattern appeared ({} occurrences): {}",
                         pattern.count,
-                        &pattern.pattern.chars().take(80).collect::<String>()
+                        pattern.pattern.chars().take(80).collect::<String>()
                     ),
                     severity: Severity::Error,
                     z_score: 0.0,
