@@ -529,6 +529,27 @@ pub(crate) enum Commands {
         runtime: Option<String>,
     },
 
+    /// Lint the spec: every problem with a line number, unknown-field typos, and ignored fields
+    Lint {
+        /// Exit non-zero on warnings as well as errors
+        #[arg(long)]
+        deny_warnings: bool,
+    },
+
+    /// Show which spec fields each runtime (Podman, Kubernetes, KubeVirt) honours
+    Portability,
+
+    /// Preview what editing a spec would do on each runtime, without applying
+    SpecPlan {
+        /// Previous spec file (compared against --spec, or NEW when given)
+        old: PathBuf,
+        /// Edited spec file (defaults to --spec)
+        new: Option<PathBuf>,
+        /// Exit 0 when nothing changes, 2 when there are changes (like terraform plan)
+        #[arg(long)]
+        detailed_exit_code: bool,
+    },
+
     /// Compare workload across runtimes (cost, capabilities, limitations)
     Compare,
 
@@ -998,6 +1019,9 @@ impl Commands {
             Self::PortForward { .. } => "port-forward",
             Self::Cp { .. } => "cp",
             Self::Watch { .. } => "watch",
+            Self::Lint { .. } => "lint",
+            Self::Portability => "portability",
+            Self::SpecPlan { .. } => "spec-plan",
             Self::Compare => "compare",
             Self::Decide { .. } => "decide",
             Self::Intent => "intent",

@@ -46,6 +46,7 @@ nav:
   - Product overview: PRODUCT.md
   - Ecosystem: ECOSYSTEM.md
   - Roadmap: ROADMAP.md
+  - Research (portability): RESEARCH.md
   - User stories: USER_STORIES.md
   - Test plan: TEST_PLAN.md
   - Getting Started:
@@ -59,6 +60,7 @@ nav:
   - Guides:
       - AWS to Kubernetes: guides/AWS-TO-KUBERNETES.md
       - CLI Reference: guides/cli/CLI-Reference.md
+      - Spec tools (lint, portability, plan): guides/spec-tools.md
       - Decision Engine:
           - AI purpose: guides/decision-engine/AI-PURPOSE.md
           - Examples: guides/decision-engine/EXAMPLES.md

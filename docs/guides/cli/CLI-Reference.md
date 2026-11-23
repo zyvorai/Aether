@@ -129,6 +129,41 @@ aether --output json validate
 
 ---
 
+### lint
+
+Lint the spec with line-numbered diagnostics (unknown keys, bad labels, hostile
+input, fields the allowed runtimes ignore). Exit 1 on errors; `--deny-warnings`
+also fails on warnings. See [Spec tools](../spec-tools.md).
+
+```
+aether [OPTIONS] lint [--deny-warnings]
+```
+
+---
+
+### portability
+
+Show which spec fields Podman, Kubernetes and KubeVirt honour, with a score per
+runtime.
+
+```
+aether [OPTIONS] portability
+```
+
+---
+
+### spec-plan
+
+Preview what editing a spec would do on each runtime (no effect, in-place update,
+rolling restart, replace) without applying anything.
+`--detailed-exit-code` returns 0 for no changes and 2 for changes.
+
+```
+aether [OPTIONS] spec-plan <OLD> [NEW] [--detailed-exit-code]
+```
+
+---
+
 ### build
 
 Build a container image from the workload spec. The runtime is selected

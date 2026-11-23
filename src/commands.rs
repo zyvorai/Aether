@@ -4324,6 +4324,103 @@ pub(crate) async fn watch_command(spec_path: &PathBuf, runtime: Option<String>) 
 }
 
 // ─── compare: cross-runtime comparison ───────────────────────────────
+/// Read a spec file for the offline tools, refusing oversized files before
+/// they are loaded into memory.
+fn read_spec_text(path: &std::path::Path) -> Result<String> {
+    let meta = std::fs::metadata(path)
+        .with_context(|| format!("cannot read spec '{}'", path.display()))?;
+    if meta.len() as usize > aether::speclint::MAX_SPEC_BYTES {
+        anyhow::bail!(
+            "spec '{}' is {} bytes; the limit is {}",
+            path.display(),
+            meta.len(),
+            aether::speclint::MAX_SPEC_BYTES
+        );
+    }
+    std::fs::read_to_string(path).with_context(|| format!("cannot read spec '{}'", path.display()))
+}
+
+/// `aether lint`: line-numbered diagnostics. Exits 1 on errors.
+pub(crate) async fn lint_command(spec_path: &std::path::Path, deny_warnings: bool) -> Result<()> {
+    let text = read_spec_text(spec_path)?;
+    let report = aether::speclint::lint_str(&text);
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        print!("{}", report.render_text(&spec_path.display().to_string()));
+    }
+    if report.failed(deny_warnings) {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `aether portability`: which fields each runtime honours.
+pub(crate) async fn portability_command(spec_path: &std::path::Path) -> Result<()> {
+    use aether::portability::{report, Support};
+    let text = read_spec_text(spec_path)?;
+    let doc = aether::speclint::guarded_parse(&text).map_err(|d| anyhow::anyhow!(d.message))?;
+    let rep = report(&doc);
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&rep)?);
+        return Ok(());
+    }
+    output::header("🧭", "Portability");
+    let cell = |s: Support| match s {
+        Support::Honoured => "honoured",
+        Support::Partial => "partial",
+        Support::Ignored => "IGNORED",
+        Support::ControlPlane => "control-plane",
+    };
+    let rows = rep
+        .rows
+        .iter()
+        .map(|r| {
+            vec![
+                r.path.clone(),
+                cell(r.container).to_string(),
+                cell(r.kube).to_string(),
+                cell(r.kubevirt).to_string(),
+                r.note.clone(),
+            ]
+        })
+        .collect();
+    println!(
+        "{}",
+        output::table(&["Field", "Podman", "Kubernetes", "KubeVirt", "Note"], rows)
+    );
+    for s in &rep.summary {
+        println!(
+            "  {:<10} score {:>3}%  ({} honoured, {} partial, {} ignored)",
+            s.target.as_str(),
+            s.score,
+            s.honoured,
+            s.partial,
+            s.ignored
+        );
+    }
+    Ok(())
+}
+
+/// `aether spec-plan`: offline preview of a spec edit per runtime.
+pub(crate) async fn spec_plan_command(
+    old: &std::path::Path,
+    new: &std::path::Path,
+    detailed_exit_code: bool,
+) -> Result<()> {
+    let plan = aether::specplan::plan_str(&read_spec_text(old)?, &read_spec_text(new)?)
+        .map_err(|e| anyhow::anyhow!(e))?;
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&plan)?);
+    } else {
+        print!("{}", plan.render_text());
+    }
+    if detailed_exit_code && plan.has_changes() {
+        std::process::exit(2);
+    }
+    Ok(())
+}
+
 pub(crate) async fn compare_command(spec_path: &PathBuf) -> Result<()> {
     let workload = Workload::from_file(spec_path)?;
     let engine = Engine::new();

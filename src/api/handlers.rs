@@ -2488,6 +2488,45 @@ pub(crate) async fn api_template_list() -> impl IntoResponse {
 }
 
 /// POST /api/templates/:name - Generate a workload from template
+#[derive(Deserialize)]
+pub(crate) struct SpecTextRequest {
+    pub(crate) spec: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SpecPlanRequest {
+    pub(crate) old: String,
+    pub(crate) new: String,
+}
+
+/// POST /api/spec/lint - line-numbered diagnostics for a spec (body: `{"spec": "<yaml>"}`).
+/// Input guards (size, aliases, depth) are enforced by `speclint::guarded_parse`.
+pub(crate) async fn api_spec_lint(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(crate::speclint::lint_str(&req.spec))),
+    )
+}
+
+/// POST /api/spec/portability - which fields each runtime honours for a spec.
+pub(crate) async fn api_spec_portability(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+    match crate::speclint::guarded_parse(&req.spec) {
+        Ok(doc) => (
+            StatusCode::OK,
+            Json(ApiResponse::success(crate::portability::report(&doc))),
+        ),
+        Err(d) => err_bad_request(d.message),
+    }
+}
+
+/// POST /api/spec/plan - offline per-runtime impact of editing a spec.
+pub(crate) async fn api_spec_plan(Json(req): Json<SpecPlanRequest>) -> impl IntoResponse {
+    match crate::specplan::plan_str(&req.old, &req.new) {
+        Ok(plan) => (StatusCode::OK, Json(ApiResponse::success(plan))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
 pub(crate) async fn api_template_generate(
     Path(name): Path<String>,
     Json(request): Json<TemplateRequest>,
