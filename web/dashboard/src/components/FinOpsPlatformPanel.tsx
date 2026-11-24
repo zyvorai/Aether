@@ -231,7 +231,7 @@ export default function FinOpsPlatformPanel() {
           <p className="mb-2 text-sm text-success">{spot?.eligible_count ?? 0} spot-eligible workload(s)</p>
           <ul className="space-y-2 text-xs text-muted">
             {(spot?.entries ?? []).slice(0, 5).map((e) => (
-              <li key={e.workload} className="rounded border glass-divider px-2 py-1">
+              <li key={e.workload} className="rounded-sm border glass-divider px-2 py-1">
                 <span className="font-mono text-foreground">{e.workload}</span>
                 {e.eligible ? ` · save ${e.savings_pct.toFixed(0)}%` : ' · not eligible'} — {e.reason}
               </li>

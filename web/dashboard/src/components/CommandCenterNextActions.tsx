@@ -144,7 +144,7 @@ export default function CommandCenterNextActions({
       </div>
 
       {actions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed glass-divider glass-inset-surface px-6 py-10 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-dashed glass-divider glass-inset-surface px-6 py-10 text-center backdrop-blur-xs">
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-subtle" />
           <p className="text-sm font-medium text-muted">Queue is clear</p>
           <p className="mt-1 text-xs text-subtle">

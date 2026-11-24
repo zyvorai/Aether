@@ -1144,7 +1144,7 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="fixed inset-0 backdrop-blur-sm" style={{ background: 'var(--scrim)' }} onClick={onClose} />
+      <div className="fixed inset-0 backdrop-blur-xs" style={{ background: 'var(--scrim)' }} onClick={onClose} />
       <div
         className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-rule shadow-ambient"
         style={{ background: 'var(--glass)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
@@ -1160,10 +1160,10 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
-            className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-subtle"
+            className="flex-1 bg-transparent text-sm text-foreground outline-hidden placeholder:text-subtle"
             autoComplete="off"
           />
-          <kbd className="rounded border border-rule px-1.5 py-0.5 text-xs text-subtle">ESC</kbd>
+          <kbd className="rounded-sm border border-rule px-1.5 py-0.5 text-xs text-subtle">ESC</kbd>
         </div>
 
         <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">

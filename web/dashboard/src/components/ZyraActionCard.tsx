@@ -13,7 +13,7 @@ interface ZyraActionCardProps {
 export default function ZyraActionCard({ title, summary, actions = [], testId }: ZyraActionCardProps) {
   return (
     <div
-      className="rounded-xl border border-primary/25 bg-primary/[0.06] p-4 backdrop-blur-sm"
+      className="rounded-xl border border-primary/25 bg-primary/[0.06] p-4 backdrop-blur-xs"
       data-testid={testId ?? 'zyra-action-card'}
     >
       <div className="flex items-start gap-3">

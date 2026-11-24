@@ -175,10 +175,10 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
               </div>
               <p className="text-sm text-muted mt-3 line-clamp-2">{chart.description}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-subtle">
-                {chart.storage_required && <span className="rounded glass-inset-surface px-2 py-0.5">Storage</span>}
-                {chart.ha_available && <span className="rounded glass-inset-surface px-2 py-0.5">HA</span>}
-                {chart.backup_supported && <span className="rounded glass-inset-surface px-2 py-0.5">Backup</span>}
-                {chart.monitoring_available && <span className="rounded glass-inset-surface px-2 py-0.5">Monitoring</span>}
+                {chart.storage_required && <span className="rounded-sm glass-inset-surface px-2 py-0.5">Storage</span>}
+                {chart.ha_available && <span className="rounded-sm glass-inset-surface px-2 py-0.5">HA</span>}
+                {chart.backup_supported && <span className="rounded-sm glass-inset-surface px-2 py-0.5">Backup</span>}
+                {chart.monitoring_available && <span className="rounded-sm glass-inset-surface px-2 py-0.5">Monitoring</span>}
               </div>
               <button
                 type="button"

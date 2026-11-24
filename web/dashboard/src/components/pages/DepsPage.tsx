@@ -294,7 +294,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="e.g. web-app"
-              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-primary"
+              className="glass-input text-foreground placeholder:text-slate-600 focus:outline-hidden focus:border-primary"
             />
           </div>
           <div>
@@ -304,7 +304,7 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
               value={addDependency}
               onChange={(e) => setAddDependency(e.target.value)}
               placeholder="e.g. database"
-              className="glass-input text-foreground placeholder-slate-600 focus:outline-none focus:border-primary"
+              className="glass-input text-foreground placeholder:text-slate-600 focus:outline-hidden focus:border-primary"
             />
           </div>
           <button

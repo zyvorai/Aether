@@ -121,7 +121,7 @@ export default function YamlInput({
   const toolbarBtn = 'quick-link-chip text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40';
 
   const textareaClass =
-    'glass-input font-mono leading-relaxed text-muted placeholder-slate-600 resize-y p-4';
+    'glass-input font-mono leading-relaxed text-muted placeholder:text-slate-600 resize-y p-4';
 
   return (
     <div className={isEditor ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3'}>

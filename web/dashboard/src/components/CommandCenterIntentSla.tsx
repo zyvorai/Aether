@@ -43,7 +43,7 @@ export default function CommandCenterIntentSla({ refreshKey = 0 }: CommandCenter
         {report.breaches.slice(0, 4).map((b) => (
           <li
             key={`${b.workload}-${b.metric}`}
-            className="rounded-xl border border-danger/20 bg-danger/[0.06] px-4 py-2.5 text-sm text-danger/90 backdrop-blur-sm"
+            className="rounded-xl border border-danger/20 bg-danger/[0.06] px-4 py-2.5 text-sm text-danger/90 backdrop-blur-xs"
           >
             <span className="font-medium">{b.workload}</span> — {b.current} vs target {b.target}
           </li>

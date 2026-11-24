@@ -666,7 +666,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       header: 'Image',
       width: 220,
       render: (w) => (
-        <code className="block truncate rounded bg-surface px-2 py-1 text-xs text-muted" title={w.image}>
+        <code className="block truncate rounded-sm bg-surface px-2 py-1 text-xs text-muted" title={w.image}>
           {w.image}
         </code>
       ),
@@ -692,24 +692,24 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <div className="flex flex-nowrap items-center gap-0.5" onClick={stop}>
             {discovered ? (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Info"><Info size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Info"><Info size={14} /></button>
                 {showLogs ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
                 ) : null}
                 {showShell ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Exec into pod"><Terminal size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Exec into pod"><Terminal size={14} /></button>
                 ) : showShellDenied ? (
-                  <button type="button" disabled className="cursor-not-allowed rounded p-1.5 text-subtle opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
+                  <button type="button" disabled className="cursor-not-allowed rounded-sm p-1.5 text-subtle opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
                 ) : null}
               </>
             ) : (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
                 {canMutate ? (
                   <>
-                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Start"><Play size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Stop"><Square size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded p-1.5 text-subtle hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
+                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Start"><Play size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Stop"><Square size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
                   </>
                 ) : null}
               </>

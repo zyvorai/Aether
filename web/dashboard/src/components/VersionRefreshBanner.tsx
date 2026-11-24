@@ -75,7 +75,7 @@ export default function VersionRefreshBanner() {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-warning/80 hover:text-foreground"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-1 text-warning/80 hover:text-foreground"
         aria-label="Dismiss update notice"
       >
         <X className="h-4 w-4" />
