@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (round 3)
+- **Lint output formats** (`src/lintfmt.rs`): `aether lint --format text|json|sarif|junit|github`. SARIF 2.1.0 carries the properties GitHub code scanning requires, with a stable per-finding fingerprint; JUnit XML and GitHub workflow commands escape everything that comes from the spec.
+- **Lint suppression and rule catalog:** `--ignore CODE[,CODE]`, inline `# aether-lint: ignore=CODE` (next line or same line) and `ignore-file=CODE`; suppressed counts are reported; `E00x`/`E01x` cannot be suppressed. `aether lint --list-rules` / `--explain CODE`, `GET /api/spec/lint/rules[/{code}]`. A test keeps the catalog in step with the codes the linter emits.
+- **Best-practice rules** `B101`-`B109` behind `aether lint --best-practices` (liveness/readiness probes, non-root, read-only root filesystem, privilege escalation, single replica without a disruption budget, missing network policy, floating sidecar image tags, default service account).
+- **`aether spec-merge`** (`src/specmerge.rs`): base spec + overlay files (RFC 7386 merge patch) + `--set path=value`, linted, `POST /api/spec/merge`.
+- **`aether spec-render`** (`src/specrender.rs`): canonical spec with defaults expanded, secrets redacted, and a sha256 content hash overall and per section (`--hash` for CI), `POST /api/spec/render`.
+- CLI tests (`tests/cli_spec_tools.rs`) run the real binary; handler tests cover the new endpoints. Research notes added to `docs/RESEARCH.md`.
+
 ### Added
 - **`aether lint`** (`src/speclint.rs`): every problem in a spec with a stable code and a source line, instead of `validate`'s first error. Reports unknown keys with a "did you mean" hint (the workload structs silently ignore them), invalid label/annotation keys and values, control characters, duplicate or zero ports, `runtime.preferred` outside `runtime.allow`, scaling and ingress mistakes, requests above limits, and fields the allowed runtimes ignore. Refuses oversized documents (1 MiB), alias bombs (more than 16 aliases, or aliases in a document over 64 KiB), more than 200,000 nodes and nesting over 48. `--deny-warnings`, `--json`.
 - **`aether portability`** (`src/portability.rs`): per-field matrix of what Podman, Kubernetes and KubeVirt honour for the user's own spec, with a score per runtime.

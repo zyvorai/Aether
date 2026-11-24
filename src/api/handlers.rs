@@ -2499,13 +2499,96 @@ pub(crate) struct SpecPlanRequest {
     pub(crate) new: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SpecLintRequest {
+    pub(crate) spec: String,
+    /// Run the opt-in `B1xx` rules.
+    #[serde(default, alias = "best_practices")]
+    pub(crate) best_practices: bool,
+    /// Diagnostic codes to drop.
+    #[serde(default)]
+    pub(crate) ignore: Vec<String>,
+    /// `json` (default), `sarif`, `junit` or `github`.
+    #[serde(default)]
+    pub(crate) format: Option<String>,
+    /// File name used in SARIF/JUnit/GitHub locations.
+    #[serde(default)]
+    pub(crate) file: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SpecMergeRequest {
+    pub(crate) base: String,
+    #[serde(default)]
+    pub(crate) overlays: Vec<String>,
+    #[serde(default)]
+    pub(crate) set: Vec<String>,
+}
+
 /// POST /api/spec/lint - line-numbered diagnostics for a spec (body: `{"spec": "<yaml>"}`).
-/// Input guards (size, aliases, depth) are enforced by `speclint::guarded_parse`.
-pub(crate) async fn api_spec_lint(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+/// Optional: `bestPractices`, `ignore`, and `format` (`sarif`, `junit`, `github` return the
+/// rendered report in `data`). Input guards (size, aliases, depth) are enforced by
+/// `speclint::guarded_parse`.
+pub(crate) async fn api_spec_lint(Json(req): Json<SpecLintRequest>) -> impl IntoResponse {
+    use crate::lintfmt::{self, Format};
+    let format = match req.format.as_deref().unwrap_or("json").parse::<Format>() {
+        Ok(f) => f,
+        Err(e) => return err_bad_request::<serde_json::Value>(e),
+    };
+    let report = crate::speclint::lint_with(
+        &req.spec,
+        &crate::speclint::LintOptions {
+            best_practices: req.best_practices,
+            ignore: req.ignore,
+        },
+    );
+    let file = req.file.as_deref().unwrap_or("spec.yaml");
+    let data = match format {
+        Format::Json | Format::Text => serde_json::to_value(&report).unwrap_or_default(),
+        Format::Sarif => lintfmt::sarif(&report, file),
+        Format::Junit => serde_json::Value::String(lintfmt::junit(&report, file)),
+        Format::Github => serde_json::Value::String(lintfmt::github(&report, file)),
+    };
+    (StatusCode::OK, Json(ApiResponse::success(data)))
+}
+
+/// GET /api/spec/lint/rules - every diagnostic code with its explanation.
+pub(crate) async fn api_spec_lint_rules() -> impl IntoResponse {
     (
         StatusCode::OK,
-        Json(ApiResponse::success(crate::speclint::lint_str(&req.spec))),
+        Json(ApiResponse::success(crate::lintfmt::RULES)),
     )
+}
+
+/// GET /api/spec/lint/rules/{code} - one diagnostic code.
+pub(crate) async fn api_spec_lint_rule(Path(code): Path<String>) -> impl IntoResponse {
+    match crate::lintfmt::rule(&code) {
+        Some(r) => (StatusCode::OK, Json(ApiResponse::success(*r))),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::error(format!(
+                "unknown diagnostic code `{}`",
+                crate::speclint::sanitize(&code)
+            ))),
+        ),
+    }
+}
+
+/// POST /api/spec/merge - base spec plus overlays and `path=value` overrides, linted.
+pub(crate) async fn api_spec_merge(Json(req): Json<SpecMergeRequest>) -> impl IntoResponse {
+    match crate::specmerge::merge_str(&req.base, &req.overlays, &req.set) {
+        Ok(m) => (StatusCode::OK, Json(ApiResponse::success(m))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+/// POST /api/spec/render - canonical spec (secrets redacted) with content hashes.
+pub(crate) async fn api_spec_render(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+    match crate::specrender::render_str(&req.spec) {
+        Ok(r) => (StatusCode::OK, Json(ApiResponse::success(r))),
+        Err(e) => err_bad_request(e),
+    }
 }
 
 /// POST /api/spec/portability - which fields each runtime honours for a spec.
@@ -5435,5 +5518,148 @@ mod tests {
         let json = serde_json::to_string(&summary).unwrap();
         assert!(json.contains("ops-key"));
         assert!(json.contains("operator"));
+    }
+}
+
+#[cfg(test)]
+mod spec_api_tests {
+    use super::*;
+    use axum::body::to_bytes;
+
+    const SPEC: &str = "apiVersion: aether/v1\nkind: Workload\nmetadata:\n  name: web\n  owner: me\n  project: p\nbuild:\n  context: .\n  dockerfile: Dockerfile\n  registry: localhost\nrequirements:\n  cpu: \"500m\"\n  memory: 256Mi\n  storage: 1Gi\nruntime:\n  preferred: kube\n  allow:\n    - kube\nnetwork:\n  servicetype: NodePort\n  ports:\n    - containerPort: 80\n      servicePort: 80\n";
+
+    async fn call<F, R>(f: F) -> (StatusCode, serde_json::Value)
+    where
+        F: std::future::Future<Output = R>,
+        R: IntoResponse,
+    {
+        let resp = f.await.into_response();
+        let status = resp.status();
+        let bytes = to_bytes(resp.into_body(), 1 << 22).await.unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    fn lint_req(v: serde_json::Value) -> Json<SpecLintRequest> {
+        Json(serde_json::from_value(v).unwrap())
+    }
+
+    #[tokio::test]
+    async fn lint_default_json_has_no_best_practice_rules() {
+        let (st, v) = call(api_spec_lint(lint_req(serde_json::json!({"spec": SPEC})))).await;
+        assert_eq!(st, StatusCode::OK);
+        let codes: Vec<_> = v["data"]["diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| d["code"].as_str().unwrap().to_string())
+            .collect();
+        assert!(codes.contains(&"W020".to_string()));
+        assert!(!codes.iter().any(|c| c.starts_with('B')));
+    }
+
+    #[tokio::test]
+    async fn lint_best_practices_and_ignore() {
+        let (_, v) = call(api_spec_lint(lint_req(serde_json::json!({
+            "spec": SPEC, "bestPractices": true, "ignore": ["W020", "B101"]
+        }))))
+        .await;
+        let codes: Vec<_> = v["data"]["diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| d["code"].as_str().unwrap().to_string())
+            .collect();
+        assert!(codes.contains(&"B102".to_string()));
+        assert!(!codes.contains(&"B101".to_string()));
+        assert!(!codes.contains(&"W020".to_string()));
+        assert_eq!(v["data"]["suppressed"], 2);
+    }
+
+    #[tokio::test]
+    async fn lint_sarif_junit_github_formats() {
+        let (_, v) = call(api_spec_lint(lint_req(
+            serde_json::json!({"spec": SPEC, "format": "sarif", "file": "a.yaml"}),
+        )))
+        .await;
+        assert_eq!(v["data"]["version"], "2.1.0");
+        assert_eq!(
+            v["data"]["runs"][0]["results"][0]["locations"][0]["physicalLocation"]
+                ["artifactLocation"]["uri"],
+            "a.yaml"
+        );
+        let (_, v) = call(api_spec_lint(lint_req(
+            serde_json::json!({"spec": SPEC, "format": "junit"}),
+        )))
+        .await;
+        assert!(v["data"].as_str().unwrap().contains("<testsuite"));
+        let (_, v) = call(api_spec_lint(lint_req(
+            serde_json::json!({"spec": SPEC, "format": "github"}),
+        )))
+        .await;
+        assert!(v["data"]
+            .as_str()
+            .unwrap()
+            .starts_with("::warning file=spec.yaml"));
+        let (st, _) = call(api_spec_lint(lint_req(
+            serde_json::json!({"spec": SPEC, "format": "xml"}),
+        )))
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn lint_rules_catalog_endpoints() {
+        let (st, v) = call(api_spec_lint_rules()).await;
+        assert_eq!(st, StatusCode::OK);
+        assert!(v["data"].as_array().unwrap().len() > 25);
+        let (st, v) = call(api_spec_lint_rule(Path("b103".into()))).await;
+        assert_eq!(st, StatusCode::OK);
+        assert_eq!(v["data"]["code"], "B103");
+        let (st, v) = call(api_spec_lint_rule(Path("X999\n".into()))).await;
+        assert_eq!(st, StatusCode::NOT_FOUND);
+        assert!(!v["error"].as_str().unwrap_or("").contains('\n'));
+    }
+
+    #[tokio::test]
+    async fn merge_endpoint_applies_overlays_and_sets() {
+        let req = SpecMergeRequest {
+            base: SPEC.replace("servicetype", "serviceType"),
+            overlays: vec!["requirements:\n  memory: 1Gi\n".into()],
+            set: vec!["network.ports[0].servicePort=8080".into()],
+        };
+        let (st, v) = call(api_spec_merge(Json(req))).await;
+        assert_eq!(st, StatusCode::OK);
+        let spec = v["data"]["spec"].as_str().unwrap();
+        assert!(spec.contains("1Gi") && spec.contains("8080"));
+        assert_eq!(v["data"]["lint"]["errors"], 0);
+        let bad = SpecMergeRequest {
+            base: "- x".into(),
+            overlays: vec![],
+            set: vec![],
+        };
+        let (st, _) = call(api_spec_merge(Json(bad))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+        let bad = SpecMergeRequest {
+            base: SPEC.into(),
+            overlays: vec![],
+            set: vec!["nope".into()],
+        };
+        let (st, _) = call(api_spec_merge(Json(bad))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn render_endpoint_returns_hash_and_redacts() {
+        let spec = SPEC.replace("servicetype", "serviceType")
+            + "config:\n  secrets:\n    - name: db\n      data:\n        password: hunter2\n";
+        let (st, v) = call(api_spec_render(Json(SpecTextRequest { spec }))).await;
+        assert_eq!(st, StatusCode::OK);
+        assert!(v["data"]["hash"].as_str().unwrap().starts_with("sha256:"));
+        assert!(!v.to_string().contains("hunter2"));
+        let (st, _) = call(api_spec_render(Json(SpecTextRequest {
+            spec: "- a".into(),
+        })))
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
     }
 }

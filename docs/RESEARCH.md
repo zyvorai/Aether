@@ -68,3 +68,29 @@ and unverified); everything else was read from the cited page.
 * https://github.com/yannh/kubeconform
 * https://developer.hashicorp.com/terraform/cli/commands/plan
 * https://kubevela.io/docs/platform-engineers/oam/oam-model/ (migration stub only)
+
+## Round 3: output formats, suppression, overlays, canonical render
+
+Pages read in this round (fetched):
+
+* https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning - SARIF 2.1.0 properties GitHub requires: `version`, `tool.driver.name` and `rules[]`, per result `message.text`, `locations[].physicalLocation.artifactLocation.uri` and a `region` with start/end line and column, and `partialFingerprints` (only `primaryLocationLineHash` is used). Drove `lint --format sarif`.
+* https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/ - strategic-merge and JSON 6902 patches applied in order; patches are also called overlays. Drove `spec-merge` (merge patch plus path overrides, offline, on Aether's own spec).
+* https://docs.docker.com/reference/cli/docker/compose/config/ - `compose config` prints the resolved canonical model; `--hash` prints a per-service config hash; `--format yaml|json`; `--quiet` validates only. Drove `spec-render` (canonical output, overall and per-section hash).
+* https://github.com/yannh/kubeconform (round 2) - junit/tap/json output formats; reused for `--format junit`.
+
+Searched but not confirmed: a web search for kube-linter's check names only
+confirmed that `latest-tag`, `no-read-only-root-fs`, `run-as-non-root`,
+`unset-cpu-requirements` and `unset-memory-requirements` exist and that checks
+can be excluded; the docs page (docs.kubelinter.io) returned only its title, so
+the `B1xx` rule set is modelled on those names plus Polaris-style hardening
+**[U]**, not copied from a fetched list. The score-k8s documentation URL
+returned 404, so Score's override/patch mechanism was not read **[U]**. A search
+on drift detection for Nomad/Score returned only vendor blogs and nothing
+usable for a design.
+
+Decisions: built SARIF/JUnit/GitHub formats, suppression with a rule catalog,
+opt-in best-practice rules, overlays with `--set`, and canonical render with
+hashes. Not built: strategic-merge or JSON 6902 patches (merge patch covers
+env overlays; list-merge keys need schema knowledge per field), saved plans
+(secrets, see round 2), a `--lock-image-digests` equivalent (needs registry
+access, outside the offline boundary).
