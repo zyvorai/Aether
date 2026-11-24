@@ -94,3 +94,28 @@ hashes. Not built: strategic-merge or JSON 6902 patches (merge patch covers
 env overlays; list-merge keys need schema knowledge per field), saved plans
 (secrets, see round 2), a `--lock-image-digests` equivalent (needs registry
 access, outside the offline boundary).
+
+## Round 4: verified rule sources, policy, baselines, manifest validation
+
+Pages read in this round (fetched and read, not recalled):
+
+* https://raw.githubusercontent.com/stackrox/kube-linter/main/docs/generated/checks.md - the full kube-linter check list. Confirms `no-liveness-probe`, `no-readiness-probe`, `run-as-non-root`, `no-read-only-root-fs`, `privilege-escalation-container`, `privileged-container`, `drop-net-raw-capability`, `default-service-account`, `latest-tag`, `minimum-three-replicas`, `no-anti-affinity`, `pdb-max-unavailable`/`pdb-min-available`, `non-isolated-pod`, `host-network`/`host-pid`/`host-ipc`, `docker-sock`, `sensitive-host-mounts`, `env-var-secret`, `exposed-services`, `unset-cpu-requirements`/`unset-memory-requirements`, `schema-validation` (kubeconform). **The B1xx rules are now verified against this list** (mapping in `docs/guides/spec-tools.md`). Checks from the list that Aether does not have yet: privileged container, NET_RAW capability, host namespaces, docker.sock/sensitive host mounts, anti-affinity, missing CPU/memory requests (kube-linter flags them; Aether's `requirements` always has defaults).
+* https://raw.githubusercontent.com/FairwindsOps/polaris/master/docs/checks/security.md - Polaris security checks with severities (`runAsRootAllowed` warning, `privilegeEscalationAllowed` danger, `runAsPrivileged` danger, `notReadOnlyRootFilesystem` warning, `hostNetworkSet` warning, `tlsSettingsMissing` warning, `sensitiveContainerEnvVar` danger, ...). Used to cross-check the B1xx set and to choose warning severity for hardening advice.
+* https://raw.githubusercontent.com/Score-spec/score-k8s/main/README.md - `score-k8s init` / `generate`, `--override-property path=key` and `--overrides-file` to set or remove values in the Score file before conversion, plus patch templates (a list of `set`/`delete` operations on dot paths). This is the same model as `spec-merge --set path=value` (null deletes), which is therefore consistent with Score; patch templates (Go templates over generated manifests) are not copied.
+* https://raw.githubusercontent.com/open-policy-agent/conftest/master/README.md - Conftest runs Rego `deny` rules over structured config and prints `FAIL - file - message` with a pass/warn/fail summary. The page does not document warn semantics or exit codes (**[U]**). Drove `spec-policy`: same idea (rules outside the tool, message per violation, summary line), but a closed declarative operator set so it stays offline and deterministic without a Rego runtime.
+* Web search for Kubescape: confirmed control ids `C-0013` (non-root containers) and `C-0017` (immutable container filesystem) and the `kubescape scan framework nsa|mitre` model; framework membership of individual controls was not confirmed **[U]**.
+* https://github.com/yannh/kubeconform README (fetched via the raw URL returned 404 this round; the round 2 reading of the repository page stands): `-strict`, `-ignore-missing-schemas`, `-skip`, json/junit/tap output. Drove `manifest-check`.
+
+Not fetched: Datree (project is discontinued **[U]**), Helm lint, kustomize build, Garden and Tilt (dev-loop tools; no spec-validation overlap with this change).
+
+Decisions this round:
+
+| Idea | Decision |
+| --- | --- |
+| Policy-as-code rule file (`spec-policy`) | Built. Rules evaluated against the spec as written, with line numbers. |
+| Baseline drift (`spec-lock write/check`) | Built. Hash-only lock, per-section drift, exit 2 on drift. |
+| kubeconform-style manifest validation (`manifest-check`) | Built on the typed `k8s-openapi` objects, not fetched JSON schemas, so it is offline. Required-field detection works by noticing that the typed object serialises defaulted required fields; strictness by diffing keys. Built-in kinds only. |
+| `lint --fix` for safe findings | Built for `W020` and `I021` only; `B1xx` advice is opinionated and never auto-fixed. |
+| CI / pre-commit snippets (`spec-ci`) | Built. |
+| JSON schema generation | Skipped: `schema/workload.schema.json` already exists and is validated in CI by `validate:schema`. |
+| Rendered-manifest validation chained into `spec-plan` | Not built; adapters still need a client context to render (see round 2). |

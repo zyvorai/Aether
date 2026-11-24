@@ -246,6 +246,8 @@ async fn main() -> Result<()> {
             ignore,
             explain,
             list_rules,
+            fix,
+            diff,
         } => {
             commands::lint_command(
                 &cli.spec,
@@ -256,10 +258,29 @@ async fn main() -> Result<()> {
                     ignore,
                     explain,
                     list_rules,
+                    fix,
+                    diff,
                 },
             )
             .await
         }
+        Commands::SpecPolicy {
+            rules,
+            format,
+            deny_warnings,
+        } => commands::spec_policy_command(&cli.spec, &rules, &format, deny_warnings).await,
+        Commands::SpecLock { action } => commands::spec_lock_command(&cli.spec, action).await,
+        Commands::ManifestCheck {
+            files,
+            strict,
+            ignore_missing_schemas,
+            skip,
+            format,
+        } => {
+            commands::manifest_check_command(&files, strict, ignore_missing_schemas, skip, &format)
+                .await
+        }
+        Commands::SpecCi { provider } => commands::spec_ci_command(&cli.spec, &provider).await,
         Commands::SpecMerge {
             overlays,
             set,

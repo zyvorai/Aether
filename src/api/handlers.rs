@@ -5420,6 +5420,115 @@ pub(crate) async fn restore_backup(
     ))
 }
 
+#[derive(Deserialize)]
+pub(crate) struct SpecPolicyRequest {
+    pub(crate) spec: String,
+    pub(crate) rules: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SpecLockCheckRequest {
+    pub(crate) spec: String,
+    pub(crate) lock: String,
+    #[serde(default)]
+    pub(crate) ignore: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ManifestCheckRequest {
+    pub(crate) manifests: String,
+    #[serde(default)]
+    pub(crate) strict: bool,
+    #[serde(default)]
+    pub(crate) ignore_missing_schemas: bool,
+    #[serde(default)]
+    pub(crate) skip: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SpecCiQuery {
+    pub(crate) spec: Option<String>,
+}
+
+/// POST /api/spec/fix - safe auto-fixes for lint findings (nothing is written).
+pub(crate) async fn api_spec_fix(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+    if req.spec.len() > crate::speclint::MAX_SPEC_BYTES {
+        return err_bad_request("spec too large");
+    }
+    let r = crate::specfix::fix_str(&req.spec);
+    let remaining = crate::speclint::lint_str(&r.fixed);
+    (
+        StatusCode::OK,
+        Json(ApiResponse::success(json!({
+            "fixed": r.fixed,
+            "changed": r.changed,
+            "applied": r.applied,
+            "skipped": r.skipped,
+            "remaining": remaining,
+        }))),
+    )
+}
+
+/// POST /api/spec/policy - evaluate a rule file against a spec.
+pub(crate) async fn api_spec_policy(Json(req): Json<SpecPolicyRequest>) -> impl IntoResponse {
+    if req.spec.len() > crate::speclint::MAX_SPEC_BYTES {
+        return err_bad_request("spec too large");
+    }
+    match crate::specpolicy::evaluate(&req.spec, &req.rules) {
+        Ok(r) => (StatusCode::OK, Json(ApiResponse::success(r))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+/// POST /api/spec/lock - baseline hashes for a spec.
+pub(crate) async fn api_spec_lock(Json(req): Json<SpecTextRequest>) -> impl IntoResponse {
+    match crate::speclock::make_lock(&req.spec) {
+        Ok(l) => (StatusCode::OK, Json(ApiResponse::success(l))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+/// POST /api/spec/lock/check - drift of a spec against a lock.
+pub(crate) async fn api_spec_lock_check(
+    Json(req): Json<SpecLockCheckRequest>,
+) -> impl IntoResponse {
+    match crate::speclock::check(&req.spec, &req.lock, &req.ignore) {
+        Ok(c) => (StatusCode::OK, Json(ApiResponse::success(c))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+/// POST /api/spec/manifest-check - kubeconform-style validation of manifests.
+pub(crate) async fn api_manifest_check(Json(req): Json<ManifestCheckRequest>) -> impl IntoResponse {
+    let opts = crate::manifestcheck::Options {
+        strict: req.strict,
+        ignore_missing_schemas: req.ignore_missing_schemas,
+        skip: req.skip,
+    };
+    match crate::manifestcheck::check(&[("manifests".to_string(), req.manifests)], &opts) {
+        Ok(r) => (StatusCode::OK, Json(ApiResponse::success(r))),
+        Err(e) => err_bad_request(e),
+    }
+}
+
+/// GET /api/spec/ci/{provider}?spec=path - CI / pre-commit snippet.
+pub(crate) async fn api_spec_ci(
+    Path(provider): Path<String>,
+    axum::extract::Query(q): axum::extract::Query<SpecCiQuery>,
+) -> impl IntoResponse {
+    let spec = q.spec.unwrap_or_else(|| "workload.yaml".to_string());
+    match crate::specci::snippet(&provider, &spec) {
+        Ok(s) => (
+            StatusCode::OK,
+            Json(ApiResponse::success(
+                json!({ "provider": provider, "snippet": s }),
+            )),
+        ),
+        Err(e) => err_bad_request(e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5660,6 +5769,111 @@ mod spec_api_tests {
             spec: "- a".into(),
         })))
         .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn fix_endpoint_renames_typos_and_reports_remaining() {
+        let (st, v) = call(api_spec_fix(Json(SpecTextRequest { spec: SPEC.into() }))).await;
+        assert_eq!(st, StatusCode::OK);
+        assert_eq!(v["data"]["changed"], true);
+        assert!(v["data"]["fixed"]
+            .as_str()
+            .unwrap()
+            .contains("serviceType: NodePort"));
+        assert_eq!(v["data"]["applied"][0]["code"], "W020");
+        assert_eq!(v["data"]["remaining"]["warnings"], 0);
+        let clean = SPEC.replace("servicetype", "serviceType");
+        let (_, v) = call(api_spec_fix(Json(SpecTextRequest { spec: clean }))).await;
+        assert_eq!(v["data"]["changed"], false);
+    }
+
+    const RULES: &str = "rules:\n  - {id: P1, path: metadata.team, op: exists, message: team required}\n  - {id: P2, path: requirements.memory, op: lte, value: 1Gi}\n";
+
+    #[tokio::test]
+    async fn policy_endpoint_reports_violations_and_bad_rules() {
+        let req = SpecPolicyRequest {
+            spec: SPEC.into(),
+            rules: RULES.into(),
+        };
+        let (st, v) = call(api_spec_policy(Json(req))).await;
+        assert_eq!(st, StatusCode::OK);
+        assert_eq!(v["data"]["errors"], 1);
+        assert_eq!(v["data"]["violations"][0]["id"], "P1");
+        assert_eq!(v["data"]["passed"], 1);
+        let bad = SpecPolicyRequest {
+            spec: SPEC.into(),
+            rules: "rules: [{id: A}]".into(),
+        };
+        let (st, _) = call(api_spec_policy(Json(bad))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn lock_and_lock_check_endpoints() {
+        let spec = SPEC.replace("servicetype", "serviceType");
+        let (st, v) = call(api_spec_lock(Json(SpecTextRequest { spec: spec.clone() }))).await;
+        assert_eq!(st, StatusCode::OK);
+        let lock = v["data"].to_string();
+        let req = SpecLockCheckRequest {
+            spec: spec.clone(),
+            lock: lock.clone(),
+            ignore: vec![],
+        };
+        let (_, v) = call(api_spec_lock_check(Json(req))).await;
+        assert_eq!(v["data"]["drift"], false);
+        let req = SpecLockCheckRequest {
+            spec: spec.replace("256Mi", "1Gi"),
+            lock,
+            ignore: vec![],
+        };
+        let (_, v) = call(api_spec_lock_check(Json(req))).await;
+        assert_eq!(v["data"]["drift"], true);
+        assert_eq!(v["data"]["changed"][0], "requirements");
+        let req = SpecLockCheckRequest {
+            spec,
+            lock: "{}".into(),
+            ignore: vec![],
+        };
+        let (st, _) = call(api_spec_lock_check(Json(req))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn manifest_check_endpoint() {
+        let m = "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\ndata:\n  a: b\n---\napiVersion: kubevirt.io/v1\nkind: VirtualMachine\nmetadata:\n  name: vm\n";
+        let req =
+            serde_json::from_value(json!({"manifests": m, "ignoreMissingSchemas": true})).unwrap();
+        let (st, v) = call(api_manifest_check(Json(req))).await;
+        assert_eq!(st, StatusCode::OK);
+        assert_eq!(v["data"]["summary"]["valid"], 1);
+        assert_eq!(v["data"]["summary"]["skipped"], 1);
+        let req = serde_json::from_value(json!({"manifests": m})).unwrap();
+        let (_, v) = call(api_manifest_check(Json(req))).await;
+        assert_eq!(v["data"]["summary"]["errors"], 1);
+        let req = serde_json::from_value(json!({"manifests": "x".repeat(5 << 20)})).unwrap();
+        let (st, _) = call(api_manifest_check(Json(req))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn ci_endpoint() {
+        let q = axum::extract::Query(SpecCiQuery {
+            spec: Some("deploy/w.yaml".into()),
+        });
+        let (st, v) = call(api_spec_ci(Path("github".into()), q)).await;
+        assert_eq!(st, StatusCode::OK);
+        assert!(v["data"]["snippet"]
+            .as_str()
+            .unwrap()
+            .contains("aether --spec deploy/w.yaml lint"));
+        let q = axum::extract::Query(SpecCiQuery {
+            spec: Some("a b".into()),
+        });
+        let (st, _) = call(api_spec_ci(Path("github".into()), q)).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST);
+        let q = axum::extract::Query(SpecCiQuery { spec: None });
+        let (st, _) = call(api_spec_ci(Path("jenkins".into()), q)).await;
         assert_eq!(st, StatusCode::BAD_REQUEST);
     }
 }

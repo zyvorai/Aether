@@ -93,6 +93,25 @@ fn get_styles() -> clap::builder::Styles {
         )
 }
 
+#[derive(Subcommand, Debug)]
+pub(crate) enum SpecLockAction {
+    /// Write the lock file for the current spec
+    Write {
+        /// Lock file (default: <spec>.lock.json)
+        #[arg(long)]
+        lock: Option<PathBuf>,
+    },
+    /// Compare the spec with the lock file; exit 0 no drift, 2 drift, 1 error
+    Check {
+        /// Lock file (default: <spec>.lock.json)
+        #[arg(long)]
+        lock: Option<PathBuf>,
+        /// Top-level sections to leave out of the comparison (comma separated)
+        #[arg(long, value_delimiter = ',')]
+        ignore: Vec<String>,
+    },
+}
+
 #[derive(Subcommand)]
 pub(crate) enum Commands {
     /// Validate workload specification (checks syntax, intent, and runtime compatibility)
@@ -549,6 +568,54 @@ pub(crate) enum Commands {
         /// List every diagnostic code and exit
         #[arg(long)]
         list_rules: bool,
+        /// Apply safe fixes in place (rename typo'd keys to the suggested key, snake_case aliases to camelCase)
+        #[arg(long)]
+        fix: bool,
+        /// Show the fixes as a diff and change nothing
+        #[arg(long)]
+        diff: bool,
+    },
+
+    /// Check the spec against organisation rules from a YAML rule file (policy as code)
+    SpecPolicy {
+        /// Rule file (see docs/guides/spec-tools.md)
+        rules: PathBuf,
+        /// Output format: text, json, junit or github
+        #[arg(long, default_value = "text")]
+        format: String,
+        /// Exit non-zero on warnings as well as errors
+        #[arg(long)]
+        deny_warnings: bool,
+    },
+
+    /// Record or check a hash baseline of the spec (offline drift detection for CI)
+    SpecLock {
+        #[command(subcommand)]
+        action: SpecLockAction,
+    },
+
+    /// Validate Kubernetes manifests against the bundled API schemas (kubeconform-style)
+    ManifestCheck {
+        /// Manifest files; `-` reads stdin
+        files: Vec<PathBuf>,
+        /// Report fields the schema does not know
+        #[arg(long)]
+        strict: bool,
+        /// Skip kinds without a bundled schema (custom resources) instead of failing
+        #[arg(long)]
+        ignore_missing_schemas: bool,
+        /// Skip these kinds (comma separated)
+        #[arg(long, value_delimiter = ',')]
+        skip: Vec<String>,
+        /// Output format: text, json or junit
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
+
+    /// Print a CI or pre-commit configuration that runs the spec checks
+    SpecCi {
+        /// github, gitlab or pre-commit
+        provider: String,
     },
 
     /// Merge the spec with overlay files and --set overrides (JSON merge patch), then lint the result
@@ -1057,6 +1124,10 @@ impl Commands {
             Self::Cp { .. } => "cp",
             Self::Watch { .. } => "watch",
             Self::Lint { .. } => "lint",
+            Self::SpecPolicy { .. } => "spec-policy",
+            Self::SpecLock { .. } => "spec-lock",
+            Self::ManifestCheck { .. } => "manifest-check",
+            Self::SpecCi { .. } => "spec-ci",
             Self::SpecMerge { .. } => "spec-merge",
             Self::SpecRender { .. } => "spec-render",
             Self::Portability => "portability",

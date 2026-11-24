@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (round 4)
+- **`aether lint --fix` / `--diff`** (`src/specfix.rs`): safe, comment-preserving fixes for `W020` (typo'd key renamed to the suggested key) and `I021` (snake_case alias to camelCase); refuses edits that raise the error count. `POST /api/spec/fix`.
+- **`aether spec-policy RULES.yaml`** (`src/specpolicy.rs`): policy as code. Declarative rule file (path with `[*]`, 14 operators including quantity comparison and globs, `when`, severity), findings with source lines, text/json/junit/github output. `examples/policy/org-baseline.yaml`. `POST /api/spec/policy`.
+- **`aether spec-lock write|check`** (`src/speclock.rs`): hash-only baseline file, per-section drift report, `--ignore`, exit 2 on drift. `POST /api/spec/lock`, `/api/spec/lock/check`.
+- **`aether manifest-check FILES`** (`src/manifestcheck.rs`): kubeconform-style offline validation of Kubernetes manifests against the bundled k8s-openapi types (types, missing required fields, bad base64, unserved apiVersions, `--strict` unknown fields, `--ignore-missing-schemas`, `--skip`, text/json/junit). `POST /api/spec/manifest-check`.
+- **`aether spec-ci github|gitlab|pre-commit`** (`src/specci.rs`): ready-to-paste CI/pre-commit configuration. `GET /api/spec/ci/{provider}`. Root `.pre-commit-hooks.yaml` for consumers of the repository.
+- B101-B109 are now cross-checked against the kube-linter check list and Polaris security checks (docs/RESEARCH.md round 4).
+
+### Changed (round 4 upgrades)
+- **reqwest 0.12 -> 0.13**, no longer blocked: `openidconnect` 4.1 is built with `default-features = false` (no bundled reqwest) and `src/oidc.rs` implements its `AsyncHttpClient` trait for a thin wrapper around the application's reqwest 0.13 client. One reqwest version in the tree; native-tls/OpenSSL no longer linked (rustls with aws-lc-rs is the 0.13 default). The `form` and `query` features are enabled explicitly (0.13 made them opt-in).
+- **`serde_yaml` 0.9 (unmaintained) -> `serde_yaml_ng` 0.10** via a Cargo `package` rename; no source changes, golden and spec-tool tests unchanged and green.
+- **Dashboard: Tailwind CSS 3 -> 4** (`tailwindcss` + `@tailwindcss/postcss`, autoprefixer removed, `@import 'tailwindcss'` + `@config` for the existing theme). Renamed utilities migrated (`rounded` -> `rounded-sm`, `shadow-sm` -> `shadow-xs`, `backdrop-blur-sm` -> `backdrop-blur-xs`, `outline-none` -> `outline-hidden`, `flex-shrink-0` -> `shrink-0`, `placeholder-*` -> `placeholder:text-*`); a base rule restores the v3 default border colour (gray-200). Not visually checked in a browser.
+- Other npm updates (lucide-react 1.79, @playwright/test 1.65); GitHub Actions pins and Docker base images re-verified as the latest releases.
+
 ### Added (round 3)
 - **Lint output formats** (`src/lintfmt.rs`): `aether lint --format text|json|sarif|junit|github`. SARIF 2.1.0 carries the properties GitHub code scanning requires, with a stable per-finding fingerprint; JUnit XML and GitHub workflow commands escape everything that comes from the spec.
 - **Lint suppression and rule catalog:** `--ignore CODE[,CODE]`, inline `# aether-lint: ignore=CODE` (next line or same line) and `ignore-file=CODE`; suppressed counts are reported; `E00x`/`E01x` cannot be suppressed. `aether lint --list-rules` / `--explain CODE`, `GET /api/spec/lint/rules[/{code}]`. A test keeps the catalog in step with the codes the linter emits.

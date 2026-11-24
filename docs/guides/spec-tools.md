@@ -99,6 +99,14 @@ Polaris. They are advice, not correctness, so plain `lint` never reports them.
 
 B103-B109 apply only when Kubernetes is an allowed runtime.
 
+Cross-checked against the kube-linter check list and Polaris security checks
+(see `docs/RESEARCH.md`, round 4): B101/B102 are kube-linter `no-liveness-probe`
+/ `no-readiness-probe`, B103 `run-as-non-root` / Polaris `runAsRootAllowed`,
+B104 `no-read-only-root-fs` / `notReadOnlyRootFilesystem`, B105
+`privilege-escalation-container` / `privilegeEscalationAllowed`, B106
+`minimum-three-replicas` + `pdb-*`, B107 `non-isolated-pod` / `missingNetworkPolicy`,
+B108 `latest-tag`, B109 `default-service-account`.
+
 ## aether portability
 
 ```bash
@@ -171,6 +179,74 @@ printed as `***`, but the hash covers the real values, so rotating a secret
 still changes it. Treat the hash itself as non-public for specs whose secrets
 are low-entropy.
 
+### Auto-fix (`--fix`, `--diff`)
+
+`aether lint --fix` applies only safe, textual edits and keeps comments and
+layout: a misspelt key with a "did you mean" hint is renamed (`W020`; the old
+key was being ignored, so this *does* change behaviour and is reported as
+such) and a snake_case alias becomes its canonical camelCase key (`I021`,
+behaviour-neutral). `--diff` shows the edits and changes nothing. If the edited
+spec would have more errors than before, nothing is written. Best-practice
+rules are never auto-fixed.
+
+## aether spec-policy
+
+Policy as code: organisation rules live in a YAML file and are evaluated
+against the spec as written, so every finding has a source line. See
+`examples/policy/org-baseline.yaml`.
+
+```yaml
+rules:
+  - id: ORG003
+    description: memory request stays below 8Gi
+    path: requirements.memory
+    op: lte
+    value: 8Gi
+    severity: error            # error (default) | warning | info
+    when: { path: runtime.preferred, op: equals, value: kube }   # optional
+    skip_if_missing: false     # optional
+    message: custom text       # optional
+```
+
+Operators: `exists`, `absent`, `equals`, `not_equals`, `in`, `not_in`,
+`matches` / `not_matches` (glob `*` `?`), `lt`, `lte`, `gt`, `gte` (numbers and
+quantities such as `500m`, `256Mi`), `min_len`, `max_len`. Paths use dots,
+`[N]` and `[*]` (every list element; quote the path in flow style, since a bare `*` starts a YAML alias). A missing value fails every operator
+except `absent`, `not_equals`, `not_in` and `not_matches`. Formats: `text`,
+`json`, `junit`, `github`; exit 1 on errors (or warnings with
+`--deny-warnings`). Unknown rule keys, duplicate ids and bad paths are rejected.
+
+## aether spec-lock
+
+Offline drift detection against a committed baseline. `spec-lock write` stores
+the canonical hashes (overall and per section, the same as `spec-render`) in
+`<spec>.lock.json`; the lock holds no spec values. `spec-lock check` exits 0
+with no drift, 2 on drift (naming the changed, added and removed sections) and
+1 on errors such as a malformed lock. `--ignore requirements,scaling` leaves
+sections out of the comparison. For live state use `aether diff`.
+
+## aether manifest-check
+
+kubeconform-style validation of Kubernetes manifests (rendered, Helm or
+kustomize output), offline. Each document is parsed into the typed
+`k8s-openapi` object for its `apiVersion`/`kind`: wrong types, missing
+required fields, bad base64 in Secrets and apiVersions the API no longer
+serves (`extensions/v1beta1` Ingress) are invalid. `--strict` also reports
+unknown fields with their path. Multi-document streams, `kind: List` and stdin
+(`-`) work. Built-in kinds only (Pod, Service, ConfigMap, Secret, Namespace,
+ServiceAccount, PVC, ResourceQuota, LimitRange, Deployment, StatefulSet,
+DaemonSet, ReplicaSet, Job, CronJob, Ingress, NetworkPolicy, HPA v2, PDB, RBAC
+kinds); custom resources (KubeVirt, Cilium, ...) are errors unless
+`--ignore-missing-schemas`, or skipped with `--skip Kind`. Formats `text`,
+`json`, `junit`; exit 1 on invalid or error. The schema is the one bundled
+with the `k8s-openapi` crate; CEL rules and admission are not evaluated.
+
+## aether spec-ci
+
+`aether spec-ci github|gitlab|pre-commit` prints a ready-to-paste config that
+runs `lint --best-practices` and `spec-lock check`. The spec path comes from
+`--spec` and is restricted to `[A-Za-z0-9._/-]`.
+
 ## API
 
 The same checks are available over HTTP (Operator or Admin role, like other
@@ -184,6 +260,12 @@ POST endpoints):
 | `POST /api/spec/render` | `{"spec": "<yaml>"}` | `{hash, sections, spec}` |
 | `POST /api/spec/portability` | `{"spec": "<yaml>"}` | portability report |
 | `POST /api/spec/plan` | `{"old": "<yaml>", "new": "<yaml>"}` | plan |
+| `POST /api/spec/fix` | `{"spec": "<yaml>"}` | `{fixed, changed, applied, skipped, remaining}` (nothing is stored) |
+| `POST /api/spec/policy` | `{"spec": "<yaml>", "rules": "<yaml>"}` | policy report |
+| `POST /api/spec/lock` | `{"spec": "<yaml>"}` | lock |
+| `POST /api/spec/lock/check` | `{"spec": "<yaml>", "lock": "<json>", "ignore": []}` | drift result |
+| `POST /api/spec/manifest-check` | `{"manifests": "<yaml>", "strict": false, "ignoreMissingSchemas": false, "skip": []}` | `{results, summary}` |
+| `GET /api/spec/ci/{provider}?spec=path` | - | `{provider, snippet}` |
 
 Request bodies larger than 1 MiB per spec are refused.
 
