@@ -49,7 +49,7 @@ export default function PlatformRecommendations({ items, loading }: PlatformReco
   if (loading) {
     return (
       <div className="dash-card">
-        <div className="skeleton h-6 w-48 rounded mb-4" />
+        <div className="skeleton h-6 w-48 rounded-sm mb-4" />
         <div className="space-y-3">
           <div className="skeleton h-20 rounded-xl" />
           <div className="skeleton h-20 rounded-xl" />

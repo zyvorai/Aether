@@ -323,7 +323,7 @@ function BackupsPage({ refreshKey }: { refreshKey?: number } = {}) {
             type="checkbox"
             checked={restoreMerge}
             onChange={(e) => setRestoreMerge(e.target.checked)}
-            className="rounded glass-divider"
+            className="rounded-sm glass-divider"
           />
           Merge workloads not already present
         </label>

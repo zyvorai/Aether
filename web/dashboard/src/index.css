@@ -1,9 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import './theme.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+/* Tailwind 4 compatibility: v3 defaulted border-like utilities to gray-200
+   (and ring to 3px blue-500); v4 uses currentColor. Keep the v3 look. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 @layer base {
   html {
@@ -446,7 +457,7 @@ html.dark-theme .apple-editorial-hero::before,
 .hub-band:hover .hub-band-arrow { transform: translateX(3px); }
 
 .focus-ring {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  @apply focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   --tw-ring-offset-color: var(--background);
 }
 
@@ -591,7 +602,7 @@ html.dark-theme .apple-editorial-hero::before,
 
   .glass-input,
   .glass-select {
-    @apply w-full rounded-xl px-3 py-2 text-sm outline-none transition-shadow;
+    @apply w-full rounded-xl px-3 py-2 text-sm outline-hidden transition-shadow;
     background: var(--glass-bg-elevated);
     border: 1px solid var(--glass-border);
     color: var(--foreground);

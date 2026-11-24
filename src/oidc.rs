@@ -50,8 +50,52 @@ struct OidcRoleMapping {
     rules: Vec<(Role, Vec<String>)>,
 }
 
+/// Adapter that lets openidconnect (built against reqwest 0.12) use the
+/// application's own reqwest 0.13 client through its `AsyncHttpClient` trait.
+#[derive(Clone)]
+struct ReqwestHttp(reqwest::Client);
+
+type OidcHttpFuture<'c> = std::pin::Pin<
+    Box<
+        dyn std::future::Future<
+                Output = Result<
+                    openidconnect::HttpResponse,
+                    openidconnect::HttpClientError<reqwest::Error>,
+                >,
+            > + Send
+            + 'c,
+    >,
+>;
+
+impl<'c> openidconnect::AsyncHttpClient<'c> for ReqwestHttp {
+    type Error = openidconnect::HttpClientError<reqwest::Error>;
+    type Future = OidcHttpFuture<'c>;
+
+    fn call(&'c self, request: openidconnect::HttpRequest) -> Self::Future {
+        Box::pin(async move {
+            let (parts, body) = request.into_parts();
+            let req = self
+                .0
+                .request(parts.method, parts.uri.to_string())
+                .headers(parts.headers)
+                .body(body);
+            let response = req.send().await.map_err(Box::new)?;
+            let mut builder = axum::http::Response::builder()
+                .status(response.status())
+                .version(response.version());
+            for (name, value) in response.headers() {
+                builder = builder.header(name, value);
+            }
+            let bytes = response.bytes().await.map_err(Box::new)?;
+            builder
+                .body(bytes.to_vec())
+                .map_err(openidconnect::HttpClientError::Http)
+        })
+    }
+}
+
 pub struct OidcRuntime {
-    http: reqwest::Client,
+    http: ReqwestHttp,
     issuer_url: IssuerUrl,
     client_id: ClientId,
     client_secret: Option<ClientSecret>,
@@ -104,10 +148,12 @@ impl OidcRuntime {
         if role_mapping.is_some() {
             tracing::info!("OIDC group → role mapping enabled");
         }
-        let http = reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .build()
-            .context("failed to build reqwest client for OIDC")?;
+        let http = ReqwestHttp(
+            reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .context("failed to build reqwest client for OIDC")?,
+        );
         tracing::info!(
             issuer = %issuer_url,
             "OpenID Connect relying-party mode enabled"

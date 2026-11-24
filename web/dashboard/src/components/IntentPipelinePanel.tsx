@@ -188,7 +188,7 @@ export default function IntentPipelinePanel() {
               {report.steps.map((step) => (
                 <li key={step.phase} className="glass px-4 py-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <span className="rounded glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-muted">{step.phase}</span>
+                    <span className="rounded-sm glass-inset-surface px-2 py-0.5 text-[10px] uppercase text-muted">{step.phase}</span>
                     {step.title}
                   </div>
                   <p className="mt-1 text-sm text-muted">{step.detail}</p>

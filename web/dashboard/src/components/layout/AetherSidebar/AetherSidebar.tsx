@@ -56,7 +56,7 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'relative flex w-full items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        'relative flex w-full items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50',
         active ? 'glass-fill font-medium text-primary shadow-card' : 'text-muted hover:bg-hover hover:text-foreground',
         className,
       )}
@@ -86,7 +86,7 @@ function SidebarSectionBlock({
         type="button"
         aria-expanded={expanded}
         onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-subtle hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-subtle hover:text-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50"
       >
         <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
         <span className="truncate">{section.label}</span>
@@ -155,7 +155,7 @@ export default function AetherSidebar({
   return (
     <aside
       className={cn(
-        'flex flex-shrink-0 flex-col',
+        'flex shrink-0 flex-col',
         mobile
           ? 'h-full w-72 glass'
           : 'hidden lg:flex w-64 m-3.5 rounded-[var(--radius-2xl)] glass-fill sticky top-[calc(var(--nav-h)+14px)] self-start h-[calc(100dvh-var(--nav-h)-28px)]',
@@ -171,7 +171,7 @@ export default function AetherSidebar({
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter"
             aria-label="Filter navigation"
-            className="glass-fill w-full min-w-0 rounded-md py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="glass-fill w-full min-w-0 rounded-md py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-hidden focus:ring-1 focus:ring-primary/30"
           />
           {filter ? (
             <button

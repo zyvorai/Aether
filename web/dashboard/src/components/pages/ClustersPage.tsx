@@ -1498,7 +1498,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   </button>
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-subtle">Revision</span>
-                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
+                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
                       {rollout.history.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>
                           {entry.revision}
@@ -1544,7 +1544,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   />
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-subtle">Revision</span>
-                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-none">
+                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
                       {helmHistory.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>{entry.revision}</option>
                       ))}

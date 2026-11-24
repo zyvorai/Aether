@@ -4348,6 +4348,8 @@ pub(crate) struct LintArgs {
     pub ignore: Vec<String>,
     pub explain: Option<String>,
     pub list_rules: bool,
+    pub fix: bool,
+    pub diff: bool,
 }
 
 pub(crate) async fn lint_command(spec_path: &std::path::Path, args: LintArgs) -> Result<()> {
@@ -4382,7 +4384,38 @@ pub(crate) async fn lint_command(spec_path: &std::path::Path, args: LintArgs) ->
     if output::is_json() && format == Format::Text {
         format = Format::Json;
     }
-    let text = read_spec_text(spec_path)?;
+    let mut text = read_spec_text(spec_path)?;
+    if args.fix || args.diff {
+        let fixed = aether::specfix::fix_str(&text);
+        let name = spec_path.display().to_string();
+        for f in &fixed.applied {
+            eprintln!(
+                "{name}:{}: fix[{}]: `{}` -> `{}`{}",
+                f.line,
+                f.code,
+                f.from,
+                f.to,
+                if f.behaviour_change {
+                    " (was ignored; behaviour changes)"
+                } else {
+                    ""
+                }
+            );
+        }
+        for s in &fixed.skipped {
+            eprintln!("{name}: not fixed: {s}");
+        }
+        if args.diff {
+            print!("{}", aether::specfix::diff(&text, &fixed.fixed, &name));
+            return Ok(());
+        }
+        if fixed.changed {
+            std::fs::write(spec_path, &fixed.fixed)
+                .with_context(|| format!("cannot write '{}'", spec_path.display()))?;
+            eprintln!("{name}: applied {} fix(es)", fixed.applied.len());
+            text = fixed.fixed;
+        }
+    }
     let report = aether::speclint::lint_with(
         &text,
         &aether::speclint::LintOptions {
@@ -4397,6 +4430,132 @@ pub(crate) async fn lint_command(spec_path: &std::path::Path, args: LintArgs) ->
     if report.failed(args.deny_warnings) {
         std::process::exit(1);
     }
+    Ok(())
+}
+
+/// `aether spec-policy`: evaluate a rule file against the spec.
+pub(crate) async fn spec_policy_command(
+    spec_path: &std::path::Path,
+    rules_path: &std::path::Path,
+    format: &str,
+    deny_warnings: bool,
+) -> Result<()> {
+    let spec = read_spec_text(spec_path)?;
+    let rules = read_spec_text(rules_path)?;
+    let report = aether::specpolicy::evaluate(&spec, &rules).map_err(|e| anyhow::anyhow!(e))?;
+    let file = spec_path.display().to_string();
+    let format = if output::is_json() { "json" } else { format };
+    match format {
+        "text" => print!("{}", report.render_text(&file)),
+        "json" => println!("{}", serde_json::to_string_pretty(&report)?),
+        "github" => print!("{}", report.render_github(&file)),
+        "junit" => print!("{}", report.render_junit(&file)),
+        other => anyhow::bail!("unknown format `{other}` (expected text, json, junit or github)"),
+    }
+    if report.failed(deny_warnings) {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `aether spec-lock`: write or check the hash baseline.
+pub(crate) async fn spec_lock_command(
+    spec_path: &std::path::Path,
+    action: crate::cli::SpecLockAction,
+) -> Result<()> {
+    use crate::cli::SpecLockAction;
+    let default_lock = || {
+        let mut s = spec_path.as_os_str().to_owned();
+        s.push(".lock.json");
+        PathBuf::from(s)
+    };
+    let spec = read_spec_text(spec_path)?;
+    match action {
+        SpecLockAction::Write { lock } => {
+            let path = lock.unwrap_or_else(default_lock);
+            let l = aether::speclock::make_lock(&spec).map_err(|e| anyhow::anyhow!(e))?;
+            std::fs::write(&path, aether::speclock::lock_text(&l))
+                .with_context(|| format!("cannot write '{}'", path.display()))?;
+            println!("wrote {} ({})", path.display(), l.hash);
+        }
+        SpecLockAction::Check { lock, ignore } => {
+            let path = lock.unwrap_or_else(default_lock);
+            let lock_text = read_spec_text(&path)?;
+            let c = aether::speclock::check(&spec, &lock_text, &ignore)
+                .map_err(|e| anyhow::anyhow!(e))?;
+            if output::is_json() {
+                println!("{}", serde_json::to_string_pretty(&c)?);
+            } else {
+                print!("{}", c.render_text());
+            }
+            if c.drift {
+                std::process::exit(2);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// `aether manifest-check`: kubeconform-style schema validation.
+pub(crate) async fn manifest_check_command(
+    files: &[PathBuf],
+    strict: bool,
+    ignore_missing_schemas: bool,
+    skip: Vec<String>,
+    format: &str,
+) -> Result<()> {
+    use std::io::Read;
+    if files.is_empty() {
+        anyhow::bail!("give at least one manifest file (or `-` for stdin)");
+    }
+    let mut inputs = Vec::new();
+    for f in files {
+        if f.as_os_str() == "-" {
+            let mut s = String::new();
+            std::io::stdin()
+                .take(aether::manifestcheck::MAX_BYTES as u64 + 1)
+                .read_to_string(&mut s)?;
+            inputs.push(("<stdin>".to_string(), s));
+        } else {
+            inputs.push((f.display().to_string(), read_manifest_text(f)?));
+        }
+    }
+    let report = aether::manifestcheck::check(
+        &inputs,
+        &aether::manifestcheck::Options {
+            strict,
+            ignore_missing_schemas,
+            skip,
+        },
+    )
+    .map_err(|e| anyhow::anyhow!(e))?;
+    let format = if output::is_json() { "json" } else { format };
+    match format {
+        "text" => print!("{}", report.render_text()),
+        "json" => println!("{}", serde_json::to_string_pretty(&report)?),
+        "junit" => print!("{}", report.render_junit()),
+        other => anyhow::bail!("unknown format `{other}` (expected text, json or junit)"),
+    }
+    if report.failed() {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+fn read_manifest_text(path: &std::path::Path) -> Result<String> {
+    let meta =
+        std::fs::metadata(path).with_context(|| format!("cannot read '{}'", path.display()))?;
+    if meta.len() as usize > aether::manifestcheck::MAX_BYTES {
+        anyhow::bail!("'{}' exceeds the manifest size limit", path.display());
+    }
+    std::fs::read_to_string(path).with_context(|| format!("cannot read '{}'", path.display()))
+}
+
+/// `aether spec-ci`: print a CI / pre-commit snippet.
+pub(crate) async fn spec_ci_command(spec_path: &std::path::Path, provider: &str) -> Result<()> {
+    let spec = spec_path.display().to_string();
+    let s = aether::specci::snippet(provider, &spec).map_err(|e| anyhow::anyhow!(e))?;
+    print!("{s}");
     Ok(())
 }
 

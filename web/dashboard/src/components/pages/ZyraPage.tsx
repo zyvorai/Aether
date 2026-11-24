@@ -290,7 +290,7 @@ function ZyraPage() {
 
         <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite" aria-relevant="additions">
           {messages.length === 0 && (
-            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-sm">
+            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-xs">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
               <p className="text-sm text-muted">
                 Ask about health, drift, costs, migrations, or cluster state.
@@ -329,7 +329,7 @@ function ZyraPage() {
           ))}
 
           {pending.length > 0 && (
-            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 backdrop-blur-sm" data-testid="zyra-pending-actions">
+            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 backdrop-blur-xs" data-testid="zyra-pending-actions">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-warning">Actions awaiting confirmation</p>
                 {pending.length > 1 ? (
@@ -383,7 +383,7 @@ function ZyraPage() {
             placeholder="Ask Aether anything…"
             aria-label="Message Zyra"
             data-testid="copilot-input"
-            className="glass-input min-w-0 flex-1 text-foreground outline-none transition focus:border-primary/45 focus:ring-1 focus:ring-aether-ai/20"
+            className="glass-input min-w-0 flex-1 text-foreground outline-hidden transition focus:border-primary/45 focus:ring-1 focus:ring-aether-ai/20"
             disabled={loading}
           />
           <button

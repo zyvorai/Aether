@@ -60,7 +60,7 @@ function StatusTile({
   const c = toneClasses(tone);
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
+      className={`group relative overflow-hidden rounded-2xl border p-4 backdrop-blur-xs transition-all duration-300 hover:scale-[1.01] hover:shadow-lg ${c.ring}`}
     >
       <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/5 blur-2xl transition-opacity group-hover:opacity-80" />
       <div className="flex items-start justify-between gap-3">

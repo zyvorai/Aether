@@ -215,7 +215,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
       {topCapacity ? (
         <div
-          className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 backdrop-blur-sm"
+          className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-warning/25 bg-warning/10 px-4 py-3 backdrop-blur-xs"
           data-testid="briefing-capacity-risk"
         >
           <TrendingUp className="h-4 w-4 shrink-0 text-warning" />
@@ -242,7 +242,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
             {briefing.issues.slice(0, 4).map((issue, i) => (
               <div
                 key={`${issue.title}-${i}`}
-                className={`rounded-xl border px-4 py-3 backdrop-blur-sm ${severityTone(issue.severity)}`}
+                className={`rounded-xl border px-4 py-3 backdrop-blur-xs ${severityTone(issue.severity)}`}
               >
                 <div className="text-sm font-medium">{issue.title}</div>
                 <div className="mt-1 text-xs opacity-80">{issue.detail}</div>

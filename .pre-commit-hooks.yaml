@@ -1,0 +1,21 @@
+# pre-commit hooks for repositories that keep an Aether workload spec.
+# Requires the `aether` binary on PATH. Use:
+#   repos:
+#     - repo: https://github.com/zyvorai/Aether
+#       rev: main
+#       hooks:
+#         - id: aether-lint
+- id: aether-lint
+  name: aether lint
+  description: Lint workload.yaml (unknown keys, bad values, ignored fields)
+  entry: aether lint --deny-warnings
+  language: system
+  pass_filenames: false
+  files: '^workload\.ya?ml$'
+- id: aether-spec-lock
+  name: aether spec-lock check
+  description: Fail when workload.yaml drifts from workload.yaml.lock.json
+  entry: aether spec-lock check
+  language: system
+  pass_filenames: false
+  files: '^workload\.ya?ml(\.lock\.json)?$'

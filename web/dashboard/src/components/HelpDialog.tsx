@@ -21,7 +21,7 @@ const TABS: { id: HelpTab; label: string; icon: React.ReactNode }[] = [
 
 function Kbd({ children }: { children: string }) {
   return (
-    <kbd className="min-w-[1.5rem] rounded border glass-divider/80 glass-inset-surface px-1.5 py-0.5 text-center text-xs font-mono text-muted shadow-sm">
+    <kbd className="min-w-[1.5rem] rounded-sm border glass-divider/80 glass-inset-surface px-1.5 py-0.5 text-center text-xs font-mono text-muted shadow-xs">
       {children}
     </kbd>
   );

@@ -228,7 +228,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
       <div className="relative z-[1] flex-1 space-y-2 overflow-y-auto p-3">
         {messages.length === 0 ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-3 py-3 backdrop-blur-sm">
+            <div className="rounded-2xl border border-primary/15 glass-inset-surface px-3 py-3 backdrop-blur-xs">
               <p className="text-xs leading-relaxed text-muted">
                 Not a chatbot — an infrastructure co-pilot. Ask about health, cost, migrations, security, or
                 capacity.
@@ -269,7 +269,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
         ))}
 
         {pending.length > 0 ? (
-          <div className="rounded-xl border border-warning/30 bg-warning/10 p-2.5 backdrop-blur-sm">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 p-2.5 backdrop-blur-xs">
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-warning">
               Awaiting confirmation
             </p>

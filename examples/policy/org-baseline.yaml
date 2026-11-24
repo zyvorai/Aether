@@ -1,0 +1,31 @@
+# Example organisation policy for `aether spec-policy`.
+#   aether --spec workload.yaml spec-policy examples/policy/org-baseline.yaml
+rules:
+  - id: ORG001
+    description: every workload names an owner
+    path: metadata.owner
+    op: exists
+  - id: ORG002
+    severity: warning
+    description: images come from the internal registry
+    path: build.registry
+    op: matches
+    value: "registry.internal/*"
+    skip_if_missing: true
+  - id: ORG003
+    description: memory request stays below 8Gi
+    path: requirements.memory
+    op: lte
+    value: 8Gi
+  - id: ORG004
+    severity: warning
+    description: use unprivileged ports
+    path: network.ports[*].containerPort
+    op: gte
+    value: 1024
+  - id: ORG005
+    description: production workloads must not run on the single-host runtime
+    path: runtime.preferred
+    op: not_in
+    value: [podman, docker]
+    when: { path: metadata.environment, op: equals, value: production }

@@ -354,7 +354,7 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
                         type="button"
                         onClick={() => void handleDeleteChannel(ch.name)}
                         disabled={channelDeleting === ch.name}
-                        className="p-1.5 text-subtle hover:text-danger rounded"
+                        className="p-1.5 text-subtle hover:text-danger rounded-sm"
                         title="Remove channel"
                       >
                         <Trash2 size={14} />

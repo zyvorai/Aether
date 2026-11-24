@@ -267,7 +267,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                       <div className="mt-3 space-y-2 rounded-lg border glass-divider glass-inset-surface p-3">
                         <div className="flex flex-wrap gap-1.5">
                           {secretDetail.keys.map((key) => (
-                            <span key={key} className="inline-flex items-center gap-1 rounded border glass-divider px-2 py-0.5 font-mono text-[11px] text-muted">
+                            <span key={key} className="inline-flex items-center gap-1 rounded-sm border glass-divider px-2 py-0.5 font-mono text-[11px] text-muted">
                               {key}
                               <button
                                 type="button"

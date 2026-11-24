@@ -282,7 +282,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
           <label className="text-sm">
             Name
             <input
-              className="block mt-1 rounded border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+              className="block mt-1 rounded-sm border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -290,7 +290,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
           <label className="text-sm">
             Slug
             <input
-              className="block mt-1 rounded border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+              className="block mt-1 rounded-sm border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
             />
@@ -298,7 +298,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
           <label className="text-sm">
             Plan
             <select
-              className="block mt-1 rounded border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+              className="block mt-1 rounded-sm border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
             >
