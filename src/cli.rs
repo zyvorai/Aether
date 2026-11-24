@@ -534,6 +534,43 @@ pub(crate) enum Commands {
         /// Exit non-zero on warnings as well as errors
         #[arg(long)]
         deny_warnings: bool,
+        /// Output format: text, json, sarif (GitHub code scanning), junit or github (workflow commands)
+        #[arg(long, default_value = "text")]
+        format: String,
+        /// Also run the opt-in best-practice rules (B1xx: probes, non-root, read-only rootfs, ...)
+        #[arg(long)]
+        best_practices: bool,
+        /// Drop these diagnostic codes (comma separated or repeated); input errors cannot be ignored
+        #[arg(long, value_delimiter = ',')]
+        ignore: Vec<String>,
+        /// Explain one diagnostic code and exit
+        #[arg(long, value_name = "CODE")]
+        explain: Option<String>,
+        /// List every diagnostic code and exit
+        #[arg(long)]
+        list_rules: bool,
+    },
+
+    /// Merge the spec with overlay files and --set overrides (JSON merge patch), then lint the result
+    SpecMerge {
+        /// Overlay files applied in order on top of --spec
+        overlays: Vec<PathBuf>,
+        /// Override one value: path=value (e.g. requirements.memory=1Gi, network.ports[0].servicePort=8080); path=null deletes
+        #[arg(long = "set", value_name = "PATH=VALUE")]
+        set: Vec<String>,
+        /// Write the merged spec here instead of stdout
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
+    /// Print the canonical spec the engine will act on, with a content hash per section
+    SpecRender {
+        /// Output format: yaml or json
+        #[arg(long, default_value = "yaml")]
+        format: String,
+        /// Print only the sha256 content hash
+        #[arg(long)]
+        hash: bool,
     },
 
     /// Show which spec fields each runtime (Podman, Kubernetes, KubeVirt) honours
@@ -1020,6 +1057,8 @@ impl Commands {
             Self::Cp { .. } => "cp",
             Self::Watch { .. } => "watch",
             Self::Lint { .. } => "lint",
+            Self::SpecMerge { .. } => "spec-merge",
+            Self::SpecRender { .. } => "spec-render",
             Self::Portability => "portability",
             Self::SpecPlan { .. } => "spec-plan",
             Self::Compare => "compare",

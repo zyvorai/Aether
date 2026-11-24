@@ -239,7 +239,35 @@ async fn main() -> Result<()> {
             timeout,
         } => commands::cp_command(&name, &src, &dest, timeout).await,
         Commands::Watch { runtime } => commands::watch_command(&cli.spec, runtime).await,
-        Commands::Lint { deny_warnings } => commands::lint_command(&cli.spec, deny_warnings).await,
+        Commands::Lint {
+            deny_warnings,
+            format,
+            best_practices,
+            ignore,
+            explain,
+            list_rules,
+        } => {
+            commands::lint_command(
+                &cli.spec,
+                commands::LintArgs {
+                    deny_warnings,
+                    format,
+                    best_practices,
+                    ignore,
+                    explain,
+                    list_rules,
+                },
+            )
+            .await
+        }
+        Commands::SpecMerge {
+            overlays,
+            set,
+            output,
+        } => commands::spec_merge_command(&cli.spec, &overlays, &set, output.as_deref()).await,
+        Commands::SpecRender { format, hash } => {
+            commands::spec_render_command(&cli.spec, &format, hash).await
+        }
         Commands::Portability => commands::portability_command(&cli.spec).await,
         Commands::SpecPlan {
             old,

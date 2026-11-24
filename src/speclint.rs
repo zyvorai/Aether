@@ -69,6 +69,13 @@ pub struct LintReport {
     pub diagnostics: Vec<Diagnostic>,
     pub errors: usize,
     pub warnings: usize,
+    /// Diagnostics dropped by `--ignore` or inline `aether-lint: ignore` comments.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub suppressed: usize,
+}
+
+fn is_zero(n: &usize) -> bool {
+    *n == 0
 }
 
 impl LintReport {
@@ -86,6 +93,7 @@ impl LintReport {
             diagnostics,
             errors,
             warnings,
+            suppressed: 0,
         }
     }
 
@@ -119,9 +127,13 @@ impl LintReport {
             }
         }
         out.push_str(&format!(
-            "{} error(s), {} warning(s)\n",
+            "{} error(s), {} warning(s)",
             self.errors, self.warnings
         ));
+        if self.suppressed > 0 {
+            out.push_str(&format!(", {} suppressed", self.suppressed));
+        }
+        out.push('\n');
         out
     }
 }
@@ -875,8 +887,278 @@ fn names(ts: &[Target]) -> String {
     ts.iter().map(|t| t.as_str()).collect::<Vec<_>>().join(", ")
 }
 
+/// Image reference with no tag, `:latest`, and no digest pin.
+pub fn image_is_floating(image: &str) -> bool {
+    if image.contains('@') {
+        return false;
+    }
+    let last = image.rsplit('/').next().unwrap_or(image);
+    match last.split_once(':') {
+        None => true,
+        Some((_, tag)) => tag == "latest",
+    }
+}
+
+fn bool_at(raw: &Value, path: &str) -> Option<bool> {
+    portability::lookup(raw, path).and_then(Value::as_bool)
+}
+
+/// Opt-in hardening and reliability rules (`B1xx`), in the spirit of
+/// kube-linter and Polaris. They are advice, not correctness, so they only
+/// run with `aether lint --best-practices`.
+fn best_practice_rules(raw: &Value, out: &mut Vec<Diagnostic>) {
+    let targets = portability::declared_targets(raw);
+    let kube = targets.contains(&Target::Kube);
+    let is_job = portability::lookup(raw, "schedule").is_some_and(portability::is_set);
+    let exposes = portability::lookup(raw, "network.ports").is_some_and(portability::is_set);
+    let probe = |name: &str| {
+        portability::lookup(raw, &format!("health.{name}")).is_some_and(portability::is_set)
+    };
+
+    if !is_job && !probe("liveness") {
+        out.push(diag(
+            "B101",
+            Severity::Warning,
+            "health.liveness",
+            "no liveness probe: a hung process is never restarted".into(),
+        ));
+    }
+    if !is_job && exposes && !probe("readiness") {
+        out.push(diag(
+            "B102",
+            Severity::Warning,
+            "health.readiness",
+            "ports are exposed but there is no readiness probe: traffic reaches pods that are not ready".into(),
+        ));
+    }
+    if kube {
+        let nonroot = bool_at(raw, "kubernetes.containerSecurityContext.runAsNonRoot")
+            == Some(true)
+            || bool_at(raw, "kubernetes.podSecurityContext.runAsNonRoot") == Some(true);
+        if !nonroot {
+            out.push(diag(
+                "B103",
+                Severity::Warning,
+                "kubernetes.containerSecurityContext.runAsNonRoot",
+                "the container may run as root; set runAsNonRoot: true".into(),
+            ));
+        }
+        if bool_at(
+            raw,
+            "kubernetes.containerSecurityContext.readOnlyRootFilesystem",
+        ) != Some(true)
+        {
+            out.push(diag(
+                "B104",
+                Severity::Warning,
+                "kubernetes.containerSecurityContext.readOnlyRootFilesystem",
+                "the root filesystem is writable; set readOnlyRootFilesystem: true".into(),
+            ));
+        }
+        if bool_at(
+            raw,
+            "kubernetes.containerSecurityContext.allowPrivilegeEscalation",
+        ) != Some(false)
+        {
+            out.push(diag(
+                "B105",
+                Severity::Warning,
+                "kubernetes.containerSecurityContext.allowPrivilegeEscalation",
+                "privilege escalation is allowed; set allowPrivilegeEscalation: false".into(),
+            ));
+        }
+        let min = portability::lookup(raw, "scaling.minReplicas")
+            .and_then(Value::as_u64)
+            .unwrap_or(1);
+        let scaled = portability::lookup(raw, "scaling").is_some_and(portability::is_set);
+        let pdb = portability::lookup(raw, "kubernetes.podDisruptionBudget")
+            .is_some_and(portability::is_set);
+        if !is_job && !(scaled && min >= 2) && !pdb {
+            out.push(diag(
+                "B106",
+                Severity::Warning,
+                "scaling.minReplicas",
+                "a single replica with no disruption budget goes down on every node drain".into(),
+            ));
+        }
+        let has_policy = [
+            "networkPolicy",
+            "ciliumNetworkPolicy",
+            "calicoNetworkPolicy",
+        ]
+        .iter()
+        .any(|k| {
+            portability::lookup(raw, &format!("network.{k}")).is_some_and(portability::is_set)
+        });
+        if exposes && !has_policy {
+            out.push(diag(
+                "B107",
+                Severity::Warning,
+                "network.networkPolicy",
+                "no network policy: every pod in the cluster can reach this workload".into(),
+            ));
+        }
+        let has_sa = portability::lookup(raw, "kubernetes.serviceAccountName")
+            .is_some_and(portability::is_set)
+            || portability::lookup(raw, "kubernetes.serviceAccount")
+                .is_some_and(portability::is_set);
+        if !has_sa {
+            out.push(diag(
+                "B109",
+                Severity::Warning,
+                "kubernetes.serviceAccountName",
+                "the pod uses the namespace's default service account".into(),
+            ));
+        }
+        for key in ["sidecars", "initContainers"] {
+            let Some(Value::Sequence(items)) =
+                portability::lookup(raw, &format!("kubernetes.{key}"))
+            else {
+                continue;
+            };
+            for (i, c) in items.iter().enumerate() {
+                if let Some(img) = c.get("image").and_then(Value::as_str) {
+                    if image_is_floating(img) {
+                        out.push(diag(
+                            "B108",
+                            Severity::Warning,
+                            &format!("kubernetes.{key}[{i}].image"),
+                            format!("`{}` has no pinned tag or digest", sanitize(img)),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Options for [`lint_with`].
+#[derive(Debug, Clone, Default)]
+pub struct LintOptions {
+    /// Also run the opt-in best-practice rules (`B1xx`).
+    pub best_practices: bool,
+    /// Diagnostic codes to drop (case-insensitive). Input guards and parse and
+    /// validation errors (`E00x`, `E01x`) can never be suppressed.
+    pub ignore: Vec<String>,
+}
+
 /// Lint a spec document. Never panics on hostile input.
 pub fn lint_str(src: &str) -> LintReport {
+    lint_with(src, &LintOptions::default())
+}
+
+/// Codes that guard against hostile or broken input; suppressing them would
+/// hide that the rest of the report is incomplete.
+pub fn is_unsuppressible(code: &str) -> bool {
+    code.starts_with("E00") || code.starts_with("E01")
+}
+
+/// Lint with options: best-practice rules, `--ignore` codes and inline
+/// `# aether-lint: ignore=CODE[,CODE]` comments (see [`parse_directives`]).
+pub fn lint_with(src: &str, opts: &LintOptions) -> LintReport {
+    let mut report = lint_inner(src, opts.best_practices);
+    let dirs = parse_directives(src);
+    let before = report.diagnostics.len();
+    report.diagnostics.retain(|d| {
+        if is_unsuppressible(d.code) {
+            return true;
+        }
+        if opts.ignore.iter().any(|c| c.eq_ignore_ascii_case(d.code)) {
+            return false;
+        }
+        !dirs.suppresses(d.code, d.line)
+    });
+    report.suppressed = before - report.diagnostics.len();
+    report.errors = report
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
+    report.warnings = report
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity == Severity::Warning)
+        .count();
+    report
+}
+
+/// Inline suppression comments found in a spec.
+///
+/// * `# aether-lint: ignore=W020,W040` on its own line suppresses those codes
+///   on the next line that holds content.
+/// * The same comment after a value suppresses them on that line.
+/// * `# aether-lint: ignore-file=I041` suppresses them for the whole file.
+#[derive(Debug, Default)]
+pub struct Directives {
+    file: Vec<String>,
+    lines: Vec<(usize, String)>,
+}
+
+impl Directives {
+    pub fn suppresses(&self, code: &str, line: usize) -> bool {
+        self.file.iter().any(|c| c.eq_ignore_ascii_case(code))
+            || (line > 0
+                && self
+                    .lines
+                    .iter()
+                    .any(|(l, c)| *l == line && c.eq_ignore_ascii_case(code)))
+    }
+}
+
+pub fn parse_directives(src: &str) -> Directives {
+    const TAG: &str = "aether-lint:";
+    let mut d = Directives::default();
+    let mut pending: Vec<String> = Vec::new();
+    for (i, raw) in src.lines().enumerate() {
+        let lineno = i + 1;
+        let trimmed = raw.trim_start();
+        let standalone = trimmed.starts_with('#');
+        let comment = if standalone {
+            Some(trimmed)
+        } else {
+            raw.find(" #").map(|at| &raw[at + 1..])
+        };
+        let mut found: Option<(bool, Vec<String>)> = None;
+        if let Some(c) = comment {
+            if let Some(pos) = c.find(TAG) {
+                let rest = c[pos + TAG.len()..].trim();
+                let (file_wide, list) = if let Some(l) = rest.strip_prefix("ignore-file=") {
+                    (true, l)
+                } else if let Some(l) = rest.strip_prefix("ignore=") {
+                    (false, l)
+                } else {
+                    (false, "")
+                };
+                let codes: Vec<String> = list
+                    .split(|ch: char| ch == ',' || ch.is_whitespace())
+                    .filter(|c| !c.is_empty())
+                    .map(|c| c.to_ascii_uppercase())
+                    .take(32)
+                    .collect();
+                found = Some((file_wide, codes));
+            }
+        }
+        if let Some((file_wide, codes)) = found {
+            if file_wide {
+                d.file.extend(codes);
+            } else if standalone {
+                pending.extend(codes);
+            } else {
+                for c in codes {
+                    d.lines.push((lineno, c));
+                }
+            }
+        }
+        if !standalone && !raw.trim().is_empty() {
+            for c in pending.drain(..) {
+                d.lines.push((lineno, c));
+            }
+        }
+    }
+    d
+}
+
+fn lint_inner(src: &str, best_practices: bool) -> LintReport {
     let mut diags = Vec::new();
     let raw = match guarded_parse(src) {
         Ok(v) => v,
@@ -930,6 +1212,9 @@ pub fn lint_str(src: &str) -> LintReport {
                 }
             }
             portability_rules(&raw, &mut diags);
+            if best_practices {
+                best_practice_rules(&raw, &mut diags);
+            }
         }
         Err(e) => {
             let mut d = diag("E010", Severity::Error, "", format!("schema error: {e}"));

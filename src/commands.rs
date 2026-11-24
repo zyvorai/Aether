@@ -4341,16 +4341,115 @@ fn read_spec_text(path: &std::path::Path) -> Result<String> {
 }
 
 /// `aether lint`: line-numbered diagnostics. Exits 1 on errors.
-pub(crate) async fn lint_command(spec_path: &std::path::Path, deny_warnings: bool) -> Result<()> {
-    let text = read_spec_text(spec_path)?;
-    let report = aether::speclint::lint_str(&text);
-    if output::is_json() {
-        println!("{}", serde_json::to_string_pretty(&report)?);
-    } else {
-        print!("{}", report.render_text(&spec_path.display().to_string()));
+pub(crate) struct LintArgs {
+    pub deny_warnings: bool,
+    pub format: String,
+    pub best_practices: bool,
+    pub ignore: Vec<String>,
+    pub explain: Option<String>,
+    pub list_rules: bool,
+}
+
+pub(crate) async fn lint_command(spec_path: &std::path::Path, args: LintArgs) -> Result<()> {
+    use aether::lintfmt::{self, Format};
+    if let Some(code) = &args.explain {
+        let rule = lintfmt::rule(code).ok_or_else(|| {
+            anyhow::anyhow!("unknown diagnostic code `{code}` (see --list-rules)")
+        })?;
+        print!("{}", lintfmt::explain(rule));
+        return Ok(());
     }
-    if report.failed(deny_warnings) {
+    if args.list_rules {
+        if output::is_json() {
+            println!("{}", serde_json::to_string_pretty(lintfmt::RULES)?);
+        } else {
+            for r in lintfmt::RULES {
+                println!(
+                    "{}  {:<7} {}{}",
+                    r.code,
+                    r.severity.as_str(),
+                    r.title,
+                    if r.opt_in { "  [--best-practices]" } else { "" }
+                );
+            }
+        }
+        return Ok(());
+    }
+    let mut format: Format = args
+        .format
+        .parse()
+        .map_err(|e: String| anyhow::anyhow!(e))?;
+    if output::is_json() && format == Format::Text {
+        format = Format::Json;
+    }
+    let text = read_spec_text(spec_path)?;
+    let report = aether::speclint::lint_with(
+        &text,
+        &aether::speclint::LintOptions {
+            best_practices: args.best_practices,
+            ignore: args.ignore,
+        },
+    );
+    print!(
+        "{}",
+        lintfmt::render(&report, &spec_path.display().to_string(), format)
+    );
+    if report.failed(args.deny_warnings) {
         std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `aether spec-merge`: base spec + overlays + `--set`, linted.
+pub(crate) async fn spec_merge_command(
+    spec_path: &std::path::Path,
+    overlays: &[PathBuf],
+    sets: &[String],
+    output_path: Option<&std::path::Path>,
+) -> Result<()> {
+    let base = read_spec_text(spec_path)?;
+    let mut texts = Vec::new();
+    for o in overlays {
+        texts.push(read_spec_text(o)?);
+    }
+    let merged =
+        aether::specmerge::merge_str(&base, &texts, sets).map_err(|e| anyhow::anyhow!(e))?;
+    if output::is_json() {
+        println!("{}", serde_json::to_string_pretty(&merged)?);
+    } else if let Some(p) = output_path {
+        std::fs::write(p, &merged.spec)
+            .with_context(|| format!("cannot write '{}'", p.display()))?;
+    } else {
+        print!("{}", merged.spec);
+    }
+    if !output::is_json() {
+        eprint!("{}", merged.lint.render_text("<merged>"));
+    }
+    if merged.lint.failed(false) {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `aether spec-render`: canonical spec and content hashes.
+pub(crate) async fn spec_render_command(
+    spec_path: &std::path::Path,
+    format: &str,
+    hash_only: bool,
+) -> Result<()> {
+    let rendered = aether::specrender::render_str(&read_spec_text(spec_path)?)
+        .map_err(|e| anyhow::anyhow!(e))?;
+    if hash_only {
+        println!("{}", rendered.hash);
+        return Ok(());
+    }
+    match format {
+        "json" => println!("{}", serde_json::to_string_pretty(&rendered)?),
+        "yaml" => {
+            println!("# hash: {}", rendered.hash);
+            print!("{}", serde_yaml::to_string(&rendered.spec)?);
+        }
+        other => anyhow::bail!("unknown format `{other}` (expected yaml or json)"),
     }
     Ok(())
 }

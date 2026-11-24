@@ -143,7 +143,7 @@ fn truncate(s: &str) -> String {
     }
 }
 
-fn is_sensitive(path: &str) -> bool {
+pub(crate) fn is_sensitive(path: &str) -> bool {
     let p = path.to_lowercase();
     [
         "secret",
