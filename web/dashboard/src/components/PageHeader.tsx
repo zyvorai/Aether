@@ -48,8 +48,8 @@ export default function PageHeader({
           ) : null}
           <div className="min-w-0">
             {eyebrow ? (
-              <div className="mb-1 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary platform-pulse" />
+              <div className="mb-1 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-primary">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent-fill platform-pulse" />
                 {eyebrow}
               </div>
             ) : null}

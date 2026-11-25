@@ -278,7 +278,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
                     type="button"
                     onClick={() => void handleGenerate(t.name)}
                     disabled={generateLoading === t.name}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/10 hover:text-primary disabled:opacity-50"
                   >
                     <Wand2 size={13} />
                     {generateLoading === t.name ? '…' : 'Generate'}
@@ -286,7 +286,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', template: t.name }))}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                   >
                     <FileCode2 size={13} />
                     Use
@@ -294,7 +294,7 @@ function TemplatesPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => setConfigureTemplate(t.name)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                   >
                     <Settings2 size={13} />
                     Config

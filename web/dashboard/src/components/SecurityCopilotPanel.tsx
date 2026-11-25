@@ -112,7 +112,7 @@ export default function SecurityCopilotPanel() {
                 </button>
               </div>
               <p className="mb-3 text-sm text-muted">{item.rationale}</p>
-              <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
+              <pre tabIndex={0} className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
                 {item.policy_yaml}
               </pre>
             </li>

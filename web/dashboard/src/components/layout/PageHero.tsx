@@ -40,7 +40,7 @@ interface PageHeroProps {
 
 export function PageHero({ eyebrow, title, description, actions, accent, swatches, stats, statsTestId, className }: PageHeroProps) {
   return (
-    <section data-tone={accent} className={cn('tahoe-hero apple-editorial-hero space-y-10', className)}>
+    <section data-tone={accent} className={cn('tahoe-hero apple-editorial-hero space-y-8', className)}>
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3 min-w-0 max-w-3xl">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
@@ -76,11 +76,11 @@ export function PageHero({ eyebrow, title, description, actions, accent, swatche
       {stats?.length ? (
         <div
           data-tone={accent}
-          className="apple-chapter-dark marketplace-chapter-ink rounded-2xl px-6 py-12 sm:px-10 sm:py-14"
+          className="apple-chapter-dark marketplace-chapter-ink rounded-2xl p-6 sm:p-8"
           data-testid={statsTestId}
         >
           <AppleHighlightsRow
-            title="Get the highlights."
+            title="At a glance"
             items={stats.map((stat) => ({
               id: String(stat.label),
               value: String(stat.value),

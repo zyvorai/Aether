@@ -43,11 +43,11 @@ interface FabricTopologyReport {
 }
 
 const KIND_COLORS: Record<FabricNode['kind'], string> = {
-  application: 'rgb(99 164 255)',
-  runtime: 'rgb(168 85 247)',
-  cluster: 'rgb(45 212 191)',
-  node: 'rgb(251 191 36)',
-  resource: 'rgb(148 163 184)',
+  application: 'var(--tone-sky)',
+  runtime: 'var(--tone-violet)',
+  cluster: 'var(--tone-teal)',
+  node: 'var(--tone-amber)',
+  resource: 'var(--subtle)',
 };
 
 function buildFabricGraph(workloads: WorkloadResponse[]): FabricGraph {
@@ -256,8 +256,8 @@ export default function RuntimeFabricGraph({
         >
           <defs>
             <linearGradient id="fabric-edge" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(99,164,255,0.2)" />
-              <stop offset="100%" stopColor="rgba(168,85,247,0.5)" />
+              <stop offset="0%" stopColor="var(--tone-sky)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="var(--tone-violet)" stopOpacity={0.7} />
             </linearGradient>
             <filter id="fabric-glow">
               <feGaussianBlur stdDeviation="2" result="blur" />
@@ -311,16 +311,17 @@ export default function RuntimeFabricGraph({
                   width={104}
                   height={44}
                   rx={12}
-                  fill="rgba(15,23,42,0.92)"
-                  stroke={active ? color : `${color.replace('rgb', 'rgba').replace(')', ', 0.55)')}`}
+                  fill="var(--surface)"
+                  stroke={color}
+                  strokeOpacity={active ? 1 : 0.6}
                   strokeWidth={active ? 2.5 : 1.5}
                   filter={active ? 'url(#fabric-glow)' : undefined}
                 />
-                <text textAnchor="middle" y={-2} className="fill-slate-100 text-[11px] font-medium">
+                <text textAnchor="middle" y={-2} className="fill-foreground text-[11px] font-medium">
                   {node.label.length > 12 ? `${node.label.slice(0, 10)}…` : node.label}
                 </text>
                 {node.sub ? (
-                  <text textAnchor="middle" y={12} className="fill-slate-500 text-[9px]">
+                  <text textAnchor="middle" y={12} className="fill-muted text-[9px]">
                     {node.sub}
                   </text>
                 ) : null}
@@ -332,7 +333,7 @@ export default function RuntimeFabricGraph({
 
       {selectedNode?.workload && onQuickAction ? (
         <div className="flex flex-wrap gap-2 rounded-2xl border glass-divider glass p-3" data-testid="fabric-node-actions">
-          <span className="w-full text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+          <span className="w-full text-[10px] font-semibold uppercase tracking-[0.04em] text-subtle">
             Quick actions · {selectedNode.workload}
           </span>
           <button
@@ -359,7 +360,7 @@ export default function RuntimeFabricGraph({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.14em] text-subtle">
+      <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.04em] text-subtle">
         <span className="inline-flex items-center gap-1"><Cpu className="h-3 w-3 text-primary" /> Application</span>
         <span className="inline-flex items-center gap-1"><Network className="h-3 w-3 text-lavender" /> Runtime</span>
         <span className="inline-flex items-center gap-1"><HardDrive className="h-3 w-3 text-mistblue" /> Cluster</span>

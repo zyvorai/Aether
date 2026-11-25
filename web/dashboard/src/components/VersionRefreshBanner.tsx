@@ -58,7 +58,7 @@ export default function VersionRefreshBanner() {
   return (
     <div
       role="status"
-      className="relative border-b border-warning/50 bg-warning/40 px-4 py-2 pr-10 text-center text-sm text-warning"
+      className="relative border-b border-warning/50 bg-warning/10 px-4 py-2 pr-10 text-center text-sm text-warning"
     >
       <RefreshCw className="inline-block w-4 h-4 mr-2 -mt-0.5" aria-hidden />
       A new dashboard build is available on the server.{' '}

@@ -290,7 +290,7 @@ function DriftPage({ refreshKey }: { refreshKey?: number } = {}) {
                         ? 'border-primary/60 ring-1 ring-aether/30 bg-primary/5 text-primary'
                         : bulkScan?.drifted.includes(w.name)
                           ? 'border-danger/40 bg-danger/10 text-danger'
-                          : 'glass-divider glass text-foreground hover:bg-white/[0.04]'
+                          : 'glass-divider glass text-foreground hover:bg-hover'
                   }`}
                 >
                   {checkLoading === w.name ? 'Checking…' : w.name}

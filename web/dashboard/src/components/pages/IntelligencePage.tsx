@@ -531,7 +531,7 @@ export function IntelligenceStudio({ refreshKey, forcedTab }: { refreshKey?: num
             <p className="text-sm text-muted">
               POST workload YAML to rank clusters and runtimes for global placement.
             </p>
-            <textarea
+            <textarea aria-label="Workload YAML"
               value={placeYaml}
               onChange={(e) => setPlaceYaml(e.target.value)}
               rows={14}

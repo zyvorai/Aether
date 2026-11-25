@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   User,
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 import {
   apiFetchAuthProviders,
   apiFetchHealth,
@@ -29,7 +30,7 @@ import {
   type AuthProvidersPayload,
   type HealthPayload,
 } from '../utils/api';
-import { ZyvorFooter, ZYVOR_URL, ZYVOR_ORANGE } from './ZyvorBrand';
+import { ZyvorFooter, ZYVOR_URL } from './ZyvorBrand';
 
 interface LoginGateProps {
   onAuthenticated: (username: string) => void;
@@ -180,7 +181,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
   return (
     <main className="login-scroll" data-testid="login-gate">
-      <div className="ae-ambient" aria-hidden><i /><i /><i /></div>
+      <div className="fixed right-4 top-4 z-20"><ThemeToggle /></div>
 
       <section className="login-chapter login-hero text-center" aria-label="Aether">
         <div className="relative z-10 flex flex-col items-center">
@@ -188,7 +189,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             <img src="/zyvor-logo.svg" alt="Zyvor" width={40} height={40} className="rounded-xl shrink-0" />
             <div className="text-left">
               <div className="text-lg font-semibold tracking-tight text-foreground">Aether</div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Universal runtime control plane</div>
+              <div className="text-[11px] uppercase tracking-[0.04em] text-muted">Universal runtime control plane</div>
             </div>
           </a>
           {health ? (
@@ -222,7 +223,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
               { icon: ShieldCheck, title: 'Policy built in', text: 'RBAC and audit trails', tone: 'violet' as const },
               { icon: Boxes, title: 'Runtime aware', text: 'Smart placement decisions', tone: 'teal' as const },
             ].map(({ icon: Icon, title, text, tone }) => (
-              <div key={title} data-tone={tone} className="glass-fill rounded-xl p-4 text-left" style={{ background: 'color-mix(in srgb, var(--tone-color) 14%, var(--glass-bg))' }}>
+              <div key={title} data-tone={tone} className="glass-fill rounded-xl p-4 text-left" >
                 <Icon className="h-4 w-4" style={{ color: 'var(--tone-color)' }} aria-hidden />
                 <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
                 <div className="mt-1 text-xs leading-relaxed text-muted">{text}</div>
@@ -252,8 +253,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             href={ZYVOR_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-2 text-xs font-medium"
-            style={{ color: ZYVOR_ORANGE }}
+            className="mt-8 inline-flex items-center gap-2 text-xs font-medium text-muted transition-colors hover:text-foreground"
           >
             <img src="/zyvor-logo.svg" alt="" width={16} height={16} className="rounded-[4px]" />
             Built by ZyvorAI Labs
@@ -264,7 +264,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
       <section id="login-sign-in-chapter" className="login-chapter login-panel" aria-label="Sign in">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Aether console</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.04em] text-primary">Aether console</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               Sign in to manage workloads across every connected runtime.
@@ -273,12 +273,12 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
           <div className="login-glass p-5 sm:p-6">
             {notice ? (
-              <div className="mb-4 rounded-xl border border-warning bg-warning px-3.5 py-3 text-sm text-warning" role="alert">
+              <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-3 text-sm text-warning" role="alert">
                 {notice}
               </div>
             ) : null}
             {error ? (
-              <div className="mb-4 rounded-xl border border-danger bg-danger px-3.5 py-3 text-sm text-danger" role="alert">
+              <div className="mb-4 rounded-xl border border-danger/40 bg-danger/10 px-3.5 py-3 text-sm text-danger" role="alert">
                 {error}
               </div>
             ) : null}
@@ -346,7 +346,7 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
             <div className="mt-5 h-10 animate-pulse rounded-xl bg-surface" aria-hidden />
           ) : hasEnterpriseProvider ? (
             <div className="mt-5">
-              <div className="mb-4 flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-muted">
+              <div className="mb-4 flex items-center gap-3 text-[11px] uppercase tracking-[0.04em] text-muted">
                 <span className="h-px flex-1 bg-border" />
                 Organization sign-in
                 <span className="h-px flex-1 bg-border" />

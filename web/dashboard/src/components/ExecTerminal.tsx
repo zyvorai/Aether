@@ -21,6 +21,18 @@ interface ExecTerminalProps {
   className?: string;
 }
 
+/** xterm needs concrete colours, so read the terminal tokens from theme.css. */
+function terminalTheme() {
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string) => css.getPropertyValue(name).trim();
+  return {
+    background: token('--terminal-bg'),
+    foreground: token('--terminal-fg'),
+    cursor: token('--terminal-fg'),
+    selectionBackground: 'rgba(41, 151, 255, 0.35)',
+  };
+}
+
 const ExecTerminal = forwardRef<ExecTerminalHandle, ExecTerminalProps>(function ExecTerminal(
   { interactive, onData, className },
   ref,
@@ -70,12 +82,7 @@ const ExecTerminal = forwardRef<ExecTerminalHandle, ExecTerminalProps>(function 
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
       fontSize: 13,
       lineHeight: 1.35,
-      theme: {
-        background: '#0b1220',
-        foreground: '#34d399',
-        cursor: '#34d399',
-        selectionBackground: 'rgba(52, 211, 153, 0.25)',
-      },
+      theme: terminalTheme(),
       allowProposedApi: true,
     });
     const fit = new FitAddon();

@@ -293,7 +293,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => setSelectedPlugin(p)}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                   >
                     <Search size={13} />
                     Inspect
@@ -302,7 +302,7 @@ function PluginsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => void handleRemove(p.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/15 hover:text-danger"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/10 hover:text-danger"
                     >
                       <Trash2 size={13} />
                       Remove

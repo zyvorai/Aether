@@ -59,7 +59,7 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/25"
+          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
         >
           <Rocket size={12} /> Open
         </button>

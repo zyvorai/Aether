@@ -300,7 +300,7 @@ function EditorPage() {
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-muted"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-hover text-muted"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? 'Hide' : 'Show'} YAML
@@ -309,7 +309,7 @@ function EditorPage() {
           <button
             type="button"
             onClick={() => (yamlEditMode ? disableYamlEdit() : enableYamlEdit())}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-white/[0.04] text-muted"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border glass-divider rounded-xl hover:bg-hover text-muted"
           >
             <Pencil className="w-4 h-4" />
             {yamlEditMode ? 'Sync from form' : 'Edit YAML directly'}
@@ -324,7 +324,7 @@ function EditorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-subtle mb-1">Name</label>
-                <input
+                <input aria-label="Name"
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChange('name', e.target.value)}
@@ -333,7 +333,7 @@ function EditorPage() {
               </div>
               <div>
                 <label className="block text-xs text-subtle mb-1">Image</label>
-                <input
+                <input aria-label="Image"
                   type="text"
                   value={form.image}
                   onChange={(e) => handleChange('image', e.target.value)}
@@ -346,7 +346,7 @@ function EditorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-subtle mb-1">Runtime</label>
-              <select
+              <select aria-label="Runtime"
                 value={form.runtime}
                 onChange={(e) => handleChange('runtime', e.target.value)}
                 className="glass-input"
@@ -360,7 +360,7 @@ function EditorPage() {
             </div>
             <div>
               <label className="block text-xs text-subtle mb-1">Replicas</label>
-              <input
+              <input aria-label="Replicas"
                 type="number"
                 value={form.replicas}
                 onChange={(e) => handleChange('replicas', parseInt(e.target.value, 10) || 1)}
@@ -375,7 +375,7 @@ function EditorPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-subtle mb-1">Namespace</label>
-                  <input
+                  <input aria-label="Namespace"
                     type="text"
                     value={form.k8sNamespace}
                     onChange={(e) => handleChange('k8sNamespace', e.target.value)}
@@ -384,7 +384,7 @@ function EditorPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-subtle mb-1">Service account</label>
-                  <input
+                  <input aria-label="Service account"
                     type="text"
                     value={form.k8sServiceAccount}
                     onChange={(e) => handleChange('k8sServiceAccount', e.target.value)}
@@ -393,7 +393,7 @@ function EditorPage() {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs text-subtle mb-1">Node selector (key=value)</label>
-                  <input
+                  <input aria-label="Node selector (key=value)"
                     type="text"
                     value={form.k8sNodeSelector}
                     onChange={(e) => handleChange('k8sNodeSelector', e.target.value)}
@@ -424,7 +424,7 @@ function EditorPage() {
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border glass-divider p-4">
                   <div>
                     <label className="block text-xs text-subtle mb-1">Workload kind</label>
-                    <select
+                    <select aria-label="Workload kind"
                       value={form.k8sWorkloadKind}
                       onChange={(e) => handleChange('k8sWorkloadKind', e.target.value)}
                       className="glass-input"
@@ -438,7 +438,7 @@ function EditorPage() {
                   </div>
                   <div>
                     <label className="block text-xs text-subtle mb-1">PDB minAvailable</label>
-                    <input
+                    <input aria-label="PDB minAvailable"
                       type="text"
                       value={form.k8sPdbMinAvailable}
                       onChange={(e) => handleChange('k8sPdbMinAvailable', e.target.value)}
@@ -529,7 +529,7 @@ function EditorPage() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-xs text-subtle mb-1">Min replicas</label>
-                  <input
+                  <input aria-label="Min replicas"
                     type="number"
                     value={form.scalingMin}
                     onChange={(e) => handleChange('scalingMin', parseInt(e.target.value, 10) || 1)}
@@ -538,7 +538,7 @@ function EditorPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-subtle mb-1">Max replicas</label>
-                  <input
+                  <input aria-label="Max replicas"
                     type="number"
                     value={form.scalingMax}
                     onChange={(e) => handleChange('scalingMax', parseInt(e.target.value, 10) || 1)}
@@ -581,7 +581,7 @@ function EditorPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-subtle mb-1">CPU</label>
-                <input
+                <input aria-label="CPU"
                   type="text"
                   value={form.cpu}
                   onChange={(e) => handleChange('cpu', e.target.value)}
@@ -590,7 +590,7 @@ function EditorPage() {
               </div>
               <div>
                 <label className="block text-xs text-subtle mb-1">Memory</label>
-                <input
+                <input aria-label="Memory"
                   type="text"
                   value={form.memory}
                   onChange={(e) => handleChange('memory', e.target.value)}
@@ -602,7 +602,7 @@ function EditorPage() {
 
           <div>
             <label className="block text-xs text-subtle mb-1">Intent</label>
-            <select
+            <select aria-label="Intent"
               value={form.intent}
               onChange={(e) => handleChange('intent', e.target.value)}
               className="glass-input"
@@ -617,7 +617,7 @@ function EditorPage() {
 
           <div>
             <label className="block text-xs text-subtle mb-1">Environment (KEY=VALUE per line)</label>
-            <textarea
+            <textarea aria-label="Environment (KEY=VALUE per line)"
               value={form.env}
               onChange={(e) => handleChange('env', e.target.value)}
               rows={3}
@@ -646,7 +646,7 @@ function EditorPage() {
           )}
 
           {exportPath && (
-            <p className="text-xs text-subtle mt-2">Helm output: <code className="text-primary/90">{exportPath}</code></p>
+            <p className="text-xs text-subtle mt-2">Helm output: <code className="text-primary">{exportPath}</code></p>
           )}
 
           <div className="flex flex-wrap gap-3 pt-4 glass-divider-t">

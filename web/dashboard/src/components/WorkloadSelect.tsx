@@ -24,6 +24,7 @@ export default function WorkloadSelect({
 
   return (
     <select
+      aria-label={placeholder || 'Workload'}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`glass-select ${className}`}

@@ -414,7 +414,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
                 setPlacementPlan(res.success ? (res.data as FederationPlan) : null);
                 setPlacementLoading(false);
               }}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm text-[var(--primary-foreground)] disabled:opacity-50"
+              className="rounded-lg bg-accent-fill px-3 py-1.5 text-sm text-[var(--primary-foreground)] disabled:opacity-50"
             >
               {placementLoading ? 'Planning…' : 'Plan for focused workload'}
             </button>
@@ -640,7 +640,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
           Deep Hubble flow queries and PacketWolf east-west verification are integrated via env URLs on the control plane.
         </p>
         {packetwolfStatus?.configured ? (
-          <div className="mb-4 rounded-xl border border-primary/40 bg-primary/20 px-4 py-3 text-sm" data-testid="packetwolf-live-card">
+          <div className="mb-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm" data-testid="packetwolf-live-card">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium text-primary">PacketWolf bridge</span>
               <Badge text={packetwolfStatus.reachable ? 'live' : 'offline'} variant={packetwolfStatus.reachable ? 'green' : 'yellow'} />
@@ -658,7 +658,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
               href={integrations.grafana_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/20"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/10"
             >
               Grafana <ExternalLink size={14} />
             </a>
@@ -692,7 +692,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/30 px-4 py-2 text-sm text-primary hover:bg-primary/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/50"
             >
               PacketWolf <ExternalLink size={14} />
             </a>

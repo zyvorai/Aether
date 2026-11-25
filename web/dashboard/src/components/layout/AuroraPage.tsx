@@ -48,7 +48,7 @@ export default function AuroraPage({
 }: AuroraPageProps) {
   const meta = getViewMeta(view);
   return (
-    <div className={cn('space-y-12 animate-fade-up', className)} data-testid={`page-${view}`}>
+    <div className={cn('space-y-10 animate-fade-up', className)} data-testid={`page-${view}`}>
       <PageHero
         eyebrow={GROUP_EYEBROW[meta.group]}
         title={title ?? meta.label}
@@ -60,7 +60,7 @@ export default function AuroraPage({
         stats={stats}
         statsTestId={statsTestId}
       />
-      <div className="space-y-12">{children}</div>
+      <div className="space-y-10">{children}</div>
     </div>
   );
 }

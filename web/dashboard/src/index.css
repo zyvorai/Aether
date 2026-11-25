@@ -1,51 +1,146 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-@import './theme.css';
+/* Copyright 2026 ZyvorAI Labs Private Limited */
+/* SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0 */
 
 @import 'tailwindcss';
-@config '../tailwind.config.js';
+@import './theme.css';
 
-/* Tailwind 4 compatibility: v3 defaulted border-like utilities to gray-200
-   (and ring to 3px blue-500); v4 uses currentColor. Keep the v3 look. */
+/* Utilities are generated from the CSS variables in theme.css. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-primary: var(--primary);
+  --color-primary-wash: var(--accent-tint);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-muted: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --color-warn: var(--warning);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-danger-fill: var(--danger-fill);
+  --color-warning-fill: var(--warning-fill);
+  --color-success-fill: var(--success-fill);
+  --color-violet-fill: var(--violet-fill);
+  --color-hover: var(--hover);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-glass: var(--glass);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-purple: var(--accent-purple);
+  --color-deepblue: rgb(var(--iphone-deep-blue-rgb));
+  --color-sage: rgb(var(--iphone-sage-rgb));
+  --color-mistblue: rgb(var(--iphone-mist-blue-rgb));
+  --color-lavender: rgb(var(--iphone-lavender-rgb));
+  --color-gold: rgb(var(--iphone-gold-rgb));
+  --color-aether: var(--primary);
+  --color-aether-light: var(--accent-fill-hover);
+  --color-aether-dark: var(--primary-hover);
+  --color-aether-ai: var(--primary);
+  --color-aether-ai-light: var(--primary-hover);
+
+  --font-sans: var(--sans);
+  --font-display: var(--display);
+  --font-mono: var(--mono);
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.47;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.43;
+  --text-body-lg: 1.1875rem;
+  --text-body-lg--line-height: 1.42;
+  --text-display: clamp(2.125rem, 4vw, 3rem);
+  --text-display--line-height: 1.08;
+
+  --shadow-ambient: var(--shadow-overlay);
+  --shadow-card: var(--shadow-card);
+
+  --radius-liquid: var(--radius-liquid);
+  --radius-pill: var(--radius-pill);
+
+  --animate-scale-in: scale-in 0.2s ease-out;
+
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+/* Shape scale (rounded-*). */
+@theme {
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+}
+
 @layer base {
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
+    border-color: var(--border);
   }
-}
 
-@layer base {
   html {
-    scroll-padding-top: var(--nav-h, 44px);
+    scroll-padding-top: var(--nav-h);
     background: var(--background);
   }
 
   body {
     font-family: var(--sans);
     font-size: var(--font-size-base);
-    line-height: var(--leading-relaxed);
+    line-height: 1.47;
+    letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     background: var(--background);
     color: var(--foreground);
   }
 
   h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.022em;
+    font-family: var(--display);
+    letter-spacing: var(--tracking-display);
     font-weight: 600;
+    text-wrap: balance;
   }
 
-  code, pre {
-    font-family: var(--mono);
-  }
+  code, pre, kbd { font-family: var(--mono); letter-spacing: 0; }
 
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  select:not(:disabled),
+  summary { cursor: pointer; }
+
+  ::placeholder { color: var(--subtle); opacity: 1; }
+  ::selection { background: var(--code-selection); }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--subtle); }
+
+  /* Plain form controls follow the theme even without a component class. */
+  :where(input:not([type='checkbox'], [type='radio'], [type='range']), select, textarea) {
+    color: var(--foreground);
+  }
+  :where(select) option { background: var(--surface-elevated); color: var(--foreground); }
+  :where(input[type='checkbox'], input[type='radio'], input[type='range']) { accent-color: var(--accent-fill); }
 }
+
+/* Keyboard focus is always visible. Unlayered so `outline-hidden` utilities
+   cannot remove it. */
+:where(a, button, input, select, textarea, summary, [tabindex], [role='button'], [role='tab'], [role^='menuitem'], .cm-content):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.cm-content:focus-visible { outline-offset: -2px; }
 
 .h-hero { font-size: clamp(48px, 6vw, 80px); line-height: 1.05; }
 .h-sec { font-size: clamp(32px, 4vw, 48px); line-height: 1.08; }
@@ -88,7 +183,7 @@
   100% { background-position: 200% 0; }
 }
 .animate-shimmer {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--glass-border-strong) 50%, var(--surface) 75%);
+  background: linear-gradient(90deg, var(--surface) 25%, var(--border) 50%, var(--surface) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
 }
@@ -100,377 +195,242 @@
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.3s; }
 
-/* ---- macOS 26 glass surfaces ---- */
-.glass {
-  background-color: var(--glass-bg);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge), 0 0 0 1px var(--glass-border) inset;
-  border-radius: var(--radius-liquid);
-  transition: box-shadow 0.18s ease;
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
-  }
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  /* No backdrop-filter support: fall back to an opaque fill so text stays readable. */
-  .glass { background-color: var(--surface-elevated); }
-}
-/* Same surface as .glass but without an opinionated border-radius, for call
-   sites that need to keep an explicit Tailwind rounded-* utility (rounded-full
-   pills, etc.) — .glass's own radius would otherwise win the cascade. */
-.glass-fill {
-  background-color: var(--glass-bg);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass-fill {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
-  }
-}
-.glass-elevated { background-color: var(--glass-bg-elevated); }
-.glass-strong {
-  background-color: var(--glass-bg-strong);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-}
-.glass:hover, .glass-elevated:hover {
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
-}
-.glass-hover-lift {
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
-}
-.glass-hover-lift:hover {
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
-  transform: translateY(-1px);
-}
 
-/* ambient background — three blurred washes behind the whole glass shell */
-.ae-ambient {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.ae-ambient i {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.75;
-}
-.ae-ambient i:nth-child(1) { width: 60vw; height: 60vw; left: -15vw; top: -25vw; background: var(--hero-a); }
-.ae-ambient i:nth-child(2) { width: 45vw; height: 45vw; right: -10vw; top: -10vw; background: var(--hero-b); }
-.ae-ambient i:nth-child(3) { width: 50vw; height: 50vw; left: 30vw; bottom: -30vw; background: var(--hero-c); }
-@media (prefers-reduced-motion: reduce) {
-  .ae-ambient { opacity: 0.6; }
-}
-
-.tahoe-hero {
-  background: var(--glass-bg);
-  border-radius: var(--radius-2xl);
-  padding: clamp(2rem, 4vw, 3rem);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .tahoe-hero {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
-  }
-}
-.tahoe-hero-shine {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), transparent 45%);
-  pointer-events: none;
-}
-.tahoe-icon-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 85%, white), var(--primary));
-  color: #fff;
-  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
-}
-/* Widely reused stat-tile pattern (`tahoe-stat-tile border border-border
-   bg-surface`, ~40 call sites) — own the surface here so every call site
-   picks up the glass treatment without touching each file. */
-.tahoe-stat-tile {
-  border-width: 0;
-  background-color: var(--glass-bg);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+@layer components {
+  /* ---- Cards. Layered, so utilities (rounded-*, bg-*, border-*) can refine them. ---- */
+  .glass,
+  .glass-fill,
+  .surface-panel,
+  .surface-panel-soft,
+  .glass-panel-card,
+  .dash-card,
+  .dash-card-flush,
+  .glass-split-pane-sidebar,
+  .glass-split-pane-main,
+  .glass-table-shell,
+  .glass-empty-state,
   .tahoe-stat-tile {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    background-color: var(--surface-elevated);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
   }
-}
-.tahoe-stat-tile:hover {
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-border-strong);
-}
-.tahoe-stat-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
-}
-.tahoe-stat-label {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--muted-foreground);
-}
+  .glass,
+  .surface-panel,
+  .surface-panel-soft,
+  .glass-panel-card,
+  .dash-card,
+  .dash-card-flush,
+  .glass-split-pane-sidebar,
+  .glass-split-pane-main,
+  .glass-table-shell,
+  .glass-empty-state { border-radius: var(--radius-card); }
+  .tahoe-stat-tile { border-width: 0; border-radius: var(--radius-liquid-lg); }
 
-.apple-editorial-hero {
-  padding-block: var(--hero-pad-block, clamp(2.5rem, 6vw, 4.5rem));
-}
+  /* Page-level wrappers are transparent: cards sit directly on the page. */
+  .command-center-shell,
+  .overview-section-shell,
+  .hub-page-shell,
+  .dash-breadcrumb { background: transparent; box-shadow: none; }
 
-/* Feature card with an orbiting-runtime illustration — "One spec, every
-   runtime." marketing chapter (see AetherApp.jsx reference). */
-.feature-orbit-card {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 28px;
-  align-items: center;
-  padding: 34px 36px;
-  border-radius: var(--radius-2xl);
-  background: var(--glass-bg);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  /* A card inside a card becomes a quiet inset, never a second floating card. */
+  :is(.glass, .dash-card, .glass-panel-card, .surface-panel, .glass-modal-panel, .glass-empty-state)
+    :is(.glass, .glass-fill, .glass-inset-surface, .tahoe-stat-tile, .glass-empty-state, .dash-card, .surface-panel) {
+    background-color: var(--surface);
+    box-shadow: none;
+  }
+  .glass-elevated { background-color: var(--surface-elevated); }
+  .glass-hover-lift { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+  .glass-hover-lift:hover { box-shadow: 0 0 0 1px var(--border), var(--shadow-raised); transform: translateY(-1px); }
+  .glass-inset-surface {
+    background: var(--surface);
+    border-color: var(--border);
+    border-radius: var(--radius-liquid);
+  }
+  .glass-code-block {
+    background: var(--code-bg);
+    box-shadow: 0 0 0 1px var(--border);
+    border-radius: var(--radius-liquid);
+  }
+  .glass-code-block-body { background: var(--code-bg); color: var(--code-fg); }
+
+  /* ---- Floating material: dialogs, drawers, menus ---- */
+  .glass-strong,
+  .glass-drawer,
+  .glass-dropdown-surface,
+  .glass-modal-panel {
+    background: var(--material-bg);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-overlay);
+    -webkit-backdrop-filter: var(--material-blur);
+    backdrop-filter: var(--material-blur);
+  }
+  .glass-drawer,
+  .glass-dropdown-surface,
+  .glass-modal-panel { border-radius: var(--radius-card); }
+  .dialog-panel { background: var(--surface-elevated); box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-overlay); }
+  .glass-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* ---- Page hero: large headline on the page, generous air ---- */
+  .tahoe-hero { padding-block: clamp(0.5rem, 2vw, 1.5rem) 0; }
+  .tahoe-hero-shine,
+  .tahoe-icon-badge-shine { display: none; }
+  .tahoe-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-liquid);
+    background: var(--accent-tint);
+    color: var(--primary);
+  }
+  .tahoe-stat-value { font-size: 1.75rem; font-weight: 600; letter-spacing: var(--tracking-display); color: var(--foreground); }
+  .tahoe-stat-label { font-size: 0.8125rem; color: var(--muted-foreground); }
+
   .feature-orbit-card {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 28px;
+    align-items: center;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border-radius: var(--radius-card);
+    background: var(--surface-elevated);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
   }
-}
-.feature-orbit-art {
-  position: relative;
-  height: 220px;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-.feature-orbit-art .orbit {
-  position: absolute;
-  inset: 14%;
-  border-radius: 50%;
-  border: 1px dashed var(--glass-border-strong);
-}
-.feature-orbit-art .node {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
-}
-.feature-orbit-art .core {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 80%, white), var(--primary));
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-weight: 800;
-  box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--primary) 90%, transparent);
-}
-@media (max-width: 1024px) {
-  .feature-orbit-card { grid-template-columns: 1fr; }
-  .feature-orbit-art { display: none; }
-}
+  .feature-orbit-art {
+    position: relative;
+    height: 220px;
+    border-radius: var(--radius-liquid-lg);
+    background: var(--surface);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+  .feature-orbit-art .orbit { position: absolute; inset: 14%; border-radius: 50%; border: 1px dashed var(--border-strong); }
+  .feature-orbit-art .node {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-liquid);
+    display: grid;
+    place-items: center;
+    color: var(--surface-elevated);
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: var(--shadow-raised);
+  }
+  .feature-orbit-art .core {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-card);
+    background: var(--accent-fill);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 700;
+  }
+  @media (max-width: 1024px) {
+    .feature-orbit-card { grid-template-columns: 1fr; }
+    .feature-orbit-art { display: none; }
+  }
 
-/* iPad Pro–style OLED dark chapter: true black with a soft spotlight glow
-   behind the hero copy. Light mode stays plain Apple Store paper — this is a
-   dark-theme-only accent, not a light-mode wash. */
-html.dark-theme .apple-editorial-hero,
-:root[data-theme='dark'] .apple-editorial-hero {
-  position: relative;
-  isolation: isolate;
-}
-html.dark-theme .apple-editorial-hero::before,
-:root[data-theme='dark'] .apple-editorial-hero::before {
-  content: '';
-  position: absolute;
-  inset: -15% -10% -40%;
-  z-index: -1;
-  background: radial-gradient(50% 55% at 50% 0%, var(--tone-glow, var(--tone-sky-glow)), transparent 72%);
-  opacity: 0.45;
-  pointer-events: none;
-}
-
-.apple-chapter-dark,
-.marketplace-chapter-ink {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background: var(--glass-bg-strong);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-  color: var(--foreground);
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .apple-highlights-row { width: 100%; }
+  .apple-highlights-kicker {
+    margin: 0 0 1.25rem;
+    font-family: var(--display);
+    font-size: 1.1875rem;
+    font-weight: 600;
+    letter-spacing: var(--tracking-display);
+  }
+  .apple-highlights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 1.5rem 2rem; }
+  .apple-highlight-value {
+    font-family: var(--display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+    letter-spacing: var(--tracking-hero);
+    line-height: 1.08;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .apple-highlight-label { margin-top: 0.25rem; font-size: 0.875rem; color: var(--muted-foreground); }
   .apple-chapter-dark,
   .marketplace-chapter-ink {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    background: var(--surface-elevated);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
+    color: var(--foreground);
   }
-}
 
-.apple-chapter-dark::before,
-.marketplace-chapter-ink::before {
-  content: '';
-  position: absolute;
-  inset: -20%;
-  z-index: -1;
-  background: radial-gradient(60% 80% at 18% 8%, var(--tone-glow, var(--tone-sky-glow)), transparent 70%);
-  opacity: 0.6;
-  pointer-events: none;
-}
+  .tahoe-empty { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-liquid); }
+  .tahoe-empty-orb { display: none; }
 
-.apple-chapter-dark .text-eyebrow,
-.marketplace-chapter-ink .text-eyebrow {
-  color: var(--foreground);
-  opacity: 0.68;
-}
+  .hero-swatch-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .hero-swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.8rem 0.35rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--foreground);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+  }
+  button.hero-swatch[aria-pressed='true'] { border-color: var(--tone-color, var(--primary)); }
+  .hero-swatch-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone-color, var(--primary)); flex-shrink: 0; }
 
-.apple-highlights-row { text-align: center; width: 100%; }
-.apple-highlights-kicker {
-  margin: 0 0 2rem;
-  font-family: var(--font-hero);
-  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-.apple-highlights-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 2rem 2.5rem;
-  max-width: 980px;
-  margin: 0 auto;
-}
-.apple-highlight-value {
-  font-family: var(--font-hero);
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
-.apple-highlight-label {
-  margin-top: 0.35rem;
-  font-size: 14px;
-  opacity: 0.72;
-}
-.tahoe-empty {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-liquid);
-}
-.tahoe-empty-orb { display: none; }
-
-/* Tone binding — set once via data-tone on a wrapper, consumed by
-   .apple-chapter-dark's glow, hero swatches, and hub bands below. */
-[data-tone='sky']    { --tone-color: var(--tone-sky);    --tone-wash: var(--tone-sky-tint);    --tone-glow: var(--tone-sky-glow); }
-[data-tone='violet'] { --tone-color: var(--tone-violet); --tone-wash: var(--tone-violet-tint); --tone-glow: var(--tone-violet-glow); }
-[data-tone='emerald']{ --tone-color: var(--tone-emerald);--tone-wash: var(--tone-emerald-tint);--tone-glow: var(--tone-emerald-glow); }
-[data-tone='amber']  { --tone-color: var(--tone-amber);  --tone-wash: var(--tone-amber-tint);  --tone-glow: var(--tone-amber-glow); }
-[data-tone='pink']   { --tone-color: var(--tone-pink);   --tone-wash: var(--tone-pink-tint);   --tone-glow: var(--tone-pink-glow); }
-[data-tone='teal']   { --tone-color: var(--tone-teal);   --tone-wash: var(--tone-teal-tint);   --tone-glow: var(--tone-teal-glow); }
-[data-tone='rust']   { --tone-color: var(--tone-rust);   --tone-wash: var(--tone-rust-tint);   --tone-glow: var(--tone-rust-glow); }
-
-/* iPad-style hero swatch row — a picker/legend of tone pills under the
-   hero description on flagship pages (Overview). */
-.hero-swatch-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.hero-swatch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem 0.4rem 0.55rem;
-  border-radius: var(--radius-pill);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--foreground);
-  background: var(--tone-wash, var(--accent-tint));
-  border: 1px solid color-mix(in srgb, var(--tone-color, var(--primary)) 30%, transparent);
-}
-.hero-swatch-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tone-color, var(--primary));
-  flex-shrink: 0;
-}
-
-/* Services-style hub band — one full-width row per destination, each
-   carrying its own tone wash, replacing the plain divide-y link list. */
-.hub-band-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.hub-band {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  padding: 1.5rem 1.75rem;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-  text-decoration: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .hub-band-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.875rem; }
   .hub-band {
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    background: var(--surface-elevated);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+  .hub-band:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--border), var(--shadow-raised); }
+  .hub-band-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-liquid);
+    color: var(--tone-color, var(--primary));
+    background: var(--tone-wash, var(--accent-tint));
+  }
+  .hub-band-arrow { margin-top: 0.35rem; color: var(--subtle); transition: transform 0.2s ease; }
+  .hub-band:hover .hub-band-arrow { transform: translateX(3px); color: var(--primary); }
 }
-.hub-band:hover {
-  transform: translateY(-1px);
-  background: var(--tone-wash, var(--glass-bg-elevated));
-  box-shadow: var(--glass-shadow), 0 0 0 1px color-mix(in srgb, var(--tone-color, var(--primary)) 40%, var(--glass-edge));
-}
-.hub-band-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  flex-shrink: 0;
-  border-radius: var(--radius-lg);
-  color: var(--tone-color, var(--primary));
-  background: color-mix(in srgb, var(--tone-color, var(--primary)) 16%, var(--surface-elevated));
-}
-.hub-band-arrow {
-  margin-top: 0.35rem;
-  color: var(--tone-color, var(--muted-foreground));
-  transition: transform 0.18s ease;
-}
-.hub-band:hover .hub-band-arrow { transform: translateX(3px); }
 
-.focus-ring {
-  @apply focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
-  --tw-ring-offset-color: var(--background);
-}
+/* Tone binding: set data-tone on a wrapper, consumed by swatches and hub cards. */
+[data-tone='sky']     { --tone-color: var(--tone-sky);     --tone-wash: var(--tone-sky-tint); }
+[data-tone='violet']  { --tone-color: var(--tone-violet);  --tone-wash: var(--tone-violet-tint); }
+[data-tone='emerald'] { --tone-color: var(--tone-emerald); --tone-wash: var(--tone-emerald-tint); }
+[data-tone='amber']   { --tone-color: var(--tone-amber);   --tone-wash: var(--tone-amber-tint); }
+[data-tone='pink']    { --tone-color: var(--tone-pink);    --tone-wash: var(--tone-pink-tint); }
+[data-tone='teal']    { --tone-color: var(--tone-teal);    --tone-wash: var(--tone-teal-tint); }
+[data-tone='rust']    { --tone-color: var(--tone-rust);    --tone-wash: var(--tone-rust-tint); }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center rounded-full px-5 py-2 text-sm font-medium text-white transition-all;
-    background: var(--primary);
-    border: 1px solid var(--primary);
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors;
+    color: #fff;
+    background: var(--accent-fill);
+    border: 1px solid var(--accent-fill);
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-accent);
+    background: var(--accent-fill-hover);
+    border-color: var(--accent-fill-hover);
   }
   .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -483,13 +443,12 @@ html.dark-theme .apple-editorial-hero::before,
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--accent-tint);
-    transform: translateY(-1px);
   }
   .btn-secondary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
 
   .btn-danger {
     @apply inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-colors;
-    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    background: color-mix(in srgb, var(--danger) 9%, transparent);
     color: var(--danger);
   }
 
@@ -505,7 +464,7 @@ html.dark-theme .apple-editorial-hero::before,
   }
 
   .page-frame {
-    @apply px-4 py-10 sm:px-6 sm:py-14 lg:px-0;
+    @apply px-4 py-4 sm:px-6 lg:px-0;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -522,53 +481,8 @@ html.dark-theme .apple-editorial-hero::before,
     border-top: 1px solid var(--border);
   }
 
-  /* Compat: old Liquid Glass class names → now real glass again */
-  .command-center-shell,
-  .overview-section-shell,
-  .hub-page-shell,
-  .surface-panel,
-  .surface-panel-soft,
-  .glass-panel-card,
-  .dash-card,
-  .dash-card-flush,
-  .glass-modal-panel,
-  .glass-drawer,
-  .glass-split-pane-sidebar,
-  .glass-split-pane-main,
-  .glass-table-shell,
-  .glass-code-block,
-  .glass-empty-state,
-  .glass-dropdown-surface,
-  .dash-breadcrumb {
-    background: var(--glass-bg);
-    box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-    border-radius: var(--radius-liquid);
-  }
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .command-center-shell,
-    .overview-section-shell,
-    .hub-page-shell,
-    .surface-panel,
-    .surface-panel-soft,
-    .glass-panel-card,
-    .dash-card,
-    .dash-card-flush,
-    .glass-modal-panel,
-    .glass-drawer,
-    .glass-split-pane-sidebar,
-    .glass-split-pane-main,
-    .glass-table-shell,
-    .glass-code-block,
-    .glass-empty-state,
-    .glass-dropdown-surface,
-    .dash-breadcrumb {
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-    }
-  }
-
   .glass-toolbar {
-    @apply mb-10 flex flex-col gap-4 px-0 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    @apply mb-6 flex flex-col gap-4 px-0 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
     background: transparent;
     border: none;
     box-shadow: none;
@@ -602,36 +516,33 @@ html.dark-theme .apple-editorial-hero::before,
 
   .glass-input,
   .glass-select {
-    @apply w-full rounded-xl px-3 py-2 text-sm outline-hidden transition-shadow;
-    background: var(--glass-bg-elevated);
-    border: 1px solid var(--glass-border);
+    @apply w-full rounded-xl px-3 py-2 text-sm transition-shadow;
+    min-height: 40px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-input);
     color: var(--foreground);
   }
   .glass-input:focus,
   .glass-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
   }
 
   .glass-table-row:hover { background: var(--hover); }
   .glass-divider { border-color: var(--border); }
   .glass-divider-b { border-bottom: 1px solid var(--border); }
   .glass-divider-t { border-top: 1px solid var(--border); }
-  .glass-inset-surface {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-md);
-  }
   .glass-tab,
+  .glass-tab-active,
   .tab-chip {
-    @apply rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
+    @apply rounded-full px-4 py-1.5 text-sm font-medium transition-colors;
     color: var(--muted-foreground);
+    border: 1px solid transparent;
   }
   .glass-tab-active,
   .tab-chip-active {
-    color: var(--primary);
-    background: var(--accent-tint);
-    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+    color: var(--background);
+    background: var(--foreground);
   }
   .glass-nav-item:hover { background: var(--hover); }
   .glass-row-hover:hover { background: var(--hover); }
@@ -639,24 +550,14 @@ html.dark-theme .apple-editorial-hero::before,
   .glass-alert-warn,
   .glass-alert-success {
     @apply rounded-xl border px-4 py-3 text-sm;
-    border-color: var(--glass-border);
-    background: var(--glass-bg);
+    border-color: var(--border);
+    background: var(--surface-elevated);
   }
   .glass-context-banner {
     @apply mb-6 rounded-2xl border px-4 py-3;
-    border-color: var(--glass-border);
-    background: var(--glass-bg);
+    border-color: var(--border);
+    background: var(--surface-elevated);
   }
-  .glass-modal-backdrop {
-    background: var(--scrim);
-  }
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .glass-modal-backdrop {
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-    }
-  }
-
   .section-label-purple,
   .section-label-red,
   .section-label-neutral {
@@ -664,8 +565,8 @@ html.dark-theme .apple-editorial-hero::before,
   }
 
   .nav-pill-active {
-    background: var(--accent-tint);
-    color: var(--primary);
+    background: var(--selected);
+    color: var(--foreground);
   }
   .nav-pill {
     color: var(--muted-foreground);
@@ -687,14 +588,10 @@ html.dark-theme .apple-editorial-hero::before,
   }
 
   .steel-grid { background-image: none; }
-  .navbar-blur { background: var(--nav-bg); }
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .navbar-blur {
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-    }
+  .navbar-blur { background: var(--nav-bg); -webkit-backdrop-filter: var(--material-blur); backdrop-filter: var(--material-blur); }
+  .navbar-glass-accent::after {
+    display: none;
   }
-  .navbar-glass-accent::after { display: none; }
 
   @keyframes toast-slide-in {
     from { transform: translateX(100%); opacity: 0; }
@@ -708,9 +605,8 @@ html.dark-theme .apple-editorial-hero::before,
   .toast-exit { animation: toast-slide-out 0.3s ease-in forwards; }
 
   .text-eyebrow {
-    @apply text-xs font-semibold uppercase;
-    color: var(--primary);
-    letter-spacing: var(--tracking-eyebrow);
+    @apply text-sm font-semibold;
+    color: var(--muted-foreground);
   }
   .text-stat-value {
     font-size: var(--font-size-2xl);
@@ -783,29 +679,23 @@ html.dark-theme .apple-editorial-hero::before,
   }
   .login-panel { background: transparent; }
   .login-glass {
-    background: var(--glass-bg-strong);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--glass-shadow), 0 0 0 1px var(--glass-edge);
-  }
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .login-glass {
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-    }
+    background: var(--surface-elevated);
+    border-radius: var(--radius-card);
+    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-raised);
   }
   .login-input {
     width: 100%;
+    min-height: 44px;
     padding: 0.65rem 0.9rem 0.65rem 2.5rem;
     border-radius: 12px;
-    background: var(--glass-bg-elevated);
-    border: 1px solid var(--glass-border);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-input);
     color: var(--foreground);
-    font-size: 0.875rem;
+    font-size: 1rem;
   }
   .login-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
   }
   .login-btn-primary {
     width: 100%;
@@ -818,13 +708,13 @@ html.dark-theme .apple-editorial-hero::before,
     border-radius: 980px;
     font-size: 1.0625rem;
     font-weight: 400;
-    color: var(--primary-foreground);
-    background: var(--primary);
-    border: 1px solid var(--primary);
+    color: #fff;
+    background: var(--accent-fill);
+    border: 1px solid var(--accent-fill);
     transition: background-color 0.2s ease;
   }
   .login-btn-primary:hover:not(:disabled) {
-    background: var(--primary-hover);
+    background: var(--accent-fill-hover);
   }
   .login-btn-primary:active:not(:disabled) { transform: scale(0.98); }
   .login-btn-primary:disabled { opacity: 0.5; }
@@ -844,3 +734,39 @@ html.dark-theme .apple-editorial-hero::before,
     transform: none;
   }
 }
+
+/* Respect reduced motion everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dense resource tables (DataTable). */
+.data-row { min-height: 48px; padding-block: 6px; }
+@media (max-width: 640px) {
+  .dash-content .page-frame { padding-inline: 0; }
+}
+
+/* Long code and unbroken values wrap or scroll inside their card. */
+#main-content pre { max-width: 100%; overflow: auto; }
+#main-content :where(.glass, .page-frame, [data-testid^='page-']) { min-width: 0; }
+#main-content [data-testid^='page-'] > div > * { min-width: 0; max-width: 100%; }
+
+/* A card whose first child brings no padding of its own gets the standard inset. */
+@layer components {
+  :where(.glass, .dash-card):where(:not(.overflow-hidden, .rounded-full, :has(> :first-child:is([class^="p-"], [class*=" p-"], [class*="px-"], [class*="py-"], table, thead)))) {
+    padding: 1.25rem;
+  }
+}
+
+@layer components {
+  :where(pre.glass-code-block-body) { overflow: auto; padding: 0.75rem; border-radius: var(--radius-liquid); }
+}
+
+/* Compact pill buttons keep a compact height. */
+.btn-primary:is(.text-xs, .\!text-xs),
+.btn-secondary:is(.text-xs, .\!text-xs) { min-height: 32px; }

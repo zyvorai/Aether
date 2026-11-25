@@ -1146,8 +1146,7 @@ export default function CommandPalette({
     >
       <div className="fixed inset-0 backdrop-blur-xs" style={{ background: 'var(--scrim)' }} onClick={onClose} />
       <div
-        className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-rule shadow-ambient"
-        style={{ background: 'var(--glass)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
+        className="glass-drawer relative w-full max-w-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-rule px-4 py-4">
@@ -1160,6 +1159,7 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
+            aria-label="Search pages, workloads, and actions"
             className="flex-1 bg-transparent text-sm text-foreground outline-hidden placeholder:text-subtle"
             autoComplete="off"
           />

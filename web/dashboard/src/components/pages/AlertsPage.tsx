@@ -304,7 +304,7 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
                 className="glass-input"
               />
               <div className="flex flex-wrap gap-3">
-                <select
+                <select aria-label="HTTP method"
                   value={newMethod}
                   onChange={(e) => setNewMethod(e.target.value)}
                   className="glass-select"
@@ -312,7 +312,7 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
                   <option value="POST">POST</option>
                   <option value="PUT">PUT</option>
                 </select>
-                <select
+                <select aria-label="Minimum severity"
                   value={newSeverity}
                   onChange={(e) => setNewSeverity(e.target.value)}
                   className="glass-select"
@@ -435,7 +435,7 @@ export function AlertsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
           Emits a test event through the selected channel (same as <code className="text-muted">aether webhook test</code>).
         </p>
         <div className="flex flex-wrap gap-3 items-center">
-          <select
+          <select aria-label="Channel to test"
             value={testChannel}
             onChange={(e) => setTestChannel(e.target.value)}
             className="glass-select min-w-[12rem]"

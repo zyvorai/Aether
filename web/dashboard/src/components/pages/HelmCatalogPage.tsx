@@ -292,7 +292,7 @@ function HelmCatalogPage({ refreshKey }: { refreshKey?: number } = {}) {
                 />
               </label>
             ) : (
-              <pre className="glass-code-block-body text-[11px] text-muted font-mono max-h-40 overflow-auto">
+              <pre tabIndex={0} className="glass-code-block-body text-[11px] text-muted font-mono max-h-40 overflow-auto">
                 {generatedYaml || '# No values generated'}
               </pre>
             )}

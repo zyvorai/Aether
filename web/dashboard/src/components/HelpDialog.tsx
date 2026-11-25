@@ -74,7 +74,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
           ))}
         </div>
 
-        <div className="max-h-[min(70vh,32rem)] overflow-y-auto p-5">
+        <div tabIndex={0} role="region" aria-label="Help content" className="max-h-[min(70vh,32rem)] overflow-y-auto p-5">
           {tab === 'shortcuts' ? (
             <div role="tabpanel">
               <ul className="m-0 list-none space-y-3">

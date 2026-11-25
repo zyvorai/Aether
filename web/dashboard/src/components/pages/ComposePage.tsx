@@ -227,8 +227,8 @@ function ComposePage() {
       <section className="space-y-6">
       <div>
         <p className="text-sm text-subtle">
-          Validate dependency order and deploy a stack. Use <code className="text-primary/90">spec_yaml</code> for inline
-          workloads or <code className="text-primary/90">spec</code> for file paths on the server.
+          Validate dependency order and deploy a stack. Use <code className="text-primary">spec_yaml</code> for inline
+          workloads or <code className="text-primary">spec</code> for file paths on the server.
         </p>
       </div>
 

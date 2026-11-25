@@ -229,7 +229,7 @@ function ZyraPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-foreground">AI Ops Zyra</h2>
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
+            <p className="text-[10px] font-medium uppercase tracking-[0.04em] text-aether-ai">
               Infrastructure agent
             </p>
           </div>
@@ -291,7 +291,7 @@ function ZyraPage() {
         <div className="relative z-[1] flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite" aria-relevant="additions">
           {messages.length === 0 && (
             <div className="rounded-2xl border border-primary/15 glass-inset-surface px-4 py-6 text-center backdrop-blur-xs">
-              <Sparkles className="mx-auto mb-3 h-8 w-8 text-aether-ai/80" aria-hidden />
+              <Sparkles className="mx-auto mb-3 h-8 w-8 text-primary" aria-hidden />
               <p className="text-sm text-muted">
                 Ask about health, drift, costs, migrations, or cluster state.
               </p>
@@ -337,7 +337,7 @@ function ZyraPage() {
                     type="button"
                     data-testid="zyra-confirm-batch"
                     onClick={() => void confirmBatch()}
-                    className="rounded-lg bg-warning px-2 py-1 text-xs text-white hover:bg-warning"
+                    className="rounded-lg bg-warning-fill px-2 py-1 text-xs text-white hover:brightness-110"
                   >
                     Approve all ({pending.length})
                   </button>
@@ -349,7 +349,7 @@ function ZyraPage() {
                   <button
                     type="button"
                     onClick={() => confirmAction(a.id)}
-                    className="rounded-lg bg-warning px-2 py-1 text-white hover:bg-warning"
+                    className="rounded-lg bg-warning-fill px-2 py-1 text-white hover:brightness-110"
                   >
                     Confirm
                   </button>
@@ -360,7 +360,7 @@ function ZyraPage() {
 
           {loading && (
             <div className="flex items-center gap-2 text-xs text-subtle">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-fill" />
               Zyra is thinking…
             </div>
           )}
@@ -390,7 +390,7 @@ function ZyraPage() {
             type="submit"
             data-testid="zyra-send-button"
             disabled={loading || !input.trim()}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-primary to-primary/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-accent-fill px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" aria-hidden />
             Send

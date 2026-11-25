@@ -85,7 +85,7 @@ export default function AutonomousSrePanel() {
           </div>
           <details className="mt-6">
             <summary className="cursor-pointer text-sm text-primary">View full markdown</summary>
-            <pre className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
+            <pre tabIndex={0} className="mt-3 max-h-64 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
               {report.runbook_markdown}
             </pre>
           </details>

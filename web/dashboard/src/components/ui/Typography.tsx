@@ -10,7 +10,7 @@ export function Eyebrow({ children, className, as: Tag = 'p', id }: TypographyPr
   return <Tag id={id} className={cn('text-eyebrow', className)}>{children}</Tag>;
 }
 export function DisplayTitle({ children, className, as: Tag = 'h1', id }: TypographyProps) {
-  return <Tag id={id} className={cn('text-display md:text-[clamp(2.5rem,5vw,4rem)] font-semibold leading-tight tracking-[var(--tracking-hero)]', className)}>{children}</Tag>;
+  return <Tag id={id} className={cn('text-display font-semibold tracking-[var(--tracking-hero)]', className)}>{children}</Tag>;
 }
 export function PageTitle({ children, className, as: Tag = 'h1', id }: TypographyProps) {
   return <Tag id={id} className={cn('text-[clamp(1.75rem,3vw,2.125rem)] font-semibold leading-tight tracking-[var(--tracking-display)]', className)}>{children}</Tag>;

@@ -2,252 +2,229 @@
 /* SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0 */
 
 /*
-  Aurora Apple.com visual system + Zyvor orange accent.
-  Source: Aurora apps/web/globals.css + zyvor-web layout tokens
-  Light-first. Dark via html.dark-theme or data-theme="dark".
+  Design tokens: neutral surfaces, one blue accent, light and dark.
+  The theme is chosen with <html data-theme="light|dark">, set before first
+  paint by the inline script in index.html and kept in sync by ThemeContext
+  ("system" resolves to one of the two).
+
+  Every colour used by the UI comes from here. Tailwind utilities are mapped
+  onto these variables in index.css (@theme inline).
 */
 
 :root {
-  /* Apple.com / AirPods aliases (same hex as --foreground / --surface / --primary) */
-  --apple-ink: #1d1d1f;
-  --apple-muted: #6e6e73;
-  --apple-paper: #f5f5f7;
-  --apple-border: #d2d2d7;
-  --apple-action: #f97316;
-  --apple-link: #ea580c;
-  --apple-sky: #fb923c;
-  --font-hero: "SF Pro Display", "Archivo", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-  --background: #ffffff;
-  --surface: #f5f5f7;
+  /* Surfaces: page < card (elevated); surface is the inset fill. */
+  --background: #f5f5f7;
+  --surface: #f2f2f4;
   --surface-elevated: #ffffff;
+
+  /* Text: all three meet WCAG AA on every surface above. */
   --foreground: #1d1d1f;
-  --muted-foreground: #6e6e73;
-  /* Zyvor orange — brand accent (was Apple blue) */
-  --primary: #f97316;
-  --primary-hover: #ea580c;
+  --muted-foreground: #515154;
+  --subtle: #68686d;
+
+  /* Accent. --primary is for text, icons and tints; --accent-fill carries white text. */
+  --primary: #005cb9;
+  --primary-hover: #004a94;
   --primary-foreground: #ffffff;
-  --border: #d2d2d7;
-  --ring: #f97316;
-  --success: #248a3d;
-  --warning: #bf4800;
-  --danger: #d70015;
-  --accent-fill: #f97316;
-  --accent-tint: #fef3ea;
-  --accent-blue: #f97316;
-  --accent-pink: #e11d48;
-  --accent-teal: #0d9488;
-  --accent-purple: #7c3aed;
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-accent: 0 4px 14px rgba(249, 115, 22, 0.22);
-  --nav-bg: rgba(255, 255, 255, 0.72);
-  --nav-bg-open: rgba(255, 255, 255, 0.96);
-  --nav-border: rgba(0, 0, 0, 0.08);
-  --nav-hover-bg: rgba(0, 0, 0, 0.04);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-2xl: 34px;
+  --accent-fill: #0071e3;
+  --accent-fill-hover: #0062c4;
+  --accent-tint: rgba(0, 113, 227, 0.08);
+  --ring: #0071e3;
+
+  /* Status: text colours, plus solid fills that carry white text. */
+  --success: #19702f;
+  --warning: #9a4300;
+  --danger: #bf001a;
+  --success-fill: #19702f;
+  --warning-fill: #9a4300;
+  --danger-fill: #bf001a;
+  --violet-fill: #6b3fc0;
+
+  /* Lines */
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --border-input: #86868b;
+  --hover: rgba(0, 0, 0, 0.045);
+  --selected: rgba(0, 0, 0, 0.065);
+  --scrim: rgba(0, 0, 0, 0.32);
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.16);
+  --card-edge: rgba(0, 0, 0, 0.05);
+
+  /* Translucent chrome (navigation bar, menus, dialog backdrop) */
+  --nav-bg: rgba(251, 251, 253, 0.8);
+  --nav-border: rgba(0, 0, 0, 0.1);
+  --material-bg: rgba(255, 255, 255, 0.9);
+  --material-blur: saturate(180%) blur(20px);
+
+  /* Code surfaces (YAML editor, code blocks) */
+  --code-bg: #fbfbfd;
+  --code-fg: #1d1d1f;
+  --code-gutter: #f2f2f4;
+  --code-gutter-fg: #68686d;
+  --code-active: rgba(0, 113, 227, 0.06);
+  --code-selection: rgba(0, 113, 227, 0.18);
+  --code-key: #0b4f9c;
+  --code-string: #19702f;
+  --code-number: #8a2f8f;
+  --code-atom: #9a4300;
+  --code-comment: #62666b;
+  --code-punct: #4f5561;
+  --code-invalid: #bf001a;
+  /* Terminals stay dark in both themes. */
+  --terminal-bg: #161617;
+  --terminal-fg: #f5f5f7;
+
+  /* Shape */
+  --radius-card: 18px;
+  --radius-liquid: 12px;
+  --radius-liquid-lg: 14px;
   --radius-pill: 980px;
-  --side-w: 264px;
-  --side-min: 76px;
-  --section-gap: 3.5rem;
-  --chapter-gap: 3.5rem;
-  --hero-pad-block: clamp(2.5rem, 6vw, 4.5rem);
-  --content-max-width: 72rem;
-  --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.8125rem;
+
+  /* Type: system fonts only, no webfont downloads. */
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Display", "Inter", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --font-size-base: 1.0625rem;
-  --font-size-lg: 1.1875rem;
-  --font-size-xl: 1.3125rem;
   --font-size-2xl: 1.75rem;
-  --font-size-3xl: 2rem;
-  --font-size-display: 2.5rem;
-  --leading-tight: 1.1;
-  --leading-normal: 1.47;
-  --leading-relaxed: 1.47;
-  --tracking-eyebrow: 0.08em;
-  --tracking-display: -0.035em;
-  --tracking-hero: -0.045em;
+  --tracking-eyebrow: 0.06em;
+  --tracking-display: -0.021em;
+  --tracking-hero: -0.028em;
 
-  /* Vision Pro–style tone system: one accent per destination/category.
-     Each tone ships a solid, a tint (wash), and a glow (radial depth) —
-     used by PageHero swatches, hub-page bands, and status chips. */
+  /* Layout */
+  --nav-h: 52px;
+  --content-max-width: 76rem;
+  --section-gap: 3.5rem;
+
+  /* Tones: one per destination or category (icons, dots, chart series). */
   --tone-sky: #0071e3;
-  --tone-sky-tint: rgba(0, 113, 227, 0.1);
-  --tone-sky-glow: rgba(0, 113, 227, 0.22);
-  --tone-violet: #7c3aed;
-  --tone-violet-tint: rgba(124, 58, 237, 0.1);
-  --tone-violet-glow: rgba(124, 58, 237, 0.22);
-  --tone-emerald: #248a3d;
-  --tone-emerald-tint: rgba(36, 138, 61, 0.1);
-  --tone-emerald-glow: rgba(36, 138, 61, 0.22);
-  --tone-amber: #bf7a00;
-  --tone-amber-tint: rgba(191, 122, 0, 0.12);
-  --tone-amber-glow: rgba(191, 122, 0, 0.24);
-  --tone-pink: #e11d48;
-  --tone-pink-tint: rgba(225, 29, 72, 0.1);
-  --tone-pink-glow: rgba(225, 29, 72, 0.22);
-  --tone-teal: #0d9488;
-  --tone-teal-tint: rgba(13, 148, 136, 0.1);
-  --tone-teal-glow: rgba(13, 148, 136, 0.22);
-  --tone-rust: #c2410c;
-  --tone-rust-tint: rgba(194, 65, 12, 0.1);
-  --tone-rust-glow: rgba(194, 65, 12, 0.22);
+  --tone-violet: #7a45d6;
+  --tone-emerald: #1f8a3b;
+  --tone-amber: #a96a00;
+  --tone-pink: #d41c49;
+  --tone-teal: #0a7d75;
+  --tone-rust: #bd4a0c;
+  --tone-sky-tint: color-mix(in srgb, var(--tone-sky) 10%, transparent);
+  --tone-violet-tint: color-mix(in srgb, var(--tone-violet) 10%, transparent);
+  --tone-emerald-tint: color-mix(in srgb, var(--tone-emerald) 10%, transparent);
+  --tone-amber-tint: color-mix(in srgb, var(--tone-amber) 12%, transparent);
+  --tone-pink-tint: color-mix(in srgb, var(--tone-pink) 10%, transparent);
+  --tone-teal-tint: color-mix(in srgb, var(--tone-teal) 10%, transparent);
+  --tone-rust-tint: color-mix(in srgb, var(--tone-rust) 10%, transparent);
 
-  /* Runtime identity accents — aliased onto the tone system so there is one
-     source of truth for "Podman is sky, Kubernetes is violet, KubeVirt is
-     teal" everywhere a runtime chip/node renders (formatters.ts, hero
-     swatches, fabric cards). */
+  /* Runtime identity, aliased onto tones. */
   --rt-podman: var(--tone-sky);
   --rt-k8s: var(--tone-violet);
   --rt-kubevirt: var(--tone-teal);
 
-  --bg-primary: var(--background);
-  --bg-secondary: var(--surface);
-  --bg-card: var(--surface-elevated);
+  /* Categorical accents (categoricalColor.ts). Text-safe as space-separated RGB. */
+  --iphone-deep-blue-rgb: 50 55 74;
+  --iphone-sage-rgb: 76 100 58;
+  --iphone-mist-blue-rgb: 52 94 132;
+  --iphone-lavender-rgb: 106 76 134;
+  --iphone-gold-rgb: 128 90 4;
+  --iphone-deep-blue: rgb(var(--iphone-deep-blue-rgb));
+  --iphone-sage: rgb(var(--iphone-sage-rgb));
+  --iphone-mist-blue: rgb(var(--iphone-mist-blue-rgb));
+  --iphone-lavender: rgb(var(--iphone-lavender-rgb));
+  --iphone-gold: rgb(var(--iphone-gold-rgb));
+
+  --accent-pink: #c2184a;
+  --accent-teal: #0a716a;
+  --accent-purple: #6b3fc0;
+
+  /* Aliases still used by class names and inline styles in the components. */
   --text-primary: var(--foreground);
   --text-secondary: var(--muted-foreground);
   --accent: var(--primary);
-  --accent-hover: var(--primary-hover);
-  --radius-liquid: 10px;
-  --radius-liquid-lg: 12px;
-  /* macOS 26 "glass" system — translucent floating panels over an ambient
-     backdrop. Values are additive on top of the flat Aurora tokens above;
-     variable NAMES are unchanged so every existing bg-surface/text-foreground
-     Tailwind class keeps working — only what they resolve to gets glassier. */
-  --glass-blur: blur(28px) saturate(180%);
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-bg-elevated: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.9);
-  --glass-border-strong: rgba(0, 0, 0, 0.12);
-  --glass-edge: rgba(0, 0, 0, 0.06);
-  --glass-shadow: 0 18px 40px -22px rgba(30, 30, 60, 0.28), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
-  --glass-highlight: transparent;
-  --hero-a: #dbe8ff;
-  --hero-b: #f3e6ff;
-  --hero-c: #dff6f2;
-  --nav-h: 44px;
-  --hs-nav-h: 44px;
-  --hs-max-width: 1180px;
-  --hs-gutter: 22px;
-  --hs-s1: 4px;
-  --hs-radius-sm: 8px;
-  --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.08);
-  --hs-font-mono: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
-
-  /* Backward-compat aliases used across existing dashboard classes */
-  --hover: var(--nav-hover-bg);
   --rule: var(--border);
-  --rule-strong: var(--glass-border-strong);
-  --subtle: #86868b;
-  --primary-rgb: 249 115 22;
-  --scrim: rgba(0, 0, 0, 0.4);
+  --rule-strong: var(--border-strong);
   --glass: var(--nav-bg);
+  --glass-bg: var(--surface-elevated);
+  --glass-bg-elevated: var(--surface-elevated);
+  --glass-bg-strong: var(--material-bg);
+  --glass-border: var(--border);
+  --glass-border-strong: var(--border-strong);
+  --glass-edge: var(--card-edge);
   --shadow: var(--shadow-card);
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  /* iPhone 17 categorical accents — used by categoricalColor.ts (chip
-     coloring) and formatters.ts (runtime identity colors), not decorative */
-  --iphone-deep-blue: #32374a;
-  --iphone-deep-blue-rgb: 50 55 74;
-  --iphone-sage: #7a9068;
-  --iphone-sage-rgb: 122 144 104;
-  --iphone-mist-blue: #6b8fb5;
-  --iphone-mist-blue-rgb: 107 143 181;
-  --iphone-lavender: #9b7fb0;
-  --iphone-lavender-rgb: 155 127 176;
-  --iphone-gold: #b8860b;
-  --iphone-gold-rgb: 184 134 11;
 
   color-scheme: light;
 }
 
-html.dark-theme,
 :root[data-theme='dark'] {
   --background: #000000;
-  --surface: #1d1d1f;
-  --surface-elevated: #2c2c2e;
+  --surface: #2a2a2c;
+  --surface-elevated: #1d1d1f;
+
   --foreground: #f5f5f7;
-  --muted-foreground: #a1a1a6;
-  --primary: #fb923c;
-  --primary-hover: #fdba74;
-  --primary-foreground: #1d1d1f;
-  --border: rgba(255, 255, 255, 0.12);
-  --ring: #fb923c;
+  --muted-foreground: #b4b4b9;
+  --subtle: #9d9da2;
+
+  --primary: #4da3ff;
+  --primary-hover: #78bbff;
+  --accent-fill: #0071e3;
+  --accent-fill-hover: #0066cc;
+  --accent-tint: rgba(41, 151, 255, 0.13);
+  --ring: #2997ff;
+
   --success: #30d158;
   --warning: #ff9f0a;
-  --danger: #ff453a;
-  --accent-fill: #fb923c;
-  --accent-tint: rgba(251, 146, 60, 0.18);
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
-  --shadow-accent: 0 4px 14px rgba(251, 146, 60, 0.28);
-  --nav-bg: rgba(29, 29, 31, 0.72);
-  --nav-bg-open: rgba(29, 29, 31, 0.96);
-  --nav-border: rgba(255, 255, 255, 0.08);
-  --nav-hover-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(40, 40, 46, 0.55);
-  --glass-bg-elevated: rgba(44, 44, 50, 0.68);
-  --glass-bg-strong: rgba(44, 44, 50, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-strong: rgba(255, 255, 255, 0.22);
-  --glass-edge: rgba(0, 0, 0, 0.4);
-  --glass-shadow: 0 24px 50px -24px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
-  --hero-a: #1a2f55;
-  --hero-b: #2d1f4d;
-  --hero-c: #123833;
-  --hs-e2: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --primary-rgb: 251 146 60;
-  --subtle: #8e8e93;
-  --scrim: rgba(0, 0, 0, 0.55);
-  --glass: var(--nav-bg);
-  --shadow: var(--shadow-card);
+  --danger: #ff7a73;
+  --success-fill: #19702f;
+  --warning-fill: #9a4300;
+  --danger-fill: #c4001a;
 
-  --tone-sky: #0a84ff;
-  --tone-sky-tint: rgba(10, 132, 255, 0.16);
-  --tone-sky-glow: rgba(10, 132, 255, 0.32);
-  --tone-violet: #9f6dff;
-  --tone-violet-tint: rgba(159, 109, 255, 0.16);
-  --tone-violet-glow: rgba(159, 109, 255, 0.32);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --border-input: #707075;
+  --hover: rgba(255, 255, 255, 0.07);
+  --selected: rgba(255, 255, 255, 0.11);
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --card-edge: rgba(255, 255, 255, 0.08);
+
+  --nav-bg: rgba(22, 22, 23, 0.8);
+  --nav-border: rgba(255, 255, 255, 0.12);
+  --material-bg: rgba(36, 36, 38, 0.94);
+
+  --code-bg: #161617;
+  --code-fg: #e8e8ed;
+  --code-gutter: #1d1d1f;
+  --code-gutter-fg: #98989d;
+  --code-active: rgba(41, 151, 255, 0.1);
+  --code-selection: rgba(41, 151, 255, 0.3);
+  --code-key: #6cc4ff;
+  --code-string: #7ee29a;
+  --code-number: #ff8fcf;
+  --code-atom: #ffd27a;
+  --code-comment: #96a096;
+  --code-punct: #b8c4d0;
+  --code-invalid: #ff7a73;
+  --terminal-bg: #111112;
+
+  --tone-sky: #2997ff;
+  --tone-violet: #b08bff;
   --tone-emerald: #30d158;
-  --tone-emerald-tint: rgba(48, 209, 88, 0.16);
-  --tone-emerald-glow: rgba(48, 209, 88, 0.32);
   --tone-amber: #ff9f0a;
-  --tone-amber-tint: rgba(255, 159, 10, 0.18);
-  --tone-amber-glow: rgba(255, 159, 10, 0.34);
-  --tone-pink: #ff375f;
-  --tone-pink-tint: rgba(255, 55, 95, 0.16);
-  --tone-pink-glow: rgba(255, 55, 95, 0.32);
+  --tone-pink: #ff6482;
   --tone-teal: #63d9d0;
-  --tone-teal-tint: rgba(99, 217, 208, 0.16);
-  --tone-teal-glow: rgba(99, 217, 208, 0.32);
   --tone-rust: #ff8a4c;
-  --tone-rust-tint: rgba(255, 138, 76, 0.18);
-  --tone-rust-glow: rgba(255, 138, 76, 0.34);
+
+  --iphone-deep-blue-rgb: 164 176 214;
+  --iphone-sage-rgb: 166 196 146;
+  --iphone-mist-blue-rgb: 142 188 226;
+  --iphone-lavender-rgb: 196 168 222;
+  --iphone-gold-rgb: 224 180 76;
+
+  --accent-pink: #ff7a99;
+  --accent-teal: #63d9d0;
+  --accent-purple: #b99cff;
 
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']):not(.light-theme) {
-    /* applied when ThemeContext sets html.dark-theme — see ThemeContext */
-  }
-}
-
-.data-row {
-  height: 34px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-ac-slide,
-  .animate-ac-lift,
-  .animate-fade-up,
-  .animate-slide-in,
-  .animate-glass-in,
-  .animate-fade-in {
-    animation: none !important;
-  }
 }

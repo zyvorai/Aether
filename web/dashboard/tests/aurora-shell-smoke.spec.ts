@@ -78,15 +78,46 @@ test.describe('Aurora shell smoke', () => {
     });
   }
 
-  test('theme toggle switches dark-theme class', async ({ page }) => {
+  test('theme menu switches and persists light and dark', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('global-nav')).toBeVisible({ timeout: 15_000 });
-    const themeBtn = page.getByTestId('global-nav').getByRole('button', { name: /switch to (light|dark)/i });
-    if (await themeBtn.isVisible().catch(() => false)) {
-      const before = await page.locator('html').evaluate((el) => el.classList.contains('dark-theme'));
-      await themeBtn.click();
-      const after = await page.locator('html').evaluate((el) => el.classList.contains('dark-theme'));
-      expect(after).not.toBe(before);
-    }
+    const html = page.locator('html');
+    const toggle = page.getByTestId('theme-toggle');
+
+    await toggle.click();
+    await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+    await expect(html).toHaveClass(/dark-theme/);
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await page.reload();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+
+    await toggle.click();
+    await page.getByRole('menuitemradio', { name: 'Light' }).click();
+    await expect(html).toHaveClass(/light-theme/);
+    await expect(html).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('system theme follows prefers-color-scheme', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await page.getByTestId('theme-toggle').click();
+    await page.getByRole('menuitemradio', { name: 'System' }).click();
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect(html).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('theme menu works from the keyboard', async ({ page }) => {
+    await page.goto('/');
+    const toggle = page.getByTestId('theme-toggle');
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menu', { name: 'Theme' })).toBeVisible();
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(toggle).toBeFocused();
   });
 });

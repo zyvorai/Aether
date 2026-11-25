@@ -346,7 +346,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <>
                   <button
                     type="button"
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                     onClick={() => {
                       setActiveTenantId(t.slug);
                       toast(`Active tenant: ${t.slug}`, 'success');
@@ -360,7 +360,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       data-testid="hosted-upgrade-button"
                       disabled={upgradingId === t.id}
                       onClick={() => void handleUpgrade(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary disabled:opacity-50"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/10 hover:text-primary disabled:opacity-50"
                     >
                       {upgradingId === t.id ? '…' : 'Upgrade'}
                     </button>
@@ -370,7 +370,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       type="button"
                       data-testid="hosted-stripe-checkout-button"
                       onClick={() => void handleStripeCheckout(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                     >
                       Stripe
                     </button>
@@ -380,7 +380,7 @@ function HostedPage({ refreshKey }: { refreshKey?: number } = {}) {
                       type="button"
                       data-testid="hosted-stripe-portal-button"
                       onClick={() => void handleStripePortal(t)}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                     >
                       Portal
                     </button>

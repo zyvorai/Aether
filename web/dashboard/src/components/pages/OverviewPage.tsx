@@ -263,7 +263,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
             <button
               type="button"
               onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent-fill px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:bg-accent-fill-hover transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               Retry
@@ -390,7 +390,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/15 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/10 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Retry
@@ -566,7 +566,7 @@ function OverviewExplore({
           {setupHints.length > 0 ? (
             <div className="glass-alert-info">
               <p className="text-sm font-medium text-primary mb-2">Platform setup recommended</p>
-              <ul className="text-sm text-primary/90 space-y-1 list-disc list-inside">
+              <ul className="text-sm text-primary space-y-1 list-disc list-inside">
                 {setupHints.map((hint) => (
                   <li key={hint}>{hint}</li>
                 ))}

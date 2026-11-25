@@ -69,7 +69,7 @@ export function getSeverityColor(severity: string): string {
   if (s === 'CRITICAL' || s === 'ERROR') return 'bg-danger/10 text-danger border-danger/20';
   if (s === 'WARNING' || s === 'WARN') return 'bg-warning/10 text-warning border-warning/20';
   if (s === 'INFO') return 'bg-primary/10 text-primary border-primary/20';
-  return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+  return 'bg-hover text-muted border-border';
 }
 
 export function getHealthColor(health: string): string {
@@ -77,11 +77,11 @@ export function getHealthColor(health: string): string {
   if (h === 'healthy') return 'bg-success/10 text-success border-success/20';
   if (h === 'degraded') return 'bg-warning/10 text-warning border-warning/20';
   if (h === 'unhealthy') return 'bg-danger/10 text-danger border-danger/20';
-  return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+  return 'bg-hover text-muted border-border';
 }
 
 export function getBarColor(percent: number): string {
-  if (percent > 85) return 'bg-gradient-to-r from-red-600 to-red-500';
-  if (percent > 60) return 'bg-gradient-to-r from-amber-600 to-amber-500';
-  return 'bg-gradient-to-r from-emerald-600 to-emerald-500';
+  if (percent > 85) return 'bg-danger';
+  if (percent > 60) return 'bg-warning';
+  return 'bg-success';
 }

@@ -48,7 +48,7 @@ export default function ZyraPromptLibrary() {
         <h3 className="mb-3 text-sm font-semibold text-foreground">Prompt Library</h3>
         <div className="space-y-2">
           {prompts.map((p) => (
-            <div key={p.id} className="rounded-xl border border-white/10 p-3">
+            <div key={p.id} className="rounded-xl border border-border p-3">
               <p className="text-sm font-medium text-foreground">{p.title}</p>
               <p className="mt-1 text-xs text-subtle">{p.body}</p>
               <button type="button" className="btn-secondary mt-2 text-xs" onClick={() => runPrompt(p.body)}>
@@ -66,7 +66,7 @@ export default function ZyraPromptLibrary() {
         </h3>
         <div className="space-y-2">
           {marketplace.map((a) => (
-            <div key={a.id} className="rounded-xl border border-white/10 p-3">
+            <div key={a.id} className="rounded-xl border border-border p-3">
               <p className="text-sm font-medium text-foreground">{a.name}</p>
               <p className="mt-1 text-xs text-subtle">{a.description}</p>
               {a.installed ? (

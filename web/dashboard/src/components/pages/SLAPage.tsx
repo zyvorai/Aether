@@ -178,7 +178,7 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
               placeholder="Workload name"
               className="glass-input min-w-[160px]"
             />
-            <select
+            <select aria-label="SLA tier"
               value={addTier}
               onChange={(e) => setAddTier(e.target.value)}
               className="glass-input"

@@ -56,8 +56,8 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={() => onNavigate(item.view)}
       className={cn(
-        'relative flex w-full items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-[13px] leading-none tracking-[-0.005em] transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50',
-        active ? 'glass-fill font-medium text-primary shadow-card' : 'text-muted hover:bg-hover hover:text-foreground',
+        'relative flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm leading-tight transition-colors',
+        active ? 'bg-[var(--selected)] font-semibold text-foreground [&>svg]:text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
         className,
       )}
     >
@@ -81,18 +81,18 @@ function SidebarSectionBlock({
   onNavigate: (view: AppView) => void;
 }) {
   return (
-    <div className="mb-2">
+    <div className="mb-3">
       <button
         type="button"
         aria-expanded={expanded}
         onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1 px-2 py-1 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-subtle hover:text-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50"
+        className="flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-xs font-semibold text-subtle hover:text-foreground"
       >
         <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
         <span className="truncate">{section.label}</span>
       </button>
       {expanded ? (
-        <ul className="space-y-px">
+        <ul className="space-y-0.5">
           {section.items.map((item) => (
             <li key={item.view}>
               <SidebarLink item={item} active={item.view === currentView} onNavigate={onNavigate} />
@@ -157,21 +157,21 @@ export default function AetherSidebar({
       className={cn(
         'flex shrink-0 flex-col',
         mobile
-          ? 'h-full w-72 glass'
-          : 'hidden lg:flex w-64 m-3.5 rounded-[var(--radius-2xl)] glass-fill sticky top-[calc(var(--nav-h)+14px)] self-start h-[calc(100dvh-var(--nav-h)-28px)]',
+          ? 'h-full w-72 bg-surface-elevated shadow-ambient'
+          : 'hidden lg:flex w-64 border-r border-border sticky top-[var(--nav-h)] self-start h-[calc(100dvh-var(--nav-h))]',
       )}
       aria-label="Aether navigation"
     >
-      <div className="px-2.5 pb-1.5 pt-2.5">
+      <div className="px-3 pb-1 pt-4">
         <label className="relative block">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-subtle" aria-hidden />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle" aria-hidden />
           <input
             type="search"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter"
             aria-label="Filter navigation"
-            className="glass-fill w-full min-w-0 rounded-md py-1.5 pl-7 pr-7 text-[13px] text-foreground placeholder:text-subtle focus:outline-hidden focus:ring-1 focus:ring-primary/30"
+            className="w-full min-w-0 rounded-lg border border-[var(--border-input)] bg-surface-elevated py-2 pl-8 pr-8 text-sm text-foreground placeholder:text-subtle"
           />
           {filter ? (
             <button
@@ -186,8 +186,8 @@ export default function AetherSidebar({
         </label>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-2 py-2" aria-label="Primary">
-        <ul className="mb-2 space-y-px">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-3 py-3" aria-label="Primary">
+        <ul className="mb-4 space-y-0.5">
           {filteredPrimary.map((item) => (
             <li key={item.view}>
               <SidebarLink item={item} active={item.view === currentView} onNavigate={handleNavigate} />
@@ -209,17 +209,15 @@ export default function AetherSidebar({
         ) : null}
       </nav>
 
-      <div className="border-t border-border p-1.5">
+      <div className="border-t border-border p-3">
         <button
           type="button"
           onClick={() => handleNavigate('zyra')}
           title="Ask Zyra"
-          className="flex w-full items-center gap-2.5 rounded-[var(--radius-lg)] px-2.5 py-2 text-left transition-colors hover:bg-hover"
-          style={{ background: 'linear-gradient(135deg, rgba(168,98,234,.16), rgba(249,115,22,.14))' }}
+          className="flex w-full items-center gap-2.5 rounded-xl bg-surface-elevated border border-border px-3 py-2.5 text-left transition-colors hover:bg-hover"
         >
           <span
-            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-white"
-            style={{ background: 'linear-gradient(135deg, #a862ea, #f97316)' }}
+            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-accent-fill text-white"
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
           </span>

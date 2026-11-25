@@ -128,7 +128,7 @@ export default function IntentStudioPanel() {
             })();
           }}
           disabled={generating}
-          className="rounded-xl bg-lavender px-4 py-2.5 text-sm font-medium text-white hover:bg-lavender disabled:opacity-60"
+          className="rounded-xl bg-violet-fill px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
           data-testid="intent-generate-button"
         >
           {generating ? 'Generating…' : 'Generate Intent'}
@@ -141,7 +141,7 @@ export default function IntentStudioPanel() {
         ) : null}
 
         {generatedYaml ? (
-          <pre className="glass-code-block-body mt-6 text-xs text-muted" data-testid="intent-generated-yaml">
+          <pre tabIndex={0} className="glass-code-block-body mt-6 text-xs text-muted" data-testid="intent-generated-yaml">
             {generatedYaml}
           </pre>
         ) : null}

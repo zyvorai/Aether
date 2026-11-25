@@ -374,7 +374,7 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
             <form onSubmit={(e) => void initGitOps(e)} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
               <div className="sm:col-span-2">
                 <label className="block text-xs text-subtle mb-1">Repository URL</label>
-                <input
+                <input aria-label="Repository URL"
                   type="url"
                   value={initRepo}
                   onChange={(e) => setInitRepo(e.target.value)}
@@ -384,7 +384,7 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
               </div>
               <div>
                 <label className="block text-xs text-subtle mb-1">Branch</label>
-                <input
+                <input aria-label="Branch"
                   type="text"
                   value={initBranch}
                   onChange={(e) => setInitBranch(e.target.value)}

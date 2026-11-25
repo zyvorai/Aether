@@ -46,11 +46,11 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-primary/90">Zyra</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-primary">Zyra</p>
             <p className="truncate text-sm text-foreground">{insights.summary}</p>
           </div>
           {workload.trim() ? (
-            <span className="hidden rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-muted sm:inline">
+            <span className="hidden rounded-full border border-border bg-surface px-2 py-0.5 text-xs text-muted sm:inline">
               Workload: {workload.trim()}
             </span>
           ) : null}
@@ -69,7 +69,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
           <button
             type="button"
             onClick={() => onAskZyra?.('Summarize fleet health and recommend next actions')}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1 text-xs text-muted hover:border-primary/30 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs text-muted hover:border-primary/30 hover:text-foreground"
             data-testid="zyra-context-explain"
           >
             <Zap className="h-3 w-3" />

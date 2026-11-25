@@ -16,14 +16,6 @@ function statusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
   return 'yellow';
 }
 
-function statusAccent(status: string): string {
-  const s = status.toLowerCase();
-  if (s === 'running' || s.includes('deployed')) return 'from-emerald-500/30 via-transparent to-transparent';
-  if (s === 'error' || s === 'failed') return 'from-red-500/30 via-transparent to-transparent';
-  if (['stopped', 'exited', 'succeeded'].includes(s)) return 'from-slate-500/20 via-transparent to-transparent';
-  return 'from-amber-500/25 via-transparent to-transparent';
-}
-
 function kindGlyph(kind?: string) {
   const k = (kind ?? '').toLowerCase();
   if (k.includes('virtualmachine') || k.includes('vm')) return Server;
@@ -74,8 +66,8 @@ export default function WorkloadCard({
         data-testid={`workload-card-${shortName}`}
         className={`group w-full rounded-xl border px-3 py-2.5 text-left transition ${
           selected
-            ? 'border-primary/50 bg-primary/10 shadow-[0_0_0_1px_rgba(211,84,0,0.25)]'
-            : 'glass-divider glass-inset-surface hover:border-primary/30 hover:bg-white/[0.03]'
+            ? 'border-primary/50 bg-primary/10 ring-1 ring-primary'
+            : 'border-border bg-surface-elevated hover:bg-hover'
         }`}
       >
         <div className="flex items-start gap-2">
@@ -83,7 +75,7 @@ export default function WorkloadCard({
             className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
               variant === 'green' ? 'bg-success' :
               variant === 'red' ? 'bg-danger' :
-              variant === 'muted' ? 'bg-slate-500' : 'bg-warning'
+              variant === 'muted' ? 'bg-subtle' : 'bg-warning'
             } ${running ? 'platform-pulse' : ''}`}
           />
           <div className="min-w-0 flex-1">
@@ -104,20 +96,16 @@ export default function WorkloadCard({
       style={{ animationDelay: `${delayMs}ms` }}
       className={`workload-card-rise group relative overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
         selected
-          ? 'border-primary/45 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent shadow-[0_20px_50px_rgba(0,0,0,0.35)]'
-          : 'glass-divider bg-gradient-to-br from-white/[0.05] via-white/[0.015] to-transparent hover:border-primary/35 hover:shadow-[0_18px_44px_rgba(0,0,0,0.32)]'
+          ? 'border-primary bg-surface-elevated shadow-card'
+          : 'border-border bg-surface-elevated shadow-card hover:border-rule-strong'
       }`}
     >
-      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${statusAccent(workload.status)}`} aria-hidden />
-      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-primary/12 blur-3xl transition duration-500 group-hover:bg-primary/22 group-hover:scale-110" aria-hidden />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-60" aria-hidden />
-
       <div className="relative flex h-full flex-col p-4">
         <div className="mb-3 flex items-start gap-3">
-          <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-gradient-to-br from-white/[0.08] to-transparent">
+          <div className="relative mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border glass-divider bg-surface">
             <KindIcon size={18} className="text-muted transition group-hover:text-primary" />
             {running ? (
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(10,13,18,0.9)] bg-success platform-pulse" />
+              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-elevated bg-success platform-pulse" />
             ) : null}
           </div>
           <div className="min-w-0 flex-1">
@@ -169,7 +157,7 @@ export default function WorkloadCard({
           <button
             type="button"
             onClick={() => onOpen('overview')}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
             title="Info"
             data-testid={`workload-card-info-${shortName}`}
           >
@@ -180,7 +168,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('logs')}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/15 hover:text-primary"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-primary/10 hover:text-primary"
               title="Logs"
               data-testid={`workload-card-logs-${shortName}`}
             >
@@ -192,7 +180,7 @@ export default function WorkloadCard({
             <button
               type="button"
               onClick={() => onOpen('overview', true)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-success/15 hover:text-success"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-success/10 hover:text-success"
               title="Exec into pod"
               data-testid={`workload-card-shell-${shortName}`}
             >

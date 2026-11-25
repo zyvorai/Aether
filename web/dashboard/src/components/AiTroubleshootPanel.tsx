@@ -145,7 +145,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
                 return (
                   <div
                     key={`${rec.title}-${rec.action}`}
-                    className="rounded-lg border border-warning/20 bg-warning/15 p-3"
+                    className="rounded-lg border border-warning/20 bg-warning/10 p-3"
                     data-testid={`ai-troubleshoot-rec-${rec.action}`}
                   >
                     <div className="flex items-start gap-2">
@@ -159,7 +159,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
                               type="button"
                               onClick={() => void handleApply(rec.action)}
                               disabled={applying === rec.action}
-                              className="inline-flex items-center gap-1 rounded-lg bg-primary/20 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/30 disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
                               data-testid={`ai-troubleshoot-apply-${rec.action}`}
                             >
                               {applying === rec.action ? (
@@ -185,7 +185,7 @@ export default function AiTroubleshootPanel({ workload, compact = false, onAppli
           )}
 
           {report.log_excerpt && (
-            <pre className="glass-code-block-body max-h-32 text-[10px] text-muted font-mono">
+            <pre tabIndex={0} className="glass-code-block-body max-h-32 text-[10px] text-muted font-mono">
               {report.log_excerpt.slice(-1200)}
             </pre>
           )}

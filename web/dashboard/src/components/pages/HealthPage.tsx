@@ -295,7 +295,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               data-testid="health-run-checks"
               onClick={() => void runOrchestratorAction('health-check')}
               disabled={orchBusy !== null}
-              className="rounded-xl bg-success/20 border border-success/40 px-4 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+              className="rounded-xl bg-success/10 border border-success/40 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
             >
               {orchBusy === 'health-check' ? 'Checking…' : 'Run health checks'}
             </button>

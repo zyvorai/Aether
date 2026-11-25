@@ -10,7 +10,7 @@
   (unlike severity red/amber/green, which stay reserved for status).
 */
 
-const PALETTE = ['bg-primary', 'bg-deepblue', 'bg-sage', 'bg-mistblue', 'bg-lavender', 'bg-gold'] as const;
+const PALETTE = ['bg-accent-fill', 'bg-deepblue', 'bg-sage', 'bg-mistblue', 'bg-lavender', 'bg-gold'] as const;
 
 function hashString(value: string): number {
   let hash = 2166136261;

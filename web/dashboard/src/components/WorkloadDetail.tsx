@@ -902,8 +902,8 @@ export default function WorkloadDetail({
     <>
     <Card className="animate-ac-slide mt-4 overflow-hidden p-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 glass-divider-b glass-inset-surface">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 glass-divider-b glass-inset-surface">
+        <div className="flex flex-wrap items-center gap-3">
           <div>
             <h3 className="text-lg font-bold text-foreground">
               {isKubeWorkload ? applicationLabel(workload) : workload.name}
@@ -1002,7 +1002,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setShellOpen(true);
                     }}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/20 text-success hover:bg-success/40 border border-success/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/10 text-success hover:bg-success/10 border border-success/30 transition-colors"
                   >
                     Exec
                   </button>
@@ -1012,7 +1012,7 @@ export default function WorkloadDetail({
                     data-testid="workload-shell-button-denied"
                     disabled
                     title="Exec requires Operator or Admin role"
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-slate-600/20 text-subtle border border-slate-600/30 cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-surface text-subtle border border-border cursor-not-allowed"
                   >
                     Exec
                   </button>
@@ -1024,10 +1024,10 @@ export default function WorkloadDetail({
                     disabled={!!actionLoading}
                     className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${
                       action === 'delete'
-                        ? 'bg-danger/20 text-danger hover:bg-danger/40 border border-danger/30'
+                        ? 'bg-danger/10 text-danger hover:bg-danger/10 border border-danger/30'
                         : action === 'rollback'
-                          ? 'bg-warning/20 text-warning hover:bg-warning/40 border border-warning/30'
-                        : 'glass-inset-surface text-muted hover:bg-white/[0.08] border glass-divider'
+                          ? 'bg-warning/10 text-warning hover:bg-warning/10 border border-warning/30'
+                        : 'glass-inset-surface text-muted hover:bg-hover border glass-divider'
                     } disabled:opacity-50`}
                   >
                     {actionLoading === action ? '...' : action.charAt(0).toUpperCase() + action.slice(1)}
@@ -1037,7 +1037,7 @@ export default function WorkloadDetail({
                   <button
                     type="button"
                     onClick={() => onMigrate(workload.name)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30 transition-colors"
+                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/10 text-primary hover:bg-primary/10 border border-primary/30 transition-colors"
                   >
                     Migrate
                   </button>
@@ -1072,7 +1072,7 @@ export default function WorkloadDetail({
                         setShellWantConnect(false);
                         setShellOpen(true);
                       }}
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/20 text-success hover:bg-success/40 border border-success/30 transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/10 text-success hover:bg-success/10 border border-success/30 transition-colors"
                     >
                       Exec
                     </button>
@@ -1082,7 +1082,7 @@ export default function WorkloadDetail({
                       data-testid="workload-shell-button-denied"
                       disabled
                       title="Exec requires Operator or Admin role"
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-slate-600/20 text-subtle border border-slate-600/30 cursor-not-allowed"
+                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-surface text-subtle border border-border cursor-not-allowed"
                     >
                       Exec
                     </button>
@@ -1090,7 +1090,7 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-white/[0.08] border glass-divider disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-hover border glass-divider disabled:opacity-50"
                   >
                     {actionLoading === 'restart' ? '...' : 'Restart'}
                   </button>
@@ -1107,7 +1107,7 @@ export default function WorkloadDetail({
                               void handleAction('scale', next);
                             }}
                             disabled={!!actionLoading}
-                            className="rounded-sm border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-muted hover:bg-white/[0.08] disabled:opacity-50"
+                            className="rounded-sm border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-muted hover:bg-hover disabled:opacity-50"
                             title="Scale down by 1"
                             data-testid="workload-scale-down"
                           >
@@ -1128,7 +1128,7 @@ export default function WorkloadDetail({
                               void handleAction('scale', next);
                             }}
                             disabled={!!actionLoading}
-                            className="rounded-sm border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-muted hover:bg-white/[0.08] disabled:opacity-50"
+                            className="rounded-sm border glass-divider glass-inset-surface px-2 py-1.5 text-sm text-muted hover:bg-hover disabled:opacity-50"
                             title="Scale up by 1"
                             data-testid="workload-scale-up"
                           >
@@ -1139,7 +1139,7 @@ export default function WorkloadDetail({
                       <button
                         onClick={() => handleAction('scale')}
                         disabled={!!actionLoading}
-                        className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 disabled:opacity-50"
+                        className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/10 text-primary hover:bg-primary/10 border border-primary/30 disabled:opacity-50"
                       >
                         {actionLoading === 'scale' ? '...' : 'Scale'}
                       </button>
@@ -1163,7 +1163,7 @@ export default function WorkloadDetail({
                         kind: workload.kind,
                         workload: workload.name,
                       })}
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-white/[0.08] border glass-divider transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-hover border glass-divider transition-colors"
                       data-testid="workload-open-clusters-link"
                     >
                       Open in Clusters
@@ -1172,7 +1172,7 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-danger/20 text-danger hover:bg-danger/40 border border-danger/30 disabled:opacity-50"
+                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-danger/10 text-danger hover:bg-danger/10 border border-danger/30 disabled:opacity-50"
                   >
                     {actionLoading === 'delete' ? '...' : 'Delete'}
                   </button>
@@ -1249,7 +1249,7 @@ export default function WorkloadDetail({
                                 void copyToClipboard(pod.name);
                                 toast(`Copied ${pod.name}`, 'success');
                               }}
-                              className="rounded-sm px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-white/5 hover:text-foreground"
+                              className="rounded-sm px-1.5 py-0.5 text-[11px] text-subtle transition-colors hover:bg-hover hover:text-foreground"
                               title="Copy pod name"
                             >
                               Copy
@@ -1627,7 +1627,7 @@ export default function WorkloadDetail({
                       type="button"
                       onClick={() => void handlePortForwardStart()}
                       disabled={!!portForwardSession || !!actionLoading || (!portForwardPod && workload.kind !== 'Service')}
-                      className="flex-1 rounded-lg border border-primary/40 bg-primary/20 px-2 py-1.5 text-xs text-primary hover:bg-primary/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1.5 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
                       data-testid="workload-pf-start"
                     >
                       {actionLoading === 'port-forward' ? '...' : 'Start'}
@@ -1679,7 +1679,7 @@ export default function WorkloadDetail({
                         setCopiedCmd('all');
                         window.setTimeout(() => setCopiedCmd(''), 1500);
                       }}
-                      className="rounded-sm px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-muted transition-colors hover:bg-white/5 hover:text-primary"
+                      className="rounded-sm px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-muted transition-colors hover:bg-hover hover:text-primary"
                       data-testid="workload-kubectl-copy-all"
                     >
                       {copiedCmd === 'all' ? 'Copied all' : 'Copy all'}
@@ -1704,7 +1704,7 @@ export default function WorkloadDetail({
                             setCopiedCmd(cmd.label);
                             window.setTimeout(() => setCopiedCmd(''), 1500);
                           }}
-                          className="shrink-0 rounded-sm px-2 py-1 text-[11px] text-muted transition-colors hover:bg-white/5 hover:text-primary"
+                          className="shrink-0 rounded-sm px-2 py-1 text-[11px] text-muted transition-colors hover:bg-hover hover:text-primary"
                         >
                           {copiedCmd === cmd.label ? 'Copied' : 'Copy'}
                         </button>
@@ -1865,7 +1865,7 @@ export default function WorkloadDetail({
 
                 <div className="glass-drawer p-3">
                   <h4 className="mb-3 text-sm font-semibold text-foreground">Manifest</h4>
-                  <pre className="glass-code-block-body max-h-96 overflow-auto text-xs">
+                  <pre tabIndex={0} className="glass-code-block-body max-h-96 overflow-auto text-xs">
                     {JSON.stringify(clusterDetail.manifest, null, 2)}
                   </pre>
                 </div>
@@ -1981,7 +1981,7 @@ export default function WorkloadDetail({
                 <div className="font-medium" data-testid="workload-shell-title">
                   Exec — {shellPod || workload.name}
                 </div>
-                <div className={`text-xs px-2 py-0.5 rounded-sm ${shellConnected ? 'bg-success/20 text-success' : 'glass-inset-surface text-muted'}`}>
+                <div className={`text-xs px-2 py-0.5 rounded-sm ${shellConnected ? 'bg-success/10 text-success' : 'glass-inset-surface text-muted'}`}>
                   {shellConnected ? 'Connected' : shellWantConnect ? 'Connecting…' : 'Disconnected'}
                 </div>
                 {shellPods.length > 0 ? (
@@ -2063,7 +2063,7 @@ export default function WorkloadDetail({
                     setShellWantConnect(true);
                   }}
                   disabled={shellResolving || !shellPod || !selectedPodExecReady}
-                  className="text-xs px-3 py-1 rounded-sm border border-success bg-success/20 text-success hover:bg-success/30 disabled:opacity-50"
+                  className="text-xs px-3 py-1 rounded-sm border border-success bg-success/10 text-success hover:bg-success/10 disabled:opacity-50"
                   data-testid="workload-shell-connect"
                 >
                   Connect
@@ -2140,7 +2140,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setActiveTab('logs');
                     }}
-                    className="rounded-sm border border-warning/40 bg-warning/15 px-2 py-0.5 text-xs text-warning hover:bg-warning/25"
+                    className="rounded-sm border border-warning/40 bg-warning/10 px-2 py-0.5 text-xs text-warning hover:bg-warning/10"
                     data-testid="workload-shell-open-logs"
                   >
                     Open Logs

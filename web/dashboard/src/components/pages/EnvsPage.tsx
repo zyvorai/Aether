@@ -395,7 +395,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 <button
                   type="button"
                   onClick={() => setSelectedEnvironment(env)}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                 >
                   <Search size={13} />
                   Inspect
@@ -477,7 +477,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <form data-testid="envs-create-modal" onSubmit={(e) => void handleCreate(e)} className="space-y-4">
           <div>
             <label className="block text-xs text-subtle mb-1">Name</label>
-            <input
+            <input aria-label="Name"
               type="text"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
@@ -486,7 +486,7 @@ function EnvsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
           <div>
             <label className="block text-xs text-subtle mb-1">Tier</label>
-            <select
+            <select aria-label="Tier"
               value={createTier}
               onChange={(e) => setCreateTier(e.target.value)}
               className="glass-input"

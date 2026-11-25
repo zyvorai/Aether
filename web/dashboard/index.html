@@ -6,23 +6,25 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='8' y1='8' x2='56' y2='56' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='1' stop-color='%23f0583a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23bg)'/%3E%3Cpath d='M19 18h26v7L29 40h16v7H19v-7l16-15H19z' fill='%23fff'/%3E%3C/svg%3E">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aether — Universal Runtime Control Plane</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f5f7" />
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif; }
+      /* First-paint colours only. No global resets here: unlayered rules would override Tailwind's layered utilities. */
+      html { background: #f5f5f7; color-scheme: light; }
+      html[data-theme='dark'] { background: #000000; color-scheme: dark; }
     </style>
     <script>
       (function () {
-        try {
-          var stored = localStorage.getItem('aether-theme');
-          var theme = stored === 'steel' ? 'dark' : stored === 'aurora' ? 'light' : stored;
-          if (theme === 'light' || theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', theme);
-          }
-          var accent = localStorage.getItem('aether-accent');
-          if (accent === 'deepblue' || accent === 'sage' || accent === 'mistblue' || accent === 'lavender') {
-            document.documentElement.setAttribute('data-accent', accent);
-          }
-        } catch (e) {}
+        var stored = null;
+        try { stored = localStorage.getItem('aether-theme'); } catch (e) {}
+        var pref = stored === 'steel' ? 'dark' : stored === 'aurora' ? 'light' : stored;
+        var theme = pref === 'light' || pref === 'dark' ? pref
+          : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        var root = document.documentElement;
+        root.setAttribute('data-theme', theme);
+        root.classList.add(theme + '-theme');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta && theme === 'dark') meta.setAttribute('content', '#000000');
       })();
     </script>
   </head>

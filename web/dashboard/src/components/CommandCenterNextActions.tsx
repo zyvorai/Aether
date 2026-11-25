@@ -164,7 +164,7 @@ export default function CommandCenterNextActions({
                   data-testid={`next-action-${action.id}`}
                 >
                   <span className="next-action-priority">{action.priority}</span>
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.04]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border bg-surface">
                     <Icon className="h-4 w-4 text-muted" />
                   </span>
                   <span className="min-w-0 flex-1">

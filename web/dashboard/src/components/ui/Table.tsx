@@ -8,17 +8,17 @@ export function Table({ children, className }: { children: ReactNode; className?
   return <div className={cn('glass overflow-x-auto', className)}><table className="w-full text-body-sm">{children}</table></div>;
 }
 export function TableHead({ children }: { children: ReactNode }) {
-  return <thead className="bg-[var(--glass-bg-elevated)] text-muted text-left">{children}</thead>;
+  return <thead className="border-b border-border text-muted text-left">{children}</thead>;
 }
 export function TableBody({ children }: { children: ReactNode }) {
   return <tbody>{children}</tbody>;
 }
 export function TableRow({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
-  return <tr className={cn('border-t border-[var(--glass-border)] first:border-t-0', className)} onClick={onClick}>{children}</tr>;
+  return <tr className={cn('border-t border-border first:border-t-0 hover:bg-hover', className)} onClick={onClick}>{children}</tr>;
 }
 export function TableHeaderCell({ children, className }: { children: ReactNode; className?: string }) {
-  return <th className={cn('p-3 text-xs font-medium uppercase tracking-wide text-muted', className)}>{children}</th>;
+  return <th className={cn('px-4 py-3 text-xs font-semibold text-muted', className)}>{children}</th>;
 }
 export function TableCell({ children, className }: { children: ReactNode; className?: string }) {
-  return <td className={cn('p-3', className)}>{children}</td>;
+  return <td className={cn('px-4 py-3', className)}>{children}</td>;
 }
