@@ -12,7 +12,7 @@ import PageLoading from './PageLoading';
 function ConfigRow({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
   return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 py-2 border-b border-white/5 last:border-0">
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 py-2 border-b border-border last:border-0">
       <span className="text-xs text-subtle shrink-0">{label}</span>
       <code className="text-xs text-muted break-all text-right">{value}</code>
     </div>

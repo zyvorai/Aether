@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dashboard appearance
+- New neutral design with light, dark and system themes, chosen from an Appearance menu, applied before first paint and remembered.
+- Fixed layout regressions from the Tailwind 4 upgrade: a global reset in `index.html` cancelled all margin and padding utilities, theme variables overrode the radius scale, and warning and text-size utilities were missing.
+- Accessibility: contrast, focus rings, control labels, keyboard access to menus, the navigation drawer and scroll regions.
+- System fonts only; the dashboard no longer requests Google Fonts.
+
 ### Added (round 4)
 - **`aether lint --fix` / `--diff`** (`src/specfix.rs`): safe, comment-preserving fixes for `W020` (typo'd key renamed to the suggested key) and `I021` (snake_case alias to camelCase); refuses edits that raise the error count. `POST /api/spec/fix`.
 - **`aether spec-policy RULES.yaml`** (`src/specpolicy.rs`): policy as code. Declarative rule file (path with `[*]`, 14 operators including quantity comparison and globs, `when`, severity), findings with source lines, text/json/junit/github output. `examples/policy/org-baseline.yaml`. `POST /api/spec/policy`.

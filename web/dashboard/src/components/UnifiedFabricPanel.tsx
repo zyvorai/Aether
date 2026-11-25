@@ -31,12 +31,12 @@ export default function UnifiedFabricPanel() {
         <div className="flex items-center gap-3">
           <Box className="h-5 w-5 text-aether-ai" />
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-aether-ai">Fabric</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-aether-ai">Fabric</p>
             <h2 className="text-xl font-semibold text-foreground">Unified Edge + Cloud Fabric</h2>
             <p className="text-sm text-muted">Edge agents linked to federated clusters and workloads</p>
           </div>
         </div>
-        <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted transition hover:border-primary/30">
+        <button aria-label="Refresh" type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted transition hover:border-primary/30">
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </div>

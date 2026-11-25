@@ -431,7 +431,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
                   href={grafanaDashboardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/20"
+                  className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/10"
                 >
                   Open Aether dashboard <ExternalLink size={14} />
                 </a>
@@ -477,7 +477,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/30 px-4 py-2 text-sm text-primary hover:bg-primary/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/50"
             >
               PacketWolf <ExternalLink size={14} />
             </a>
@@ -490,7 +490,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
         </div>
         <p className="mt-4 text-xs text-subtle">
           Multi-cluster inventory: open{' '}
-          <a href="/fleet" className="text-primary hover:underline">
+          <a href="/fleet" className="text-primary underline underline-offset-2">
             Fleet Overview
           </a>
           . Set <code className="text-muted">AETHER_PACKETWOLF_URL</code> for PacketWolf east-west verification.

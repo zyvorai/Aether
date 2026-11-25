@@ -63,7 +63,7 @@ export default function DestructiveConfirmDialog({
           type="button"
           onClick={commit}
           disabled={!matches}
-          className="rounded-full bg-danger px-4 py-1.5 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 hover:bg-danger"
+          className="rounded-full bg-danger-fill px-4 py-1.5 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 hover:brightness-110"
         >
           {confirmLabel}
         </button>

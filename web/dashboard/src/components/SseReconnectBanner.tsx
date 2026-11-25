@@ -23,7 +23,7 @@ export default function SseReconnectBanner({ onRefresh }: SseReconnectBannerProp
         <button
           type="button"
           onClick={onRefresh}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-warning/40 px-3 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/15"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-warning/40 px-3 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refresh now

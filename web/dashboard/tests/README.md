@@ -29,4 +29,4 @@ Automated coverage of the amber reconnect banner is intentionally avoided in CI 
 - Onboarding strip on empty Overview
 - Help → About dialog
 - API-down retry UI (GitOps or Policy)
-- Light-theme deploy modal (`Theme` → Light, `/workloads?deploy=1`)
+- Light-theme deploy modal (Appearance menu → Light, `/workloads?deploy=1`)

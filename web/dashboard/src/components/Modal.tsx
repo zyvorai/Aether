@@ -77,7 +77,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
 
   if (isFull) {
     return createPortal(
-      <div className="fixed inset-0 z-50 flex animate-fade-in flex-col glass" role="dialog" aria-modal="true" aria-label={title} ref={panelRef}>
+      <div className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-surface-elevated" role="dialog" aria-modal="true" aria-label={title} ref={panelRef}>
         <div className="flex shrink-0 items-center justify-between glass-divider-b px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
@@ -108,7 +108,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`glass rounded-[var(--radius-lg)] animate-scale-in shadow-2xl max-h-[85vh] ${
+        className={`dialog-panel relative flex w-full flex-col rounded-2xl animate-scale-in max-h-[85vh] ${
           isWide ? 'max-w-[min(96rem,calc(100vw-2rem))] max-sm:max-w-[calc(100vw-1rem)] max-sm:rounded-none max-sm:max-h-[100dvh]' : 'max-w-2xl max-sm:max-w-[calc(100vw-1rem)]'
         }`}
       >

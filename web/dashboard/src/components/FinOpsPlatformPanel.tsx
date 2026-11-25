@@ -200,7 +200,7 @@ export default function FinOpsPlatformPanel() {
             {(trends?.points ?? []).map((p) => (
               <div
                 key={p.label}
-                className={`flex-1 rounded-t ${p.forecast ? 'bg-success/30' : 'bg-success/60'}`}
+                className={`flex-1 rounded-t ${p.forecast ? 'bg-success/10' : 'bg-success/60'}`}
                 style={{ height: `${Math.max(8, Math.min(100, p.monthly_usd / 50))}%` }}
                 title={`${p.label}: ${formatUSD(p.monthly_usd)}`}
               />

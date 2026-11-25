@@ -85,7 +85,7 @@ export default function MacOSPlatformPanel() {
       icon={<Apple className="h-5 w-5 text-foreground" />}
       actions={<div className="flex gap-2">
           <Badge text={inShell ? 'Tauri shell' : 'Web only'} variant={inShell ? 'green' : 'muted'} />
-          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
+          <button aria-label="Refresh" type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}
@@ -133,7 +133,7 @@ export default function MacOSPlatformPanel() {
             <Search className="h-4 w-4 text-primary" />
             Spotlight index
           </h3>
-          <ul className="max-h-32 space-y-1 overflow-auto text-sm text-muted" data-testid="spotlight-index-panel">
+          <ul tabIndex={0} className="max-h-32 space-y-1 overflow-auto text-sm text-muted" data-testid="spotlight-index-panel">
             {(spotlight?.items ?? []).slice(0, 6).map((item) => (
               <li key={item.id}>
                 {item.title} — {item.deep_link}

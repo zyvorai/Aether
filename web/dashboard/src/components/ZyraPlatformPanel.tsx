@@ -198,7 +198,7 @@ export default function ZyraPlatformPanel() {
             <button
               type="button"
               onClick={() => void routeAgent()}
-              className="rounded-lg bg-lavender px-3 py-2 text-xs text-white hover:bg-lavender"
+              className="rounded-lg bg-violet-fill px-3 py-2 text-xs text-white hover:brightness-110"
               data-testid="zyra-route-button"
             >
               Route agent
@@ -261,7 +261,7 @@ export default function ZyraPlatformPanel() {
             <button
               type="button"
               onClick={() => void authorRunbook()}
-              className="inline-flex items-center gap-1 rounded-lg bg-lavender px-3 py-2 text-xs text-white hover:bg-lavender"
+              className="inline-flex items-center gap-1 rounded-lg bg-violet-fill px-3 py-2 text-xs text-white hover:brightness-110"
               data-testid="zyra-runbook-button"
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -269,7 +269,7 @@ export default function ZyraPlatformPanel() {
             </button>
           </div>
           {runbook ? (
-            <pre className="glass-code-block-body max-h-64 text-xs text-muted whitespace-pre-wrap">
+            <pre tabIndex={0} className="glass-code-block-body max-h-64 text-xs text-muted whitespace-pre-wrap">
               {runbook.markdown}
             </pre>
           ) : (

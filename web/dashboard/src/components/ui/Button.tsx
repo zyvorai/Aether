@@ -13,16 +13,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    'rounded-[var(--radius-pill)] text-[var(--primary-foreground)] bg-primary border border-primary ' +
-    'hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-accent)] ' +
-    'active:translate-y-0 active:scale-[0.98] transition-all',
+    'rounded-[var(--radius-pill)] text-white bg-accent-fill border border-accent-fill ' +
+    'hover:bg-accent-fill-hover hover:border-accent-fill-hover active:scale-[0.98] transition-colors',
   secondary:
-    'rounded-[var(--radius-pill)] glass-fill text-foreground ' +
-    'hover:bg-[var(--accent-tint)] hover:-translate-y-px active:scale-[0.98] transition-all',
+    'rounded-[var(--radius-pill)] bg-surface-elevated border border-border text-primary ' +
+    'hover:bg-primary-wash active:scale-[0.98] transition-colors',
   ghost:
     'rounded-[var(--radius-sm)] text-muted hover:text-foreground hover:bg-[var(--hover)] transition-colors',
   danger:
-    'rounded-[var(--radius-pill)] bg-danger/10 text-danger hover:bg-danger/15 transition-colors',
+    'rounded-[var(--radius-pill)] bg-danger/10 text-danger hover:bg-danger/10 transition-colors',
   link: 'text-primary hover:underline p-0 h-auto font-normal',
   tertiary:
     'rounded-[var(--radius-sm)] text-primary bg-transparent px-3 py-2 ' +

@@ -10,13 +10,13 @@ interface ThemeContextType {
   resolvedTheme: 'light' | 'dark';
   setTheme: (t: AppTheme) => void;
   toggleDarkLight: () => void;
-  /** @deprecated Accent picker removed — Apple blue only. Kept for compile safety. */
+  /** @deprecated Accent picker removed — single accent. Kept for compile safety. */
   accent: 'blue';
   setAccent: (a: 'blue') => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'light',
+  theme: 'system',
   resolvedTheme: 'light',
   setTheme: () => {},
   toggleDarkLight: () => {},
@@ -28,16 +28,24 @@ function parseStoredTheme(raw: string | null): AppTheme {
   if (raw === 'steel') return 'dark';
   if (raw === 'aurora') return 'light';
   if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;
-  return 'light';
+  return 'system';
 }
 
 function getSystemPrefersDark(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+function readStoredTheme(): string | null {
+  try {
+    return localStorage.getItem('aether-theme');
+  } catch {
+    return null;
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<AppTheme>(() =>
-    parseStoredTheme(typeof localStorage !== 'undefined' ? localStorage.getItem('aether-theme') : null),
+    parseStoredTheme(readStoredTheme()),
   );
   const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
 
@@ -46,19 +54,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setAccent = useCallback((_a: 'blue') => {
-    /* no-op — brand is fixed Apple blue */
+    /* no-op — the accent is fixed */
   }, []);
 
+  const resolvedTheme: 'light' | 'dark' = theme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : theme;
+
+  // Mirrors the inline script in index.html, which applies the theme before first paint.
   useEffect(() => {
-    localStorage.setItem('aether-theme', theme);
+    try {
+      localStorage.setItem('aether-theme', theme);
+    } catch {
+      /* storage may be unavailable; the choice then lasts for this page only */
+    }
     const root = document.documentElement;
     root.removeAttribute('data-accent');
-    const resolved = theme === 'system' ? (getSystemPrefersDark() ? 'dark' : 'light') : theme;
-    if (theme === 'system') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', theme);
-    root.classList.toggle('dark-theme', resolved === 'dark');
-    root.classList.toggle('light-theme', resolved === 'light');
-  }, [theme, systemPrefersDark]);
+    root.setAttribute('data-theme', resolvedTheme);
+    root.classList.toggle('dark-theme', resolvedTheme === 'dark');
+    root.classList.toggle('light-theme', resolvedTheme === 'light');
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', getComputedStyle(root).getPropertyValue('--background').trim());
+  }, [theme, resolvedTheme]);
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
@@ -66,8 +82,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
   }, []);
-
-  const resolvedTheme: 'light' | 'dark' = theme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : theme;
 
   const toggleDarkLight = useCallback(() => {
     setThemeState((t) => {
@@ -91,7 +105,7 @@ export function useTheme() {
 
 /** @deprecated Removed with Aurora UX — kept so old imports compile until cleaned. */
 export const ACCENT_OPTIONS: { value: 'blue'; label: string; swatchClass: string }[] = [
-  { value: 'blue', label: 'Apple Blue', swatchClass: 'bg-primary' },
+  { value: 'blue', label: 'Blue', swatchClass: 'bg-accent-fill' },
 ];
 
 export type AccentColor = 'blue';

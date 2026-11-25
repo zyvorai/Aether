@@ -34,12 +34,12 @@ export default function CommandMetricCard({
     <button
       type="button"
       onClick={onClick}
-      className={`tahoe-stat-tile group w-full rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left transition hover:border-primary/30 hover:shadow-card ${isEmpty ? 'opacity-70' : ''}`}
+      className={`tahoe-stat-tile group w-full rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left transition hover:border-primary/30 hover:shadow-card ${isEmpty ? 'border-dashed' : ''}`}
       data-testid={testId}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted">
             {icon}
             {label}
           </div>

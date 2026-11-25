@@ -143,7 +143,7 @@ function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
         />
 
         {tab === 'local' ? (
-          <div className="space-y-4 rounded-xl border border-white/10 p-4">
+          <div className="space-y-4 rounded-xl border border-border p-4">
             <label className="flex items-center gap-3 text-sm text-foreground">
               <input
                 type="checkbox"
@@ -160,7 +160,7 @@ function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3 rounded-xl border border-white/10 p-4">
+          <div className="space-y-3 rounded-xl border border-border p-4">
             <h3 className="text-sm font-medium text-foreground">Add provider</h3>
             <input
               className="input-field w-full"
@@ -228,7 +228,7 @@ function AiProvidersPage({ refreshKey }: { refreshKey?: number } = {}) {
 
           <div className="space-y-2">
             {(registry?.providers ?? []).map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-xl border border-white/10 p-3">
+              <div key={p.id} className="flex items-center justify-between rounded-xl border border-border p-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">{p.display_name}</p>
                   <p className="text-xs text-subtle">

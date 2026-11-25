@@ -38,7 +38,7 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
       {icon ? (
         <div className={cn('absolute right-3 top-3 opacity-80', accentMap[color])}>{icon}</div>
       ) : null}
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{title}</p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">{title}</p>
       <p className={cn('tahoe-stat-value', compact ? 'text-2xl' : 'text-3xl', empty ? 'text-muted' : 'text-foreground')}>
         {value}
       </p>

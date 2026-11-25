@@ -296,7 +296,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => void handleExpand(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                     >
                       {detailLoading === s.name ? (
                         <span className="h-3 w-3 animate-spin rounded-full border-b border-primary" />
@@ -310,7 +310,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(s.name)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/15 hover:text-danger"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-danger/10 hover:text-danger"
                     >
                       <Trash2 size={13} />
                       Delete
@@ -329,7 +329,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div data-testid="secrets-create-modal" className="space-y-4">
           <div>
             <label className="mb-1 block text-xs text-subtle">Name</label>
-            <input
+            <input aria-label="Name"
               type="text"
               value={createName}
               onChange={(e) => setCreateName(e.target.value)}
@@ -338,7 +338,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
           <div>
             <label className="mb-1 block text-xs text-subtle">Namespace</label>
-            <input
+            <input aria-label="Namespace"
               type="text"
               value={createNamespace}
               onChange={(e) => setCreateNamespace(e.target.value)}
@@ -347,7 +347,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           </div>
           <div>
             <label className="mb-1 block text-xs text-subtle">Keys (KEY=value per line)</label>
-            <textarea
+            <textarea aria-label="Keys (KEY=value per line)"
               value={createKeys}
               onChange={(e) => setCreateKeys(e.target.value)}
               rows={5}
@@ -386,7 +386,7 @@ function SecretsPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => confirmDelete && void handleDelete(confirmDelete)}
-            className="px-4 py-2 bg-danger hover:bg-danger text-white rounded-lg text-sm font-medium"
+            className="px-4 py-2 bg-danger-fill hover:brightness-110 text-white rounded-lg text-sm font-medium"
           >
             Delete
           </button>

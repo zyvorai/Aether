@@ -289,22 +289,22 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
         <div className="flex flex-wrap items-end gap-3" data-testid="deps-add-form">
           <div>
             <label className="block text-xs text-muted mb-1">Workload</label>
-            <input
+            <input aria-label="Workload"
               type="text"
               value={addWorkload}
               onChange={(e) => setAddWorkload(e.target.value)}
               placeholder="e.g. web-app"
-              className="glass-input text-foreground placeholder:text-slate-600 focus:outline-hidden focus:border-primary"
+              className="glass-input text-foreground placeholder:text-subtle focus:outline-hidden focus:border-primary"
             />
           </div>
           <div>
             <label className="block text-xs text-muted mb-1">Depends on</label>
-            <input
+            <input aria-label="Depends on"
               type="text"
               value={addDependency}
               onChange={(e) => setAddDependency(e.target.value)}
               placeholder="e.g. database"
-              className="glass-input text-foreground placeholder:text-slate-600 focus:outline-hidden focus:border-primary"
+              className="glass-input text-foreground placeholder:text-subtle focus:outline-hidden focus:border-primary"
             />
           </div>
           <button

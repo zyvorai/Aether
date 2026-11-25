@@ -11,11 +11,11 @@ import type { KnowledgeGraphReport } from '../types/api';
 import GlassSection from './GlassSection';
 
 const KIND_COLORS: Record<string, string> = {
-  workload: 'rgb(99 164 255)',
-  runtime: 'rgb(168 85 247)',
-  cluster: 'rgb(45 212 191)',
-  threat: 'rgb(248 113 113)',
-  drift: 'rgb(251 191 36)',
+  workload: 'var(--tone-sky)',
+  runtime: 'var(--tone-violet)',
+  cluster: 'var(--tone-teal)',
+  threat: 'var(--danger)',
+  drift: 'var(--tone-amber)',
 };
 
 const EDGE_KINDS = ['depends_on', 'runs_on', 'placed_on', 'threatens', 'drifts_from'];
@@ -170,7 +170,7 @@ export default function KnowledgeGraphPanel() {
                       y1={a.y}
                       x2={b.x}
                       y2={b.y}
-                      stroke="rgb(148 163 184 / 0.35)"
+                      stroke="var(--border-strong)"
                       strokeWidth={1.2}
                     />
                   );
@@ -178,7 +178,7 @@ export default function KnowledgeGraphPanel() {
                 {graph.nodes.map((node) => {
                   const p = layout.positions.get(node.id);
                   if (!p) return null;
-                  const color = KIND_COLORS[node.kind] ?? 'rgb(148 163 184)';
+                  const color = KIND_COLORS[node.kind] ?? 'var(--subtle)';
                   return (
                     <g
                       key={node.id}
@@ -186,7 +186,7 @@ export default function KnowledgeGraphPanel() {
                       onClick={() => handleNodeClick(node.id)}
                     >
                       <circle cx={p.x} cy={p.y} r={16} fill={color} fillOpacity={0.2} stroke={color} strokeWidth={1.5} />
-                      <text x={p.x} y={p.y + 28} textAnchor="middle" className="fill-slate-300 text-[10px]">
+                      <text x={p.x} y={p.y + 28} textAnchor="middle" className="fill-muted text-[10px]">
                         {node.label.length > 14 ? `${node.label.slice(0, 12)}…` : node.label}
                       </text>
                     </g>

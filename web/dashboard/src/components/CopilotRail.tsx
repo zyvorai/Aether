@@ -83,8 +83,8 @@ const DEFAULT_PROMPTS = [
 ];
 
 function agentStatusDot(status: string): string {
-  if (status === 'alert') return 'bg-danger shadow-[0_0_8px_rgba(248,113,113,0.6)]';
-  if (status === 'active') return 'bg-success shadow-[0_0_8px_rgba(52,211,153,0.5)]';
+  if (status === 'alert') return 'bg-danger ';
+  if (status === 'active') return 'bg-success ';
   return 'glass-status-dot-muted';
 }
 
@@ -146,7 +146,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="rounded-xl border border-primary/30 bg-aether-ai/10 p-2 text-[#c084fc] transition hover:bg-aether-ai/20"
+          className="rounded-xl border border-primary/30 bg-aether-ai/10 p-2 text-primary transition hover:bg-aether-ai/20"
           title="Open Ask Aether"
           aria-label="Open Ask Aether copilot"
         >
@@ -163,11 +163,11 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
     >
       <div className="relative z-[1] flex items-center gap-3 glass-table-row px-4 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/30 bg-gradient-to-br from-primary/20 to-primary/80/20">
-          <Sparkles className="h-4 w-4 text-[#c084fc]" aria-hidden />
+          <Sparkles className="h-4 w-4 text-primary" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-foreground">Ask Aether</div>
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-aether-ai">
+          <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-aether-ai">
             Infrastructure agent
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
 
       {agents.length > 0 ? (
         <div className="relative z-[1] glass-table-row px-3 py-3">
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-subtle">
             Agent focus
           </p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -235,7 +235,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
               </p>
             </div>
             <div>
-              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-subtle">
                 Suggested questions
               </p>
               <div className="flex flex-col gap-1.5">
@@ -279,7 +279,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
                 <button
                   type="button"
                   onClick={() => confirmAction(a.id)}
-                  className="shrink-0 rounded-lg bg-warning px-2 py-0.5 font-medium text-white transition hover:bg-warning"
+                  className="shrink-0 rounded-lg bg-warning-fill px-2 py-0.5 font-medium text-white transition hover:brightness-110"
                 >
                   Confirm
                 </button>
@@ -290,7 +290,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
 
         {loading ? (
           <div className="flex items-center gap-2 px-1 text-[10px] text-subtle">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-aether-ai" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-fill" />
             Thinking…
           </div>
         ) : null}
@@ -315,7 +315,7 @@ export default function CopilotRail({ collapsed: controlledCollapsed, onCollapse
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="rounded-xl bg-gradient-to-br from-primary to-primary/90 p-2.5 text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-accent-fill p-2.5 text-white shadow-lg shadow-primary/20 transition hover:opacity-90 disabled:opacity-40"
           aria-label="Send"
         >
           <Send className="h-4 w-4" />
@@ -331,7 +331,7 @@ export function CopilotRailToggle({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-primary/40 bg-gradient-to-r from-primary to-primary/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/25 backdrop-blur-xl xl:hidden"
+      className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full border border-primary/40 bg-accent-fill px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/25 backdrop-blur-xl xl:hidden"
       data-testid="copilot-rail-mobile-toggle"
     >
       <Bot className="h-4 w-4" />

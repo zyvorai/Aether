@@ -125,7 +125,8 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
         <button
           type="button"
           onClick={() => onNavigate('overview')}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-white/[0.04] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
+          aria-label="Home"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-hover hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aether/40"
         >
           <Home className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
           <span className="hidden sm:inline">Home</span>
@@ -137,7 +138,7 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
               type="button"
               data-testid="breadcrumb-parent"
               onClick={() => onNavigate(explicitParent.view)}
-              className="truncate rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-white/[0.04] hover:text-foreground"
+              className="truncate rounded-lg px-2 py-1 text-[13px] text-muted transition hover:bg-hover hover:text-foreground"
             >
               {explicitParent.label}
             </button>
@@ -160,7 +161,7 @@ export default function Breadcrumb({ currentView, onNavigate, workloadName }: Br
               type="button"
               data-testid="breadcrumb-workload"
               onClick={() => navigate(pathWithQuery(viewToPath(currentView), { workload }))}
-              className="max-w-[12rem] truncate rounded-lg px-2 py-1 text-[13px] font-mono text-primary transition hover:bg-white/[0.04] hover:underline"
+              className="max-w-[12rem] truncate rounded-lg px-2 py-1 text-[13px] font-mono text-primary transition hover:bg-hover hover:underline"
             >
               {workload}
             </button>

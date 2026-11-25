@@ -163,7 +163,7 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide ${
               sseConnected && liveEnabled
-                ? 'bg-success/15 text-success border border-success/30'
+                ? 'bg-success/10 text-success border border-success/30'
                 : 'glass-inset-surface text-subtle border glass-divider'
             }`}
           >
@@ -176,7 +176,7 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
             </span>
           )}
           {(clusterSummary?.clusters.length ?? 0) > 1 && (
-            <select
+            <select aria-label="Cluster"
               value={selectedCluster}
               onChange={(e) => {
                 selectedClusterRef.current = e.target.value;
@@ -265,7 +265,7 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
                     key={app.name}
                     type="button"
                     onClick={() => navigate(pathWithQuery(viewToPath('applications'), { workload: app.name }))}
-                    className="w-full text-left flex items-center justify-between rounded-lg border border-danger/20 bg-danger/15 px-3 py-2 hover:border-danger/40"
+                    className="w-full text-left flex items-center justify-between rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 hover:border-danger/40"
                   >
                     <span className="text-sm text-foreground">{app.name}</span>
                     <span className="text-xs text-danger">{app.status}</span>

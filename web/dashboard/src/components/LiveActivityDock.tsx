@@ -109,7 +109,7 @@ export default function LiveActivityDock() {
                   ? 'bg-danger'
                   : activity.phase === 'completed'
                     ? 'bg-success'
-                    : 'bg-primary'
+                    : 'bg-accent-fill'
               }`}
               style={{ width: `${Math.min(100, Math.max(4, activity.percent))}%` }}
             />

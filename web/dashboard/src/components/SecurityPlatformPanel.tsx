@@ -221,7 +221,7 @@ export default function SecurityPlatformPanel() {
             <button
               type="button"
               onClick={() => void runHunt()}
-              className="inline-flex items-center gap-1 rounded-lg bg-danger px-3 py-2 text-xs text-white"
+              className="inline-flex items-center gap-1 rounded-lg bg-danger-fill px-3 py-2 text-xs text-white"
               data-testid="security-hunt-button"
             >
               <Target className="h-3.5 w-3.5" />

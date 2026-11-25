@@ -606,7 +606,7 @@ export function AIStudio({ refreshKey, forcedTab }: { refreshKey?: number; force
               type="button"
               onClick={() => void handleIntentOptimize()}
               disabled={intentLoading || !selectedWorkload}
-              className="w-full py-3 bg-lavender hover:bg-lavender rounded-xl font-medium disabled:opacity-60 text-white"
+              className="w-full py-3 bg-violet-fill hover:brightness-110 rounded-xl font-medium disabled:opacity-60 text-white"
             >
               {intentLoading ? 'Optimizing…' : 'Optimize Intent'}
             </button>
@@ -633,7 +633,7 @@ export function AIStudio({ refreshKey, forcedTab }: { refreshKey?: number; force
               type="button"
               onClick={() => void handleRightSize()}
               disabled={resizeLoading || !selectedWorkload}
-              className="w-full py-3 bg-success hover:bg-success rounded-xl font-medium disabled:opacity-60 text-white"
+              className="w-full py-3 bg-success-fill hover:brightness-110 rounded-xl font-medium disabled:opacity-60 text-white"
             >
               {resizeLoading ? 'Analyzing…' : 'Analyze Resources'}
             </button>

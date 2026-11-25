@@ -80,23 +80,23 @@ export default function DataTable<T>({
   }
 
   return (
-    <ResponsiveTable testId={testId}>
-      <div className="flex h-[30px] items-center border-b border-rule bg-surface pl-5 font-sans text-[11px] font-medium tracking-[0.02em] text-subtle">
-        {columns.map((col) => (
-          <button
-            key={col.key}
-            type="button"
-            onClick={() => col.sortValue && toggleSort(col.key)}
-            className={`shrink-0 truncate px-0 ${col.width ? '' : 'flex-1'} ${col.align === 'right' ? 'pr-[18px] text-right' : ''} ${
-              col.sortValue ? 'cursor-pointer hover:text-muted' : 'cursor-default'
-            }`}
-            style={col.width ? { width: col.width } : undefined}
-            disabled={!col.sortValue}
-          >
-            {col.header}
-            {sort?.key === col.key ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : ''}
-          </button>
-        ))}
+    <ResponsiveTable testId={testId} className="rounded-2xl bg-surface-elevated shadow-card ring-1 ring-[var(--card-edge)]">
+      <div className="min-w-fit">
+      <div className="flex min-h-10 items-center border-b border-rule pl-5 font-sans text-xs font-semibold text-muted">
+        {columns.map((col) => {
+          const cellClass = `shrink-0 truncate px-0 ${col.width ? '' : 'flex-1 min-w-[12rem]'} ${col.align === 'right' ? 'pr-[18px] text-right' : 'text-left'}`;
+          const style = col.width ? { width: col.width } : undefined;
+          return col.sortValue ? (
+            <button key={col.key} type="button" onClick={() => toggleSort(col.key)} className={`${cellClass} hover:text-foreground`} style={style}>
+              {col.header}
+              {sort?.key === col.key ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : ''}
+            </button>
+          ) : (
+            <span key={col.key} className={cellClass} style={style}>
+              {col.header}
+            </span>
+          );
+        })}
       </div>
 
       <div>
@@ -124,7 +124,7 @@ export default function DataTable<T>({
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className={`shrink-0 truncate ${col.width ? '' : 'flex-1 min-w-0'} ${col.align === 'right' ? 'pr-[18px] text-right' : ''}`}
+                  className={`shrink-0 truncate ${col.width ? '' : 'flex-1 min-w-[12rem]'} ${col.align === 'right' ? 'pr-[18px] text-right' : ''}`}
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.render(item)}
@@ -133,6 +133,7 @@ export default function DataTable<T>({
             </div>
           );
         })}
+      </div>
       </div>
     </ResponsiveTable>
   );

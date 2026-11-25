@@ -124,7 +124,7 @@ export default function WorkloadDesignerPanel() {
           type="button"
           disabled={!prompt.trim()}
           onClick={() => setSpec(generateSpec(prompt))}
-          className="mt-4 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] hover:bg-primary/90 disabled:opacity-50"
+          className="mt-4 rounded-xl bg-accent-fill px-4 py-2.5 text-sm font-medium text-[var(--primary-foreground)] hover:bg-accent-fill-hover disabled:opacity-50"
           data-testid="workload-designer-generate"
         >
           Generate spec
@@ -132,14 +132,14 @@ export default function WorkloadDesignerPanel() {
 
         {spec ? (
           <>
-            <pre className="glass-code-block-body mt-6 max-h-96 text-xs text-muted">
+            <pre tabIndex={0} className="glass-code-block-body mt-6 max-h-96 text-xs text-muted">
               {spec}
             </pre>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { deploy: '1', name }))}
-                className="inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm font-medium text-white hover:bg-success"
+                className="inline-flex items-center gap-2 rounded-xl bg-success-fill px-4 py-2.5 text-sm font-medium text-white hover:brightness-110"
               >
                 <Rocket className="h-4 w-4" />
                 One-click deploy

@@ -247,7 +247,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
           >
             Open Platform
           </button>
@@ -273,7 +273,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
             <code className="text-muted">AETHER_OPA_URL</code>. With{' '}
             <code className="text-muted">AETHER_OPA_ENFORCE=1</code>, cluster apply is blocked on deny.
           </p>
-          <textarea
+          <textarea aria-label="Kubernetes manifest"
             value={opaManifest}
             onChange={(e) => setOpaManifest(e.target.value)}
             rows={12}

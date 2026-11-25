@@ -60,12 +60,25 @@ export default function DashboardShell({
     setMobileSidebarOpen(false);
   }, [currentView]);
 
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    document.querySelector<HTMLElement>('[role="dialog"][aria-label="Navigation"] nav button')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previous?.focus();
+    };
+  }, [mobileSidebarOpen]);
+
   return (
     <div className={shellClass}>
-      <div className="ae-ambient" aria-hidden><i /><i /><i /></div>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:border focus:border-primary/30 focus:glass border border-border shadow-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:border focus:border-border focus:bg-surface-elevated focus:shadow-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary focus:shadow-lg"
       >
         Skip to content
       </a>
@@ -86,7 +99,7 @@ export default function DashboardShell({
       </div>
       <div className="relative z-[1] flex min-h-0 flex-1">
         <AetherSidebar currentView={currentView} onNavigate={onNavigate} />
-        <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:py-6">
+        <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:px-10 lg:py-6">
           <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
           {children}
         </main>
@@ -102,7 +115,7 @@ export default function DashboardShell({
             aria-label="Close navigation"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex">
+          <div className="absolute inset-y-0 left-0 flex animate-fade-in" role="dialog" aria-modal="true" aria-label="Navigation">
             <AetherSidebar
               currentView={currentView}
               onNavigate={onNavigate}

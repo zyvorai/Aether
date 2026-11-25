@@ -105,7 +105,7 @@ export default function IntentPipelinePanel() {
             type="button"
             onClick={() => void runPipeline()}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:bg-primary/90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent-fill px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:bg-accent-fill-hover disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Run pipeline
@@ -128,7 +128,7 @@ export default function IntentPipelinePanel() {
           Parse NL → intent block
         </button>
         {nlReport ? (
-          <pre className="mt-2 max-h-32 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-muted">
+          <pre tabIndex={0} className="mt-2 max-h-32 overflow-auto rounded-lg glass-code-block-body p-2 text-[11px] text-muted">
             {nlReport.intent_yaml}
           </pre>
         ) : null}
@@ -210,7 +210,7 @@ export default function IntentPipelinePanel() {
             </Link>
           </div>
 
-          <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
+          <pre tabIndex={0} className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
             {report.spec_yaml}
           </pre>
         </div>

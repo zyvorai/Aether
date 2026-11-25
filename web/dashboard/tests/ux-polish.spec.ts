@@ -95,8 +95,10 @@ test.describe('Dashboard UX polish', () => {
     await expect(page.getByRole('heading', { name: 'Workload policy check' })).toBeVisible();
   });
 
-  test('aurora theme deploy modal opens with readable dialog', async ({ page }) => {
-    await page.getByLabel('Theme').selectOption('aurora');
+  test('light theme deploy modal opens with readable dialog', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('theme-toggle').click();
+    await page.getByRole('menuitemradio', { name: 'Light' }).click();
     await page.goto('/workloads?deploy=1');
     await expect(page.getByRole('heading', { name: 'Deploy New Workload' })).toBeVisible({
       timeout: 15_000,
@@ -217,7 +219,7 @@ test.describe('Dashboard UX polish', () => {
     expect(overflow).toBe(false);
   });
 
-  test('steel theme empty state on workloads page', async ({ page }) => {
+  test('dark theme empty state on workloads page', async ({ page }) => {
     await page.route('**/api/workloads', (route) =>
       route.fulfill({
         status: 200,
@@ -225,7 +227,9 @@ test.describe('Dashboard UX polish', () => {
         body: JSON.stringify({ success: true, data: [] }),
       }),
     );
-    await page.getByLabel('Theme').selectOption('steel');
+    await page.goto('/');
+    await page.getByTestId('theme-toggle').click();
+    await page.getByRole('menuitemradio', { name: 'Dark' }).click();
     await page.goto('/workloads');
     await expect(page.locator('.overview-section-shell').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('.glass-empty-state').first()).toBeVisible({ timeout: 15_000 });

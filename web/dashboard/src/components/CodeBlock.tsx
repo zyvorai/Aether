@@ -16,7 +16,7 @@ export default function CodeBlock({ children, title }: CodeBlockProps) {
           </span>
         </div>
       )}
-      <pre className="glass-code-block-body">
+      <pre tabIndex={0} className="glass-code-block-body">
         <code>{children}</code>
       </pre>
     </div>

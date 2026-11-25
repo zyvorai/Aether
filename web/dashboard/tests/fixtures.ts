@@ -33,7 +33,7 @@ export const test = base.extend({
       if (path === '/' || path === '') {
         await page
           .locator('[data-testid="overview-platform-quick-link"]')
-          .scrollIntoViewIfNeeded()
+          .scrollIntoViewIfNeeded({ timeout: 2000 })
           .catch(() => undefined);
       }
       return res;

@@ -674,7 +674,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     {
       key: 'status',
       header: 'Status',
-      width: 110,
+      width: 190,
       sortValue: (w) => w.status,
       render: (w) => <Badge text={w.status} variant={getStatusVariant(w.status)} />,
     },
@@ -742,12 +742,14 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         refreshing={loading}
         filters={
           <>
-            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-source-filter">
+            <select value={sourceFilterVal} onChange={(e) => setSourceFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-source-filter"
+              aria-label="Filter by source">
               <option value="all">All sources</option>
               <option value="aether">Aether managed</option>
               <option value="cluster">Kubernetes discovered</option>
             </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-status-filter">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelectClass} style={filterSelectStyle} data-testid="workloads-status-filter"
+              aria-label="Filter by status">
               <option value="all">All statuses</option>
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
@@ -814,7 +816,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 onClick={() => setKindFilter(kind)}
                 className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
                   active
-                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    ? 'bg-primary/10 text-primary border border-primary/40'
                     : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
                 }`}
               >
@@ -872,7 +874,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           onClick={() => setPinnedOnly((v) => !v)}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
             pinnedOnly
-              ? 'bg-primary/20 text-primary border border-primary/40'
+              ? 'bg-primary/10 text-primary border border-primary/40'
               : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
           }`}
           title="Show pinned workloads only"
@@ -889,7 +891,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
             title="Card view"
           >
             <LayoutGrid size={14} />
@@ -898,7 +900,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
             title="Table view"
           >
             <List size={14} />
@@ -983,9 +985,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
           <span className="text-sm text-muted">{selectedNames.size} selected</span>
-          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-success text-white hover:bg-success">Start all</button>
-          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-warning text-white hover:bg-warning">Stop all</button>
-          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-danger text-white hover:bg-danger">Delete all</button>
+          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-success-fill text-white hover:brightness-110">Start all</button>
+          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-warning-fill text-white hover:brightness-110">Stop all</button>
+          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-danger-fill text-white hover:brightness-110">Delete all</button>
           <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-muted hover:text-foreground">Clear</button>
         </div>
       )}
@@ -1253,7 +1255,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               type="button"
               onClick={() => migrateModal && migrateTarget && handleMigrate(migrateModal, migrateTarget, migrateStrategy)}
               disabled={actionLoading !== null}
-              className="w-full py-3 bg-primary hover:bg-aether-light disabled:opacity-50 rounded-xl font-medium text-[var(--primary-foreground)]"
+              className="w-full py-3 bg-accent-fill hover:bg-accent-fill-hover disabled:opacity-50 rounded-xl font-medium text-[var(--primary-foreground)]"
             >
               {actionLoading ? 'Starting migration…' : `Start migration to ${migrateTarget}`}
             </button>

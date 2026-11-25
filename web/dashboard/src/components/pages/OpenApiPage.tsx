@@ -207,7 +207,7 @@ function OpenApiPage({ refreshKey }: { refreshKey?: number } = {}) {
           <p className="text-sm text-muted mb-4">{doc.info.description}</p>
         )}
         <p className="text-xs text-subtle">
-          Raw document: <code className="text-primary/90">GET /api/openapi.json</code>
+          Raw document: <code className="text-primary">GET /api/openapi.json</code>
         </p>
         <button
           type="button"

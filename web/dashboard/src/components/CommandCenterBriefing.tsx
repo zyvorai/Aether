@@ -127,7 +127,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Command Center</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-primary">Command Center</p>
           </div>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -163,7 +163,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           {!fleetEmpty ? (
             <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-accent-fill transition-all"
                 style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct))}%` }}
               />
             </div>
@@ -237,7 +237,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
       {briefing.issues.length > 0 ? (
         <div className="mt-8 space-y-3">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-subtle">Active signals</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.04em] text-subtle">Active signals</h3>
           <div className="grid gap-2 lg:grid-cols-2">
             {briefing.issues.slice(0, 4).map((issue, i) => (
               <div

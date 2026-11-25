@@ -1061,7 +1061,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
             }
             setCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20"
+          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10"
         >
           <Plus size={16} />
           Create Resource
@@ -1086,7 +1086,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                 setResourceView('cards');
                 try { localStorage.setItem('aether_clusters_view', 'cards'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'cards' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
             >
               <LayoutGrid size={14} />
               Cards
@@ -1097,7 +1097,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                 setResourceView('table');
                 try { localStorage.setItem('aether_clusters_view', 'table'); } catch { /* ignore */ }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-primary/20 text-primary' : 'text-muted hover:text-foreground'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${resourceView === 'table' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
             >
               <List size={14} />
               Table
@@ -1132,7 +1132,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                       <button
                         type="button"
                         onClick={() => openDetail(resource)}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-white/5 hover:text-foreground"
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-muted transition hover:bg-hover hover:text-foreground"
                       >
                         Open
                       </button>
@@ -1201,21 +1201,21 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('drain')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-danger bg-danger/20 px-3 py-2 text-sm text-danger hover:bg-danger/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-danger bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-50"
                   >
                     {actionLoading === 'drain' ? 'Draining...' : 'Drain'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('cordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
                   >
                     {actionLoading === 'cordon' ? 'Cordoning...' : 'Cordon'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('uncordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     {actionLoading === 'uncordon' ? 'Uncordoning...' : 'Uncordon'}
                   </button>
@@ -1226,14 +1226,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('start')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     {actionLoading === 'start' ? 'Starting...' : 'Start'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('stop')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
                   >
                     {actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
                   </button>
@@ -1244,14 +1244,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('suspend')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
                   >
                     {actionLoading === 'suspend' ? 'Suspending...' : 'Suspend'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('resume')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     {actionLoading === 'resume' ? 'Resuming...' : 'Resume'}
                   </button>
@@ -1272,7 +1272,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('scale')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
                   >
                     {actionLoading === 'scale' ? 'Scaling...' : 'Scale'}
                   </button>
@@ -1291,7 +1291,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
               <button
                 onClick={() => handleResourceAction('delete')}
                 disabled={!!actionLoading || selected.kind === 'Node' || !canDeleteCluster}
-                className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/20 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-50"
               >
                 <Trash2 size={14} />
                 {selected.kind === 'Node' ? 'Delete Disabled' : actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
@@ -1334,7 +1334,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                       {selected.owned_resources!.map((child) => (
                         <span
                           key={`${child.kind}/${child.name}`}
-                          className="rounded-full border border-warning/40 bg-warning/30 px-3 py-1 text-xs text-warning"
+                          className="rounded-full border border-warning/40 bg-warning/10 px-3 py-1 text-xs text-warning"
                         >
                           {child.kind}/{child.name}
                         </span>
@@ -1478,27 +1478,27 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleRolloutAction('pause')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-warning bg-warning/20 px-3 py-2 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+                    className="rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-pause' ? 'Pausing...' : 'Pause'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('resume')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-resume' ? 'Resuming...' : 'Resume'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('restart')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                    className="rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
                   >
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-subtle">Revision</span>
-                    <select value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
+                    <select aria-label="Rollout revision" value={rolloutRevision} onChange={(e) => setRolloutRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
                       {rollout.history.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>
                           {entry.revision}
@@ -1544,7 +1544,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   />
                   <div className="flex items-center gap-2 glass-drawer px-3 py-2">
                     <span className="text-xs text-subtle">Revision</span>
-                    <select value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
+                    <select aria-label="Helm revision" value={helmRevision} onChange={(e) => setHelmRevision(e.target.value)} className="bg-transparent text-sm text-foreground outline-hidden">
                       {helmHistory.map((entry) => (
                         <option key={entry.revision} value={entry.revision}>{entry.revision}</option>
                       ))}
@@ -1563,14 +1563,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleHelmAction('upgrade')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                    className="rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
                   >
                     {actionLoading === 'helm-upgrade' ? 'Upgrading...' : 'Upgrade'}
                   </button>
                   <button
                     onClick={() => handleHelmAction('install')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-success bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     {actionLoading === 'helm-install' ? 'Installing...' : 'Install'}
                   </button>
@@ -1621,12 +1621,12 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                  <select value={execPod} onChange={(e) => setExecPod(e.target.value)} className="glass-select">
+                  <select aria-label="Pod" value={execPod} onChange={(e) => setExecPod(e.target.value)} className="glass-select">
                     {(selected.kind === 'Pod' ? [selected.name] : selected.pods.map((pod) => pod.name)).map((podName) => (
                       <option key={podName} value={podName}>{podName}</option>
                     ))}
                   </select>
-                  <select value={execContainer} onChange={(e) => setExecContainer(e.target.value)} disabled={selectedContainers.length === 0} className="glass-select disabled:opacity-60">
+                  <select aria-label="Container" value={execContainer} onChange={(e) => setExecContainer(e.target.value)} disabled={selectedContainers.length === 0} className="glass-select disabled:opacity-60">
                     <option value="">default container</option>
                     {selectedContainers.map((containerName) => (
                       <option key={containerName} value={containerName}>{containerName}</option>
@@ -1642,7 +1642,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                     <button
                       onClick={connectExec}
                       disabled={!execPod}
-                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
                     >
                       Connect
                     </button>
@@ -1655,7 +1655,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                     </button>
                   </div>
                 </div>
-                <pre className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-success ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
+                <pre tabIndex={0} className={`mt-3 overflow-auto rounded-lg glass-code-block-body text-xs text-success ${terminalExpanded ? 'h-[65vh]' : 'h-64'}`}>{execOutput || '[aether] terminal idle'}</pre>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={execInput}
@@ -1672,7 +1672,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={sendExecLine}
                     disabled={!execConnected || !execInput}
-                    className="rounded-lg border border-success bg-success/20 px-4 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
+                    className="rounded-lg border border-success bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                   >
                     Send
                   </button>
@@ -1710,7 +1710,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                       data-testid="clusters-port-forward-start"
                       onClick={handlePortForwardStart}
                       disabled={!portForwardPod || !portForwardRemotePort || !!portForwardSession}
-                      className="flex-1 rounded-lg border border-primary bg-primary/20 px-3 py-2 text-sm text-primary hover:bg-primary/30 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
                     >
                       {actionLoading === 'port-forward' ? 'Starting...' : 'Start'}
                     </button>
@@ -1739,13 +1739,13 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                 <button
                   onClick={handleApply}
                   disabled={!!actionLoading || selected.kind === 'HelmRelease'}
-                  className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
                 >
                   <Save size={14} />
                   {actionLoading === 'apply' ? 'Applying...' : selected.kind === 'HelmRelease' ? 'Managed by Helm' : 'Apply Changes'}
                 </button>
               </div>
-              <textarea
+              <textarea aria-label="Resource manifest"
                 value={manifestDraft}
                 onChange={(e) => setManifestDraft(e.target.value)}
                 rows={18}
@@ -1817,7 +1817,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
               <p className="text-sm text-muted">
                 Provide a JSON manifest. Aether will apply it directly to the selected cluster.
               </p>
-              <textarea
+              <textarea aria-label="New resource manifest"
                 value={createManifestDraft}
                 onChange={(e) => setCreateManifestDraft(e.target.value)}
                 rows={18}
@@ -1830,7 +1830,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
             <button
               onClick={handleCreateResource}
               disabled={!!actionLoading || (kind === 'HelmRelease' && (!createHelmRelease || !createHelmChart))}
-              className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/20 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
             >
               <Save size={14} />
               {actionLoading === 'create' ? (kind === 'HelmRelease' ? 'Installing...' : 'Applying...') : (kind === 'HelmRelease' ? 'Install Release' : 'Create / Apply')}

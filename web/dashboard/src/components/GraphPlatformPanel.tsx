@@ -124,7 +124,7 @@ export default function GraphPlatformPanel() {
             className="glass-input"
             data-testid="graph-workload-input"
           />
-          <button type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
+          <button aria-label="Refresh" type="button" onClick={() => void load()} className="rounded-xl border glass-divider px-3 py-2 text-xs text-muted">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </button>
         </div>}
@@ -294,7 +294,7 @@ export default function GraphPlatformPanel() {
             </button>
           </div>
           {exportReport ? (
-            <pre className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
+            <pre tabIndex={0} className="max-h-48 overflow-auto rounded-xl border glass-divider glass-code-block-body p-3 text-xs text-muted">
               {exportReport.payload.slice(0, 2000)}
             </pre>
           ) : null}
