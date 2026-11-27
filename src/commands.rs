@@ -363,7 +363,19 @@ pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
             std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
         });
         let kube = aether::adapters::KubernetesRuntime::with_namespace(ns).await?;
-        kube.stop_cascade(&ws.instance).await?;
+        let stopped = kube.stop_cascade(&ws.instance).await;
+        record_audit_action(
+            aether::audit::AuditAction::Stop,
+            name,
+            Some("kubernetes"),
+            if stopped.is_ok() {
+                aether::audit::ActionResult::Success
+            } else {
+                aether::audit::ActionResult::Failure
+            },
+            "stop with cascade",
+        );
+        stopped?;
     } else {
         if cascade && ws.runtime != aether::runtime::RuntimeKind::Kubernetes {
             output::warning(
@@ -690,15 +702,15 @@ fn record_audit_action(
     result: aether::audit::ActionResult,
     message: &str,
 ) {
-    let path = aether::audit::AuditLog::default_path();
-    match aether::audit::AuditLog::load(&path) {
-        Ok(mut log) => {
-            log.record(action, workload, runtime, result, message, None);
-            if let Err(e) = log.save(&path) {
-                tracing::warn!("Failed to save audit log: {}", e);
-            }
-        }
-        Err(e) => tracing::warn!("Failed to load audit log: {}", e),
+    if let Err(e) = aether::ops::journal::audit(
+        &aether::ops::data_dir(),
+        action,
+        workload,
+        runtime,
+        result,
+        message,
+    ) {
+        tracing::warn!("Failed to record audit event: {:#}", e);
     }
 }
 
@@ -1352,7 +1364,19 @@ pub(crate) async fn live_migrate_command(name: &str, watch_timeout: u64) -> Resu
 
     output::section_with_icon("🔀", &format!("Live-migrating VM '{}'", name));
     let runtime = KubeVirtRuntime::new().await?;
-    let mig_name = runtime.live_migrate(name).await?;
+    let triggered = runtime.live_migrate(name).await;
+    record_audit_action(
+        aether::audit::AuditAction::Migrate,
+        name,
+        Some("kubevirt"),
+        if triggered.is_ok() {
+            aether::audit::ActionResult::Success
+        } else {
+            aether::audit::ActionResult::Failure
+        },
+        "live migration requested",
+    );
+    let mig_name = triggered?;
     output::info(&format!("Created migration '{}'", mig_name));
 
     if watch_timeout == 0 {
@@ -1466,7 +1490,16 @@ pub(crate) async fn migrate_command(
     let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
     let sp = output::spinner("Executing migration...");
-    let result = engine.migrate(plan).await?;
+    let reason = format!("migration from {source_runtime} to {target_runtime}");
+    let outcome = aether::ops::with_reason(reason, engine.migrate(plan)).await;
+    aether::ops::journal::record_migration(
+        &aether::ops::data_dir(),
+        name,
+        source_runtime,
+        target_runtime,
+        &outcome,
+    );
+    let result = outcome?;
     let migration_duration = migration_start.elapsed().as_secs_f64();
 
     // Record metrics
@@ -3956,34 +3989,30 @@ pub(crate) fn emit_event(
     title: &str,
     message: &str,
 ) {
-    let path = aether::events::EventBus::default_path();
-    match aether::events::EventBus::load(&path) {
-        Ok(mut bus) => {
-            bus.emit_simple(severity, category, source, workload, title, message);
-            if let Err(e) = bus.save(&path) {
-                tracing::warn!("Failed to save event bus: {}", e);
-            }
-        }
-        Err(e) => {
-            tracing::warn!("Failed to emit event: {}", e);
-        }
+    publish_events(vec![aether::events::EventBus::simple(
+        severity, category, source, workload, title, message,
+    )]);
+}
+
+fn publish_events(events: Vec<aether::events::Event>) {
+    if events.is_empty() {
+        return;
+    }
+    if let Err(e) = aether::ops::journal::publish(&aether::ops::data_dir(), events) {
+        tracing::warn!("Failed to emit event: {:#}", e);
     }
 }
 
-/// Batched event emitter — loads once, accumulates events, saves once on drop.
+/// Batched event emitter — accumulates events and appends them once on drop,
+/// keeping whatever else was written to the bus in the meantime.
+#[derive(Default)]
 pub(crate) struct EventBatch {
-    bus: aether::events::EventBus,
-    path: std::path::PathBuf,
+    events: Vec<aether::events::Event>,
 }
 
 impl EventBatch {
     pub(crate) fn new() -> Self {
-        let path = aether::events::EventBus::default_path();
-        let bus = aether::events::EventBus::load(&path).unwrap_or_else(|e| {
-            tracing::warn!("Failed to load event bus, starting fresh: {}", e);
-            aether::events::EventBus::new()
-        });
-        Self { bus, path }
+        Self::default()
     }
 
     pub(crate) fn emit(
@@ -3995,16 +4024,15 @@ impl EventBatch {
         title: &str,
         message: &str,
     ) {
-        self.bus
-            .emit_simple(severity, category, source, workload, title, message);
+        self.events.push(aether::events::EventBus::simple(
+            severity, category, source, workload, title, message,
+        ));
     }
 }
 
 impl Drop for EventBatch {
     fn drop(&mut self) {
-        if let Err(e) = self.bus.save(&self.path) {
-            tracing::warn!("Failed to save event batch: {}", e);
-        }
+        publish_events(std::mem::take(&mut self.events));
     }
 }
 

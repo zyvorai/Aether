@@ -245,6 +245,19 @@ impl EventBus {
 
     /// Emit an event
     pub fn emit(&mut self, event: Event) -> u64 {
+        let (id, notifications) = self.append(event);
+
+        // Process notifications (log format for now)
+        for notification in notifications {
+            self.deliver_notification(&notification);
+        }
+
+        id
+    }
+
+    /// Store an event and return its id with the notifications it calls for,
+    /// so a caller holding a lock can deliver them after releasing it.
+    pub fn append(&mut self, event: Event) -> (u64, Vec<NotificationPayload>) {
         let id = self.next_id;
         let mut event = event;
         event.id = id;
@@ -264,12 +277,14 @@ impl EventBus {
             self.events.drain(..drain);
         }
 
-        // Process notifications (log format for now)
-        for notification in notifications {
-            self.deliver_notification(&notification);
-        }
+        (id, notifications)
+    }
 
-        id
+    /// Send the notifications returned by [`EventBus::append`].
+    pub fn deliver(&self, notifications: &[NotificationPayload]) {
+        for notification in notifications {
+            self.deliver_notification(notification);
+        }
     }
 
     /// Send a test notification to one channel, whatever its severity filter.
@@ -296,17 +311,16 @@ impl EventBus {
         true
     }
 
-    /// Create and emit an event with builder pattern
-    pub fn emit_simple(
-        &mut self,
+    /// Build an event stamped now, ready to be appended.
+    pub fn simple(
         severity: EventSeverity,
         category: EventCategory,
         source: &str,
         workload: Option<&str>,
         title: &str,
         message: &str,
-    ) -> u64 {
-        let event = Event {
+    ) -> Event {
+        Event {
             id: 0,
             timestamp: crate::resources::now_rfc3339(),
             severity,
@@ -317,7 +331,20 @@ impl EventBus {
             message: message.to_string(),
             metadata: HashMap::new(),
             acknowledged: false,
-        };
+        }
+    }
+
+    /// Create and emit an event with builder pattern
+    pub fn emit_simple(
+        &mut self,
+        severity: EventSeverity,
+        category: EventCategory,
+        source: &str,
+        workload: Option<&str>,
+        title: &str,
+        message: &str,
+    ) -> u64 {
+        let event = Self::simple(severity, category, source, workload, title, message);
         self.emit(event)
     }
 

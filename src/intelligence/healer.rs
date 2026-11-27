@@ -3,7 +3,7 @@
 
 //! Self-healing action executor for orchestrator actions.
 
-use crate::audit::{ActionResult, AuditAction, AuditLog};
+use crate::audit::{ActionResult, AuditAction};
 use crate::drift::DriftDetector;
 use crate::intelligence::policy::AutonomyPolicy;
 use crate::orchestrator::OrchestratorAction;
@@ -428,17 +428,16 @@ async fn reconcile_drift_fleet(
 }
 
 fn audit_autonomous(source: &str, workload: &str, detail: &str) {
-    let path = AuditLog::default_path();
-    if let Ok(mut log) = AuditLog::load(&path) {
-        log.record(
-            AuditAction::External,
-            workload,
-            Some(source),
-            ActionResult::Success,
-            "autonomous_action",
-            Some(detail),
-        );
-        let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        AuditAction::External,
+        workload,
+        Some(source),
+        ActionResult::Success,
+        "autonomous_action",
+        Some(detail),
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
     }
 }
 

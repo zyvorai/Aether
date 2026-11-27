@@ -336,10 +336,17 @@ fn record_audit_event(
     message: &str,
     details: Option<&str>,
 ) {
-    let path = crate::audit::AuditLog::default_path();
-    let mut log = crate::audit::AuditLog::load(&path).unwrap_or_default();
-    log.record(action, workload, runtime, result, message, details);
-    let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        action,
+        workload,
+        runtime,
+        result,
+        message,
+        details,
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
+    }
 }
 
 fn extract_bearer_token(headers: &HeaderMap) -> Option<String> {
@@ -1517,15 +1524,6 @@ pub(crate) async fn update_workload(
             name: name.clone(),
             action: "updated".to_string(),
         },
-    );
-
-    record_audit_event(
-        crate::audit::AuditAction::ConfigChange,
-        &name,
-        None,
-        crate::audit::ActionResult::Success,
-        "workload updated via API",
-        None,
     );
 
     (
@@ -4252,7 +4250,16 @@ pub(crate) async fn migrate_workload(
     );
 
     let engine = MigrationEngine::new(app_state.state_path.clone());
-    let result = match engine.migrate(plan).await {
+    let reason = format!("migration from {source_runtime} to {target_runtime}");
+    let outcome = crate::ops::with_reason(reason, engine.migrate(plan)).await;
+    crate::ops::journal::record_migration(
+        &crate::ops::data_dir(),
+        &name,
+        source_runtime,
+        target_runtime,
+        &outcome,
+    );
+    let result = match outcome {
         Ok(r) => r,
         Err(e) => {
             emit_sse(
@@ -5300,22 +5307,19 @@ pub(crate) async fn serve_openapi() -> impl IntoResponse {
 
 /// POST /api/audit/events — Append an audit row (admin only; integrity hash applied).
 pub(crate) async fn api_audit_append(Json(req): Json<AuditAppendRequest>) -> impl IntoResponse {
-    use crate::audit::AuditLog;
-
-    let path = AuditLog::default_path();
-    let mut log = AuditLog::load(&path).unwrap_or_default();
     let action = parse_audit_action_from_str(&req.action);
     let result = parse_action_result_from_str(&req.result);
-    log.record(
+    // Locked, and a trail that cannot be read is an error rather than replaced.
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
         action,
         &req.workload,
         req.runtime.as_deref(),
         result,
         &req.message,
         req.details.as_deref(),
-    );
-    if let Err(e) = log.save(&path) {
-        return err_internal::<String>(e);
+    ) {
+        return err_internal::<String>(format!("{e:#}"));
     }
     ok_json("audit event recorded".to_string())
 }

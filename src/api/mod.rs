@@ -191,10 +191,45 @@ fn resolve_tenant_id(
     key_tenant.or_else(|| crate::hosted::tenant::tenant_from_headers(headers))
 }
 
+/// Pick up workloads the CLI added, changed or removed in the shared state file
+/// while the server was running. Without this the server answers from memory
+/// and its next save would overwrite the CLI's changes.
+async fn sync_state_from_disk(app_state: &AppState) {
+    if app_state.workload_state_pg.is_some() {
+        return; // PostgreSQL is the source of truth and has its own poller.
+    }
+    let path = &app_state.state_path;
+    let Ok(modified) = std::fs::metadata(path).and_then(|m| m.modified()) else {
+        return;
+    };
+    static SEEN: std::sync::Mutex<Option<(std::path::PathBuf, std::time::SystemTime)>> =
+        std::sync::Mutex::new(None);
+    let key = (path.clone(), modified);
+    if SEEN.lock().is_ok_and(|seen| seen.as_ref() == Some(&key)) {
+        return;
+    }
+    let mut state = app_state.state.write().await;
+    // Read under the write lock so a concurrent handler's save is not undone.
+    match StateStore::load(path) {
+        Ok(fresh) => {
+            *state = fresh;
+            if let Ok(mut seen) = SEEN.lock() {
+                *seen = Some(key);
+            }
+        }
+        Err(e) => tracing::warn!(
+            "keeping in-memory state, cannot read {}: {e:#}",
+            path.display()
+        ),
+    }
+}
+
 async fn authorized_next(
+    app_state: &AppState,
     req: Request<Body>,
     next: Next,
     tenant_id: Option<String>,
+    actor: String,
 ) -> Result<Response, StatusCode> {
     if let Some(ref tid) = tenant_id {
         if crate::hosted::metering::UsageMeter::quota_exceeded(tid) {
@@ -202,7 +237,9 @@ async fn authorized_next(
         }
     }
     let path = req.uri().path().to_string();
-    let res = next.run(req).await;
+    sync_state_from_disk(app_state).await;
+    // Changes made while serving this request are attributed to the caller.
+    let res = crate::ops::with_actor(format!("api:{actor}"), next.run(req)).await;
     if let Some(tid) = tenant_id {
         crate::hosted::metering::UsageMeter::record(&tid, &path);
     }
@@ -281,7 +318,7 @@ async fn auth_middleware(
             .and_then(|t| rbac_store.verify_key(t))
             .map(|entry| {
                 (
-                    entry.role,
+                    entry.name.clone(),
                     crate::rbac::check_permission(&entry.role, &http_method, path),
                 )
             });
@@ -294,17 +331,17 @@ async fn auth_middleware(
     if legacy_key.is_none() && !has_rbac_keys && !session_auth_enabled {
         ensure_mutation_confirm(req.method(), path, req.headers())?;
         let tenant = resolve_tenant_id(req.headers(), None);
-        return authorized_next(req, next, tenant).await;
+        return authorized_next(&app_state, req, next, tenant, "anonymous".to_string()).await;
     }
 
     if let Some(ref token) = token {
-        if let Some((_role, permitted)) = verified {
+        if let Some((key_name, permitted)) = verified {
             if !permitted {
                 return Err(StatusCode::FORBIDDEN);
             }
             ensure_mutation_confirm(req.method(), path, req.headers())?;
             let tenant = resolve_tenant_id(req.headers(), None);
-            return authorized_next(req, next, tenant).await;
+            return authorized_next(&app_state, req, next, tenant, key_name).await;
         }
 
         if let Some(key_rec) = crate::hosted::keys::TenantKeyStore::load().verify(token) {
@@ -314,7 +351,8 @@ async fn auth_middleware(
             }
             ensure_mutation_confirm(req.method(), path, req.headers())?;
             let tenant = resolve_tenant_id(req.headers(), Some(key_rec.tenant_id.clone()));
-            return authorized_next(req, next, tenant).await;
+            let actor = format!("tenant:{}", key_rec.tenant_id);
+            return authorized_next(&app_state, req, next, tenant, actor).await;
         }
 
         if let Some(ref expected) = legacy_key {
@@ -324,7 +362,7 @@ async fn auth_middleware(
             if token_hash == expected_hash {
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, "api-key".to_string()).await;
             }
         }
         return Err(StatusCode::UNAUTHORIZED);
@@ -332,43 +370,43 @@ async fn auth_middleware(
 
     if session_auth_enabled {
         if let Some(oidc) = app_state.oidc.as_ref() {
-            if let Some((role, _username)) = oidc.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = oidc.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(saml) = app_state.saml.as_ref() {
-            if let Some((role, _username)) = saml.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = saml.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(ldap) = app_state.ldap.as_ref() {
-            if let Some((role, _username)) = ldap.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = ldap.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(local) = app_state.local_auth.as_ref() {
-            if let Some((role, _username)) = local.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = local.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
     }
@@ -505,17 +543,16 @@ fn emit_maintenance_event(
     title: &str,
     message: &str,
 ) {
-    let path = crate::events::EventBus::default_path();
-    if let Ok(mut bus) = crate::events::EventBus::load(&path) {
-        bus.emit_simple(
-            severity,
-            category,
-            "serve-maintenance",
-            None,
-            title,
-            message,
-        );
-        let _ = bus.save(&path);
+    let event = crate::events::EventBus::simple(
+        severity,
+        category,
+        "serve-maintenance",
+        None,
+        title,
+        message,
+    );
+    if let Err(e) = crate::ops::journal::publish(&crate::ops::data_dir(), vec![event]) {
+        tracing::warn!("could not record event: {e:#}");
     }
 }
 
@@ -769,17 +806,16 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
 
 /// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
 fn audit_autonomous_maintenance(source: &str, detail: &str) {
-    let path = crate::audit::AuditLog::default_path();
-    if let Ok(mut log) = crate::audit::AuditLog::load(&path) {
-        log.record(
-            crate::audit::AuditAction::External,
-            source,
-            Some(source),
-            crate::audit::ActionResult::Success,
-            "autonomous_secret_rotation",
-            Some(detail),
-        );
-        let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        crate::audit::AuditAction::External,
+        source,
+        Some(source),
+        crate::audit::ActionResult::Success,
+        "autonomous_secret_rotation",
+        Some(detail),
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
     }
 }
 

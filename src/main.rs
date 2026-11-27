@@ -53,6 +53,16 @@ async fn main() -> Result<()> {
     commands::set_skip_policy(cli.skip_policy);
     commands::set_namespace(cli.namespace.clone());
 
+    // Who changes made by this process are attributed to.
+    aether::ops::set_process_actor(if matches!(cli.command, Commands::Serve { .. }) {
+        "serve".to_string()
+    } else {
+        let user = std::env::var("USER")
+            .or_else(|_| std::env::var("USERNAME"))
+            .unwrap_or_else(|_| "unknown".to_string());
+        format!("cli:{user}")
+    });
+
     // Initialize metrics
     aether::metrics::init();
 
