@@ -3,7 +3,7 @@
 
 //! SRE & Reliability OS — runbook scheduler, incidents, on-call, postmortems, chaos, MTTR.
 
-use crate::audit::{ActionResult, AuditAction, AuditLog};
+use crate::audit::{ActionResult, AuditLog};
 use crate::events::{ChannelType, EventBus};
 use crate::health::HealthHistory;
 use crate::intelligence::healer::{build_healer_preview, execute_healer, HealerExecuteReport};
@@ -789,71 +789,57 @@ pub async fn build_escalation_policies(
 pub struct MttrEntry {
     pub workload: String,
     pub incidents: u32,
-    pub avg_recovery_minutes: f64,
+    /// Incidents that ended with the workload ready again.
+    pub recovered: u32,
+    /// Mean over recovered incidents; `None` when there is none.
+    pub avg_recovery_minutes: Option<f64>,
     pub last_incident: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MttrReport {
     pub generated_at: String,
-    pub fleet_avg_mttr_minutes: f64,
+    pub fleet_avg_mttr_minutes: Option<f64>,
     pub entries: Vec<MttrEntry>,
 }
 
+/// Time to recovery measured from recorded incidents (see
+/// [`crate::ops::incidents`]).
 pub fn build_mttr_report(state_path: &Path) -> anyhow::Result<MttrReport> {
+    mttr_from(state_path, &crate::ops::data_dir())
+}
+
+fn mttr_from(state_path: &Path, data_dir: &Path) -> anyhow::Result<MttrReport> {
+    use crate::ops::incidents;
     let store = StateStore::load(state_path)?;
-    let audit = AuditLog::load(&AuditLog::default_path()).unwrap_or_default();
-    let mut entries = Vec::new();
-    let mut total_mttr = 0.0;
-    let mut total_incidents = 0u32;
-
-    for ws in store.list() {
-        let events: Vec<_> = audit.events_for(&ws.name);
-        let failures: Vec<_> = events
+    let all = incidents::load(data_dir)?;
+    let mut entries: Vec<MttrEntry> = store
+        .list()
+        .iter()
+        .map(|ws| {
+            let r = incidents::recovery(all.incidents.iter().filter(|i| i.workload == ws.name));
+            MttrEntry {
+                workload: ws.name.clone(),
+                incidents: r.incidents,
+                recovered: r.recovered,
+                avg_recovery_minutes: r.mean_minutes,
+                last_incident: r.last_opened_at,
+            }
+        })
+        .collect();
+    entries.sort_by(|a, b| {
+        b.incidents
+            .cmp(&a.incidents)
+            .then_with(|| a.workload.cmp(&b.workload))
+    });
+    let fleet = incidents::recovery(
+        all.incidents
             .iter()
-            .filter(|e| e.result == ActionResult::Failure)
-            .collect();
-        let heals: Vec<_> = events
-            .iter()
-            .filter(|e| {
-                matches!(
-                    e.action,
-                    AuditAction::Start | AuditAction::Deploy | AuditAction::Scale
-                ) && e.result == ActionResult::Success
-            })
-            .collect();
-
-        let incidents = failures.len() as u32;
-        let avg = if incidents > 0 && !heals.is_empty() {
-            12.0 + (incidents as f64 * 3.5)
-        } else if incidents > 0 {
-            25.0
-        } else {
-            0.0
-        };
-
-        if incidents > 0 {
-            total_mttr += avg * incidents as f64;
-            total_incidents += incidents;
-        }
-
-        entries.push(MttrEntry {
-            workload: ws.name.clone(),
-            incidents,
-            avg_recovery_minutes: avg,
-            last_incident: failures.last().map(|e| e.timestamp.clone()),
-        });
-    }
-
-    entries.sort_by_key(|b| std::cmp::Reverse(b.incidents));
-
+            .filter(|i| store.get(&i.workload).is_some()),
+    );
     Ok(MttrReport {
         generated_at: crate::resources::now_rfc3339(),
-        fleet_avg_mttr_minutes: if total_incidents > 0 {
-            total_mttr / total_incidents as f64
-        } else {
-            0.0
-        },
+        fleet_avg_mttr_minutes: fleet.mean_minutes,
         entries,
     })
 }
@@ -901,8 +887,46 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("state.json");
         StateStore::new().save(&path).unwrap();
-        let report = build_mttr_report(&path).unwrap();
-        assert_eq!(report.fleet_avg_mttr_minutes, 0.0);
+        let report = mttr_from(&path, dir.path()).unwrap();
+        assert_eq!(report.fleet_avg_mttr_minutes, None);
+    }
+
+    #[test]
+    fn mttr_is_measured_not_estimated() {
+        use crate::ops::incidents::{self, Observation};
+        use crate::runtime::{Instance, InstanceState, RuntimeKind};
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("state.json");
+        let mut store = StateStore::new();
+        let instance = Instance::new("i".into(), "web".into(), RuntimeKind::Podman, "w".into());
+        store.upsert(
+            "web".into(),
+            crate::state::WorkloadState::new(
+                "web".into(),
+                RuntimeKind::Podman,
+                instance,
+                "web.yaml".into(),
+            ),
+        );
+        store.save(&path).unwrap();
+        for (ready, minute) in [(false, 0), (false, 1), (true, 8)] {
+            incidents::record(
+                dir.path(),
+                &Observation {
+                    workload: "web".into(),
+                    runtime: RuntimeKind::Podman,
+                    state: InstanceState::Failed,
+                    ready,
+                    restart_count: 0,
+                    message: None,
+                    at: format!("2026-03-01T10:{minute:02}:00Z"),
+                },
+            )
+            .unwrap();
+        }
+        let report = mttr_from(&path, dir.path()).unwrap();
+        assert_eq!(report.fleet_avg_mttr_minutes, Some(8.0));
+        assert_eq!(report.entries[0].recovered, 1);
     }
 
     #[test]

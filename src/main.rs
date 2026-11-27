@@ -231,6 +231,12 @@ async fn main() -> Result<()> {
         Commands::History { name, show, diff } => {
             operator_commands::history_command(&name, show, &diff)
         }
+        Commands::Changes {
+            since,
+            workload,
+            limit,
+        } => operator_commands::changes_command(&since, workload, limit),
+        Commands::Incidents { action } => operator_commands::incidents_command(action),
         Commands::Hold { action } => operator_commands::hold_command(action),
         Commands::Deploy {
             dir,

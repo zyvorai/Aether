@@ -920,6 +920,45 @@ async fn run_scheduled_backup(state: &Arc<RwLock<StateStore>>, keep: usize) {
     }
 }
 
+/// Like [`env_secs`], but an explicit `0` disables.
+fn env_secs_or_off(name: &str, default: u64) -> u64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .unwrap_or(default)
+}
+
+async fn run_observation_loop(every_secs: u64, app_state: AppState) {
+    tracing::info!("health observation: every {every_secs}s");
+    let mut tick = tokio::time::interval(std::time::Duration::from_secs(every_secs));
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    // The first tick completes immediately.
+    loop {
+        tick.tick().await;
+        sync_state_from_disk(&app_state).await;
+        let store = app_state.state.read().await.clone();
+        let workloads: Vec<_> = store.list().into_iter().cloned().collect();
+        match crate::ops::incidents::collect(&crate::ops::data_dir(), &workloads, None).await {
+            Ok(report) => {
+                if !report.opened.is_empty() || !report.resolved.is_empty() {
+                    let event = types::ServerEvent::HealthUpdate {
+                        workload: "fleet".to_string(),
+                        status: format!(
+                            "{} incident(s) opened, {} resolved",
+                            report.opened.len(),
+                            report.resolved.len()
+                        ),
+                    };
+                    if let Ok(json) = serde_json::to_string(&event) {
+                        let _ = app_state.event_tx.send(json);
+                    }
+                }
+            }
+            Err(e) => tracing::warn!("health observation failed: {e:#}"),
+        }
+    }
+}
+
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let state_path = config.state_path.clone();
@@ -993,6 +1032,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
 
     if let Some(pg) = workload_state_pg {
         crate::state_postgres::spawn_workload_state_poller(pg, app_state.state.clone());
+    }
+
+    // Record every workload's status so health history, incidents and
+    // availability fill in while `serve` runs. AETHER_OBSERVE_SECS=0 turns it off.
+    let observe_secs = env_secs_or_off("AETHER_OBSERVE_SECS", 60);
+    if observe_secs > 0 {
+        let app = app_state.clone();
+        tokio::spawn(async move {
+            run_observation_loop(observe_secs, app).await;
+        });
     }
 
     // Spawn background health check loop
@@ -2069,6 +2118,13 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/workloads/{name}/revision-diff",
             get(api_revision_diff),
         )
+        .route("/api/changes", get(api_changes))
+        .route("/api/incidents", get(api_incidents))
+        .route("/api/incidents/{id}", get(api_incident))
+        .route("/api/incidents/{id}/report", get(api_incident_report))
+        .route("/api/incidents/{id}/ack", post(api_incident_ack))
+        .route("/api/incidents/{id}/notes", post(api_incident_note))
+        .route("/api/observe", post(api_observe))
         .route("/api/holds", get(api_holds).post(api_hold_set))
         .route("/api/holds/release", post(api_hold_release))
         .route("/api/compose/validate", post(api_compose_validate))

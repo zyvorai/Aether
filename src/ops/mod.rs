@@ -10,7 +10,9 @@
 //! Every function takes the Aether data directory (normally `~/.aether`, see
 //! [`data_dir`]) so the logic can be tested against a temporary directory.
 
+pub mod changes;
 pub mod holds;
+pub mod incidents;
 pub mod journal;
 pub mod revisions;
 pub mod rollback;

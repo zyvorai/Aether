@@ -1721,13 +1721,15 @@ export interface EscalationPolicyReport {
 export interface MttrEntry {
   workload: string;
   incidents: number;
-  avg_recovery_minutes: number;
+  recovered: number;
+  /** null when no incident has recovered */
+  avg_recovery_minutes: number | null;
   last_incident: string | null;
 }
 
 export interface MttrReport {
   generated_at: string;
-  fleet_avg_mttr_minutes: number;
+  fleet_avg_mttr_minutes: number | null;
   entries: MttrEntry[];
 }
 

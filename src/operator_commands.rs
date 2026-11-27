@@ -3,13 +3,14 @@
 
 //! CLI handlers for the operator features in [`aether::ops`].
 
-use aether::ops::{self, holds, revisions};
+use aether::ops::{self, changes, holds, incidents, revisions};
 use aether::output;
 use aether::state::{StateStore, WorkloadState};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::Serialize;
+use std::path::Path;
 
-use crate::cli::HoldAction;
+use crate::cli::{HoldAction, IncidentAction};
 
 fn managed(name: &str) -> Result<WorkloadState> {
     ops::check_name(name)?;
@@ -48,6 +49,66 @@ pub(crate) fn history_command(name: &str, show: Option<u64>, diff: &[u64]) -> Re
     }
     let summaries = log.summaries();
     emit(&summaries, || revisions::format_history(name, &summaries))
+}
+
+pub(crate) fn changes_command(since: &str, workload: Option<String>, limit: usize) -> Result<()> {
+    let since = ops::parse_since(since, chrono::Utc::now())?;
+    let feed = changes::collect(
+        &ops::data_dir(),
+        &changes::Query::since(since, workload, limit.max(1)),
+    )?;
+    emit(&feed, || changes::format_feed(&feed))
+}
+
+pub(crate) fn incidents_command(action: Option<IncidentAction>) -> Result<()> {
+    let dir = ops::data_dir();
+    match action.unwrap_or(IncidentAction::List {
+        workload: None,
+        open: false,
+    }) {
+        IncidentAction::List { workload, open } => {
+            let store = incidents::load(&dir)?;
+            let list: Vec<_> = store
+                .incidents
+                .iter()
+                .rev()
+                .filter(|i| workload.as_deref().is_none_or(|w| w == i.workload))
+                .filter(|i| !open || i.is_open())
+                .collect();
+            emit(&list, || incidents::format_list(&list))
+        }
+        IncidentAction::Show { id } => {
+            let detail = incidents::detail(&dir, id)?;
+            emit(&detail, || incidents::markdown(&detail))
+        }
+        IncidentAction::Report { id, out } => {
+            let detail = incidents::detail(&dir, id)?;
+            write_or_print(&incidents::markdown(&detail), out.as_deref())
+        }
+        IncidentAction::Ack { id } => {
+            let i = incidents::acknowledge(&dir, id)?;
+            emit(&i, || {
+                let by = i.acknowledged.as_ref().map_or("-", |a| a.actor.as_str());
+                format!("Incident {id} acknowledged by {by}\n")
+            })
+        }
+        IncidentAction::Note { id, text } => {
+            let i = incidents::add_note(&dir, id, &text.join(" "))?;
+            emit(&i, || format!("Note added to incident {id}\n"))
+        }
+    }
+}
+
+fn write_or_print(content: &str, out: Option<&Path>) -> Result<()> {
+    match out {
+        Some(path) => {
+            std::fs::write(path, content)
+                .with_context(|| format!("failed to write {}", path.display()))?;
+            output::success(&format!("Wrote {}", path.display()));
+        }
+        None => print!("{content}"),
+    }
+    Ok(())
 }
 
 pub(crate) fn hold_command(action: HoldAction) -> Result<()> {

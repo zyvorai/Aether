@@ -503,6 +503,25 @@ pub(crate) enum Commands {
         diff: Vec<u64>,
     },
 
+    /// What changed: deploys, operations, warnings and incidents, newest first
+    Changes {
+        /// Window: 30m, 24h, 7d, or an RFC 3339 time
+        #[arg(long, default_value = "24h")]
+        since: String,
+        /// Only this workload
+        #[arg(long)]
+        workload: Option<String>,
+        /// Most entries to show
+        #[arg(long, default_value_t = 100)]
+        limit: usize,
+    },
+
+    /// Incidents detected from health checks (list, show, acknowledge, annotate)
+    Incidents {
+        #[command(subcommand)]
+        action: Option<IncidentAction>,
+    },
+
     /// Protect a workload: Aether refuses changes while it is on hold
     Hold {
         #[command(subcommand)]
@@ -1152,6 +1171,8 @@ impl Commands {
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
             Self::History { .. } => "history",
+            Self::Changes { .. } => "changes",
+            Self::Incidents { .. } => "incidents",
             Self::Hold { .. } => "hold",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",
@@ -1486,6 +1507,45 @@ pub(crate) enum PluginAction {
     Remove {
         /// Plugin name
         name: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum IncidentAction {
+    /// List incidents, newest first
+    List {
+        /// Only this workload
+        #[arg(long)]
+        workload: Option<String>,
+        /// Only open incidents
+        #[arg(long)]
+        open: bool,
+    },
+    /// One incident with its timeline and the changes before it
+    Show {
+        /// Incident id
+        id: u64,
+    },
+    /// Write a Markdown post-incident draft
+    Report {
+        /// Incident id
+        id: u64,
+        /// Write to a file instead of standard output
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    /// Acknowledge an incident
+    Ack {
+        /// Incident id
+        id: u64,
+    },
+    /// Add a note to an incident
+    Note {
+        /// Incident id
+        id: u64,
+        /// Note text
+        #[arg(required = true)]
+        text: Vec<String>,
     },
 }
 

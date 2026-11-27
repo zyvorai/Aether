@@ -7,15 +7,16 @@
 //! [`crate::runtime::create_runtime`] hands out, so deploys, updates, stops
 //! and deletes are recorded the same way whether they came from the CLI, the
 //! API, a migration, a compose file or the self-healing loop. For each change
-//! it refuses held workloads, writes an audit event for success and failure
-//! and records the applied spec revision.
+//! it refuses held workloads, writes an audit event for success and failure,
+//! records the applied spec revision, and tells the incident tracker when a
+//! workload was stopped on purpose.
 //!
 //! Bookkeeping failures never turn a successful runtime change into an error;
 //! they are logged.
 
 use crate::audit::{ActionResult, AuditAction, AuditLog};
 use crate::events::{Event, EventBus, EventCategory, EventSeverity};
-use crate::ops::{self, holds, revisions, store};
+use crate::ops::{self, holds, incidents, revisions, store};
 use crate::runtime::{Capacity, Image, Instance, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use anyhow::Result;
@@ -176,6 +177,14 @@ impl Journaled {
     }
 
     fn failed(&self, action: AuditAction, workload: &str, what: &str, error: &anyhow::Error) {
+        // A failed build or deploy can leave a stopped workload behind. That is
+        // not downtime anyone asked for, so watch it again.
+        if matches!(
+            action,
+            AuditAction::Build | AuditAction::Deploy | AuditAction::ConfigChange
+        ) {
+            log_failure("expected state", incidents::expect_up(&self.dir, workload));
+        }
         let runtime = self.kind.to_string();
         let message = format!("{what} failed on {runtime}: {}", error.to_string().trim());
         log_failure(
@@ -232,6 +241,7 @@ impl Journaled {
                 extra.as_deref(),
             ),
         );
+        log_failure("expected state", incidents::expect_up(&self.dir, name));
     }
 
     fn change_failed(&self, action: AuditAction, name: &str, what: &str, error: &anyhow::Error) {
@@ -305,6 +315,10 @@ impl Runtime for Journaled {
                         &format!("stopped on {runtime}"),
                     ),
                 );
+                log_failure(
+                    "expected state",
+                    incidents::expect_down(&self.dir, &instance.name, self.kind, "stopped"),
+                );
                 Ok(())
             }
             Err(e) => {
@@ -337,6 +351,10 @@ impl Runtime for Journaled {
                         ActionResult::Success,
                         &format!("deleted from {runtime}"),
                     ),
+                );
+                log_failure(
+                    "expected state",
+                    incidents::expect_down(&self.dir, &instance.name, self.kind, "deleted"),
                 );
                 Ok(())
             }

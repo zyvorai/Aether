@@ -379,6 +379,7 @@ pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
             "stop with cascade",
         );
         stopped?;
+        aether::ops::incidents::expect_down(&aether::ops::data_dir(), name, ws.runtime, "stopped")?;
     } else {
         if cascade && ws.runtime != aether::runtime::RuntimeKind::Kubernetes {
             output::warning(
@@ -413,18 +414,18 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 
     // Record health check (side-effect: status queries feed the health timeline)
     if !output::is_quiet() {
-        let health_path = aether::health::HealthHistory::default_path();
-        let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
-        history.record(aether::health::HealthRecord {
-            timestamp: aether::resources::now_rfc3339(),
+        let observation = aether::ops::incidents::Observation {
             workload: name.to_string(),
             runtime: ws.runtime,
             state: status.state.clone(),
             ready: status.ready,
             restart_count: status.restart_count,
-            latency_ms: None,
-        });
-        let _ = history.save(&health_path);
+            message: status.message.clone(),
+            at: aether::resources::now_rfc3339(),
+        };
+        if let Err(e) = aether::ops::incidents::record(&aether::ops::data_dir(), &observation) {
+            tracing::warn!("Failed to record health check: {:#}", e);
+        }
     }
 
     // JSON/YAML output modes
@@ -5350,39 +5351,30 @@ pub(crate) async fn health_collect_command() -> Result<()> {
     output::section_with_icon("\u{1F493}", "Collecting Health Data");
 
     let state = StateStore::load(&StateStore::default_path())?;
-    let workloads = state.list();
+    let workloads: Vec<_> = state.list().into_iter().cloned().collect();
 
     if workloads.is_empty() {
         output::info("No workloads to check");
         return Ok(());
     }
 
-    let health_path = aether::health::HealthHistory::default_path();
-    let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
-    let mut collected = 0u32;
-
-    for ws in &workloads {
-        match aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
-            Ok(rt) => match rt.status(&ws.instance).await {
-                Ok(status) => {
-                    let record = aether::health::record_from_status(&ws.name, ws.runtime, &status);
-                    history.record(record);
-                    collected += 1;
-                }
-                Err(e) => {
-                    tracing::debug!("Failed to get status for '{}': {}", ws.name, e);
-                }
-            },
-            Err(e) => {
-                tracing::debug!("Failed to create runtime for '{}': {}", ws.name, e);
-            }
-        }
+    let report =
+        aether::ops::incidents::collect(&aether::ops::data_dir(), &workloads, get_namespace())
+            .await?;
+    for e in &report.errors {
+        output::warning(&format!("Could not check {}", e));
     }
-
-    history.save(&health_path)?;
+    for id in &report.opened {
+        output::warning(&format!(
+            "Incident {id} opened (see `aether incidents show {id}`)"
+        ));
+    }
+    for id in &report.resolved {
+        output::success(&format!("Incident {id} resolved"));
+    }
     output::success(&format!(
         "Collected health data for {} workloads",
-        collected
+        report.observed
     ));
     Ok(())
 }

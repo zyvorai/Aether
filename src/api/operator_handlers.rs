@@ -5,10 +5,11 @@
 
 use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
 use super::types::AppState;
-use crate::ops::{self, holds, revisions};
+use crate::ops::{self, changes, holds, incidents, revisions};
 use crate::state::{StateStore, WorkloadState};
 use axum::{
     extract::{Path, Query, State as AxumState},
+    http::header,
     response::{IntoResponse, Response},
     Json,
 };
@@ -68,6 +69,11 @@ fn respond<T: serde::Serialize>(result: anyhow::Result<T>) -> Response {
     }
 }
 
+fn window(since: Option<&str>, default: &str) -> Result<chrono::DateTime<chrono::Utc>, Reject> {
+    ops::parse_since(since.unwrap_or(default), chrono::Utc::now())
+        .map_err(|e| Box::new(bad_request(e)))
+}
+
 // ── Revisions ────────────────────────────────────────────────────────────────
 
 /// GET /api/workloads/{name}/revisions
@@ -114,6 +120,155 @@ pub(crate) async fn api_revision_diff(
         },
         Err(e) => internal(e),
     }
+}
+
+// ── Changes, attention, report ───────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ChangesQuery {
+    since: Option<String>,
+    workload: Option<String>,
+    limit: Option<usize>,
+}
+
+/// GET /api/changes?since=24h&workload=&limit=
+pub(crate) async fn api_changes(Query(q): Query<ChangesQuery>) -> Response {
+    let since = try_response!(window(q.since.as_deref(), "24h"));
+    let query = changes::Query::since(
+        since,
+        q.workload.filter(|w| !w.is_empty()),
+        q.limit.unwrap_or(200).clamp(1, 1000),
+    );
+    respond(blocking(move || changes::collect(&ops::data_dir(), &query)).await)
+}
+
+// ── Incidents ────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct IncidentQuery {
+    workload: Option<String>,
+    #[serde(default)]
+    open: bool,
+}
+
+#[derive(serde::Serialize)]
+struct IncidentList {
+    /// Newest first.
+    incidents: Vec<IncidentSummary>,
+    recovery: incidents::Recovery,
+    observation_threshold: u32,
+}
+
+#[derive(serde::Serialize)]
+struct IncidentSummary {
+    #[serde(flatten)]
+    incident: incidents::Incident,
+    duration_secs: i64,
+}
+
+/// GET /api/incidents?workload=&open=
+pub(crate) async fn api_incidents(Query(q): Query<IncidentQuery>) -> Response {
+    respond(
+        blocking(move || {
+            let store = incidents::load(&ops::data_dir())?;
+            let wanted: Vec<_> = store
+                .incidents
+                .iter()
+                .filter(|i| {
+                    q.workload
+                        .as_deref()
+                        .is_none_or(|w| w.is_empty() || w == i.workload)
+                })
+                .collect();
+            let now = chrono::Utc::now();
+            Ok(IncidentList {
+                recovery: incidents::recovery(wanted.iter().copied()),
+                incidents: wanted
+                    .into_iter()
+                    .rev()
+                    .filter(|i| !q.open || i.is_open())
+                    .map(|i| IncidentSummary {
+                        duration_secs: i.duration_secs(now),
+                        incident: i.clone(),
+                    })
+                    .collect(),
+                observation_threshold: incidents::threshold(),
+            })
+        })
+        .await,
+    )
+}
+
+fn incident_detail(id: u64) -> Result<incidents::IncidentDetail, Reject> {
+    let dir = ops::data_dir();
+    let store = incidents::load(&dir).map_err(|e| Box::new(internal(e)))?;
+    if store.get(id).is_none() {
+        return Err(Box::new(not_found(format!("incident {id} not found"))));
+    }
+    incidents::detail(&dir, id).map_err(|e| Box::new(internal(e)))
+}
+
+/// GET /api/incidents/{id}
+pub(crate) async fn api_incident(Path(id): Path<u64>) -> Response {
+    ok_json(try_response!(incident_detail(id))).into_response()
+}
+
+/// GET /api/incidents/{id}/report — Markdown post-incident draft.
+pub(crate) async fn api_incident_report(Path(id): Path<u64>) -> Response {
+    let detail = try_response!(incident_detail(id));
+    (
+        [
+            (
+                header::CONTENT_TYPE,
+                "text/markdown; charset=utf-8".to_string(),
+            ),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"incident-{id}.md\""),
+            ),
+        ],
+        incidents::markdown(&detail),
+    )
+        .into_response()
+}
+
+/// POST /api/incidents/{id}/ack
+pub(crate) async fn api_incident_ack(Path(id): Path<u64>) -> Response {
+    match incidents::acknowledge(&ops::data_dir(), id) {
+        Ok(i) => ok_json(i).into_response(),
+        Err(e) => not_found(format!("{e:#}")),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct NoteRequest {
+    text: String,
+}
+
+/// POST /api/incidents/{id}/notes
+pub(crate) async fn api_incident_note(
+    Path(id): Path<u64>,
+    Json(req): Json<NoteRequest>,
+) -> Response {
+    let dir = ops::data_dir();
+    match incidents::load(&dir) {
+        Ok(store) if store.get(id).is_none() => {
+            return not_found(format!("incident {id} not found"))
+        }
+        Ok(_) => {}
+        Err(e) => return internal(e),
+    }
+    match incidents::add_note(&dir, id, &req.text) {
+        Ok(i) => ok_json(i).into_response(),
+        Err(e) => bad_request(format!("{e:#}")),
+    }
+}
+
+/// POST /api/observe — check every workload's status now.
+pub(crate) async fn api_observe(AxumState(app): AxumState<AppState>) -> Response {
+    let state = current_state(&app).await;
+    let workloads: Vec<_> = state.list().into_iter().cloned().collect();
+    respond(incidents::collect(&ops::data_dir(), &workloads, None).await)
 }
 
 // ── Holds ────────────────────────────────────────────────────────────────────
