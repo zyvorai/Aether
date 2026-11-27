@@ -19,8 +19,13 @@ async function bootstrapAuth(page: import('@playwright/test').Page, baseURL: str
     return;
   }
 
+  // isVisible() does not wait, so first let the app show either the shell or the sign-in form.
   const loginGate = page.getByTestId('login-gate');
-  if (await loginGate.isVisible({ timeout: 5000 }).catch(() => false)) {
+  await helpMenu.or(loginGate).first().waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {});
+  if (await helpMenu.isVisible()) {
+    return;
+  }
+  if (await loginGate.isVisible()) {
     const user = loginGate.locator('input[name="username"], input[autocomplete="username"]').first();
     const pass = loginGate.locator('input[name="password"], input[type="password"]').first();
     if (await user.isVisible().catch(() => false)) {
