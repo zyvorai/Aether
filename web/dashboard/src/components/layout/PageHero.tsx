@@ -4,7 +4,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../../lib/cn';
-import { DisplayTitle, Eyebrow, TextLead } from '../ui/Typography';
+import { Eyebrow } from '../ui/Typography';
 import AppleHighlightsRow from '../ui/AppleHighlightsRow';
 
 export type Tone = 'sky' | 'violet' | 'emerald' | 'amber' | 'pink' | 'teal' | 'rust';
@@ -40,14 +40,14 @@ interface PageHeroProps {
 
 export function PageHero({ eyebrow, title, description, actions, accent, swatches, stats, statsTestId, className }: PageHeroProps) {
   return (
-    <section data-tone={accent} className={cn('tahoe-hero apple-editorial-hero space-y-8', className)}>
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3 min-w-0 max-w-3xl">
+    <section data-tone={accent} className={cn('tahoe-hero apple-editorial-hero page-header', className)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 max-w-3xl">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <DisplayTitle>{title}</DisplayTitle>
-          {description ? <TextLead>{description}</TextLead> : null}
+          <h1 className="page-title">{title}</h1>
+          {description ? <p className="page-lede">{description}</p> : null}
           {swatches?.length ? (
-            <div className="hero-swatch-row pt-1" role={swatches.some((s) => s.onSelect) ? 'group' : undefined}>
+            <div className="hero-swatch-row pt-2.5" role={swatches.some((s) => s.onSelect) ? 'group' : undefined}>
               {swatches.map((swatch) =>
                 swatch.onSelect ? (
                   <button
@@ -71,16 +71,15 @@ export function PageHero({ eyebrow, title, description, actions, accent, swatche
             </div>
           ) : null}
         </div>
-        {actions ? <div className="flex flex-wrap gap-3 shrink-0">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap gap-2 shrink-0">{actions}</div> : null}
       </div>
       {stats?.length ? (
         <div
           data-tone={accent}
-          className="apple-chapter-dark marketplace-chapter-ink rounded-2xl p-6 sm:p-8"
+          className="apple-chapter-dark marketplace-chapter-ink mt-4 rounded-2xl p-5"
           data-testid={statsTestId}
         >
           <AppleHighlightsRow
-            title="At a glance"
             items={stats.map((stat) => ({
               id: String(stat.label),
               value: String(stat.value),

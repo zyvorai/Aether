@@ -5,6 +5,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import GlobalNav from './layout/GlobalNav/GlobalNav';
 import AetherSidebar from './layout/AetherSidebar/AetherSidebar';
 import Breadcrumb from './Breadcrumb';
+import { useRouteChange } from '../hooks/useRouteChange';
+import { usePreferences } from '../hooks/usePreferences';
+import type { LiveStatusProps } from './layout/GlobalNav/LiveStatus';
 import ZyraRail from './ZyraRail';
 import CriticalIssueNotifier from './CriticalIssueNotifier';
 import SseReconnectBanner from './SseReconnectBanner';
@@ -22,6 +25,9 @@ interface DashboardShellProps {
   lastRefreshed: Date;
   sseConnected: boolean;
   sseBannerVisible?: boolean;
+  livePaused: boolean;
+  heldUpdates: number;
+  onTogglePause: () => void;
   onNavigate: (view: AppView) => void;
   onLogout: () => void;
   onRefresh: () => void;
@@ -39,8 +45,12 @@ export default function DashboardShell({
   shellClass,
   currentView,
   username,
+  lastRefreshed,
   sseConnected,
   sseBannerVisible = false,
+  livePaused,
+  heldUpdates,
+  onTogglePause,
   onNavigate,
   onLogout,
   onRefresh,
@@ -55,6 +65,20 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const isZyraView = currentView === 'zyra' || currentView === 'copilot';
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { density } = usePreferences();
+  const announcement = useRouteChange(currentView);
+  const live: LiveStatusProps = {
+    connected: sseConnected,
+    paused: livePaused,
+    heldUpdates,
+    lastRefreshed,
+    onTogglePause,
+    onRefresh,
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-density', density);
+  }, [density]);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -63,7 +87,9 @@ export default function DashboardShell({
   useEffect(() => {
     if (!mobileSidebarOpen) return;
     const previous = document.activeElement as HTMLElement | null;
-    document.querySelector<HTMLElement>('[role="dialog"][aria-label="Navigation"] nav button')?.focus();
+    // Focus the current page rather than the filter, which would raise a phone keyboard.
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Navigation"]');
+    (dialog?.querySelector<HTMLElement>('[aria-current="page"]') ?? dialog?.querySelector<HTMLElement>('nav a'))?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMobileSidebarOpen(false);
     };
@@ -90,8 +116,10 @@ export default function DashboardShell({
         onSearchClick={onOpenCommandPalette}
         onOpenHelp={onOpenHelp}
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-        sseConnected={sseConnected}
+        live={live}
+        refreshKey={refreshKey}
       />
+      <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       <div className="relative z-[1]">
         <ViewerBanner />
         {sseBannerVisible ? <SseReconnectBanner onRefresh={onRefresh} /> : null}
@@ -99,7 +127,7 @@ export default function DashboardShell({
       </div>
       <div className="relative z-[1] flex min-h-0 flex-1">
         <AetherSidebar currentView={currentView} onNavigate={onNavigate} />
-        <main id="main-content" className="min-w-0 flex-1 dash-content py-5 lg:px-10 lg:py-6">
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 dash-content py-4 outline-hidden lg:px-8 lg:py-5">
           <Breadcrumb currentView={currentView} onNavigate={onNavigate} workloadName={breadcrumbWorkload} />
           {children}
         </main>

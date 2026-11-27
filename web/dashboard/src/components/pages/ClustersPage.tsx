@@ -831,7 +831,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
 
   return (
     <div>
-    <div className="space-y-10">
+    <div className="space-y-5">
       {workloadFocus ? (
         <WorkloadContextBanner testId="clusters-workload-context" workload={workloadFocus} description="Cluster browse context">
           <WorkloadScopedCrossLinks workload={workloadFocus} prefix="clusters" showDrift showAudit />

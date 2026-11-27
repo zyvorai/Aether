@@ -3,6 +3,7 @@
 
 import { withAuroraPage } from '../layout/AuroraPage';
 import SectionHubPage from '../SectionHubPage';
+import NavPreferencesPanel from '../NavPreferencesPanel';
 import {
   Bot,
   KeyRound,
@@ -13,7 +14,9 @@ import {
 
 function SettingsPage() {
   return (
-    <SectionHubPage
+    <>
+      <NavPreferencesPanel />
+      <SectionHubPage
       links={[
         {
           view: 'settings-identity',
@@ -53,6 +56,7 @@ function SettingsPage() {
         },
       ]}
     />
+    </>
   );
 }
 

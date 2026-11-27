@@ -13,7 +13,7 @@ function FabricPage() {
   const [workload] = useQueryParam('workload');
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-5">
       {workload.trim() ? (
         <WorkloadContextBanner testId="fabric-workload-context" workload={workload} description="Fabric context">
           <WorkloadScopedCrossLinks workload={workload} prefix="fabric" showMetrics showDrift />
