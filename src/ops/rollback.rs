@@ -8,7 +8,7 @@
 //! back: images are rebuilt from the build context and volume data is left as
 //! it is.
 
-use crate::ops::{self, revisions, store};
+use crate::ops::{self, holds, revisions, store};
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::WorkloadState;
@@ -25,6 +25,7 @@ pub struct Planned {
 /// Choose and load the revision to apply. `None` picks
 /// [`revisions::RevisionLog::rollback_target`].
 pub fn plan(dir: &Path, ws: &WorkloadState, revision: Option<u64>) -> Result<Planned> {
+    holds::check(dir, &ws.name, "roll back")?;
     let log = revisions::load(dir, &ws.name)?;
     let target = match revision {
         Some(id) => log
@@ -174,7 +175,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn refuses_other_runtimes_and_unknown_revisions() {
+    async fn refuses_held_workloads_other_runtimes_and_unknown_revisions() {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
         let (rt, _, _) = journaled(d);
@@ -183,6 +184,9 @@ mod tests {
         assert!(plan(d, &ws, Some(9)).is_err());
         assert!(plan(d, &ws, None).is_err());
         ws.runtime = RuntimeKind::Kubernetes;
+        assert!(plan(d, &ws, Some(1)).is_err());
+        ws.runtime = RuntimeKind::Podman;
+        holds::set(d, "web", "freeze", None).unwrap();
         assert!(plan(d, &ws, Some(1)).is_err());
     }
 

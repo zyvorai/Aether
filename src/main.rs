@@ -231,6 +231,7 @@ async fn main() -> Result<()> {
         Commands::History { name, show, diff } => {
             operator_commands::history_command(&name, show, &diff)
         }
+        Commands::Hold { action } => operator_commands::hold_command(action),
         Commands::Deploy {
             dir,
             runtime,

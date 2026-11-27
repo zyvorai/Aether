@@ -349,6 +349,23 @@ fn record_audit_event(
     }
 }
 
+/// 409 when `name` is on hold; 500 when the hold store cannot be read.
+pub(crate) fn ensure_not_held<T: serde::Serialize>(
+    name: &str,
+    operation: &str,
+) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+    crate::ops::holds::check(&crate::ops::data_dir(), name, operation).map_err(|e| {
+        if e.downcast_ref::<crate::ops::holds::Held>().is_some() {
+            (
+                StatusCode::CONFLICT,
+                Json(ApiResponse::error(e.to_string())),
+            )
+        } else {
+            err_internal(format!("cannot check holds: {e:#}"))
+        }
+    })
+}
+
 fn extract_bearer_token(headers: &HeaderMap) -> Option<String> {
     headers
         .get("authorization")
@@ -1104,6 +1121,7 @@ async fn deploy_workload_spec(
     };
 
     let name = request.spec.metadata.name.clone();
+    ensure_not_held(&name, "deploy")?;
 
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
@@ -1230,6 +1248,10 @@ pub(crate) async fn delete_workload(
         Err(e) => return e,
     };
 
+    if let Err(e) = ensure_not_held(&name, "delete") {
+        return e;
+    }
+
     let rt = match make_runtime::<String>(&workload.runtime).await {
         Ok(r) => r,
         Err(e) => return e,
@@ -1293,6 +1315,10 @@ pub(crate) async fn start_workload(
         Ok(w) => w,
         Err(e) => return e,
     };
+
+    if let Err(e) = ensure_not_held(&name, "start") {
+        return e;
+    }
 
     // Load workload spec (validates path against traversal)
     let spec = match load_spec_safe::<String>(&workload_state.spec_path) {
@@ -1403,6 +1429,10 @@ pub(crate) async fn stop_workload(
         Err(e) => return e,
     };
 
+    if let Err(e) = ensure_not_held(&name, "stop") {
+        return e;
+    }
+
     let rt = match make_runtime::<String>(&workload.runtime).await {
         Ok(r) => r,
         Err(e) => return e,
@@ -1456,6 +1486,11 @@ pub(crate) async fn update_workload(
         Ok(w) => w,
         Err(e) => return e,
     };
+
+    // Before the spec file is rewritten: a refused update must change nothing.
+    if let Err(e) = ensure_not_held(&name, "update") {
+        return e;
+    }
 
     let mut spec_path = workload_state.spec_path.clone();
     if spec_path.as_path() == std::path::Path::new("api_created")
@@ -4232,6 +4267,10 @@ pub(crate) async fn migrate_workload(
             Err(e) => return err_bad_request::<String>(e),
         }
     };
+
+    if let Err(e) = ensure_not_held(&name, "migrate") {
+        return e;
+    }
 
     let strategy_str = format!("{:?}", strategy);
     let plan = MigrationPlan::new(name.clone(), source_runtime, target_runtime, strategy, true);

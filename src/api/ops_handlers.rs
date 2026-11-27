@@ -629,6 +629,9 @@ pub(crate) async fn api_workload_rollback(
     Path(name): Path<String>,
     Json(req): Json<RollbackRequest>,
 ) -> impl IntoResponse {
+    if let Err(e) = super::handlers::ensure_not_held(&name, "roll back") {
+        return e;
+    }
     // Applied revisions hold the spec itself. Snapshots only point at a spec
     // file, so they are used only on request or when nothing was recorded.
     let recorded = match crate::ops::revisions::load(&crate::ops::data_dir(), &name) {

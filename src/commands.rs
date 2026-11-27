@@ -273,6 +273,8 @@ async fn deploy_workload_inner(
         output::runtime_display(&runtime_kind)
     ));
 
+    ensure_not_held(&workload.metadata.name, "deploy")?;
+
     // Atlas-backed storage: resolve the concrete storage class (rewriting the
     // StatefulSet/KubeVirt manifest to use it) and provision tracked volume(s)
     // before deploy. No-op unless the workload opts in via `storageClass:
@@ -362,6 +364,7 @@ pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
         let ns = get_namespace().map(|s| s.to_string()).unwrap_or_else(|| {
             std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
         });
+        ensure_not_held(name, "stop")?;
         let kube = aether::adapters::KubernetesRuntime::with_namespace(ns).await?;
         let stopped = kube.stop_cascade(&ws.instance).await;
         record_audit_action(
@@ -510,6 +513,7 @@ pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
 }
 
 pub(crate) async fn delete_command(name: &str) -> Result<()> {
+    ensure_not_held(name, "delete")?;
     // Confirm destructive action
     if !output::confirm(&format!("Delete workload '{}'?", name)) {
         output::muted("Cancelled.");
@@ -605,6 +609,7 @@ pub(crate) async fn update_command(
 ) -> Result<()> {
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
     let workload = Workload::from_file(spec_path)?;
+    ensure_not_held(name, "update")?;
 
     output::section_with_icon("🔄", "Updating Workload");
 
@@ -712,6 +717,11 @@ fn record_audit_action(
     ) {
         tracing::warn!("Failed to record audit event: {:#}", e);
     }
+}
+
+/// Refuse early, before any part of a change is made, when `name` is on hold.
+fn ensure_not_held(name: &str, operation: &str) -> Result<()> {
+    aether::ops::holds::check(&aether::ops::data_dir(), name, operation)
 }
 
 /// The PVC names Atlas must create for an Atlas-backed workload, by kind:
@@ -929,6 +939,7 @@ pub(crate) async fn scale_command(name: &str, replicas: i32) -> Result<()> {
         );
     }
 
+    ensure_not_held(name, "scale")?;
     output::section_with_icon("⚖️", "Scaling Workload");
 
     // Determine the workload kind from the spec (defaults to Deployment).
@@ -990,6 +1001,7 @@ pub(crate) async fn scale_command(name: &str, replicas: i32) -> Result<()> {
 /// stop + rebuild + run for local runtimes.
 pub(crate) async fn restart_command(name: &str) -> Result<()> {
     let (state, ws, rt) = load_state_and_runtime(name).await?;
+    ensure_not_held(name, "restart")?;
     output::section_with_icon("🔁", "Restarting Workload");
 
     let result = if matches!(
@@ -1362,6 +1374,7 @@ pub(crate) async fn live_migrate_command(name: &str, watch_timeout: u64) -> Resu
         );
     }
 
+    ensure_not_held(name, "live-migrate")?;
     output::section_with_icon("🔀", &format!("Live-migrating VM '{}'", name));
     let runtime = KubeVirtRuntime::new().await?;
     let triggered = runtime.live_migrate(name).await;
@@ -1441,6 +1454,8 @@ pub(crate) async fn migrate_command(
 
     // Parse strategy
     let strategy: MigrationStrategy = strategy_str.parse()?;
+
+    ensure_not_held(name, "migrate")?;
 
     // Auto-snapshot before migration
     {
@@ -3410,6 +3425,7 @@ pub(crate) async fn rollback_command(
     }
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
+    ensure_not_held(name, "roll back")?;
 
     // Applied revisions hold the spec itself; snapshots only point at a file.
     if revision.is_some() || (version.is_none() && !log.revisions.is_empty()) {

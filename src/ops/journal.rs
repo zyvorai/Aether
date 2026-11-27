@@ -7,15 +7,15 @@
 //! [`crate::runtime::create_runtime`] hands out, so deploys, updates, stops
 //! and deletes are recorded the same way whether they came from the CLI, the
 //! API, a migration, a compose file or the self-healing loop. For each change
-//! it writes an audit event for success and failure and records the applied
-//! spec revision.
+//! it refuses held workloads, writes an audit event for success and failure
+//! and records the applied spec revision.
 //!
 //! Bookkeeping failures never turn a successful runtime change into an error;
 //! they are logged.
 
 use crate::audit::{ActionResult, AuditAction, AuditLog};
 use crate::events::{Event, EventBus, EventCategory, EventSeverity};
-use crate::ops::{self, revisions, store};
+use crate::ops::{self, holds, revisions, store};
 use crate::runtime::{Capacity, Image, Instance, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use anyhow::Result;
@@ -163,7 +163,7 @@ fn log_failure(what: &str, result: Result<()>) {
     }
 }
 
-/// A runtime whose changes are recorded.
+/// A runtime whose changes are guarded by holds and recorded.
 pub struct Journaled {
     inner: Box<dyn Runtime>,
     kind: RuntimeKind,
@@ -255,6 +255,7 @@ impl Runtime for Journaled {
 
     async fn run(&self, image: &Image, spec: &Workload) -> crate::Result<Instance> {
         let name = &spec.metadata.name;
+        holds::check(&self.dir, name, "deploy")?;
         match self.inner.run(image, spec).await {
             Ok(instance) => {
                 self.applied(revisions::RevisionOp::Deploy, spec, &instance);
@@ -274,6 +275,8 @@ impl Runtime for Journaled {
         spec: &Workload,
     ) -> crate::Result<Instance> {
         let name = &spec.metadata.name;
+        holds::check(&self.dir, &instance.name, "update")?;
+        holds::check(&self.dir, name, "update")?;
         match self.inner.update(instance, image, spec).await {
             Ok(new) => {
                 self.applied(revisions::RevisionOp::Update, spec, &new);
@@ -287,6 +290,7 @@ impl Runtime for Journaled {
     }
 
     async fn stop(&self, instance: &Instance) -> crate::Result<()> {
+        holds::check(&self.dir, &instance.name, "stop")?;
         let runtime = self.kind.to_string();
         match self.inner.stop(instance).await {
             Ok(()) => {
@@ -319,6 +323,7 @@ impl Runtime for Journaled {
     }
 
     async fn delete(&self, instance: &Instance) -> crate::Result<()> {
+        holds::check(&self.dir, &instance.name, "delete")?;
         let runtime = self.kind.to_string();
         match self.inner.delete(instance).await {
             Ok(()) => {
@@ -476,5 +481,23 @@ pub(crate) mod tests {
         assert!(last.message.contains("boom"));
         let bus: EventBus = store::load(&events_path(dir.path())).unwrap();
         assert!(bus.events().iter().any(|e| e.title == "deploy failed"));
+    }
+
+    #[tokio::test]
+    async fn held_workloads_never_reach_the_runtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let (rt, calls, _) = journaled(dir.path());
+        let w = spec("web", "256Mi");
+        let image = rt.build(&w).await.unwrap();
+        let instance = rt.run(&image, &w).await.unwrap();
+        holds::set(dir.path(), "web", "freeze", None).unwrap();
+        let before = calls.load(Ordering::SeqCst);
+        assert!(rt.run(&image, &w).await.is_err());
+        assert!(rt.update(&instance, &image, &w).await.is_err());
+        assert!(rt.stop(&instance).await.is_err());
+        assert!(rt.delete(&instance).await.is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), before);
+        // Reading is still allowed.
+        assert!(rt.status(&instance).await.is_ok());
     }
 }

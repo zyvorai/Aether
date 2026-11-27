@@ -769,6 +769,12 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
                 continue;
             }
 
+            // Scaling goes straight to the cluster, so check holds here.
+            if let Err(e) = crate::ops::holds::check(&crate::ops::data_dir(), &name, "scale") {
+                tracing::debug!("autoscale skipped: {e:#}");
+                continue;
+            }
+
             let req = crate::kubecluster::ClusterActionRequest {
                 cluster: cluster.clone(),
                 namespace: namespace.clone(),
@@ -2063,6 +2069,8 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             "/api/workloads/{name}/revision-diff",
             get(api_revision_diff),
         )
+        .route("/api/holds", get(api_holds).post(api_hold_set))
+        .route("/api/holds/release", post(api_hold_release))
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
         .route("/api/compose/down", post(api_compose_down))

@@ -503,6 +503,12 @@ pub(crate) enum Commands {
         diff: Vec<u64>,
     },
 
+    /// Protect a workload: Aether refuses changes while it is on hold
+    Hold {
+        #[command(subcommand)]
+        action: HoldAction,
+    },
+
     /// Deploy all workloads from a directory
     Deploy {
         /// Directory containing YAML workload specs
@@ -1146,6 +1152,7 @@ impl Commands {
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
             Self::History { .. } => "history",
+            Self::Hold { .. } => "hold",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",
             Self::PortForward { .. } => "port-forward",
@@ -1480,6 +1487,28 @@ pub(crate) enum PluginAction {
         /// Plugin name
         name: String,
     },
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum HoldAction {
+    /// Put a workload on hold
+    Set {
+        /// Workload name
+        name: String,
+        /// Why changes are blocked
+        #[arg(long)]
+        reason: String,
+        /// How long: 30m, 2h, 7d (default: until released)
+        #[arg(long = "for", value_name = "DURATION")]
+        duration: Option<String>,
+    },
+    /// Release a hold
+    Release {
+        /// Workload name
+        name: String,
+    },
+    /// List active holds
+    List,
 }
 
 #[cfg(test)]

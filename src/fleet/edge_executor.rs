@@ -244,6 +244,7 @@ async fn stop_workload(name: &str, cascade: bool) -> Result<()> {
     let ws = state.get(name).cloned().context("workload not found")?;
     if cascade && ws.runtime == RuntimeKind::Kubernetes {
         let ns = std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".into());
+        crate::ops::holds::check(&crate::ops::data_dir(), name, "stop")?;
         let kube = crate::adapters::KubernetesRuntime::with_namespace(ns).await?;
         kube.stop_cascade(&ws.instance).await?;
     } else {
