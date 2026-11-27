@@ -1184,6 +1184,19 @@ impl WebhookQueue {
 
     /// Attempt a single HTTP delivery. Returns true on success.
     fn try_deliver(payload_json: &str, url: &str, method: &str) -> bool {
+        // The blocking HTTP client panics when used inside an async runtime
+        // (the API server and its background loops), so give it a thread.
+        if tokio::runtime::Handle::try_current().is_ok() {
+            return std::thread::scope(|s| {
+                s.spawn(|| Self::deliver_blocking(payload_json, url, method))
+                    .join()
+                    .unwrap_or(false)
+            });
+        }
+        Self::deliver_blocking(payload_json, url, method)
+    }
+
+    fn deliver_blocking(payload_json: &str, url: &str, method: &str) -> bool {
         let client = match reqwest::blocking::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
@@ -2027,5 +2040,15 @@ mod tests {
 
         assert!(bus.remove_channel("pd-ops"));
         assert_eq!(bus.channels().len(), initial);
+    }
+
+    #[tokio::test]
+    async fn webhook_delivery_inside_a_runtime_does_not_panic() {
+        // Nothing listens on port 9, so this exercises the failure path.
+        assert!(!WebhookQueue::try_deliver(
+            "{}",
+            "http://127.0.0.1:9/hook",
+            "POST"
+        ));
     }
 }
