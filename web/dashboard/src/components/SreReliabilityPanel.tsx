@@ -91,14 +91,16 @@ export default function SreReliabilityPanel() {
 
   async function testOnCall() {
     setExecuting(true);
-    const res = await apiPost<{ message: string }>('/intelligence/sre/on-call/test', {
+    const res = await apiPost<{ message: string; sent: boolean }>('/intelligence/sre/on-call/test', {
       dry_run: true,
       provider: 'pagerduty',
     });
     setExecuting(false);
     if (res.success) {
       window.dispatchEvent(
-        new CustomEvent('aether-toast', { detail: { message: res.data?.message ?? 'Test sent', type: 'success' } }),
+        new CustomEvent('aether-toast', {
+          detail: { message: res.data?.message ?? 'No result', type: res.data?.sent ? 'success' : 'info' },
+        }),
       );
     }
   }
@@ -194,6 +196,10 @@ export default function SreReliabilityPanel() {
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {tab === 'budget' && budgets?.unobserved?.length ? (
+        <p className="mb-2 text-xs text-muted">No health data for: {budgets.unobserved.join(', ')}</p>
       ) : null}
 
       {tab === 'budget' ? (

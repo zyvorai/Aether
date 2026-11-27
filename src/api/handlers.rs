@@ -4851,28 +4851,20 @@ pub(crate) async fn api_webhook_channel_delete(Path(name): Path<String>) -> impl
 
 /// POST /api/webhooks/test — Queue a test notification for a channel (see `aether webhook test`).
 pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> impl IntoResponse {
-    use crate::events::{EventBus, EventCategory, EventSeverity};
+    use crate::events::EventBus;
 
     let path = EventBus::default_path();
-    let mut bus = match EventBus::load(&path) {
+    let bus = match EventBus::load(&path) {
         Ok(b) => b,
         Err(e) => return err_internal::<String>(e),
     };
-    if !bus.channels().iter().any(|c| c.name == req.channel) {
-        return err_not_found::<String>(format!("Channel '{}' not found", req.channel));
+    if !bus.send_test(&req.channel) {
+        return err_not_found::<String>(format!("Enabled channel '{}' not found", req.channel));
     }
-    bus.emit_simple(
-        EventSeverity::Info,
-        EventCategory::SystemAlert,
-        "api",
-        None,
-        "Webhook Test",
-        &format!("Test notification for channel '{}'", req.channel),
-    );
-    if let Err(e) = bus.save(&path) {
-        return err_internal::<String>(e);
-    }
-    ok_json(format!("Test event emitted for '{}'", req.channel))
+    ok_json(format!(
+        "Test notification handed to '{}'; a failed HTTP delivery stays in the webhook queue",
+        req.channel
+    ))
 }
 
 /// GET /api/server — Process capabilities (auth modes, persistence).

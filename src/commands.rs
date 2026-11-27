@@ -2576,7 +2576,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
             let engine = load_engine()?;
             let observation = SlaObservation {
                 uptime_pct: uptime,
-                avg_latency_ms: latency,
+                avg_latency_ms: Some(latency),
                 error_rate_pct: error_rate,
                 restarts,
                 observation_period: "24h".to_string(),
@@ -3611,9 +3611,7 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
-    use aether::events::{
-        ChannelType, EventBus, EventCategory, EventSeverity, NotificationChannel,
-    };
+    use aether::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
 
     let path = EventBus::default_path();
     let mut bus = EventBus::load(&path)?;
@@ -3684,21 +3682,11 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             );
         }
         WebhookAction::Test { name } => {
-            let channel_exists = bus.channels().iter().any(|c| c.name == name);
-            if !channel_exists {
-                anyhow::bail!("Channel '{}' not found", name);
+            if !bus.send_test(&name) {
+                anyhow::bail!("Enabled channel '{}' not found", name);
             }
-
-            bus.emit_simple(
-                EventSeverity::Info,
-                EventCategory::SystemAlert,
-                "webhook-test",
-                None,
-                "Webhook Test",
-                &format!("Test notification for channel '{}'", name),
-            );
-            bus.save(&path)?;
-            output::success(&format!("Test notification sent to channel '{}'", name));
+            output::success(&format!("Test notification handed to channel '{}'", name));
+            output::muted("A failed HTTP delivery stays in `aether webhook queue`.");
         }
         WebhookAction::Queue => {
             let queue =

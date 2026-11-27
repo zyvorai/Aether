@@ -1669,6 +1669,8 @@ export interface ErrorBudgetEntry {
 export interface ErrorBudgetDashboardReport {
   generated_at: string;
   entries: ErrorBudgetEntry[];
+  /** Workloads with no recorded health check. */
+  unobserved?: string[];
 }
 
 export interface ChaosExperiment {

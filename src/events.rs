@@ -272,6 +272,30 @@ impl EventBus {
         id
     }
 
+    /// Send a test notification to one channel, whatever its severity filter.
+    /// Returns false when there is no enabled channel of that name. HTTP
+    /// channels queue the message for retry if the first attempt fails.
+    pub fn send_test(&self, channel: &str) -> bool {
+        let Some(c) = self
+            .channels
+            .iter()
+            .find(|c| c.enabled && c.name == channel)
+        else {
+            return false;
+        };
+        self.deliver_notification(&NotificationPayload {
+            channel_name: c.name.clone(),
+            channel_type: c.channel_type.clone(),
+            event_id: 0,
+            title: "Aether test alert".to_string(),
+            message: "[INFO] [SYSTEM] Aether test alert - sent on request".to_string(),
+            severity: EventSeverity::Info,
+            category: EventCategory::SystemAlert,
+            workload: None,
+        });
+        true
+    }
+
     /// Create and emit an event with builder pattern
     pub fn emit_simple(
         &mut self,

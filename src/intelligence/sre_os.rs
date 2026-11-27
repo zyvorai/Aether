@@ -217,33 +217,75 @@ pub struct OnCallTestReport {
 
 pub fn test_on_call_webhook(dry_run: bool, provider: Option<&str>) -> OnCallTestReport {
     let provider = provider.unwrap_or("pagerduty").to_lowercase();
-    let status = build_on_call_status();
-    let configured = status
+    let configured = build_on_call_status()
         .channels
         .iter()
-        .find(|c| c.provider.to_lowercase().contains(&provider))
-        .map(|c| c.configured)
-        .unwrap_or(false);
+        .any(|c| c.provider.to_lowercase() == provider && c.configured);
+    let bus = EventBus::load(&EventBus::default_path()).unwrap_or_default();
+    test_with_channels(dry_run, &provider, &bus, configured)
+}
 
-    if !configured {
-        return OnCallTestReport {
-            dry_run,
-            provider: provider.clone(),
-            sent: false,
-            message: format!("{provider} not configured — add channel or env var"),
-        };
-    }
-
-    OnCallTestReport {
+/// Send a test alert through the channels of `provider`. Aether delivers only
+/// through configured notification channels, so a provider that is known just
+/// from an environment variable cannot be tested.
+fn test_with_channels(
+    dry_run: bool,
+    provider: &str,
+    bus: &EventBus,
+    configured: bool,
+) -> OnCallTestReport {
+    let report = |sent: bool, message: String| OnCallTestReport {
         dry_run,
-        provider: provider.clone(),
-        sent: !dry_run,
-        message: if dry_run {
-            format!("dry-run: would enqueue test alert to {provider}")
-        } else {
-            format!("test alert queued to {provider} (Events API)")
-        },
+        provider: provider.to_string(),
+        sent,
+        message,
+    };
+    if !configured {
+        return report(
+            false,
+            format!("{provider} not configured — add channel or env var"),
+        );
     }
+    let channels: Vec<&str> = bus
+        .channels()
+        .iter()
+        .filter(|c| c.enabled)
+        .filter(|c| match &c.channel_type {
+            ChannelType::PagerDuty { .. } => provider == "pagerduty",
+            ChannelType::Webhook { url, .. } => {
+                provider == "opsgenie" && url.to_lowercase().contains("opsgenie")
+            }
+            _ => false,
+        })
+        .map(|c| c.name.as_str())
+        .collect();
+    if channels.is_empty() {
+        return report(
+            false,
+            format!(
+                "not sent: there is no enabled {provider} notification channel to send through"
+            ),
+        );
+    }
+    if dry_run {
+        return report(
+            false,
+            format!(
+                "dry-run: would send a test alert to {}",
+                channels.join(", ")
+            ),
+        );
+    }
+    for name in &channels {
+        bus.send_test(name);
+    }
+    report(
+        true,
+        format!(
+            "test alert handed to {}; a failed delivery stays in the webhook queue (`aether webhook queue`)",
+            channels.join(", ")
+        ),
+    )
 }
 
 // ── Phase 38: Postmortem generator ───────────────────────────────────────────
@@ -374,6 +416,9 @@ pub struct ErrorBudgetEntry {
 pub struct ErrorBudgetDashboardReport {
     pub generated_at: String,
     pub entries: Vec<ErrorBudgetEntry>,
+    /// Workloads left out because no health check has been recorded for them.
+    #[serde(default)]
+    pub unobserved: Vec<String>,
 }
 
 pub fn build_error_budget_dashboard(
@@ -383,8 +428,15 @@ pub fn build_error_budget_dashboard(
     let engine = load_sla_engine();
     let history = HealthHistory::load(&HealthHistory::default_path()).unwrap_or_default();
     let mut entries = Vec::new();
+    let mut unobserved = Vec::new();
 
     for ws in store.list() {
+        // Without a single check there is no budget to report: 0% uptime would
+        // be an invented violation.
+        if !history.records.iter().any(|r| r.workload == ws.name) {
+            unobserved.push(ws.name.clone());
+            continue;
+        }
         let target = engine
             .get_target(&ws.name)
             .cloned()
@@ -401,11 +453,13 @@ pub fn build_error_budget_dashboard(
         }
     }
 
-    entries.sort_by(|a, b| b.burn_rate.partial_cmp(&a.burn_rate).unwrap());
+    entries.sort_by(|a, b| b.burn_rate.total_cmp(&a.burn_rate));
+    unobserved.sort();
 
     Ok(ErrorBudgetDashboardReport {
         generated_at: crate::resources::now_rfc3339(),
         entries,
+        unobserved,
     })
 }
 
@@ -849,5 +903,12 @@ mod tests {
         StateStore::new().save(&path).unwrap();
         let report = build_mttr_report(&path).unwrap();
         assert_eq!(report.fleet_avg_mttr_minutes, 0.0);
+    }
+
+    #[test]
+    fn on_call_test_never_claims_a_send_without_a_channel() {
+        let report = test_with_channels(false, "pagerduty", &EventBus::new(), true);
+        assert!(!report.sent);
+        assert!(report.message.contains("no enabled"), "{}", report.message);
     }
 }
