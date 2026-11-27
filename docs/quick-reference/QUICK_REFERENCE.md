@@ -95,7 +95,15 @@ aether exec my-app "ls -la"          # Run command in workload
 aether port-forward my-app 8080:80   # Forward local:remote ports
 aether watch                         # Auto-redeploy on spec changes
 aether diff my-app                   # Compare spec vs live state
-aether rollback my-app               # Rollback to latest snapshot
+aether rollback my-app               # Previous applied revision (--revision N)
+aether history my-app                # Applied revisions (--diff 1 2)
+aether preview my-app --delete       # What an action would do; changes nothing
+aether attention                     # What needs attention now
+aether changes --since 24h           # What changed
+aether incidents                     # Incidents from health checks
+aether explain my-app                # Why it runs where it does
+aether hold set my-app --reason "x"  # Block changes
+aether ops-report --since 7d         # Report
 aether compare                       # Compare runtimes for spec
 aether init                          # First-time setup wizard
 ```

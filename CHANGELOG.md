@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Operations desk
+Guide: `docs/guides/operations/OPERATIONS-DESK.md`. Dashboard page `/operations`.
+- **Change journal.** Deploy, update, stop, delete and migrate are now written to the audit trail (success and failure, with the actor) from every path: CLI, API, compose, migration and self-healing. Before, the lifecycle operations of managed workloads were not audited.
+- **Applied revisions** with the engine's decision: `aether history`, `GET /api/workloads/{name}/revisions`, `/revision-diff`.
+- **Rollback re-applies the recorded spec** (`aether rollback --revision N`).
+- **Health checks and incidents.** `aether serve` checks managed workloads every 60 s (`AETHER_OBSERVE_SECS`); incidents open after 2 failed checks (`AETHER_INCIDENT_THRESHOLD`), with acknowledge, notes, preceding changes and a Markdown draft: `aether incidents`.
+- **`aether changes`, `aether attention`, `aether explain`, `aether preview`, `aether ops-report`** and their API routes.
+- **Change holds:** `aether hold`; held workloads are refused (HTTP 409).
+
+### Fixed (behaviour changes)
+- Rollback redeployed whatever the spec file contained at that moment, because a snapshot stores only its path. `aether rollback` now uses the recorded revision; `--version N` keeps the old behaviour with a warning, and it is the fallback when no revision exists.
+- `aether migrate` panicked in debug builds because `-s` was both `--strategy` and the global `--spec`; `-s` is the strategy there.
+- CLI errors with a hint printed only the hint and hid the error itself.
+- Webhook, Slack and PagerDuty delivery panicked when triggered inside `aether serve` (blocking HTTP client inside the async runtime).
+- MTTR was computed by a formula (`12 + 3.5 × failures`), not measured. It now comes from recorded incidents and is `null` without data; `fleet_avg_mttr_minutes` and `avg_recovery_minutes` are nullable.
+- The on-call test reported `sent: true` without sending anything. `webhook test` sent an Info event that channels with the default `warning` filter dropped. Both now deliver to the channel, or say that they did not.
+- SLA evaluation assumed 100 ms latency when none was measured, and error budgets showed 0% uptime for workloads that were never checked.
+- `PUT /api/workloads/{name}` stopped the instance and ran a new one without removing the old, which fails on Podman because the name is taken.
+- A running server did not see workloads changed by the CLI, and its next save could overwrite them.
+- `aether update` dropped the stored namespace, context and resource kind; CLI deploys stored a relative spec path that `serve` could not resolve.
+- Preview and documentation note that `aether update` on KubeVirt deletes the VM disk (existing behaviour, not changed).
+- README no longer calls the audit hash an HMAC: it is an unkeyed SHA-256.
+
 ### Dashboard appearance
 - New neutral design with light, dark and system themes, chosen from an Appearance menu, applied before first paint and remembered.
 - Fixed layout regressions from the Tailwind 4 upgrade: a global reset in `index.html` cancelled all margin and padding utilities, theme variables overrode the radius scale, and warning and text-size utilities were missing.
