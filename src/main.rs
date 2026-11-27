@@ -5,6 +5,7 @@
 
 mod cli;
 mod commands;
+mod operator_commands;
 
 use aether::state::StateStore;
 use anyhow::Result;
@@ -223,9 +224,13 @@ async fn main() -> Result<()> {
         Commands::Diff { name } => commands::diff_command(&name).await,
         Commands::Rollback {
             name,
+            revision,
             version,
             list,
-        } => commands::rollback_command(&name, version, list).await,
+        } => commands::rollback_command(&name, revision, version, list).await,
+        Commands::History { name, show, diff } => {
+            operator_commands::history_command(&name, show, &diff)
+        }
         Commands::Deploy {
             dir,
             runtime,

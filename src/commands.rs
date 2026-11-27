@@ -3375,30 +3375,67 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: bool) -> Result<()> {
-    use aether::backup::{Backup, SnapshotManager};
+pub(crate) async fn rollback_command(
+    name: &str,
+    revision: Option<u64>,
+    version: Option<usize>,
+    list: bool,
+) -> Result<()> {
+    use aether::backup::SnapshotManager;
 
+    aether::ops::check_name(name)?;
+    let dir = aether::ops::data_dir();
+    let log = aether::ops::revisions::load(&dir, name)?;
     let snap_mgr = SnapshotManager::new();
 
-    // List mode: show available snapshots and return
+    // List mode: show what can be rolled back to and return
     if list {
-        output::section_with_icon("📋", &format!("Snapshots for workload '{}'", name));
+        output::section_with_icon("📋", &format!("Revisions of workload '{}'", name));
+        print!(
+            "{}",
+            aether::ops::revisions::format_history(name, &log.summaries())
+        );
         let snapshots = snap_mgr.list_snapshots(name)?;
-        if snapshots.is_empty() {
-            output::warning(&format!("No snapshots found for workload '{}'", name));
-            return Ok(());
-        }
-        for (i, snap) in snapshots.iter().enumerate() {
-            output::kv_tree(
-                &format!("#{}", i),
-                &snap.display().to_string(),
-                i == snapshots.len() - 1,
-            );
+        if !snapshots.is_empty() {
+            output::section("Legacy snapshots (--version N)");
+            for (i, snap) in snapshots.iter().enumerate() {
+                output::kv_tree(
+                    &format!("#{}", i),
+                    &snap.display().to_string(),
+                    i == snapshots.len() - 1,
+                );
+            }
         }
         return Ok(());
     }
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
+
+    // Applied revisions hold the spec itself; snapshots only point at a file.
+    if revision.is_some() || (version.is_none() && !log.revisions.is_empty()) {
+        let mut state = StateStore::load(&StateStore::default_path())?;
+        let ws = get_workload_state(&state, name)?;
+        let planned = aether::ops::rollback::plan(&dir, &ws, revision)?;
+        let rt = aether::runtime::create_runtime_ns(
+            &ws.runtime,
+            get_namespace().or(ws.namespace.as_deref()),
+        )
+        .await?;
+        let sp = output::spinner("Applying revision...");
+        let new = aether::ops::rollback::apply(&dir, &ws, rt.as_ref(), &planned).await?;
+        output::spinner_success(&sp, "Revision applied");
+        state.upsert(name.to_string(), new);
+        state.save(&StateStore::default_path())?;
+        output::success(&format!(
+            "Rolled '{}' back to revision {}",
+            name, planned.revision
+        ));
+        return Ok(());
+    }
+
+    output::warning(
+        "Using a legacy snapshot: it redeploys the spec file it points at, as that file is now",
+    );
 
     // Find snapshot based on version or latest
     let snapshot_path = if let Some(v) = version {
@@ -3419,7 +3456,7 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
     output::kv_tree("Found snapshot", &snapshot_path.display().to_string(), true);
 
     // Load snapshot
-    let backup = Backup::load(&snapshot_path)?;
+    let backup = aether::backup::Backup::load(&snapshot_path)?;
     let snapshot_ws = backup
         .workloads
         .first()

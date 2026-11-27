@@ -13,6 +13,7 @@ mod handlers;
 mod hosted_handlers;
 mod intelligence_handlers;
 mod migration_handlers;
+mod operator_handlers;
 mod ops_handlers;
 mod platform_recommendations;
 mod security_handlers;
@@ -37,6 +38,7 @@ use handlers::*;
 use hosted_handlers::*;
 use intelligence_handlers::*;
 use migration_handlers::*;
+use operator_handlers::*;
 use ops_handlers::*;
 use security_handlers::*;
 use std::net::SocketAddr;
@@ -2055,6 +2057,12 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/plugins/discover", post(api_plugins_discover))
         .route("/api/plugins/{name}", delete(api_plugins_remove))
         .route("/api/health/{workload}", get(api_health_summary))
+        .route("/api/workloads/{name}/revisions", get(api_revisions))
+        .route("/api/workloads/{name}/revisions/{id}", get(api_revision))
+        .route(
+            "/api/workloads/{name}/revision-diff",
+            get(api_revision_diff),
+        )
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
         .route("/api/compose/down", post(api_compose_down))

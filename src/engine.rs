@@ -7,6 +7,39 @@
 
 use crate::runtime::RuntimeKind;
 use crate::spec::{RuntimePreference, RuntimeType, Workload};
+use serde::{Deserialize, Serialize};
+
+/// One rule the engine evaluated.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RuleOutcome {
+    pub rule: String,
+    /// The spec asks for what the rule covers.
+    pub matched: bool,
+    /// This rule chose the runtime.
+    pub applied: bool,
+    pub detail: String,
+}
+
+impl RuleOutcome {
+    fn new(rule: &str, matched: bool, applied: bool, detail: String) -> Self {
+        Self {
+            rule: rule.to_string(),
+            matched,
+            applied,
+            detail,
+        }
+    }
+}
+
+/// The engine's decision together with how it got there.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DecisionTrace {
+    /// `None` when nothing is allowed.
+    pub selected: Option<RuntimeKind>,
+    /// False when the spec named the runtime itself.
+    pub automatic: bool,
+    pub rules: Vec<RuleOutcome>,
+}
 
 /// Decision engine for selecting appropriate runtime
 pub struct Engine;
@@ -18,56 +51,131 @@ impl Engine {
 
     /// Decide which runtime to use based on workload spec
     pub fn decide(&self, spec: &Workload) -> anyhow::Result<RuntimeKind> {
-        match spec.runtime.preferred {
-            RuntimePreference::Auto => self.auto_decide(spec),
-            RuntimePreference::Container => Ok(RuntimeKind::Podman),
-            RuntimePreference::Kube => Ok(RuntimeKind::Kubernetes),
-            RuntimePreference::Kubevirt => Ok(RuntimeKind::KubeVirt),
+        self.decide_trace(spec)
+            .selected
+            .ok_or_else(|| anyhow::anyhow!("No suitable runtime found for workload"))
+    }
+
+    /// Decide, and record every rule that was evaluated on the way.
+    ///
+    /// [`Engine::decide`] is built on this, so the explanation cannot differ
+    /// from the decision.
+    pub fn decide_trace(&self, spec: &Workload) -> DecisionTrace {
+        let explicit = match spec.runtime.preferred {
+            RuntimePreference::Auto => None,
+            RuntimePreference::Container => Some(("container", RuntimeKind::Podman)),
+            RuntimePreference::Kube => Some(("kube", RuntimeKind::Kubernetes)),
+            RuntimePreference::Kubevirt => Some(("kubevirt", RuntimeKind::KubeVirt)),
+        };
+        if let Some((name, kind)) = explicit {
+            return DecisionTrace {
+                selected: Some(kind),
+                automatic: false,
+                rules: vec![RuleOutcome::new(
+                    "explicit preference",
+                    true,
+                    true,
+                    format!("spec sets runtime.preferred: {name}"),
+                )],
+            };
         }
+        self.auto_trace(spec)
     }
 
     /// Automatic runtime selection based on requirements
-    fn auto_decide(&self, spec: &Workload) -> anyhow::Result<RuntimeKind> {
-        // Rule 0: Intent compliance — isolation requirement overrides all other rules
-        if let Some(ref intent) = spec.intent {
-            if let Some(ref compliance) = intent.compliance {
-                if compliance.isolation_required {
-                    if self.is_allowed(spec, RuntimeType::Kubevirt) {
-                        return Ok(RuntimeKind::KubeVirt);
-                    }
-                    // Isolation requested but KubeVirt not allowed —
-                    // fall through to normal rules with a warning
-                    tracing::warn!("Intent requires isolation but KubeVirt not in allowed list");
+    fn auto_trace(&self, spec: &Workload) -> DecisionTrace {
+        let isolation = spec
+            .intent
+            .as_ref()
+            .and_then(|i| i.compliance.as_ref())
+            .is_some_and(|c| c.isolation_required);
+        // In priority order: (rule, does the spec ask for it, runtime, wording).
+        let conditional = [
+            (
+                "intent isolation",
+                isolation,
+                RuntimeType::Kubevirt,
+                "intent.compliance.isolationRequired",
+            ),
+            (
+                "gpu",
+                spec.requirements.gpu.is_some(),
+                RuntimeType::Kubevirt,
+                "requirements.gpu",
+            ),
+            (
+                "network service",
+                spec.network.service,
+                RuntimeType::Kube,
+                "network.service",
+            ),
+            (
+                "persistence",
+                spec.persistence.enabled,
+                RuntimeType::Kube,
+                "persistence.enabled",
+            ),
+        ];
+
+        let mut rules = Vec::new();
+        let mut selected = None;
+        for (rule, matched, target, field) in conditional {
+            let kind = self.runtime_type_to_kind(&target);
+            let allowed = self.is_allowed(spec, target);
+            let detail = match (matched, allowed) {
+                (false, _) => format!("{field} is not set"),
+                (true, true) => format!("{field} is set and {kind} is allowed"),
+                (true, false) => {
+                    format!("{field} is set but {kind} is not in runtime.allow")
                 }
+            };
+            let applied = matched && allowed && selected.is_none();
+            if applied {
+                selected = Some(kind);
             }
-        }
-
-        // Rule 1: GPU required -> KubeVirt
-        if spec.requirements.gpu.is_some() && self.is_allowed(spec, RuntimeType::Kubevirt) {
-            return Ok(RuntimeKind::KubeVirt);
-        }
-
-        // Rule 3: Network service enabled -> Kubernetes
-        if spec.network.service && self.is_allowed(spec, RuntimeType::Kube) {
-            return Ok(RuntimeKind::Kubernetes);
-        }
-
-        // Rule 4: Persistence enabled -> Kubernetes
-        if spec.persistence.enabled && self.is_allowed(spec, RuntimeType::Kube) {
-            return Ok(RuntimeKind::Kubernetes);
+            if rule == "intent isolation" && matched && !allowed {
+                // Isolation requested but KubeVirt not allowed —
+                // fall through to normal rules with a warning
+                tracing::warn!("Intent requires isolation but KubeVirt not in allowed list");
+            }
+            rules.push(RuleOutcome::new(rule, matched, applied, detail));
         }
 
         // Default: Container (Podman) for local development
-        if self.is_allowed(spec, RuntimeType::Container) {
-            return Ok(RuntimeKind::Podman);
+        let container = self.is_allowed(spec, RuntimeType::Container);
+        let default_applied = container && selected.is_none();
+        if default_applied {
+            selected = Some(RuntimeKind::Podman);
+        }
+        rules.push(RuleOutcome::new(
+            "local default",
+            container,
+            default_applied,
+            if container {
+                "podman is allowed and is the default for local workloads".to_string()
+            } else {
+                "podman is not in runtime.allow".to_string()
+            },
+        ));
+
+        if selected.is_none() {
+            if let Some(first) = spec.runtime.allow.first() {
+                let kind = self.runtime_type_to_kind(first);
+                selected = Some(kind);
+                rules.push(RuleOutcome::new(
+                    "first allowed",
+                    true,
+                    true,
+                    format!("no rule applied; {kind} is first in runtime.allow"),
+                ));
+            }
         }
 
-        // Fallback: First allowed runtime
-        if let Some(first) = spec.runtime.allow.first() {
-            return Ok(self.runtime_type_to_kind(first));
+        DecisionTrace {
+            selected,
+            automatic: true,
+            rules,
         }
-
-        anyhow::bail!("No suitable runtime found for workload")
     }
 
     /// Check if runtime type is allowed
@@ -137,6 +245,39 @@ mod tests {
 
         let runtime = engine.decide(&spec).unwrap();
         assert_eq!(runtime, RuntimeKind::Kubernetes);
+    }
+
+    #[test]
+    fn trace_names_the_rule_that_applied() {
+        let engine = Engine::new();
+        let mut spec = create_test_workload(
+            RuntimePreference::Auto,
+            vec![RuntimeType::Container, RuntimeType::Kube],
+        );
+        spec.requirements.gpu = Some(GpuRequirements {
+            count: 1,
+            vendor: "nvidia".to_string(),
+            vgpu_profile: None,
+        });
+        spec.network.service = true;
+        let trace = engine.decide_trace(&spec);
+        assert_eq!(trace.selected, Some(RuntimeKind::Kubernetes));
+        assert!(trace.automatic);
+        let applied: Vec<_> = trace.rules.iter().filter(|r| r.applied).collect();
+        assert_eq!(applied.len(), 1);
+        assert_eq!(applied[0].rule, "network service");
+        // GPU was asked for but could not apply, and the trace says why.
+        let gpu = trace.rules.iter().find(|r| r.rule == "gpu").unwrap();
+        assert!(gpu.matched && !gpu.applied);
+        assert!(gpu.detail.contains("not in runtime.allow"));
+    }
+
+    #[test]
+    fn trace_and_decide_agree_when_nothing_is_allowed() {
+        let engine = Engine::new();
+        let spec = create_test_workload(RuntimePreference::Auto, vec![]);
+        assert!(engine.decide(&spec).is_err());
+        assert_eq!(engine.decide_trace(&spec).selected, None);
     }
 
     fn create_test_workload(preferred: RuntimePreference, allow: Vec<RuntimeType>) -> Workload {

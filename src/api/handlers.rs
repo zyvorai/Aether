@@ -238,7 +238,7 @@ async fn make_runtime<T: serde::Serialize>(
 }
 
 /// Emit a server-sent event for real-time dashboard updates.
-fn emit_sse(app_state: &AppState, event: &ServerEvent) {
+pub(crate) fn emit_sse(app_state: &AppState, event: &ServerEvent) {
     if let Ok(json) = serde_json::to_string(event) {
         let _ = app_state.event_tx.send(json);
     }
@@ -1485,13 +1485,20 @@ pub(crate) async fn update_workload(
         Ok(r) => r,
         Err(e) => return e,
     };
-    let _ = rt.stop(&workload_state.instance).await;
-
+    // Build first, so a build failure leaves the running instance alone.
     let image = match rt.build(&spec).await {
         Ok(img) => img,
         Err(e) => return err_internal::<String>(e),
     };
-    let instance = match rt.run(&image, &spec).await {
+    let applied = crate::ops::rollback::replace(
+        rt.as_ref(),
+        workload_state.runtime,
+        &workload_state.instance,
+        &image,
+        &spec,
+    )
+    .await;
+    let instance = match applied {
         Ok(inst) => inst,
         Err(e) => return err_internal::<String>(e),
     };

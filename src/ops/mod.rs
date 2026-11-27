@@ -11,6 +11,8 @@
 //! [`data_dir`]) so the logic can be tested against a temporary directory.
 
 pub mod journal;
+pub mod revisions;
+pub mod rollback;
 pub mod store;
 
 use std::path::PathBuf;

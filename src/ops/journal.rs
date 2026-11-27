@@ -7,14 +7,15 @@
 //! [`crate::runtime::create_runtime`] hands out, so deploys, updates, stops
 //! and deletes are recorded the same way whether they came from the CLI, the
 //! API, a migration, a compose file or the self-healing loop. For each change
-//! it writes an audit event for success and failure.
+//! it writes an audit event for success and failure and records the applied
+//! spec revision.
 //!
 //! Bookkeeping failures never turn a successful runtime change into an error;
 //! they are logged.
 
 use crate::audit::{ActionResult, AuditAction, AuditLog};
 use crate::events::{Event, EventBus, EventCategory, EventSeverity};
-use crate::ops::{self, store};
+use crate::ops::{self, revisions, store};
 use crate::runtime::{Capacity, Image, Instance, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use anyhow::Result;
@@ -153,6 +154,9 @@ pub fn record_migration(
     );
 }
 
+/// Audit marker linking an audit event to a spec revision.
+pub const REVISION_MARKER: &str = "revision=";
+
 fn log_failure(what: &str, result: Result<()>) {
     if let Err(e) = result {
         tracing::warn!("change journal: could not record {what}: {e:#}");
@@ -198,19 +202,44 @@ impl Journaled {
         );
     }
 
-    fn applied(&self, action: AuditAction, verb: &str, instance: &Instance) {
+    fn applied(&self, op: revisions::RevisionOp, spec: &Workload, instance: &Instance) {
+        let name = &spec.metadata.name;
+        let revision = revisions::record(&self.dir, op, spec, instance);
+        let extra = match &revision {
+            Ok(id) => Some(format!("{REVISION_MARKER}{id}")),
+            Err(e) => {
+                tracing::warn!("change journal: could not record revision of {name}: {e:#}");
+                None
+            }
+        };
+        let verb = match op {
+            revisions::RevisionOp::Deploy => "deployed",
+            revisions::RevisionOp::Update => "updated",
+        };
         let runtime = self.kind.to_string();
         log_failure(
             "deploy",
-            audit(
+            audit_with(
                 &self.dir,
-                action,
-                &instance.name,
+                match op {
+                    revisions::RevisionOp::Deploy => AuditAction::Deploy,
+                    revisions::RevisionOp::Update => AuditAction::ConfigChange,
+                },
+                name,
                 Some(&runtime),
                 ActionResult::Success,
                 &format!("{verb} on {runtime}: {}", instance.image),
+                extra.as_deref(),
             ),
         );
+    }
+
+    fn change_failed(&self, action: AuditAction, name: &str, what: &str, error: &anyhow::Error) {
+        log_failure(
+            "failed revision",
+            revisions::record_failure(&self.dir, name),
+        );
+        self.failed(action, name, what, error);
     }
 }
 
@@ -228,11 +257,11 @@ impl Runtime for Journaled {
         let name = &spec.metadata.name;
         match self.inner.run(image, spec).await {
             Ok(instance) => {
-                self.applied(AuditAction::Deploy, "deployed", &instance);
+                self.applied(revisions::RevisionOp::Deploy, spec, &instance);
                 Ok(instance)
             }
             Err(e) => {
-                self.failed(AuditAction::Deploy, name, "deploy", &e);
+                self.change_failed(AuditAction::Deploy, name, "deploy", &e);
                 Err(e)
             }
         }
@@ -247,11 +276,11 @@ impl Runtime for Journaled {
         let name = &spec.metadata.name;
         match self.inner.update(instance, image, spec).await {
             Ok(new) => {
-                self.applied(AuditAction::ConfigChange, "updated", &new);
+                self.applied(revisions::RevisionOp::Update, spec, &new);
                 Ok(new)
             }
             Err(e) => {
-                self.failed(AuditAction::ConfigChange, name, "update", &e);
+                self.change_failed(AuditAction::ConfigChange, name, "update", &e);
                 Err(e)
             }
         }
@@ -325,16 +354,10 @@ impl Runtime for Journaled {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::ops::revisions::tests::spec;
     use crate::runtime::InstanceState;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::Arc;
-
-    pub(crate) fn spec(name: &str, memory: &str) -> Workload {
-        let yaml = format!(
-            "apiVersion: aether/v1\nkind: Workload\nmetadata:\n  name: {name}\n  owner: me\n  project: p\nbuild:\n  context: .\n  dockerfile: Dockerfile\n  registry: localhost\nrequirements:\n  cpu: \"500m\"\n  memory: {memory}\n  storage: 1Gi\nruntime:\n  preferred: container\n  allow:\n    - container\n"
-        );
-        serde_yaml::from_str(&yaml).unwrap()
-    }
 
     /// A runtime that only counts calls, so tests can prove what reached it.
     #[derive(Default)]
@@ -409,7 +432,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
-    async fn lifecycle_is_audited() {
+    async fn lifecycle_is_audited_and_revisions_recorded() {
         let dir = tempfile::tempdir().unwrap();
         let (rt, _, _) = journaled(dir.path());
         let w = spec("web", "256Mi");
@@ -427,19 +450,26 @@ pub(crate) mod tests {
             vec![AuditAction::Deploy, AuditAction::Stop, AuditAction::Delete]
         );
         let details = audit.events()[0].details.clone().unwrap();
+        assert!(details.contains("revision=1"), "{details}");
         assert!(details.contains("reason=test run"), "{details}");
         assert!(audit.events().iter().all(AuditLog::verify_event_integrity));
+        let revs = revisions::load(dir.path(), "web").unwrap();
+        assert_eq!(revs.revisions.len(), 1);
+        assert_eq!(revs.revisions[0].reason.as_deref(), Some("test run"));
     }
 
     #[tokio::test]
-    async fn failures_are_recorded() {
+    async fn failures_are_recorded_and_not_counted_as_revisions() {
         let dir = tempfile::tempdir().unwrap();
-        let (rt, calls, fail) = journaled(dir.path());
+        let (rt, _, fail) = journaled(dir.path());
         let w = spec("web", "256Mi");
         let image = rt.build(&w).await.unwrap();
+        rt.run(&image, &w).await.unwrap();
         fail.store(true, Ordering::SeqCst);
         assert!(rt.run(&image, &w).await.is_err());
-        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        let revs = revisions::load(dir.path(), "web").unwrap();
+        assert_eq!(revs.revisions.len(), 1);
+        assert!(revs.failed_at.is_some());
         let audit = log(dir.path());
         let last = audit.events().last().unwrap();
         assert_eq!(last.result, ActionResult::Failure);

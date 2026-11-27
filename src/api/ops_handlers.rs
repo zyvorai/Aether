@@ -87,6 +87,12 @@ pub(crate) struct OrchestratorRollingUpdateRequest {
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct RollbackRequest {
+    /// Applied revision to roll back to. Without it, and without `version`,
+    /// the previous revision with a different spec is used.
+    #[serde(default)]
+    pub revision: Option<u64>,
+    /// Legacy: index of a pre-deploy snapshot.
+    #[serde(default)]
     pub version: Option<usize>,
 }
 
@@ -576,12 +582,63 @@ pub(crate) async fn api_workload_snapshots(Path(name): Path<String>) -> impl Int
     }
 }
 
+async fn rollback_to_revision(
+    app_state: &AppState,
+    name: &str,
+    revision: Option<u64>,
+) -> (axum::http::StatusCode, Json<ApiResponse<serde_json::Value>>) {
+    let dir = crate::ops::data_dir();
+    let ws = match super::handlers::lookup_workload(app_state, name).await {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    let planned = match crate::ops::rollback::plan(&dir, &ws, revision) {
+        Ok(p) => p,
+        Err(e) => return err_bad_request::<serde_json::Value>(format!("{e:#}")),
+    };
+    let rt = match runtime::create_runtime_ns(&ws.runtime, ws.namespace.as_deref()).await {
+        Ok(r) => r,
+        Err(e) => return err_internal::<serde_json::Value>(e),
+    };
+    let new = match crate::ops::rollback::apply(&dir, &ws, rt.as_ref(), &planned).await {
+        Ok(s) => s,
+        Err(e) => return err_internal::<serde_json::Value>(format!("rollback failed: {e:#}")),
+    };
+    let mut state = app_state.state.write().await;
+    state.upsert(name.to_string(), new);
+    if let Err(e) = persist_workload_api(app_state, &state).await {
+        return err_internal::<serde_json::Value>(e);
+    }
+    super::handlers::emit_sse(
+        app_state,
+        &ServerEvent::WorkloadChanged {
+            name: name.to_string(),
+            action: "rolled-back".to_string(),
+        },
+    );
+    ok_json(json!({
+        "rolled_back": true,
+        "workload": name,
+        "revision": planned.revision,
+    }))
+}
+
 /// POST /api/workloads/:name/rollback — Roll back to a snapshot (latest or by version index).
 pub(crate) async fn api_workload_rollback(
     AxumState(app_state): AxumState<AppState>,
     Path(name): Path<String>,
     Json(req): Json<RollbackRequest>,
 ) -> impl IntoResponse {
+    // Applied revisions hold the spec itself. Snapshots only point at a spec
+    // file, so they are used only on request or when nothing was recorded.
+    let recorded = match crate::ops::revisions::load(&crate::ops::data_dir(), &name) {
+        Ok(log) => !log.revisions.is_empty(),
+        Err(e) => return err_internal::<serde_json::Value>(format!("{e:#}")),
+    };
+    if req.revision.is_some() || (req.version.is_none() && recorded) {
+        return rollback_to_revision(&app_state, &name, req.revision).await;
+    }
+
     let snap_mgr = SnapshotManager::new();
     let snapshot_path = if let Some(v) = req.version {
         match snap_mgr.list_snapshots(&name) {

@@ -474,16 +474,33 @@ pub(crate) enum Commands {
         name: String,
     },
 
-    /// Rollback a workload to its latest snapshot
+    /// Roll a workload back to an applied revision
     Rollback {
         /// Workload name
         name: String,
-        /// Snapshot version to rollback to (default: latest). Use --list to see available versions.
+        /// Revision to apply (default: the previous one with a different spec,
+        /// or the last good one after a failed change). See `aether history`.
+        #[arg(long, conflicts_with = "version")]
+        revision: Option<u64>,
+        /// Legacy pre-deploy snapshot index. A snapshot only points at a spec
+        /// file, so it redeploys that file as it is now.
         #[arg(long)]
         version: Option<usize>,
-        /// List available snapshots instead of rolling back
+        /// List revisions and snapshots instead of rolling back
         #[arg(long)]
         list: bool,
+    },
+
+    /// Applied spec revisions of a workload
+    History {
+        /// Workload name
+        name: String,
+        /// Print the spec of one revision (secrets redacted)
+        #[arg(long, value_name = "REVISION", conflicts_with = "diff")]
+        show: Option<u64>,
+        /// Compare two revisions
+        #[arg(long, num_args = 2, value_names = ["FROM", "TO"])]
+        diff: Vec<u64>,
     },
 
     /// Deploy all workloads from a directory
@@ -1128,6 +1145,7 @@ impl Commands {
             Self::HelpAll => "help-all",
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
+            Self::History { .. } => "history",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",
             Self::PortForward { .. } => "port-forward",
