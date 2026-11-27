@@ -5,7 +5,7 @@
 
 use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
 use super::types::AppState;
-use crate::ops::{self, attention, changes, explain, holds, incidents, revisions};
+use crate::ops::{self, attention, changes, explain, holds, incidents, preview, revisions};
 use crate::state::{StateStore, WorkloadState};
 use axum::{
     extract::{Path, Query, State as AxumState},
@@ -131,6 +131,26 @@ pub(crate) async fn api_explain(
 ) -> Response {
     let ws = try_response!(workload(&app, &name).await);
     respond(blocking(move || explain::explain(&ops::data_dir(), &ws)).await)
+}
+
+/// POST /api/workloads/{name}/preview — read-only.
+pub(crate) async fn api_preview(
+    AxumState(app): AxumState<AppState>,
+    Path(name): Path<String>,
+    Json(action): Json<preview::Action>,
+) -> Response {
+    let ws = try_response!(workload(&app, &name).await);
+    if let preview::Action::Rollback { revision: Some(id) } = &action {
+        match revisions::load(&ops::data_dir(), &name) {
+            Ok(log) if log.get(*id).is_none() => {
+                return err_not_found::<()>(format!("revision {id} not found")).into_response()
+            }
+            Ok(_) => {}
+            Err(e) => return internal(e),
+        }
+    }
+    let policy = crate::config::Config::load().policy;
+    respond(blocking(move || preview::preview(&ops::data_dir(), &ws, &action, &policy)).await)
 }
 
 // ── Changes, attention, report ───────────────────────────────────────────────

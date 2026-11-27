@@ -3,14 +3,14 @@
 
 //! CLI handlers for the operator features in [`aether::ops`].
 
-use aether::ops::{self, attention, changes, explain, holds, incidents, revisions};
+use aether::ops::{self, attention, changes, explain, holds, incidents, preview, revisions};
 use aether::output;
 use aether::state::{StateStore, WorkloadState};
 use anyhow::{Context, Result};
 use serde::Serialize;
 use std::path::Path;
 
-use crate::cli::{HoldAction, IncidentAction};
+use crate::cli::{HoldAction, IncidentAction, PreviewArgs};
 
 fn managed(name: &str) -> Result<WorkloadState> {
     ops::check_name(name)?;
@@ -55,6 +55,43 @@ pub(crate) fn history_command(name: &str, show: Option<u64>, diff: &[u64]) -> Re
     }
     let summaries = log.summaries();
     emit(&summaries, || revisions::format_history(name, &summaries))
+}
+
+/// Returns the exit code: 2 when the action is blocked.
+pub(crate) fn preview_command(name: &str, args: &PreviewArgs) -> Result<i32> {
+    let ws = managed(name)?;
+    let action = if let Some(file) = &args.update {
+        preview::Action::Update {
+            yaml: std::fs::read_to_string(file)
+                .with_context(|| format!("failed to read {}", file.display()))?,
+        }
+    } else if args.delete {
+        preview::Action::Delete
+    } else if args.stop {
+        preview::Action::Stop
+    } else if args.restart {
+        preview::Action::Restart
+    } else if let Some(target) = &args.migrate {
+        preview::Action::Migrate {
+            target: target.clone(),
+        }
+    } else if let Some(revision) = args.rollback {
+        preview::Action::Rollback {
+            revision: (revision > 0).then_some(revision),
+        }
+    } else {
+        anyhow::bail!(
+            "say what to preview: --update FILE, --delete, --stop, --restart, --migrate TARGET or --rollback [REVISION]"
+        );
+    };
+    let policy = aether::config::Config::load().policy;
+    let p = preview::preview(&ops::data_dir(), &ws, &action, &policy)?;
+    emit(&p, || preview::format(&p))?;
+    Ok(if p.verdict == preview::Verdict::Blocked {
+        2
+    } else {
+        0
+    })
 }
 
 pub(crate) fn changes_command(since: &str, workload: Option<String>, limit: usize) -> Result<()> {

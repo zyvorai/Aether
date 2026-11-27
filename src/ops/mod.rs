@@ -16,6 +16,7 @@ pub mod explain;
 pub mod holds;
 pub mod incidents;
 pub mod journal;
+pub mod preview;
 pub mod revisions;
 pub mod rollback;
 pub mod store;

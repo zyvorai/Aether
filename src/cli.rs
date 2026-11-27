@@ -509,6 +509,14 @@ pub(crate) enum Commands {
         diff: Vec<u64>,
     },
 
+    /// Preview an action on a deployed workload without doing it (exit 2 if blocked)
+    Preview {
+        /// Workload name
+        name: String,
+        #[command(flatten)]
+        action: PreviewArgs,
+    },
+
     /// What changed: deploys, operations, warnings and incidents, newest first
     Changes {
         /// Window: 30m, 24h, 7d, or an RFC 3339 time
@@ -1181,6 +1189,7 @@ impl Commands {
             Self::Rollback { .. } => "rollback",
             Self::Explain { .. } => "explain",
             Self::History { .. } => "history",
+            Self::Preview { .. } => "preview",
             Self::Changes { .. } => "changes",
             Self::Incidents { .. } => "incidents",
             Self::Attention => "attention",
@@ -1521,6 +1530,30 @@ pub(crate) enum PluginAction {
     },
 }
 
+/// The action to preview; exactly one is required.
+#[derive(clap::Args, Debug)]
+#[group(required = true, multiple = false)]
+pub(crate) struct PreviewArgs {
+    /// Apply this edited spec
+    #[arg(long, value_name = "FILE")]
+    pub(crate) update: Option<PathBuf>,
+    /// Delete the workload
+    #[arg(long)]
+    pub(crate) delete: bool,
+    /// Stop it
+    #[arg(long)]
+    pub(crate) stop: bool,
+    /// Restart it
+    #[arg(long)]
+    pub(crate) restart: bool,
+    /// Migrate it to another runtime (podman, kube, kubevirt)
+    #[arg(long, value_name = "TARGET")]
+    pub(crate) migrate: Option<String>,
+    /// Roll it back (to REVISION, or the default target)
+    #[arg(long, value_name = "REVISION", num_args = 0..=1, default_missing_value = "0")]
+    pub(crate) rollback: Option<u64>,
+}
+
 #[derive(Subcommand, Debug)]
 pub(crate) enum IncidentAction {
     /// List incidents, newest first
@@ -1601,5 +1634,16 @@ mod tests {
             panic!("not migrate");
         };
         assert_eq!(strategy, "rolling");
+    }
+
+    #[test]
+    fn preview_takes_exactly_one_action() {
+        assert!(Cli::try_parse_from(["aether", "preview", "web"]).is_err());
+        assert!(Cli::try_parse_from(["aether", "preview", "web", "--delete", "--stop"]).is_err());
+        let cli = Cli::try_parse_from(["aether", "preview", "web", "--rollback"]).expect("parses");
+        let Commands::Preview { action, .. } = cli.command else {
+            panic!("not preview");
+        };
+        assert_eq!(action.rollback, Some(0));
     }
 }

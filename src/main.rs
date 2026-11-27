@@ -227,10 +227,34 @@ async fn main() -> Result<()> {
             revision,
             version,
             list,
-        } => commands::rollback_command(&name, revision, version, list).await,
+        } => {
+            if cli.dry_run {
+                operator_commands::preview_command(
+                    &name,
+                    &cli::PreviewArgs {
+                        update: None,
+                        delete: false,
+                        stop: false,
+                        restart: false,
+                        migrate: None,
+                        rollback: Some(revision.unwrap_or(0)),
+                    },
+                )
+                .map(|_| ())
+            } else {
+                commands::rollback_command(&name, revision, version, list).await
+            }
+        }
         Commands::Explain { name } => operator_commands::explain_command(&name),
         Commands::History { name, show, diff } => {
             operator_commands::history_command(&name, show, &diff)
+        }
+        Commands::Preview { name, action } => {
+            match operator_commands::preview_command(&name, &action) {
+                Ok(0) => Ok(()),
+                Ok(code) => std::process::exit(code),
+                Err(e) => Err(e),
+            }
         }
         Commands::Changes {
             since,

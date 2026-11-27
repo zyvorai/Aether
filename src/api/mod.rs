@@ -2119,6 +2119,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
             get(api_revision_diff),
         )
         .route("/api/workloads/{name}/explain", get(api_explain))
+        .route("/api/workloads/{name}/preview", post(api_preview))
         .route("/api/changes", get(api_changes))
         .route("/api/attention", get(api_attention))
         .route("/api/incidents", get(api_incidents))
