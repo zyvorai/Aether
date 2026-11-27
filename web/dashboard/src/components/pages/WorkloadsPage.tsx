@@ -25,7 +25,9 @@ import StatRibbon from '../StatRibbon';
 import SegmentedControl from '../ui/SegmentedControl';
 import { categoricalDotClass } from '../../utils/categoricalColor';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
+import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
 import Modal from '../Modal';
+import Drawer from '../ui/Drawer';
 import YamlInput from '../YamlInput';
 import ValidateResultPanel from '../ValidateResultPanel';
 import DeploySuccessPanel from '../DeploySuccessPanel';
@@ -50,10 +52,10 @@ interface WorkloadsPageProps {
 }
 
 function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy' || s.includes('deployed')) return 'green';
-  if (s === 'error' || s === 'failed') return 'red';
-  if (s === 'stopped' || s === 'exited') return 'muted';
+  const condition = workloadCondition(status);
+  if (condition === 'running') return 'green';
+  if (condition === 'failing') return 'red';
+  if (condition === 'stopped') return 'muted';
   return 'yellow';
 }
 
@@ -75,6 +77,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState<string | undefined>(undefined);
   const [search, setSearch] = useQueryParam('q');
   const [sourceFilter, setSourceFilter] = useQueryParam('source', 'all');
   const [kindFilter, setKindFilter] = useQueryParam('kind', 'all');
@@ -120,7 +123,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       return 'table';
     }
   });
-  const detailRef = useRef<HTMLDivElement | null>(null);
 
   const runtimes = ['podman', 'docker', 'kubernetes', 'kubevirt'];
 
@@ -141,6 +143,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     const result = await apiFetchSettled<WorkloadResponse[]>('/workloads');
     if (!result.ok) {
       setLoadFailed(true);
+      setLoadError(result.detail);
       setWorkloads([]);
     } else {
       setWorkloads(result.data);
@@ -247,14 +250,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     setDetailInitialTab(tab);
     setSelectedWorkload(match);
   }, [workloadParam, tabParam, workloads]);
-
-  useEffect(() => {
-    if (!selectedWorkload) return;
-    // Bring the detail panel into view — previously it rendered under the full inventory table.
-    window.requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }, [selectedWorkload?.name, detailInitialTab]);
 
   async function handleAction(name: string, action: string) {
     setActionLoading(`${name}-${action}`);
@@ -516,11 +511,19 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
   }
 
   if (loading && workloads.length === 0 && !loadFailed) {
-    return <PageLoading rows={6} />;
+    return (
+      <AuroraPage view="workloads">
+        <PageLoading rows={6} variant="table" />
+      </AuroraPage>
+    );
   }
 
   if (loadFailed) {
-    return <PageLoadError title="Workloads unavailable" onRetry={() => void load()} />;
+    return (
+      <AuroraPage view="workloads">
+        <PageLoadError title="Workloads unavailable" detail={loadError} onRetry={() => void load()} />
+      </AuroraPage>
+    );
   }
 
   const kinds = ['all', ...Array.from(new Set(workloads.map((w) => w.kind).filter((kind): kind is string => Boolean(kind)))).sort()];
@@ -550,7 +553,8 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'running' && isRunning) ||
-      (statusFilter === 'stopped' && isStopped);
+      (statusFilter === 'stopped' && isStopped) ||
+      (statusFilter === 'attention' && needsAttention(workload.status));
     const matchesPinned = !pinnedOnly || pinnedNames.includes(workload.name);
     return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace && matchesStatus && matchesPinned;
     }),
@@ -561,6 +565,21 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     const bp = pinnedSet.has(b.name) ? 0 : 1;
     return ap - bp;
   });
+
+  const selectedIndex = selectedWorkload ? displayWorkloads.findIndex((w) => w.name === selectedWorkload.name) : -1;
+
+  // One update: consecutive query-param setters would overwrite each other.
+  function showAll() {
+    setSearchParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev);
+        copy.delete('status');
+        copy.delete('source');
+        return copy;
+      },
+      { replace: true },
+    );
+  }
 
   function exportFilteredCsv() {
     const csv = workloadsToCsv(
@@ -588,6 +607,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     return s === 'running' || s.includes('deployed');
   }).length;
   const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
+  const attentionCount = workloads.filter((w) => needsAttention(w.status)).length;
 
   const filterSelectClass = 'glass-select';
   // .glass-select applies width:100% and wins the cascade over w-* utility classes in
@@ -674,7 +694,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     {
       key: 'status',
       header: 'Status',
-      width: 190,
+      width: 120,
       sortValue: (w) => w.status,
       render: (w) => <Badge text={w.status} variant={getStatusVariant(w.status)} />,
     },
@@ -722,14 +742,16 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
 
   return (
     <AuroraPage view="workloads">
-    <div className="overflow-x-hidden space-y-10">
+    <div className="overflow-x-hidden space-y-5">
       <StatRibbon
         testId="workloads-stats"
         items={[
-          { label: 'Total', value: workloads.length },
-          { label: 'Running', value: runningCount, tone: 'emerald' },
-          { label: 'Aether', value: aetherManagedCount, tone: 'sky' },
-          { label: 'Discovered', value: clusterDiscoveredCount },
+          { label: 'Total', value: workloads.length, testId: 'workloads-total-stat', onClick: showAll },
+          { label: 'Running', value: runningCount, tone: 'emerald', testId: 'workloads-running-stat', onClick: () => setStatusFilter(statusFilter === 'running' ? 'all' : 'running'), active: statusFilter === 'running' },
+          { label: 'Needs attention', value: attentionCount, tone: attentionCount > 0 ? 'red' : 'white', testId: 'workloads-attention-stat', onClick: () => setStatusFilter(statusFilter === 'attention' ? 'all' : 'attention'), active: statusFilter === 'attention' },
+          { label: 'Stopped', value: stoppedCount, testId: 'workloads-stopped-stat', onClick: () => setStatusFilter(statusFilter === 'stopped' ? 'all' : 'stopped'), active: statusFilter === 'stopped' },
+          { label: 'Aether', value: aetherManagedCount, tone: 'sky', testId: 'workloads-aether-stat', onClick: () => setSourceFilter(sourceFilterVal === 'aether' ? 'all' : 'aether'), active: sourceFilterVal === 'aether' },
+          { label: 'Discovered', value: clusterDiscoveredCount, testId: 'workloads-discovered-stat', onClick: () => setSourceFilter(sourceFilterVal === 'cluster' ? 'all' : 'cluster'), active: sourceFilterVal === 'cluster' },
         ]}
       />
       <PageToolbar
@@ -753,6 +775,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               <option value="all">All statuses</option>
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
+              <option value="attention">Needs attention</option>
             </select>
           </>
         }
@@ -794,12 +817,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         }
       />
 
-      <div className="flex items-start gap-4">
-        <div
-          className={selectedWorkload ? 'hidden min-w-0 flex-1 lg:block' : 'min-w-0 flex-1'}
-          data-testid="workloads-list-column"
-        >
-      <details className="mb-4" data-testid="workloads-more-filters">
+      <div className="min-w-0" data-testid="workloads-list-column">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+      <details className="min-w-0 flex-1 basis-52 pt-1.5 open:basis-full" data-testid="workloads-more-filters">
         <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More filters</summary>
         <div className="mt-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -887,7 +907,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         </div>
       </details>
 
-      <div className="mb-4 flex items-center justify-end gap-1 rounded-xl border glass-divider p-1 w-fit ml-auto" data-testid="workloads-view-toggle">
+      <div className="ml-auto flex w-fit items-center gap-1 rounded-xl border glass-divider p-1" data-testid="workloads-view-toggle">
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
@@ -906,6 +926,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             <List size={14} />
             Table
           </button>
+      </div>
       </div>
 
       {workloadParam.trim() && !selectedWorkload ? (
@@ -963,24 +984,6 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           </button>
         </div>
       ) : null}
-
-      <div className="mb-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted" data-testid="workloads-filter-stats">
-        <button type="button" onClick={() => { setStatusFilter('all'); setSourceFilter('all'); }} className="hover:text-foreground">
-          All
-        </button>
-        <button type="button" data-testid="workloads-running-stat" onClick={() => setStatusFilter('running')} className="hover:text-foreground">
-          Running
-        </button>
-        <button type="button" onClick={() => setStatusFilter('stopped')} className="hover:text-foreground">
-          Stopped
-        </button>
-        <button type="button" data-testid="workloads-aether-stat" onClick={() => setSourceFilter('aether')} className="hover:text-foreground">
-          Aether-managed
-        </button>
-        <button type="button" data-testid="workloads-discovered-stat" onClick={() => setSourceFilter('cluster')} className="hover:text-foreground">
-          Discovered
-        </button>
-      </div>
 
       {selectedNames.size > 0 && canMutate && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
@@ -1078,6 +1081,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
             items={displayWorkloads}
             getId={(w) => w.name}
             getStatus={(w) => w.status}
+            selectedId={selectedWorkload?.name ?? null}
+            onSelect={(w) => openWorkloadDetail(w, 'overview')}
+            label="Workloads"
             sortBySeverityDefault={false}
             emptyTitle="No matching workloads"
             emptyBody="Try adjusting your search or filters."
@@ -1085,36 +1091,40 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           />
         </div>
       )}
-        </div>
-
-        {selectedWorkload ? (
-          <aside
-            ref={detailRef}
-            className="animate-ac-slide w-full shrink-0 scroll-mt-4 lg:w-[45%] lg:min-w-[430px]"
-            data-testid="workloads-detail-anchor"
-          >
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 lg:hidden">
-              <button
-                type="button"
-                onClick={closeWorkloadDetail}
-                className="btn-secondary !px-3 !py-1.5 !text-xs"
-              >
-                ← Back to inventory
-              </button>
-            </div>
-            <WorkloadDetail
-              key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
-              workload={selectedWorkload}
-              initialTab={detailInitialTab}
-              initialShellOpen={detailInitialShell}
-              canMutate={canMutate}
-              onClose={closeWorkloadDetail}
-              onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
-              onAction={() => load()}
-            />
-          </aside>
-        ) : null}
       </div>
+
+      {selectedWorkload ? (
+        <Drawer
+          label={`Workload ${selectedWorkload.name}`}
+          onClose={closeWorkloadDetail}
+          contentKey={selectedWorkload.name}
+          testId="workloads-detail-anchor"
+          closeButton={false}
+          stepper={
+            selectedIndex >= 0
+              ? {
+                  index: selectedIndex,
+                  count: displayWorkloads.length,
+                  onStep: (delta) => {
+                    const next = displayWorkloads[selectedIndex + delta];
+                    if (next) openWorkloadDetail(next, 'overview');
+                  },
+                }
+              : undefined
+          }
+        >
+          <WorkloadDetail
+            key={`${selectedWorkload.name}-${detailInitialTab}-${detailInitialShell ? 'shell' : 'noshell'}`}
+            workload={selectedWorkload}
+            initialTab={detailInitialTab}
+            initialShellOpen={detailInitialShell}
+            canMutate={canMutate}
+            onClose={closeWorkloadDetail}
+            onMigrate={isAetherManaged(selectedWorkload) ? (name) => setMigrateModal(name) : undefined}
+            onAction={() => load()}
+          />
+        </Drawer>
+      ) : null}
 
       <Modal
         isOpen={bulkConfirmDelete}
