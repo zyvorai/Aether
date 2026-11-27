@@ -3,7 +3,7 @@
 
 //! Self-healing action executor for orchestrator actions.
 
-use crate::audit::{ActionResult, AuditAction, AuditLog};
+use crate::audit::{ActionResult, AuditAction};
 use crate::drift::DriftDetector;
 use crate::intelligence::policy::AutonomyPolicy;
 use crate::orchestrator::OrchestratorAction;
@@ -333,6 +333,27 @@ async fn rollback_workload_internal(
 ) -> anyhow::Result<std::path::PathBuf> {
     use crate::backup::{Backup, SnapshotManager};
 
+    let data_dir = crate::ops::data_dir();
+    let current = {
+        let store = state.read().await;
+        store.get(name).cloned()
+    };
+    if let Some(ws) = &current {
+        if !crate::ops::revisions::load(&data_dir, name)?
+            .revisions
+            .is_empty()
+        {
+            let planned = crate::ops::rollback::plan(&data_dir, ws, None)?;
+            let rt = create_runtime(&ws.runtime).await?;
+            let new = crate::ops::rollback::apply(&data_dir, ws, rt.as_ref(), &planned).await?;
+            let path = new.spec_path.clone();
+            let mut store = state.write().await;
+            store.upsert(name.to_string(), new);
+            store.save(state_path)?;
+            return Ok(path);
+        }
+    }
+
     let snap_mgr = SnapshotManager::new();
     let snapshot_path = snap_mgr
         .latest_snapshot(name)?
@@ -345,10 +366,6 @@ async fn rollback_workload_internal(
         .ok_or_else(|| anyhow::anyhow!("snapshot for '{name}' is empty"))?;
 
     // Stop the current (failing) instance, best-effort.
-    let current = {
-        let store = state.read().await;
-        store.get(name).cloned()
-    };
     if let Some(current) = current {
         if let Ok(rt) = create_runtime(&current.runtime).await {
             if let Err(e) = rt.stop(&current.instance).await {
@@ -428,17 +445,16 @@ async fn reconcile_drift_fleet(
 }
 
 fn audit_autonomous(source: &str, workload: &str, detail: &str) {
-    let path = AuditLog::default_path();
-    if let Ok(mut log) = AuditLog::load(&path) {
-        log.record(
-            AuditAction::External,
-            workload,
-            Some(source),
-            ActionResult::Success,
-            "autonomous_action",
-            Some(detail),
-        );
-        let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        AuditAction::External,
+        workload,
+        Some(source),
+        ActionResult::Success,
+        "autonomous_action",
+        Some(detail),
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
     }
 }
 

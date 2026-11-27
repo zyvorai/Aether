@@ -88,11 +88,11 @@ pub fn show_help() {
                 vec![
                     "migrate <name>".into(),
                     "Migrate to new runtime".into(),
-                    "aether migrate app -t kube".into()
+                    "aether migrate app kube".into()
                 ],
                 vec![
                     "rollback <name>".into(),
-                    "Rollback to snapshot".into(),
+                    "Roll back to a revision".into(),
                     "aether rollback my-app".into()
                 ],
                 vec![
@@ -104,6 +104,56 @@ pub fn show_help() {
                     "drift <name>".into(),
                     "Detect config drift".into(),
                     "aether drift my-app".into()
+                ],
+            ],
+        )
+    );
+
+    // Operations desk
+    println!(
+        "{}",
+        output::table(
+            &["🧭 Operations Desk", "Description", "Example"],
+            vec![
+                vec![
+                    "attention".into(),
+                    "What needs attention now".into(),
+                    "aether attention".into()
+                ],
+                vec![
+                    "changes".into(),
+                    "What changed".into(),
+                    "aether changes --since 24h".into()
+                ],
+                vec![
+                    "incidents".into(),
+                    "Incidents from health checks".into(),
+                    "aether incidents show 1".into()
+                ],
+                vec![
+                    "explain <name>".into(),
+                    "Why it runs where it does".into(),
+                    "aether explain my-app".into()
+                ],
+                vec![
+                    "history <name>".into(),
+                    "Applied spec revisions".into(),
+                    "aether history my-app --diff 1 2".into()
+                ],
+                vec![
+                    "preview <name>".into(),
+                    "What an action would do".into(),
+                    "aether preview my-app --delete".into()
+                ],
+                vec![
+                    "hold".into(),
+                    "Block changes to a workload".into(),
+                    "aether hold set my-app --reason freeze".into()
+                ],
+                vec![
+                    "ops-report".into(),
+                    "Availability and incident report".into(),
+                    "aether ops-report --since 7d".into()
                 ],
             ],
         )

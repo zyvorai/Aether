@@ -338,13 +338,16 @@ aether --dry-run migrate hello-web kubevirt --strategy blue-green
 Rollback a workload to its latest pre-deploy snapshot.
 
 ```
-aether [OPTIONS] rollback <NAME>
+aether [OPTIONS] rollback <NAME> [--revision N | --version N] [--list]
 ```
+
+Applies the spec stored in an applied revision. Without `--revision`, the previous revision with a different spec, or the last good one after a failed change. `--version` uses a legacy snapshot, which only points at a spec file. See the [operations desk guide](../operations/OPERATIONS-DESK.md) for `history`, `preview`, `hold`, `incidents`, `changes`, `attention`, `explain` and `ops-report`.
 
 **Examples:**
 
 ```bash
 aether rollback hello-web
+aether rollback hello-web --revision 3
 ```
 
 ---

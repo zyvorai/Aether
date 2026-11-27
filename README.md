@@ -53,7 +53,8 @@ Most teams write the app once, then rewrite the **deploy story** three times.
 | Moving between runtimes means a rewrite and a maintenance window | Migration between runtime pairs with immediate, blue-green, rolling or canary strategies, drain, health gates and rollback paths |
 | A VM has to move hosts without downtime | KubeVirt live migration with vGPU-aware validation |
 | Every tool has its own console | CLI, TUI, web dashboard and REST + SSE API on the same control plane and state |
-| Read-only users can do more than read | Admin / Operator / Viewer RBAC and an HMAC-verified audit trail |
+| Read-only users can do more than read | Admin / Operator / Viewer RBAC and a hash-checked audit trail |
+| Something broke and nobody knows what changed | An [operations desk](docs/guides/operations/OPERATIONS-DESK.md): incidents from health checks, one change feed, applied spec revisions with rollback, previews before an action, change holds and reports |
 
 ![Capabilities at a glance: Deploy, Decide, Migrate, Operate](docs/ux/readme-capabilities.jpg)
 
@@ -255,6 +256,25 @@ One file. Three possible homes. Aether decides — or you override.
 
 ---
 
+## Operations desk
+
+Built only on what Aether records itself, so it says "no data" rather than guessing.
+
+```bash
+aether attention                        # open incidents, failed operations, unapplied spec edits
+aether changes --since 24h              # deploys, operations, warnings and incidents in one feed
+aether incidents show 1                 # timeline, and the changes before it started
+aether explain demo-webserver           # why it runs there, health, ignored spec fields
+aether preview demo-webserver --delete  # what an action would do; changes nothing
+aether history demo-webserver           # applied revisions; `rollback --revision N` re-applies one
+aether hold set demo-webserver --reason "release freeze" --for 8h
+aether ops-report --since 7d            # Markdown, HTML or JSON
+```
+
+`aether serve` checks workload health every 60 seconds and shows the same features on the **Operations Desk** page. Changes made outside Aether are not recorded, holds do not stop `kubectl` or `podman`, and a rollback restores the spec, not volume data. Details: [Operations desk guide](docs/guides/operations/OPERATIONS-DESK.md).
+
+---
+
 ## Migration matrix
 
 | From → To | Podman | Kubernetes | KubeVirt |
@@ -283,6 +303,7 @@ Strategies: `immediate` · `blue-green` · `rolling` · `canary` — with drain,
 Zyvor-orange accent on macOS-26-style glass — not another Bootstrap admin theme.
 
 - **SSE** live updates after mutations
+- **Operations Desk** — attention queue, change feed, incidents, explain, preview, revisions, holds and reports
 - **Command palette** — `⌘K` / `Ctrl+K`
 - **Workload detail** — Overview · Logs · Drift · Scoring
 - **Discovered pods & VMs** — Logs + Shell (Operator / Admin)

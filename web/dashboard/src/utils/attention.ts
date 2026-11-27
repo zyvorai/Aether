@@ -8,6 +8,8 @@
  */
 
 import type { AppView, Event, HealthSummary, SecretSummary, WorkloadResponse } from '../types/api';
+import type { AttentionQueue } from '../types/operator';
+import { attentionTarget } from './operator';
 import { workloadCondition } from './workloadStatus';
 
 export type AttentionSeverity = 'critical' | 'warning';
@@ -27,6 +29,8 @@ export interface AttentionSources {
   events: Event[] | null;
   secrets: SecretSummary[] | null;
   health: HealthSummary | null;
+  /** The server's queue from recorded data: incidents, failed operations, unapplied specs. */
+  operator: AttentionQueue | null;
 }
 
 export const SOURCE_LABELS: Record<keyof AttentionSources, string> = {
@@ -34,6 +38,7 @@ export const SOURCE_LABELS: Record<keyof AttentionSources, string> = {
   events: 'events',
   secrets: 'secrets',
   health: 'health checks',
+  operator: 'recorded operations',
 };
 
 function eventSeverity(severity: string): AttentionSeverity | null {
@@ -45,7 +50,7 @@ function eventSeverity(severity: string): AttentionSeverity | null {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-export function buildAttention({ workloads, events, secrets, health }: AttentionSources): AttentionItem[] {
+export function buildAttention({ workloads, events, secrets, health, operator }: AttentionSources): AttentionItem[] {
   const items: AttentionItem[] = [];
   const open = (events ?? []).filter((event) => !event.acknowledged && eventSeverity(event.severity));
   const covered = new Set<Event>();
@@ -109,6 +114,33 @@ export function buildAttention({ workloads, events, secrets, health }: Attention
       title: `${plural(health.circuits_open, 'circuit breaker')} open`,
       detail: 'The orchestrator has stopped restarting these workloads.',
       view: 'health',
+    });
+  }
+
+  // Informational entries (holds, stale data) stay on the Operations Desk. A workload already listed
+  // above keeps its one row and gains what the server knows about it.
+  for (const entry of operator?.items ?? []) {
+    if (entry.level === 'info') continue;
+    const row = items.find((item) => item.id === `workload-${entry.workload}`);
+    if (row) {
+      row.detail = `${row.detail}; ${entry.title}`;
+      if (entry.level === 'critical') row.severity = 'critical';
+      continue;
+    }
+    const target = attentionTarget(entry);
+    items.push({
+      id: `operator-${entry.kind}-${entry.workload ?? ''}-${entry.title}`,
+      severity: entry.level,
+      title: entry.workload ? `${entry.workload}: ${entry.title}` : entry.title,
+      detail: entry.detail,
+      view: target ? 'operations' : 'audit',
+      query: target
+        ? {
+            tab: target.tab,
+            ...(target.workload ? { workload: target.workload } : {}),
+            ...(target.incident ? { incident: target.incident } : {}),
+          }
+        : undefined,
     });
   }
 

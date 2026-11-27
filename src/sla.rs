@@ -59,7 +59,8 @@ impl SlaTarget {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SlaObservation {
     pub uptime_pct: f64,
-    pub avg_latency_ms: f64,
+    /// `None` when no latency was measured; the latency check is then left out.
+    pub avg_latency_ms: Option<f64>,
     pub error_rate_pct: f64,
     pub restarts: u32,
     pub observation_period: String,
@@ -171,9 +172,11 @@ impl SlaEngine {
         });
 
         // Latency check
-        if let Some(max_latency) = target.max_latency_ms {
-            let latency_passed = observation.avg_latency_ms <= max_latency;
-            let margin = ((max_latency - observation.avg_latency_ms) / max_latency) * 100.0;
+        if let (Some(max_latency), Some(latency)) =
+            (target.max_latency_ms, observation.avg_latency_ms)
+        {
+            let latency_passed = latency <= max_latency;
+            let margin = ((max_latency - latency) / max_latency) * 100.0;
             if !latency_passed {
                 all_passed = false;
             } else if margin < 10.0 {
@@ -182,7 +185,7 @@ impl SlaEngine {
             checks.push(SlaCheck {
                 metric: "Latency".to_string(),
                 target: format!("{:.0}ms", max_latency),
-                actual: format!("{:.0}ms", observation.avg_latency_ms),
+                actual: format!("{:.0}ms", latency),
                 passed: latency_passed,
                 margin_pct: margin,
             });
@@ -352,7 +355,15 @@ pub fn observation_from_health(
     let restarts = history.restart_count(workload);
     SlaObservation {
         uptime_pct: uptime,
-        avg_latency_ms: 100.0, // Default when no latency data available
+        avg_latency_ms: {
+            let measured: Vec<f64> = history
+                .records
+                .iter()
+                .filter(|r| r.workload == workload)
+                .filter_map(|r| r.latency_ms)
+                .collect();
+            (!measured.is_empty()).then(|| measured.iter().sum::<f64>() / measured.len() as f64)
+        },
         error_rate_pct: if uptime > 0.0 { 100.0 - uptime } else { 0.0 },
         restarts,
         observation_period: "auto".to_string(),
@@ -424,10 +435,10 @@ mod tests {
         engine.add_target(SlaTarget::best_effort("web-app")); // 99.0% target
 
         let observation = SlaObservation {
-            uptime_pct: 99.5,      // 0.5% margin above 99.0% target
-            avg_latency_ms: 500.0, // well under 2000ms limit
-            error_rate_pct: 1.0,   // well under 5.0% limit
-            restarts: 2,           // under 10 limit
+            uptime_pct: 99.5,            // 0.5% margin above 99.0% target
+            avg_latency_ms: Some(500.0), // well under 2000ms limit
+            error_rate_pct: 1.0,         // well under 5.0% limit
+            restarts: 2,                 // under 10 limit
             observation_period: "24h".to_string(),
         };
 
@@ -443,7 +454,7 @@ mod tests {
 
         let observation = SlaObservation {
             uptime_pct: 98.0,
-            avg_latency_ms: 800.0,
+            avg_latency_ms: Some(800.0),
             error_rate_pct: 5.0,
             restarts: 10,
             observation_period: "24h".to_string(),
@@ -461,7 +472,7 @@ mod tests {
 
         let observation = SlaObservation {
             uptime_pct: 99.92, // Just above 99.9 target
-            avg_latency_ms: 100.0,
+            avg_latency_ms: Some(100.0),
             error_rate_pct: 0.1,
             restarts: 0,
             observation_period: "24h".to_string(),
@@ -478,7 +489,7 @@ mod tests {
 
         let observation = SlaObservation {
             uptime_pct: 99.95,
-            avg_latency_ms: 100.0,
+            avg_latency_ms: Some(100.0),
             error_rate_pct: 0.1,
             restarts: 0,
             observation_period: "24h".to_string(),
@@ -503,7 +514,7 @@ mod tests {
         engine.add_target(SlaTarget::standard("web-app"));
         let obs = SlaObservation {
             uptime_pct: 99.95,
-            avg_latency_ms: 100.0,
+            avg_latency_ms: Some(100.0),
             error_rate_pct: 0.1,
             restarts: 0,
             observation_period: "24h".to_string(),
@@ -512,5 +523,16 @@ mod tests {
         let formatted = format_sla_report(&report);
         assert!(formatted.contains("SLA Report"));
         assert!(formatted.contains("Error Budget"));
+    }
+
+    #[test]
+    fn latency_is_not_invented_when_nothing_measured_it() {
+        let history = crate::health::HealthHistory::default();
+        let observation = observation_from_health(&history, "web");
+        assert_eq!(observation.avg_latency_ms, None);
+        let mut engine = SlaEngine::new();
+        engine.add_target(SlaTarget::standard("web"));
+        let report = engine.evaluate("web", &observation).unwrap();
+        assert!(report.checks.iter().all(|c| c.metric != "Latency"));
     }
 }

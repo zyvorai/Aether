@@ -13,6 +13,7 @@ mod handlers;
 mod hosted_handlers;
 mod intelligence_handlers;
 mod migration_handlers;
+mod operator_handlers;
 mod ops_handlers;
 mod platform_recommendations;
 mod security_handlers;
@@ -37,6 +38,7 @@ use handlers::*;
 use hosted_handlers::*;
 use intelligence_handlers::*;
 use migration_handlers::*;
+use operator_handlers::*;
 use ops_handlers::*;
 use security_handlers::*;
 use std::net::SocketAddr;
@@ -191,10 +193,45 @@ fn resolve_tenant_id(
     key_tenant.or_else(|| crate::hosted::tenant::tenant_from_headers(headers))
 }
 
+/// Pick up workloads the CLI added, changed or removed in the shared state file
+/// while the server was running. Without this the server answers from memory
+/// and its next save would overwrite the CLI's changes.
+async fn sync_state_from_disk(app_state: &AppState) {
+    if app_state.workload_state_pg.is_some() {
+        return; // PostgreSQL is the source of truth and has its own poller.
+    }
+    let path = &app_state.state_path;
+    let Ok(modified) = std::fs::metadata(path).and_then(|m| m.modified()) else {
+        return;
+    };
+    static SEEN: std::sync::Mutex<Option<(std::path::PathBuf, std::time::SystemTime)>> =
+        std::sync::Mutex::new(None);
+    let key = (path.clone(), modified);
+    if SEEN.lock().is_ok_and(|seen| seen.as_ref() == Some(&key)) {
+        return;
+    }
+    let mut state = app_state.state.write().await;
+    // Read under the write lock so a concurrent handler's save is not undone.
+    match StateStore::load(path) {
+        Ok(fresh) => {
+            *state = fresh;
+            if let Ok(mut seen) = SEEN.lock() {
+                *seen = Some(key);
+            }
+        }
+        Err(e) => tracing::warn!(
+            "keeping in-memory state, cannot read {}: {e:#}",
+            path.display()
+        ),
+    }
+}
+
 async fn authorized_next(
+    app_state: &AppState,
     req: Request<Body>,
     next: Next,
     tenant_id: Option<String>,
+    actor: String,
 ) -> Result<Response, StatusCode> {
     if let Some(ref tid) = tenant_id {
         if crate::hosted::metering::UsageMeter::quota_exceeded(tid) {
@@ -202,7 +239,9 @@ async fn authorized_next(
         }
     }
     let path = req.uri().path().to_string();
-    let res = next.run(req).await;
+    sync_state_from_disk(app_state).await;
+    // Changes made while serving this request are attributed to the caller.
+    let res = crate::ops::with_actor(format!("api:{actor}"), next.run(req)).await;
     if let Some(tid) = tenant_id {
         crate::hosted::metering::UsageMeter::record(&tid, &path);
     }
@@ -281,7 +320,7 @@ async fn auth_middleware(
             .and_then(|t| rbac_store.verify_key(t))
             .map(|entry| {
                 (
-                    entry.role,
+                    entry.name.clone(),
                     crate::rbac::check_permission(&entry.role, &http_method, path),
                 )
             });
@@ -294,17 +333,17 @@ async fn auth_middleware(
     if legacy_key.is_none() && !has_rbac_keys && !session_auth_enabled {
         ensure_mutation_confirm(req.method(), path, req.headers())?;
         let tenant = resolve_tenant_id(req.headers(), None);
-        return authorized_next(req, next, tenant).await;
+        return authorized_next(&app_state, req, next, tenant, "anonymous".to_string()).await;
     }
 
     if let Some(ref token) = token {
-        if let Some((_role, permitted)) = verified {
+        if let Some((key_name, permitted)) = verified {
             if !permitted {
                 return Err(StatusCode::FORBIDDEN);
             }
             ensure_mutation_confirm(req.method(), path, req.headers())?;
             let tenant = resolve_tenant_id(req.headers(), None);
-            return authorized_next(req, next, tenant).await;
+            return authorized_next(&app_state, req, next, tenant, key_name).await;
         }
 
         if let Some(key_rec) = crate::hosted::keys::TenantKeyStore::load().verify(token) {
@@ -314,7 +353,8 @@ async fn auth_middleware(
             }
             ensure_mutation_confirm(req.method(), path, req.headers())?;
             let tenant = resolve_tenant_id(req.headers(), Some(key_rec.tenant_id.clone()));
-            return authorized_next(req, next, tenant).await;
+            let actor = format!("tenant:{}", key_rec.tenant_id);
+            return authorized_next(&app_state, req, next, tenant, actor).await;
         }
 
         if let Some(ref expected) = legacy_key {
@@ -324,7 +364,7 @@ async fn auth_middleware(
             if token_hash == expected_hash {
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, "api-key".to_string()).await;
             }
         }
         return Err(StatusCode::UNAUTHORIZED);
@@ -332,43 +372,43 @@ async fn auth_middleware(
 
     if session_auth_enabled {
         if let Some(oidc) = app_state.oidc.as_ref() {
-            if let Some((role, _username)) = oidc.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = oidc.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(saml) = app_state.saml.as_ref() {
-            if let Some((role, _username)) = saml.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = saml.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(ldap) = app_state.ldap.as_ref() {
-            if let Some((role, _username)) = ldap.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = ldap.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
         if let Some(local) = app_state.local_auth.as_ref() {
-            if let Some((role, _username)) = local.verify_session_cookie(req.headers()) {
+            if let Some((role, username)) = local.verify_session_cookie(req.headers()) {
                 if !crate::rbac::check_permission(&role, &http_method, path) {
                     return Err(StatusCode::FORBIDDEN);
                 }
                 ensure_mutation_confirm(req.method(), path, req.headers())?;
                 let tenant = resolve_tenant_id(req.headers(), None);
-                return authorized_next(req, next, tenant).await;
+                return authorized_next(&app_state, req, next, tenant, username).await;
             }
         }
     }
@@ -505,17 +545,16 @@ fn emit_maintenance_event(
     title: &str,
     message: &str,
 ) {
-    let path = crate::events::EventBus::default_path();
-    if let Ok(mut bus) = crate::events::EventBus::load(&path) {
-        bus.emit_simple(
-            severity,
-            category,
-            "serve-maintenance",
-            None,
-            title,
-            message,
-        );
-        let _ = bus.save(&path);
+    let event = crate::events::EventBus::simple(
+        severity,
+        category,
+        "serve-maintenance",
+        None,
+        title,
+        message,
+    );
+    if let Err(e) = crate::ops::journal::publish(&crate::ops::data_dir(), vec![event]) {
+        tracing::warn!("could not record event: {e:#}");
     }
 }
 
@@ -730,6 +769,12 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
                 continue;
             }
 
+            // Scaling goes straight to the cluster, so check holds here.
+            if let Err(e) = crate::ops::holds::check(&crate::ops::data_dir(), &name, "scale") {
+                tracing::debug!("autoscale skipped: {e:#}");
+                continue;
+            }
+
             let req = crate::kubecluster::ClusterActionRequest {
                 cluster: cluster.clone(),
                 namespace: namespace.clone(),
@@ -769,17 +814,16 @@ async fn run_autoscale_loop(state: Arc<RwLock<StateStore>>) {
 
 /// Audit an autonomous maintenance-loop action (mirrors healer::audit_autonomous).
 fn audit_autonomous_maintenance(source: &str, detail: &str) {
-    let path = crate::audit::AuditLog::default_path();
-    if let Ok(mut log) = crate::audit::AuditLog::load(&path) {
-        log.record(
-            crate::audit::AuditAction::External,
-            source,
-            Some(source),
-            crate::audit::ActionResult::Success,
-            "autonomous_secret_rotation",
-            Some(detail),
-        );
-        let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        crate::audit::AuditAction::External,
+        source,
+        Some(source),
+        crate::audit::ActionResult::Success,
+        "autonomous_secret_rotation",
+        Some(detail),
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
     }
 }
 
@@ -876,6 +920,45 @@ async fn run_scheduled_backup(state: &Arc<RwLock<StateStore>>, keep: usize) {
     }
 }
 
+/// Like [`env_secs`], but an explicit `0` disables.
+fn env_secs_or_off(name: &str, default: u64) -> u64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .unwrap_or(default)
+}
+
+async fn run_observation_loop(every_secs: u64, app_state: AppState) {
+    tracing::info!("health observation: every {every_secs}s");
+    let mut tick = tokio::time::interval(std::time::Duration::from_secs(every_secs));
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    // The first tick completes immediately.
+    loop {
+        tick.tick().await;
+        sync_state_from_disk(&app_state).await;
+        let store = app_state.state.read().await.clone();
+        let workloads: Vec<_> = store.list().into_iter().cloned().collect();
+        match crate::ops::incidents::collect(&crate::ops::data_dir(), &workloads, None).await {
+            Ok(report) => {
+                if !report.opened.is_empty() || !report.resolved.is_empty() {
+                    let event = types::ServerEvent::HealthUpdate {
+                        workload: "fleet".to_string(),
+                        status: format!(
+                            "{} incident(s) opened, {} resolved",
+                            report.opened.len(),
+                            report.resolved.len()
+                        ),
+                    };
+                    if let Ok(json) = serde_json::to_string(&event) {
+                        let _ = app_state.event_tx.send(json);
+                    }
+                }
+            }
+            Err(e) => tracing::warn!("health observation failed: {e:#}"),
+        }
+    }
+}
+
 /// Start the API server
 pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     let state_path = config.state_path.clone();
@@ -949,6 +1032,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
 
     if let Some(pg) = workload_state_pg {
         crate::state_postgres::spawn_workload_state_poller(pg, app_state.state.clone());
+    }
+
+    // Record every workload's status so health history, incidents and
+    // availability fill in while `serve` runs. AETHER_OBSERVE_SECS=0 turns it off.
+    let observe_secs = env_secs_or_off("AETHER_OBSERVE_SECS", 60);
+    if observe_secs > 0 {
+        let app = app_state.clone();
+        tokio::spawn(async move {
+            run_observation_loop(observe_secs, app).await;
+        });
     }
 
     // Spawn background health check loop
@@ -2019,6 +2112,25 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/plugins/discover", post(api_plugins_discover))
         .route("/api/plugins/{name}", delete(api_plugins_remove))
         .route("/api/health/{workload}", get(api_health_summary))
+        .route("/api/workloads/{name}/revisions", get(api_revisions))
+        .route("/api/workloads/{name}/revisions/{id}", get(api_revision))
+        .route(
+            "/api/workloads/{name}/revision-diff",
+            get(api_revision_diff),
+        )
+        .route("/api/workloads/{name}/explain", get(api_explain))
+        .route("/api/workloads/{name}/preview", post(api_preview))
+        .route("/api/changes", get(api_changes))
+        .route("/api/attention", get(api_attention))
+        .route("/api/ops-report", get(api_ops_report))
+        .route("/api/incidents", get(api_incidents))
+        .route("/api/incidents/{id}", get(api_incident))
+        .route("/api/incidents/{id}/report", get(api_incident_report))
+        .route("/api/incidents/{id}/ack", post(api_incident_ack))
+        .route("/api/incidents/{id}/notes", post(api_incident_note))
+        .route("/api/observe", post(api_observe))
+        .route("/api/holds", get(api_holds).post(api_hold_set))
+        .route("/api/holds/release", post(api_hold_release))
         .route("/api/compose/validate", post(api_compose_validate))
         .route("/api/compose/up", post(api_compose_up))
         .route("/api/compose/down", post(api_compose_down))

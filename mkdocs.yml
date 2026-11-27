@@ -61,6 +61,7 @@ nav:
       - AWS to Kubernetes: guides/AWS-TO-KUBERNETES.md
       - CLI Reference: guides/cli/CLI-Reference.md
       - Spec tools (lint, portability, plan): guides/spec-tools.md
+      - Operations desk (incidents, history, previews, holds): guides/operations/OPERATIONS-DESK.md
       - Decision Engine:
           - AI purpose: guides/decision-engine/AI-PURPOSE.md
           - Examples: guides/decision-engine/EXAMPLES.md

@@ -245,6 +245,19 @@ impl EventBus {
 
     /// Emit an event
     pub fn emit(&mut self, event: Event) -> u64 {
+        let (id, notifications) = self.append(event);
+
+        // Process notifications (log format for now)
+        for notification in notifications {
+            self.deliver_notification(&notification);
+        }
+
+        id
+    }
+
+    /// Store an event and return its id with the notifications it calls for,
+    /// so a caller holding a lock can deliver them after releasing it.
+    pub fn append(&mut self, event: Event) -> (u64, Vec<NotificationPayload>) {
         let id = self.next_id;
         let mut event = event;
         event.id = id;
@@ -264,12 +277,61 @@ impl EventBus {
             self.events.drain(..drain);
         }
 
-        // Process notifications (log format for now)
-        for notification in notifications {
-            self.deliver_notification(&notification);
-        }
+        (id, notifications)
+    }
 
-        id
+    /// Send the notifications returned by [`EventBus::append`].
+    pub fn deliver(&self, notifications: &[NotificationPayload]) {
+        for notification in notifications {
+            self.deliver_notification(notification);
+        }
+    }
+
+    /// Send a test notification to one channel, whatever its severity filter.
+    /// Returns false when there is no enabled channel of that name. HTTP
+    /// channels queue the message for retry if the first attempt fails.
+    pub fn send_test(&self, channel: &str) -> bool {
+        let Some(c) = self
+            .channels
+            .iter()
+            .find(|c| c.enabled && c.name == channel)
+        else {
+            return false;
+        };
+        self.deliver_notification(&NotificationPayload {
+            channel_name: c.name.clone(),
+            channel_type: c.channel_type.clone(),
+            event_id: 0,
+            title: "Aether test alert".to_string(),
+            message: "[INFO] [SYSTEM] Aether test alert - sent on request".to_string(),
+            severity: EventSeverity::Info,
+            category: EventCategory::SystemAlert,
+            workload: None,
+        });
+        true
+    }
+
+    /// Build an event stamped now, ready to be appended.
+    pub fn simple(
+        severity: EventSeverity,
+        category: EventCategory,
+        source: &str,
+        workload: Option<&str>,
+        title: &str,
+        message: &str,
+    ) -> Event {
+        Event {
+            id: 0,
+            timestamp: crate::resources::now_rfc3339(),
+            severity,
+            category,
+            source: source.to_string(),
+            workload: workload.map(|s| s.to_string()),
+            title: title.to_string(),
+            message: message.to_string(),
+            metadata: HashMap::new(),
+            acknowledged: false,
+        }
     }
 
     /// Create and emit an event with builder pattern
@@ -282,18 +344,7 @@ impl EventBus {
         title: &str,
         message: &str,
     ) -> u64 {
-        let event = Event {
-            id: 0,
-            timestamp: crate::resources::now_rfc3339(),
-            severity,
-            category,
-            source: source.to_string(),
-            workload: workload.map(|s| s.to_string()),
-            title: title.to_string(),
-            message: message.to_string(),
-            metadata: HashMap::new(),
-            acknowledged: false,
-        };
+        let event = Self::simple(severity, category, source, workload, title, message);
         self.emit(event)
     }
 
@@ -1184,6 +1235,19 @@ impl WebhookQueue {
 
     /// Attempt a single HTTP delivery. Returns true on success.
     fn try_deliver(payload_json: &str, url: &str, method: &str) -> bool {
+        // The blocking HTTP client panics when used inside an async runtime
+        // (the API server and its background loops), so give it a thread.
+        if tokio::runtime::Handle::try_current().is_ok() {
+            return std::thread::scope(|s| {
+                s.spawn(|| Self::deliver_blocking(payload_json, url, method))
+                    .join()
+                    .unwrap_or(false)
+            });
+        }
+        Self::deliver_blocking(payload_json, url, method)
+    }
+
+    fn deliver_blocking(payload_json: &str, url: &str, method: &str) -> bool {
         let client = match reqwest::blocking::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
@@ -2027,5 +2091,15 @@ mod tests {
 
         assert!(bus.remove_channel("pd-ops"));
         assert_eq!(bus.channels().len(), initial);
+    }
+
+    #[tokio::test]
+    async fn webhook_delivery_inside_a_runtime_does_not_panic() {
+        // Nothing listens on port 9, so this exercises the failure path.
+        assert!(!WebhookQueue::try_deliver(
+            "{}",
+            "http://127.0.0.1:9/hook",
+            "POST"
+        ));
     }
 }

@@ -30,6 +30,7 @@ const healthy: AttentionSources = {
   events: [],
   secrets: [],
   health: { healthy: 1, degraded: 0, unhealthy: 0, unknown: 0, circuits_open: 0 },
+  operator: { generated_at: '', workloads_checked: 2, items: [] },
 };
 
 describe('workloadCondition', () => {
@@ -88,6 +89,38 @@ describe('attention', () => {
       secrets: [{ name: 'db-password', namespace: 'default', key_count: 1, created_at: '', updated_at: '', needs_rotation: true }],
     });
     expect(items.map((i) => i.id)).toEqual(['secrets-rotation']);
+  });
+
+  it('adds the server queue: one row per workload, no informational noise', () => {
+    const entry = (level: 'info' | 'warning' | 'critical', kind: string, title: string, workloadName: string | null) => ({
+      level, kind, title, workload: workloadName, detail: `${title} detail`, next: null,
+    });
+    const items = buildAttention({
+      ...healthy,
+      workloads: [workload('down', 'degraded')],
+      operator: {
+        generated_at: '',
+        workloads_checked: 2,
+        items: [
+          entry('critical', 'open-incident', 'Incident 3 is open', 'down'),
+          entry('warning', 'failed-operation', '1 failed operation(s) in 24h', 'other'),
+          entry('info', 'on-hold', 'On hold', 'other'),
+          entry('critical', 'audit-integrity', '1 audit event(s) fail the integrity check', null),
+        ],
+      },
+    });
+    expect(items.map((i) => [i.view, i.severity])).toEqual([
+      ['workloads', 'critical'],
+      ['audit', 'critical'],
+      ['operations', 'warning'],
+    ]);
+    expect(items[0].detail).toContain('Incident 3 is open');
+    expect(items[2].query).toEqual({ tab: 'changes', workload: 'other' });
+  });
+
+  it('reports an unloaded server queue as unchecked', () => {
+    const sources = { ...healthy, operator: null };
+    expect(attentionVerdict(buildAttention(sources), sources)).toMatchObject({ tone: 'unknown', unchecked: ['recorded operations'] });
   });
 
   it('reports open circuit breakers', () => {

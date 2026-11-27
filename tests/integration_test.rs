@@ -1299,7 +1299,7 @@ fn test_sla_engine_compliance_check() {
     // Good observation (well above 99.9% target + 0.1% at-risk margin)
     let obs = SlaObservation {
         uptime_pct: 99.95 + 0.15,
-        avg_latency_ms: 50.0,
+        avg_latency_ms: Some(50.0),
         error_rate_pct: 0.01,
         restarts: 0,
         observation_period: "24h".to_string(),
@@ -1311,7 +1311,7 @@ fn test_sla_engine_compliance_check() {
     // Bad observation
     let bad_obs = SlaObservation {
         uptime_pct: 95.0,
-        avg_latency_ms: 1000.0,
+        avg_latency_ms: Some(1000.0),
         error_rate_pct: 10.0,
         restarts: 20,
         observation_period: "24h".to_string(),

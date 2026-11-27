@@ -18,6 +18,7 @@ import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
 import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
 import type { AttentionSources } from '../../utils/attention';
 import AttentionPanel from '../overview/AttentionPanel';
+import type { AttentionQueue } from '../../types/operator';
 import WelcomeCard from '../overview/WelcomeCard';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
@@ -68,7 +69,8 @@ type OverviewEndpoint =
   | 'clusters'
   | 'plugins'
   | 'environments'
-  | 'apiKeys';
+  | 'apiKeys'
+  | 'operator';
 
 const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   workloads: 'Workloads',
@@ -81,6 +83,7 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   plugins: 'Plugins',
   environments: 'Environments',
   apiKeys: 'API keys',
+  operator: 'Operations queue',
 };
 
 type QuickLink = {
@@ -104,6 +107,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [eventSummary, setEventSummary] = useState<EventSummary | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
+  const [operatorQueue, setOperatorQueue] = useState<AttentionQueue | null>(null);
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -149,6 +153,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
       apiFetchSettled<PluginInfo[]>('/plugins'),
       apiFetchSettled<Environment[]>('/environments'),
       apiFetchSettled<ApiKeySummary[]>('/rbac/keys'),
+      apiFetchSettled<AttentionQueue>('/attention'),
     ]);
 
     const keys: OverviewEndpoint[] = [
@@ -162,6 +167,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
       'plugins',
       'environments',
       'apiKeys',
+      'operator',
     ];
 
     const failed: OverviewEndpoint[] = [];
@@ -198,6 +204,9 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
           break;
         case 'backups':
           setBackups(data as BackupInfo[]);
+          break;
+        case 'operator':
+          setOperatorQueue(data as AttentionQueue);
           break;
         case 'secrets':
           setSecrets(data as SecretSummary[]);
@@ -297,6 +306,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
     events: loaded('events', events),
     secrets: loaded('secrets', secrets),
     health: loaded('health', healthSummary),
+    operator: loaded('operator', operatorQueue),
   };
 
   const runtimeSwatches = RUNTIME_SWATCHES.map(({ runtime, label, tone }) => {
