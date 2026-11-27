@@ -314,7 +314,8 @@ async fn deploy_workload_inner(
         workload.metadata.name.clone(),
         runtime_kind,
         instance,
-        spec_path.to_path_buf(),
+        // Absolute, so `aether serve` finds it from any working directory.
+        std::path::absolute(spec_path).unwrap_or_else(|_| spec_path.to_path_buf()),
     );
     ws.atlas_volume_ids = atlas_volume_ids;
     state.upsert(workload.metadata.name.clone(), ws);
@@ -604,7 +605,11 @@ pub(crate) async fn update_command(
 
     state.upsert(
         name.to_string(),
-        updated_workload_state(&ws, new_instance, spec_path.clone()),
+        updated_workload_state(
+            &ws,
+            new_instance,
+            std::path::absolute(spec_path).unwrap_or_else(|_| spec_path.clone()),
+        ),
     );
     state.save(&StateStore::default_path())?;
 
@@ -624,7 +629,13 @@ fn updated_workload_state(
         aether::state::WorkloadState::new(old.name.clone(), old.runtime, new_instance, spec_path);
     ws.atlas_volume_ids = old.atlas_volume_ids.clone();
     ws.created_at = old.created_at.clone();
-    ws
+    ws.os_version = old.os_version.clone();
+    ws.node_labels = old.node_labels.clone();
+    ws.with_cluster_info(
+        old.namespace.clone(),
+        old.cluster_context.clone(),
+        old.k8s_kind.clone(),
+    )
 }
 
 /// Resolve the image reference to deploy on `aether update`.
@@ -6235,30 +6246,26 @@ pub(crate) async fn edge_agent_command(
 pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     let msg = err.to_string();
 
-    if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
-        return err.context(
-            "Hint: Run `aether list` to see deployed workloads, \
-             or `aether run` to deploy one first.",
-        );
+    let hint =
+        if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
+            "Run `aether list` to see deployed workloads, or `aether run` to deploy one first."
+        } else if msg.contains("Podman not found") {
+            "Install podman with `sudo dnf install podman` (Fedora) \
+         or `sudo apt install podman` (Debian/Ubuntu)."
+        } else if msg.contains("error trying to connect") || msg.contains("connection refused") {
+            "Check your Kubernetes cluster with `kubectl cluster-info`, \
+         or set KUBECONFIG to point to a valid kubeconfig file."
+        } else if msg.contains("Unknown runtime") {
+            "Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm)."
+        } else {
+            return err;
+        };
+    if msg.contains("Hint:") {
+        return err;
     }
-    if msg.contains("Podman not found") {
-        return err.context(
-            "Hint: Install podman with `sudo dnf install podman` (Fedora) \
-             or `sudo apt install podman` (Debian/Ubuntu).",
-        );
-    }
-    if msg.contains("error trying to connect") || msg.contains("connection refused") {
-        return err.context(
-            "Hint: Check your Kubernetes cluster with `kubectl cluster-info`, \
-             or set KUBECONFIG to point to a valid kubeconfig file.",
-        );
-    }
-    if msg.contains("Unknown runtime") {
-        return err
-            .context("Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm).");
-    }
-
-    err
+    // The hint follows the error; wrapping it as context would print only the
+    // hint and hide what went wrong.
+    anyhow::anyhow!("{msg}\nHint: {hint}")
 }
 
 #[cfg(test)]

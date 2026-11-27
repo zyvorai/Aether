@@ -104,6 +104,7 @@ async fn main() -> Result<()> {
             no_validation,
             no_rollback,
             verbose_trace,
+            ..
         } => {
             if cli.dry_run {
                 aether::output::info(&format!(

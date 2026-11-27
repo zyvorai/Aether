@@ -188,6 +188,16 @@ pub(crate) enum Commands {
         #[arg(short, long, default_value = "blue-green")]
         strategy: String,
 
+        /// Shadows the global `-s/--spec`, which migrate does not use, so that
+        /// `-s` can mean `--strategy` here.
+        #[arg(
+            id = "spec",
+            long = "spec",
+            default_value = "workload.yaml",
+            hide = true
+        )]
+        unused_spec: PathBuf,
+
         /// Skip validation delay
         #[arg(long)]
         no_validation: bool,
@@ -1452,4 +1462,26 @@ pub(crate) enum PluginAction {
         /// Plugin name
         name: String,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// Catches clashing flags, which otherwise panic only when the command runs.
+    #[test]
+    fn command_line_definition_is_consistent() {
+        Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn migrate_short_s_is_the_strategy() {
+        let cli = Cli::try_parse_from(["aether", "migrate", "web", "kube", "-s", "rolling"])
+            .expect("parses");
+        let Commands::Migrate { strategy, .. } = cli.command else {
+            panic!("not migrate");
+        };
+        assert_eq!(strategy, "rolling");
+    }
 }
