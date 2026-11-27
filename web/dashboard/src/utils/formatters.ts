@@ -8,6 +8,7 @@ export function formatTimestamp(ts: string): string {
 export function formatRelativeTime(ts: string): string {
   const now = Date.now();
   const then = new Date(ts).getTime();
+  if (Number.isNaN(then)) return ts || 'unknown';
   const diff = Math.floor((now - then) / 1000);
 
   if (diff < 60) return 'just now';
