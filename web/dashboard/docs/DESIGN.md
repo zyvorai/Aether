@@ -32,17 +32,32 @@ The inline script in `index.html` resolves the theme and sets `<html data-theme=
 
 ## Type
 
-System fonts only (`-apple-system`, SF Pro, then Inter / Segoe UI / system-ui). No webfont downloads. Body is 17px; page titles are `text-display` (34-48px, tight tracking); mono is SF Mono / `ui-monospace`.
+System fonts only (`-apple-system`, SF Pro, then Inter / Segoe UI / system-ui). No webfont downloads. Body is 17px; page titles are `.page-title` (26px, 22px on phones) so that data starts on the first screen; `text-display` is for the sign-in page; mono is SF Mono / `ui-monospace`.
 
 ## Shape and layout
 
 - Cards: 18px radius, hairline edge, soft shadow. A card inside a card becomes an inset fill.
-- Controls: pill buttons (44px primary), 12px inputs.
+- Controls: pill buttons (44px primary on touch, 36px with a fine pointer; `.btn-quiet` for secondary toolbar actions), 12px inputs.
 - `rounded-sm` to `rounded-2xl` come from the `@theme` radius scale.
 - Navigation bar: 52px, sticky, translucent and blurred. Dialogs and menus use the same material.
-- Sidebar: flat, hubs only; a drawer below 1024px (Escape closes it).
 - Hub pages are a grid of one card per destination (`.hub-band`), coloured only by the icon (`data-tone`).
-- Headline metrics go through `AuroraPage` / `PageHero` `stats` ("At a glance") or `StatRibbon`; do not stack both.
+- Headline metrics use `StatRibbon` (clickable stats double as filters); do not stack it with `PageHero` `stats`.
+- Vertical rhythm is `.page-stack` and `--stack-gap`; do not add larger `space-y-*` gaps between page sections.
+
+## Console shell (`src/shell.css`)
+
+| Piece | Where | Rules |
+|-------|-------|-------|
+| Information architecture | `utils/navSections.ts` | Sidebar, breadcrumb and section tabs derive from `DASHBOARD_VIEWS`. A path under another page's path is its child; an unlisted top-level page falls back to a section by `group`. List a view in `NAV_SECTIONS` only to place or order it better. |
+| Sidebar | `AetherSidebar` | All sections, pinned pages first, filter over every page, icon rail (`[`); a drawer below 1024px. |
+| Top bar | `layout/GlobalNav` | Search, data freshness with pause, unacknowledged events, help, appearance, account. |
+| Page header | `AuroraPage` | Breadcrumb with pin star, title, one-line description, tabs for hubs. |
+| Tables | `ui/DataTable` | Table roles, `aria-sort`, `j`/`k`/arrows, Enter opens, 100 rows per step, cards below 640px, compact density. |
+| Record detail | `ui/Drawer` | Side panel with previous/next, Escape, focus returned to the opener. |
+| States | `PageLoading`, `PageLoadError`, `EmptyState` | Keep the page header. A failed request is an error with the failing call, never an empty list or a zero. |
+| Preferences | `utils/preferences.ts` | Pins, density, sidebar and the orientation card live in this browser only. |
+
+Keyboard shortcuts are listed in the Help dialog (`?`); `g` sequences come from `utils/goShortcuts.ts`.
 
 ## Accessibility
 
