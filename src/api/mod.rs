@@ -2122,6 +2122,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads/{name}/preview", post(api_preview))
         .route("/api/changes", get(api_changes))
         .route("/api/attention", get(api_attention))
+        .route("/api/ops-report", get(api_ops_report))
         .route("/api/incidents", get(api_incidents))
         .route("/api/incidents/{id}", get(api_incident))
         .route("/api/incidents/{id}/report", get(api_incident_report))

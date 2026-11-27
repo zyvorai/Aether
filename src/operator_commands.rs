@@ -3,7 +3,9 @@
 
 //! CLI handlers for the operator features in [`aether::ops`].
 
-use aether::ops::{self, attention, changes, explain, holds, incidents, preview, revisions};
+use aether::ops::{
+    self, attention, changes, explain, holds, incidents, preview, report, revisions,
+};
 use aether::output;
 use aether::state::{StateStore, WorkloadState};
 use anyhow::{Context, Result};
@@ -158,6 +160,14 @@ fn write_or_print(content: &str, out: Option<&Path>) -> Result<()> {
         None => print!("{content}"),
     }
     Ok(())
+}
+
+pub(crate) fn ops_report_command(since: &str, format: &str, out: Option<&Path>) -> Result<()> {
+    let since = ops::parse_since(since, chrono::Utc::now())?;
+    let state = StateStore::load(&StateStore::default_path())?;
+    let built = report::build(&ops::data_dir(), &state, since)?;
+    let format = if output::is_json() { "json" } else { format };
+    write_or_print(&report::render(&built, format)?, out)
 }
 
 pub(crate) fn hold_command(action: HoldAction) -> Result<()> {

@@ -539,6 +539,19 @@ pub(crate) enum Commands {
     /// What needs attention now, most urgent first
     Attention,
 
+    /// Operations report: availability, incidents, changes and open items
+    OpsReport {
+        /// Window: 24h, 7d, 4w, or an RFC 3339 time
+        #[arg(long, default_value = "7d")]
+        since: String,
+        /// markdown, html or json
+        #[arg(long, default_value = "markdown")]
+        format: String,
+        /// Write to a file instead of standard output
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+
     /// Protect a workload: Aether refuses changes while it is on hold
     Hold {
         #[command(subcommand)]
@@ -1193,6 +1206,7 @@ impl Commands {
             Self::Changes { .. } => "changes",
             Self::Incidents { .. } => "incidents",
             Self::Attention => "attention",
+            Self::OpsReport { .. } => "ops-report",
             Self::Hold { .. } => "hold",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",

@@ -5,7 +5,7 @@
 
 use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
 use super::types::AppState;
-use crate::ops::{self, attention, changes, explain, holds, incidents, preview, revisions};
+use crate::ops::{self, attention, changes, explain, holds, incidents, preview, report, revisions};
 use crate::state::{StateStore, WorkloadState};
 use axum::{
     extract::{Path, Query, State as AxumState},
@@ -177,6 +177,50 @@ pub(crate) async fn api_changes(Query(q): Query<ChangesQuery>) -> Response {
 pub(crate) async fn api_attention(AxumState(app): AxumState<AppState>) -> Response {
     let state = current_state(&app).await;
     respond(blocking(move || attention::build(&ops::data_dir(), &state)).await)
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct ReportQuery {
+    since: Option<String>,
+    format: Option<String>,
+}
+
+/// GET /api/ops-report?since=7d&format=json|markdown|html
+pub(crate) async fn api_ops_report(
+    AxumState(app): AxumState<AppState>,
+    Query(q): Query<ReportQuery>,
+) -> Response {
+    let since = try_response!(window(q.since.as_deref(), "7d"));
+    let format = q.format.unwrap_or_else(|| "json".to_string());
+    let (content_type, extension) = match format.as_str() {
+        "json" => ("application/json", "json"),
+        "markdown" | "md" => ("text/markdown; charset=utf-8", "md"),
+        "html" => ("text/html; charset=utf-8", "html"),
+        _ => return bad_request("format must be json, markdown or html"),
+    };
+    let state = current_state(&app).await;
+    let built = blocking(move || report::build(&ops::data_dir(), &state, since)).await;
+    let built = match built {
+        Ok(r) => r,
+        Err(e) => return internal(e),
+    };
+    if extension == "json" {
+        return ok_json(built).into_response();
+    }
+    match report::render(&built, extension) {
+        Ok(body) => (
+            [
+                (header::CONTENT_TYPE, content_type.to_string()),
+                (
+                    header::CONTENT_DISPOSITION,
+                    format!("attachment; filename=\"aether-report.{extension}\""),
+                ),
+            ],
+            body,
+        )
+            .into_response(),
+        Err(e) => internal(e),
+    }
 }
 
 // ── Incidents ────────────────────────────────────────────────────────────────

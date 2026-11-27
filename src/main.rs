@@ -263,6 +263,9 @@ async fn main() -> Result<()> {
         } => operator_commands::changes_command(&since, workload, limit),
         Commands::Incidents { action } => operator_commands::incidents_command(action),
         Commands::Attention => operator_commands::attention_command(),
+        Commands::OpsReport { since, format, out } => {
+            operator_commands::ops_report_command(&since, &format, out.as_deref())
+        }
         Commands::Hold { action } => operator_commands::hold_command(action),
         Commands::Deploy {
             dir,
