@@ -5,7 +5,7 @@
 
 use super::handlers::{err_bad_request, err_internal, err_not_found, ok_json};
 use super::types::AppState;
-use crate::ops::{self, changes, holds, incidents, revisions};
+use crate::ops::{self, attention, changes, explain, holds, incidents, revisions};
 use crate::state::{StateStore, WorkloadState};
 use axum::{
     extract::{Path, Query, State as AxumState},
@@ -122,6 +122,17 @@ pub(crate) async fn api_revision_diff(
     }
 }
 
+// ── Explain and preview ──────────────────────────────────────────────────────
+
+/// GET /api/workloads/{name}/explain
+pub(crate) async fn api_explain(
+    AxumState(app): AxumState<AppState>,
+    Path(name): Path<String>,
+) -> Response {
+    let ws = try_response!(workload(&app, &name).await);
+    respond(blocking(move || explain::explain(&ops::data_dir(), &ws)).await)
+}
+
 // ── Changes, attention, report ───────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -140,6 +151,12 @@ pub(crate) async fn api_changes(Query(q): Query<ChangesQuery>) -> Response {
         q.limit.unwrap_or(200).clamp(1, 1000),
     );
     respond(blocking(move || changes::collect(&ops::data_dir(), &query)).await)
+}
+
+/// GET /api/attention
+pub(crate) async fn api_attention(AxumState(app): AxumState<AppState>) -> Response {
+    let state = current_state(&app).await;
+    respond(blocking(move || attention::build(&ops::data_dir(), &state)).await)
 }
 
 // ── Incidents ────────────────────────────────────────────────────────────────

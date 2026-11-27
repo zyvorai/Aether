@@ -491,6 +491,12 @@ pub(crate) enum Commands {
         list: bool,
     },
 
+    /// Explain a workload: placement, health, changes and what needs attention
+    Explain {
+        /// Workload name
+        name: String,
+    },
+
     /// Applied spec revisions of a workload
     History {
         /// Workload name
@@ -521,6 +527,9 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: Option<IncidentAction>,
     },
+
+    /// What needs attention now, most urgent first
+    Attention,
 
     /// Protect a workload: Aether refuses changes while it is on hold
     Hold {
@@ -1170,9 +1179,11 @@ impl Commands {
             Self::HelpAll => "help-all",
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
+            Self::Explain { .. } => "explain",
             Self::History { .. } => "history",
             Self::Changes { .. } => "changes",
             Self::Incidents { .. } => "incidents",
+            Self::Attention => "attention",
             Self::Hold { .. } => "hold",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",

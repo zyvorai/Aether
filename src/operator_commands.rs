@@ -3,7 +3,7 @@
 
 //! CLI handlers for the operator features in [`aether::ops`].
 
-use aether::ops::{self, changes, holds, incidents, revisions};
+use aether::ops::{self, attention, changes, explain, holds, incidents, revisions};
 use aether::output;
 use aether::state::{StateStore, WorkloadState};
 use anyhow::{Context, Result};
@@ -36,6 +36,12 @@ fn emit<T: Serialize>(value: &T, text: impl FnOnce() -> String) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn explain_command(name: &str) -> Result<()> {
+    let ws = managed(name)?;
+    let e = explain::explain(&ops::data_dir(), &ws)?;
+    emit(&e, || explain::format(&e))
+}
+
 pub(crate) fn history_command(name: &str, show: Option<u64>, diff: &[u64]) -> Result<()> {
     // History outlives the workload, so it need not be in the state file.
     let log = revisions::load(&ops::data_dir(), name)?;
@@ -58,6 +64,12 @@ pub(crate) fn changes_command(since: &str, workload: Option<String>, limit: usiz
         &changes::Query::since(since, workload, limit.max(1)),
     )?;
     emit(&feed, || changes::format_feed(&feed))
+}
+
+pub(crate) fn attention_command() -> Result<()> {
+    let state = StateStore::load(&StateStore::default_path())?;
+    let queue = attention::build(&ops::data_dir(), &state)?;
+    emit(&queue, || attention::format_queue(&queue))
 }
 
 pub(crate) fn incidents_command(action: Option<IncidentAction>) -> Result<()> {

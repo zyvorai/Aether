@@ -228,6 +228,7 @@ async fn main() -> Result<()> {
             version,
             list,
         } => commands::rollback_command(&name, revision, version, list).await,
+        Commands::Explain { name } => operator_commands::explain_command(&name),
         Commands::History { name, show, diff } => {
             operator_commands::history_command(&name, show, &diff)
         }
@@ -237,6 +238,7 @@ async fn main() -> Result<()> {
             limit,
         } => operator_commands::changes_command(&since, workload, limit),
         Commands::Incidents { action } => operator_commands::incidents_command(action),
+        Commands::Attention => operator_commands::attention_command(),
         Commands::Hold { action } => operator_commands::hold_command(action),
         Commands::Deploy {
             dir,
