@@ -1,7 +1,7 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -19,69 +19,94 @@ const iconMap: Record<ToastType, typeof CheckCircle2> = {
   info: Info,
 };
 
-export function useToast() {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const nextId = useRef(0);
+/** Errors stay long enough to read and copy. */
+const LIFETIME_MS: Record<ToastType, number> = { success: 4000, info: 4000, error: 12000 };
+const MAX_VISIBLE = 4;
 
-  const dismiss = useCallback((id: number) => {
-    setToasts((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)),
-    );
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 300);
-  }, []);
+let toasts: ToastItem[] = [];
+let nextId = 0;
+const listeners = new Set<() => void>();
 
-  const toast = useCallback(
-    (message: string, type: ToastType = 'info') => {
-      const id = nextId.current++;
-      setToasts((prev) => [...prev, { id, message, type, exiting: false }]);
-      setTimeout(() => dismiss(id), 3000);
-    },
-    [dismiss],
+function publish(next: ToastItem[]) {
+  toasts = next;
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function dismiss(id: number) {
+  publish(toasts.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
+  setTimeout(() => publish(toasts.filter((t) => t.id !== id)), 300);
+}
+
+// Module-level so its identity never changes: a component created inside the
+// hook was remounted (and re-animated) on every render of the app.
+function ToastContainer() {
+  const items = useSyncExternalStore(subscribe, () => toasts, () => toasts);
+  return (
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
+      {items.map((t) => (
+        <ToastCard key={t.id} item={t} />
+      ))}
+    </div>
   );
+}
 
-  function ToastContainer() {
-    return (
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none" role="status" aria-live="polite" aria-atomic="true">
-        {toasts.map((t) => (
-          <ToastCard key={t.id} item={t} onDismiss={dismiss} />
-        ))}
-      </div>
-    );
-  }
+export function useToast() {
+  const toast = useCallback((message: string, type: ToastType = 'info') => {
+    const same = toasts.find((t) => t.message === message && t.type === type && !t.exiting);
+    if (same) return;
+    const item = { id: nextId++, message, type, exiting: false };
+    publish([...toasts.slice(-(MAX_VISIBLE - 1)), item]);
+  }, []);
 
   return { toast, ToastContainer };
 }
 
-function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: number) => void }) {
+function ToastCard({ item }: { item: ToastItem }) {
   const Icon = iconMap[item.type];
+  const [held, setHeld] = useState(false);
+  const remaining = useRef(LIFETIME_MS[item.type]);
 
-  const borderBg =
-    item.type === 'success'
-      ? 'border-success/30 glass-drawer'
-      : item.type === 'error'
-        ? 'border-danger/30 glass-drawer'
-        : 'border-primary/30 glass-drawer';
+  // The countdown pauses while the pointer or focus is on the message.
+  useEffect(() => {
+    if (held || item.exiting) return;
+    const started = Date.now();
+    const timer = window.setTimeout(() => dismiss(item.id), remaining.current);
+    return () => {
+      window.clearTimeout(timer);
+      remaining.current = Math.max(1000, remaining.current - (Date.now() - started));
+    };
+  }, [held, item.exiting, item.id]);
 
-  const iconColor =
-    item.type === 'success' ? 'text-success' : item.type === 'error' ? 'text-danger' : 'text-primary';
+  const border = item.type === 'success' ? 'border-success/30' : item.type === 'error' ? 'border-danger/30' : 'border-primary/30';
+  const iconColor = item.type === 'success' ? 'text-success' : item.type === 'error' ? 'text-danger' : 'text-primary';
 
   return (
     <div
-      className={`pointer-events-auto flex min-w-[280px] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 ${borderBg} ${
+      className={`glass-drawer pointer-events-auto flex min-w-[min(280px,100%)] max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 ${border} ${
         item.exiting ? 'toast-exit' : 'toast-enter'
       }`}
+      role={item.type === 'error' ? 'alert' : undefined}
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={() => setHeld(false)}
     >
-      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
-      <p className="flex-1 text-sm text-foreground">{item.message}</p>
+      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} aria-hidden />
+      <p className="flex-1 break-words text-sm text-foreground">{item.message}</p>
       <button
         type="button"
-        onClick={() => onDismiss(item.id)}
+        onClick={() => dismiss(item.id)}
         aria-label="Dismiss notification"
         className="shrink-0 rounded-sm p-0.5 text-subtle transition-colors hover:text-muted"
       >
-        <X className="h-4 w-4" />
+        <X className="h-4 w-4" aria-hidden />
       </button>
     </div>
   );

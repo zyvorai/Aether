@@ -52,6 +52,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [workloads, setWorkloads] = useState<ManagedWorkload[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState<string | undefined>(undefined);
   const [search, setSearch] = useWorkloadOrSearchFilter();
   const [statusFilter, setStatusFilter] = useQueryParam('status', 'all');
   const [workloadParam, setWorkloadParam] = useQueryParam('workload');
@@ -69,13 +70,15 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
       apiFetchSettled<HealthSummary>('/orchestrator/summary'),
       apiFetchSettled<ManagedWorkload[]>('/orchestrator/status'),
     ]);
-    if (!s.ok && !w.ok) {
+    // An empty list must mean "no managed workloads", never "the request failed".
+    if (!w.ok) {
       setLoadFailed(true);
+      setLoadError(w.detail);
       setSummary(null);
       setWorkloads([]);
     } else {
       setSummary(s.ok ? s.data : null);
-      setWorkloads(w.ok ? w.data : []);
+      setWorkloads(w.data);
     }
     setLoading(false);
     if (s.ok || w.ok) {
@@ -189,7 +192,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
     return (
       <div>
         {hubBanner}
-        <PageLoadError title="Health data unavailable" onRetry={() => void load()} />
+        <PageLoadError title="Health data unavailable" detail={loadError} onRetry={() => void load()} />
       </div>
     );
   }
