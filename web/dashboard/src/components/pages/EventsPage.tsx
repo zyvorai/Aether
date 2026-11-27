@@ -185,7 +185,7 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
             items={[
               { label: 'Total', value: summary.total_events, onClick: clearFilters, testId: 'events-total-stat' },
               { label: 'Unacknowledged', value: summary.unacknowledged, onClick: () => setAck(ack === 'open' ? 'all' : 'open'), active: ack === 'open', testId: 'events-unacked-stat' },
-              { label: 'Critical, unacknowledged', value: summary.critical_unacked, tone: summary.critical_unacked > 0 ? 'red' : 'white', onClick: () => setSeverity(severity === 'critical' ? 'all' : 'critical'), active: severity === 'critical', testId: 'events-critical-stat' },
+              { label: 'Critical open', value: summary.critical_unacked, tone: summary.critical_unacked > 0 ? 'red' : 'white', onClick: () => setSeverity(severity === 'critical' ? 'all' : 'critical'), active: severity === 'critical', testId: 'events-critical-stat' },
             ]}
           />
           <Link

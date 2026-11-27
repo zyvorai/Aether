@@ -338,7 +338,8 @@
     .glass-toolbar > div > select.glass-select { min-width: 0 !important; flex: 1 1 9rem; }
     .event-list { padding-inline: 0.9rem; }
     .event-row { flex-wrap: wrap; gap: 0.35rem 0.75rem; }
-    .event-row > div { order: 3; flex-basis: 100%; }
+    /* Beats the flex-1 utility on the element. */
+    .event-row > div { order: 3; flex: 1 1 100% !important; }
     .event-time { margin-left: auto; }
     .welcome-card { padding: 0.8rem; }
   }
