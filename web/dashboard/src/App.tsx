@@ -70,6 +70,7 @@ import HelmCatalogPage from './components/pages/HelmCatalogPage';
 import HostedPage from './components/pages/HostedPage';
 import OpenApiPage from './components/pages/OpenApiPage';
 
+import OperationsPage from './components/operator/OperationsPage';
 import ObsRootCausePage from './components/pages/ObsRootCausePage';
 import ObsCapacityForecastPage from './components/pages/ObsCapacityForecastPage';
 import ObsCapacityScalePage from './components/pages/ObsCapacityScalePage';
@@ -731,6 +732,8 @@ function AetherDashboard() {
         return <ObsAutonomousSrePage />;
       case 'obs-extensions':
         return <ObsExtensionsPage />;
+      case 'operations':
+        return <OperationsPage refreshKey={refreshKey} />;
       case 'obs-reliability':
         return <ObsReliabilityPage />;
       case 'settings-identity':

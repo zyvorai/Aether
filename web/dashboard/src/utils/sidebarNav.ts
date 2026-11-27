@@ -20,7 +20,7 @@ const SECTION_LABELS: Record<Exclude<NavGroup, 'primary'>, string> = {
 const SIDEBAR_PRIMARY_VIEWS: AppView[] = ['overview', 'workloads', 'fabric'];
 const SIDEBAR_SECTION_VIEWS: Record<Exclude<NavGroup, 'primary'>, AppView[]> = {
   intelligence: ['intelligence'],
-  operations: ['observability', 'fleet', 'clusters', 'migrations'],
+  operations: ['operations', 'observability', 'fleet', 'clusters', 'migrations'],
   resources: ['labs', 'settings'],
 };
 

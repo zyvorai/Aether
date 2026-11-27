@@ -20,6 +20,7 @@ describe('sidebarNav', () => {
       'workloads',
       'fabric',
       'intelligence',
+      'operations',
       'observability',
       'fleet',
       'clusters',
