@@ -122,14 +122,14 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
   const migrationsEmpty = briefing.migration_opportunities === 0;
 
   return (
-    <section className="glass mb-8 p-6 sm:p-8" data-testid="command-center-briefing">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <section className="glass p-5" data-testid="command-center-briefing">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" aria-hidden />
             <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-primary">Command Center</p>
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{briefing.greeting}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="max-w-2xl text-sm leading-relaxed text-muted">
               {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
@@ -236,7 +236,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
       ) : null}
 
       {briefing.issues.length > 0 ? (
-        <div className="mt-8 space-y-3">
+        <div className="mt-5 space-y-3">
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.04em] text-subtle">Active signals</h3>
           <div className="grid gap-2 lg:grid-cols-2">
             {briefing.issues.slice(0, 4).map((issue, i) => (

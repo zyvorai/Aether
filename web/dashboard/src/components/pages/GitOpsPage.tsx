@@ -274,7 +274,7 @@ export function GitOpsStudio({ refreshKey, forcedSection }: { refreshKey?: numbe
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-5">
       <div className="mb-2 glass-context-banner" data-testid="gitops-hub-context">
         GitOps
         {' · '}

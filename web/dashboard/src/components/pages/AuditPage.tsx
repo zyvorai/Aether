@@ -25,6 +25,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState<string | undefined>(undefined);
   const [search, setSearch] = useQueryParam('q');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
   const [bufferedWorkloadFilter, setBufferedWorkloadFilter] = useBufferedValue(workloadFilter, setWorkloadFilter);
@@ -37,12 +38,14 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
       apiFetchSettled<AuditResponse>('/audit'),
       apiFetchSettled<AuditVerifyResponse>('/audit/verify'),
     ]);
-    if (!data.ok && !verifyData.ok) {
+    // An empty trail must mean "nothing recorded", never "the request failed".
+    if (!data.ok) {
       setLoadFailed(true);
+      setLoadError(data.detail);
       setAudit(null);
       setVerify(null);
     } else {
-      setAudit(data.ok ? data.data : null);
+      setAudit(data.data);
       setVerify(verifyData.ok ? verifyData.data : null);
     }
     setLoading(false);
@@ -110,7 +113,7 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
   }
 
   if (loadFailed) {
-    return <PageLoadError title="Audit trail unavailable" onRetry={() => void load()} />;
+    return <PageLoadError title="Audit trail unavailable" detail={loadError} onRetry={() => void load()} />;
   }
 
   if (!audit) {

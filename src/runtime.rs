@@ -210,28 +210,30 @@ pub async fn create_runtime_ns(
         .ok()
         .filter(|c| !c.is_empty());
 
-    match kind {
-        RuntimeKind::Podman => Ok(Box::new(PodmanRuntime::new()?)),
-        RuntimeKind::Docker => Ok(Box::new(DockerRuntime::new()?)),
+    let adapter: Box<dyn Runtime> = match kind {
+        RuntimeKind::Podman => Box::new(PodmanRuntime::new()?),
+        RuntimeKind::Docker => Box::new(DockerRuntime::new()?),
         RuntimeKind::Kubernetes => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(
-                KubernetesRuntime::with_context(ctx, ns.map(String::from)).await?,
-            )),
-            (None, Some(ns)) => Ok(Box::new(
-                KubernetesRuntime::with_namespace(ns.to_string()).await?,
-            )),
-            (None, None) => Ok(Box::new(KubernetesRuntime::new().await?)),
+            (Some(ctx), ns) => {
+                Box::new(KubernetesRuntime::with_context(ctx, ns.map(String::from)).await?)
+            }
+            (None, Some(ns)) => Box::new(KubernetesRuntime::with_namespace(ns.to_string()).await?),
+            (None, None) => Box::new(KubernetesRuntime::new().await?),
         },
         RuntimeKind::KubeVirt => match (&context, namespace) {
-            (Some(ctx), ns) => Ok(Box::new(
-                KubeVirtRuntime::with_context(ctx, ns.map(String::from)).await?,
-            )),
-            (None, Some(ns)) => Ok(Box::new(
-                KubeVirtRuntime::with_namespace(ns.to_string()).await?,
-            )),
-            (None, None) => Ok(Box::new(KubeVirtRuntime::new().await?)),
+            (Some(ctx), ns) => {
+                Box::new(KubeVirtRuntime::with_context(ctx, ns.map(String::from)).await?)
+            }
+            (None, Some(ns)) => Box::new(KubeVirtRuntime::with_namespace(ns.to_string()).await?),
+            (None, None) => Box::new(KubeVirtRuntime::new().await?),
         },
-    }
+    };
+    // Every change made through an adapter is hold-checked and recorded.
+    Ok(Box::new(crate::ops::journal::Journaled::new(
+        adapter,
+        *kind,
+        crate::ops::data_dir(),
+    )))
 }
 
 #[cfg(test)]

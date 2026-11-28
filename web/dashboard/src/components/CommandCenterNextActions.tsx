@@ -14,7 +14,7 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import { apiFetch } from '../utils/api';
+import { apiFetchSettled } from '../utils/api';
 import { viewToPath } from '../utils/dashboardRoutes';
 import type { AppView, NextActionsReport } from '../types/api';
 import { useNavigate } from 'react-router';
@@ -86,20 +86,23 @@ export default function CommandCenterNextActions({
   const navigate = useNavigate();
   const [report, setReport] = useState<NextActionsReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    apiFetch<NextActionsReport>('/command-center/next-actions').then((data) => {
+    apiFetchSettled<NextActionsReport>('/command-center/next-actions').then((result) => {
       if (!cancelled) {
-        setReport(data);
+        setReport(result.ok ? result.data : null);
+        setFailed(!result.ok);
         setLoading(false);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, attempt]);
 
   function go(route: string) {
     const view = route as AppView;
@@ -129,22 +132,29 @@ export default function CommandCenterNextActions({
   const actions = report?.actions ?? [];
 
   return (
-    <section className="glass mb-8 p-6 sm:p-8" data-testid="command-center-next-actions">
+    <section className="glass p-5" data-testid="command-center-next-actions">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10">
             <ListChecks className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Next actions</h3>
+            <h2 className="text-base font-semibold text-foreground">Next actions</h2>
             <p className="text-sm text-muted">Prioritized queue from fleet intelligence</p>
           </div>
         </div>
         {loading ? <Loader2 className="h-4 w-4 animate-spin text-subtle" /> : null}
       </div>
 
-      {actions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed glass-divider glass-inset-surface px-6 py-10 text-center backdrop-blur-xs">
+      {failed ? (
+        <p className="text-sm text-muted" role="alert">
+          Next actions could not be loaded.{' '}
+          <button type="button" className="text-primary hover:underline" onClick={() => setAttempt((n) => n + 1)}>
+            Retry
+          </button>
+        </p>
+      ) : actions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed glass-divider glass-inset-surface px-4 py-6 text-center">
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-subtle" />
           <p className="text-sm font-medium text-muted">Queue is clear</p>
           <p className="mt-1 text-xs text-subtle">

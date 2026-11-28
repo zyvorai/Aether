@@ -41,19 +41,19 @@
 .utils { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--muted-foreground); background: none; border: 0; cursor: pointer; }
 .icon:hover { background: var(--hover); color: var(--foreground); }
-.searchBtn { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 36px; height: 36px; padding: 0 12px; border-radius: var(--radius-pill); font: inherit; font-size: 13px; color: var(--muted-foreground); background: none; border: 0; cursor: pointer; }
-.searchBtn:hover { background: var(--hover); color: var(--foreground); }
+
+/* Search reads as a field on wide screens and collapses to an icon on narrow ones. */
+.searchBtn { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 36px; height: 34px; margin-left: 20px; padding: 0 10px; border-radius: 10px; font: inherit; font-size: 13px; color: var(--muted-foreground); background: var(--surface-elevated); border: 1px solid var(--border); cursor: pointer; }
+.searchBtn:hover { border-color: var(--border-strong); color: var(--foreground); }
+.searchText { min-width: 16rem; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .searchKbd { font-family: var(--mono); font-size: 11px; color: var(--subtle); }
-.accountWrap { position: relative; }
-.accountBtn { display: flex; align-items: center; gap: 4px; height: 36px; padding: 0 6px; border-radius: var(--radius-pill); background: none; border: 0; cursor: pointer; color: var(--foreground); }
-.accountBtn:hover { background: var(--hover); }
-.accountAvatar { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); font-size: 11px; font-weight: 600; text-transform: uppercase; }
-.accountMenu {
+
+.menuWrap { position: relative; }
+.menu, .panel {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   z-index: 61;
-  min-width: 200px;
   padding: 6px;
   border-radius: 14px;
   background: var(--material-bg);
@@ -61,15 +61,51 @@
   -webkit-backdrop-filter: var(--material-blur);
   backdrop-filter: var(--material-blur);
 }
-.accountMenuItem { display: block; width: 100%; padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--foreground); text-align: left; background: none; border: 0; cursor: pointer; }
-.accountMenuItem:hover { background: var(--hover); }
-.accountMenuDanger { composes: accountMenuItem; color: var(--danger); }
-.accountMenuDivider { height: 1px; background: var(--border); margin: 4px 0; }
-.statusDot { width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--success); }
-.statusDot[data-connected='false'] { background: var(--warning); }
+.menu { min-width: 230px; }
+.panel { background: var(--surface-elevated); }
+.menuItem { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 8px; font-size: 14px; color: var(--foreground); text-align: left; white-space: nowrap; background: none; border: 0; cursor: pointer; }
+.menuItem:hover, .menuItem:focus-visible { background: var(--hover); }
+.menuDanger { composes: menuItem; color: var(--danger); }
+.menuDivider { height: 1px; background: var(--border); margin: 4px 0; }
+.menuCaption { padding: 4px 10px 6px; font-size: 12px; color: var(--subtle); white-space: nowrap; }
+
+.accountBtn { display: flex; align-items: center; gap: 4px; height: 36px; padding: 0 6px; border-radius: var(--radius-pill); background: none; border: 0; cursor: pointer; color: var(--foreground); }
+.accountBtn:hover { background: var(--hover); }
+.accountAvatar { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); font-size: 11px; font-weight: 600; text-transform: uppercase; }
+
+.live { display: flex; align-items: center; gap: 7px; height: 32px; margin-right: 4px; padding: 0 10px; border-radius: var(--radius-pill); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); background: none; border: 0; cursor: pointer; }
+.live:hover { background: var(--hover); color: var(--foreground); }
+.statusDot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: var(--success); }
+.statusDot[data-state='offline'] { background: var(--warning); }
+.statusDot[data-state='paused'] { background: transparent; box-shadow: inset 0 0 0 2px var(--subtle); }
+
+.inboxBtn { position: relative; }
+.inboxCount { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: var(--radius-pill); font-size: 10px; font-weight: 700; line-height: 1; color: var(--primary-foreground); background: var(--danger-fill); }
+
 .burger { display: none; }
-.subnav { border-top: 1px solid var(--nav-border); }
+
+@media (max-width: 1180px) {
+  .searchText { display: none; }
+}
 @media (max-width: 1023px) {
   .gnavInner { padding: 0 8px; }
   .burger { display: grid; place-items: center; width: 40px; height: 40px; background: none; border: 0; cursor: pointer; color: var(--foreground); border-radius: 50%; }
+}
+@media (max-width: 767px) {
+  .searchBtn { margin-left: auto; padding: 0; width: 36px; background: none; border: 0; }
+  .searchKbd { display: none; }
+  .utils { margin-left: 0; gap: 0; }
+  .liveText { display: none; }
+  .live { padding: 0 8px; margin-right: 0; }
+}
+@media (max-width: 639px) {
+  /* Panels span the screen instead of hanging off the button that opened them. */
+  .panel { position: fixed; top: calc(var(--nav-h) + 4px); right: 8px; left: 8px; }
+  .panel > * { width: 100%; }
+}
+@media (max-width: 420px) {
+  .accountChevron { display: none; }
+}
+@media (max-width: 359px) {
+  .word { display: none; }
 }

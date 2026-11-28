@@ -5,15 +5,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   AlertTriangle,
-  Inbox,
-  RefreshCw,
-  Rocket,
-  WifiOff,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
+  FileCode2,
+  RefreshCw,
+  Rocket,
+  Wrench,
 } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
-import { formatTimestamp } from '../../utils/formatters';
+import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
+import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
+import type { AttentionSources } from '../../utils/attention';
+import AttentionPanel from '../overview/AttentionPanel';
+import type { AttentionQueue } from '../../types/operator';
+import WelcomeCard from '../overview/WelcomeCard';
+import PageLoading from '../PageLoading';
+import PageLoadError from '../PageLoadError';
+import { useAuth } from '../../contexts/AuthContext';
 import type { AppView } from '../../types/api';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -60,7 +69,8 @@ type OverviewEndpoint =
   | 'clusters'
   | 'plugins'
   | 'environments'
-  | 'apiKeys';
+  | 'apiKeys'
+  | 'operator';
 
 const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   workloads: 'Workloads',
@@ -73,6 +83,7 @@ const ENDPOINT_LABELS: Record<OverviewEndpoint, string> = {
   plugins: 'Plugins',
   environments: 'Environments',
   apiKeys: 'API keys',
+  operator: 'Operations queue',
 };
 
 type QuickLink = {
@@ -86,6 +97,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
   const { capabilities, ready, loading: platformLoading } = useServerCapabilities();
+  const { canMutate } = useAuth();
 
   const goFiltered = (view: AppView, params?: Record<string, string>) => {
     navigate(pathWithQuery(viewToPath(view), params ?? {}));
@@ -95,6 +107,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
   const [eventSummary, setEventSummary] = useState<EventSummary | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
+  const [operatorQueue, setOperatorQueue] = useState<AttentionQueue | null>(null);
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -106,9 +119,11 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [failedEndpoints, setFailedEndpoints] = useState<OverviewEndpoint[]>([]);
   const [totalFailure, setTotalFailure] = useState(false);
+  const [failureDetail, setFailureDetail] = useState<string | undefined>(undefined);
   const [specValidated, setSpecValidated] = useState(() => hasValidatedSpec());
   const [deployDone, setDeployDone] = useState(() => hasDeployedWorkload());
   const [healthDone, setHealthDone] = useState(() => hasReviewedHealth());
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     const onValidated = () => setSpecValidated(true);
@@ -126,8 +141,6 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
 
   const load = useCallback(async () => {
     setLoading(true);
-    setTotalFailure(false);
-    setFailedEndpoints([]);
 
     const requests = await Promise.allSettled([
       apiFetchSettled<WorkloadResponse[]>('/workloads'),
@@ -140,6 +153,7 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
       apiFetchSettled<PluginInfo[]>('/plugins'),
       apiFetchSettled<Environment[]>('/environments'),
       apiFetchSettled<ApiKeySummary[]>('/rbac/keys'),
+      apiFetchSettled<AttentionQueue>('/attention'),
     ]);
 
     const keys: OverviewEndpoint[] = [
@@ -153,15 +167,18 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
       'plugins',
       'environments',
       'apiKeys',
+      'operator',
     ];
 
     const failed: OverviewEndpoint[] = [];
     let successCount = 0;
+    let firstFailure: string | undefined;
 
     requests.forEach((result, i) => {
       const key = keys[i];
       if (result.status === 'rejected' || !result.value.ok) {
         failed.push(key);
+        if (result.status === 'fulfilled' && !result.value.ok) firstFailure ??= result.value.detail;
         return;
       }
       successCount += 1;
@@ -188,6 +205,9 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         case 'backups':
           setBackups(data as BackupInfo[]);
           break;
+        case 'operator':
+          setOperatorQueue(data as AttentionQueue);
+          break;
         case 'secrets':
           setSecrets(data as SecretSummary[]);
           break;
@@ -210,7 +230,9 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
     });
 
     setFailedEndpoints(failed);
+    setFailureDetail(firstFailure);
     setTotalFailure(successCount === 0);
+    setLoadedAt(new Date());
     setLoading(false);
     setHasLoadedOnce(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey intentionally triggers a refetch in place (see App.tsx SSE handler), not a remount.
@@ -222,55 +244,28 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
 
   if (loading && !hasLoadedOnce) {
     return (
-      <div className="space-y-8">
-        <div className="animate-pulse">
-          <div className="h-8 w-48 rounded-lg glass-inset-surface" />
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 rounded-2xl glass-inset-surface" />
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 xl:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="skeleton h-24 rounded-2xl" />
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="glass skeleton h-48" />
-          <div className="glass skeleton h-48" />
-        </div>
-      </div>
+      <AuroraPage view="overview">
+        <PageLoading rows={5} />
+      </AuroraPage>
     );
   }
 
   if (totalFailure) {
     return (
-      <div>
+      <AuroraPage view="overview">
+        <PageLoadError
+          title="API unreachable"
+          description="Could not load dashboard data. Check that aether serve is running and your bearer token is valid."
+          detail={failureDetail}
+          onRetry={load}
+        />
         <PlatformStatusPanel
           platform={capabilities?.platform ?? null}
           ready={ready}
           sseConnected={sseConnected}
           loading={platformLoading}
         />
-        <EmptyState
-          icon={<WifiOff size={48} />}
-          title="API unreachable"
-          description="Could not load dashboard data. Check that aether serve is running and your bearer token is valid."
-          action={
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-xl bg-accent-fill px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:bg-accent-fill-hover transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Retry
-            </button>
-          }
-        />
-      </div>
+      </AuroraPage>
     );
   }
 
@@ -278,7 +273,8 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   const degraded = (healthSummary?.degraded ?? 0) + (healthSummary?.unhealthy ?? 0);
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.filter((w) => w.source === 'cluster').length;
-  const isEmptyPlatform = aetherManagedCount === 0;
+  // A failed request says nothing about whether the platform is empty.
+  const isEmptyPlatform = !failedEndpoints.includes('workloads') && aetherManagedCount === 0;
 
   const setupHints = platformSetupNeeded(capabilities?.platform ?? null);
 
@@ -304,49 +300,108 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
     { label: 'Settings', testId: 'overview-platform-quick-link', onClick: () => onNavigate('settings') },
   ];
 
-  const heroStats = !isEmptyPlatform
-    ? [
-        { label: 'Workloads', value: workloads.length },
-        { label: 'Healthy', value: healthy },
-        { label: 'Need attention', value: degraded },
-        {
-          label: 'Clusters',
-          value: clusterSummary?.cluster_count ?? clusterContext.clusterCount ?? 0,
-        },
-      ]
-    : undefined;
+  const loaded = <T,>(key: OverviewEndpoint, value: T): T | null => (failedEndpoints.includes(key) ? null : value);
+  const sources: AttentionSources = {
+    workloads: loaded('workloads', workloads),
+    events: loaded('events', events),
+    secrets: loaded('secrets', secrets),
+    health: loaded('health', healthSummary),
+    operator: loaded('operator', operatorQueue),
+  };
+
+  const runtimeSwatches = RUNTIME_SWATCHES.map(({ runtime, label, tone }) => {
+    const count = sources.workloads?.filter((w) => w.runtime.toLowerCase() === runtime).length;
+    return {
+      label: count === undefined ? label : `${label} ${count}`,
+      tone,
+      onSelect: () => goFiltered('workloads', { q: runtime }),
+    };
+  });
+
+  const kpis: Array<{ label: string; value: number | null; tone?: 'danger' | 'success'; testId: string; onClick: () => void }> = [
+    { label: 'Workloads', value: sources.workloads?.length ?? null, testId: 'overview-kpi-workloads', onClick: () => onNavigate('workloads') },
+    {
+      label: 'Running',
+      value: sources.workloads?.filter((w) => workloadCondition(w.status) === 'running').length ?? null,
+      tone: 'success',
+      testId: 'overview-kpi-running',
+      onClick: () => goFiltered('workloads', { status: 'running' }),
+    },
+    {
+      label: 'Workloads needing attention',
+      value: sources.workloads?.filter((w) => needsAttention(w.status)).length ?? null,
+      tone: 'danger',
+      testId: 'overview-kpi-attention',
+      onClick: () => goFiltered('workloads', { status: 'attention' }),
+    },
+    {
+      label: 'Unacknowledged events',
+      value: loaded('eventsSummary', eventSummary)?.unacknowledged ?? null,
+      testId: 'overview-kpi-events',
+      onClick: () => goFiltered('events', { ack: 'open' }),
+    },
+    {
+      label: 'Clusters',
+      value: loaded('clusters', clusterSummary)?.cluster_count ?? null,
+      testId: 'overview-kpi-clusters',
+      onClick: () => onNavigate('clusters'),
+    },
+  ];
 
   return (
-    <AuroraPage
-      view="overview"
-      accent="sky"
-      swatches={[
-        { label: 'Podman', tone: 'sky' },
-        { label: 'Kubernetes', tone: 'violet' },
-        { label: 'KubeVirt', tone: 'teal' },
-      ]}
-      stats={heroStats}
-      statsTestId="overview-apple-highlights"
-    >
-      {!isEmptyPlatform ? (
+    <AuroraPage view="overview" accent="sky" swatches={runtimeSwatches}>
+      {failedEndpoints.length > 0 ? (
+        <div className="glass-alert-warn flex flex-wrap items-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+          <p className="text-sm text-warning flex-1 min-w-0">
+            Some sections failed to load:{' '}
+            {failedEndpoints.map((e) => ENDPOINT_LABELS[e]).join(', ')}.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/10 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {!isEmptyPlatform || workloads.length > 0 ? (
         <>
-          <section className="apple-chapter">
-            <CommandCenterBriefing
-              onNavigate={onNavigate}
-              refreshKey={refreshKey}
-              clusterContext={clusterContext}
-            />
-          </section>
+          <AttentionPanel sources={sources} checkedAt={loadedAt} refreshing={loading} onRefresh={() => void load()} />
 
-          <section className="apple-chapter">
+          <div className="kpi-grid" data-testid="overview-apple-highlights">
+            {kpis.map((kpi) => (
+              <button key={kpi.label} type="button" className="kpi" onClick={kpi.onClick} data-testid={kpi.testId}>
+                <span className={`kpi-value ${kpi.value && kpi.tone === 'danger' ? 'text-danger' : kpi.value && kpi.tone === 'success' ? 'text-success' : ''}`}>
+                  {kpi.value ?? '—'}
+                </span>
+                <span className="kpi-label">{kpi.value === null ? `${kpi.label} (not loaded)` : kpi.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <QuickActions
+            canMutate={canMutate}
+            onDeploy={() => goFiltered('workloads', { deploy: '1' })}
+            onValidate={() => goFiltered('workloads', { validate: '1' })}
+            onNavigate={onNavigate}
+          />
+
+          <WelcomeCard />
+
+          <CommandCenterBriefing onNavigate={onNavigate} refreshKey={refreshKey} clusterContext={clusterContext} />
+
+          <div className="grid items-start gap-5 xl:grid-cols-2">
+            <RecentEvents events={sources.events} onRetry={() => void load()} goFiltered={goFiltered} />
             <CommandCenterNextActions onNavigate={onNavigate} refreshKey={refreshKey} />
-          </section>
-
-          <section className="apple-chapter">
-            <RuntimeOrbitFeature onDeploy={() => goFiltered('workloads', { deploy: '1' })} onOpenEditor={() => onNavigate('editor')} />
-          </section>
+          </div>
         </>
       ) : null}
+
+      {isEmptyPlatform ? <WelcomeCard /> : null}
 
       {isEmptyPlatform ? (
         <section className="apple-chapter space-y-8">
@@ -380,24 +435,6 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         </section>
       ) : null}
 
-      {failedEndpoints.length > 0 ? (
-        <div className="glass-alert-warn flex flex-wrap items-center gap-3">
-          <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
-          <p className="text-sm text-warning flex-1 min-w-0">
-            Some sections failed to load:{' '}
-            {failedEndpoints.map((e) => ENDPOINT_LABELS[e]).join(', ')}.
-          </p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/10 transition-colors"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Retry
-          </button>
-        </div>
-      ) : null}
-
       <OverviewExplore
         onNavigate={onNavigate}
         goFiltered={goFiltered}
@@ -407,11 +444,8 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
         sseConnected={sseConnected}
         platformLoading={platformLoading}
         setupHints={setupHints}
-        load={load}
         clusterSummary={clusterSummary}
         isEmptyPlatform={isEmptyPlatform}
-        events={events}
-        failedEndpoints={failedEndpoints}
         quickLinks={quickLinks}
         aetherManagedCount={aetherManagedCount}
         healthy={healthy}
@@ -422,50 +456,95 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
   );
 }
 
-const ORBIT_RUNTIMES = [
-  { id: 'podman', label: 'Podman', short: 'Pd', color: 'var(--rt-podman)' },
-  { id: 'k8s', label: 'Kubernetes', short: 'K8', color: 'var(--rt-k8s)' },
-  { id: 'kubevirt', label: 'KubeVirt', short: 'Kv', color: 'var(--rt-kubevirt)' },
+const RUNTIME_SWATCHES = [
+  { runtime: 'podman', label: 'Podman', tone: 'sky' },
+  { runtime: 'docker', label: 'Docker', tone: 'amber' },
+  { runtime: 'kubernetes', label: 'Kubernetes', tone: 'violet' },
+  { runtime: 'kubevirt', label: 'KubeVirt', tone: 'teal' },
 ] as const;
 
-function RuntimeOrbitFeature({ onDeploy, onOpenEditor }: { onDeploy: () => void; onOpenEditor: () => void }) {
+function QuickActions({
+  canMutate,
+  onDeploy,
+  onValidate,
+  onNavigate,
+}: {
+  canMutate: boolean;
+  onDeploy: () => void;
+  onValidate: () => void;
+  onNavigate: (view: AppView) => void;
+}) {
   return (
-    <div className="feature-orbit-card">
-      <div>
-        <h2 className="text-[34px] font-semibold tracking-[-0.035em] leading-[1.05]">One spec. Every runtime.</h2>
-        <p className="mt-3 max-w-[44ch] text-[17px] leading-[1.45] text-muted">
-          Write a single YAML spec and deploy it to Podman, Kubernetes, or KubeVirt. Move it between them later without
-          rewriting a line.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button type="button" onClick={onDeploy} className="btn-primary">
-            Deploy YAML
-          </button>
-          <button type="button" onClick={onOpenEditor} className="btn-secondary">
-            Open visual editor
-          </button>
-        </div>
-      </div>
-      <div className="feature-orbit-art" aria-hidden>
-        <div className="orbit" />
-        <div className="core">Æ</div>
-        {ORBIT_RUNTIMES.map((rt, i) => {
-          const angle = (i / ORBIT_RUNTIMES.length) * Math.PI * 2 - Math.PI / 2;
-          const x = 50 + Math.cos(angle) * 36;
-          const y = 50 + Math.sin(angle) * 36;
-          return (
-            <div
-              key={rt.id}
-              className="node"
-              style={{ left: `calc(${x}% - 22px)`, top: `calc(${y}% - 22px)`, background: rt.color }}
-              title={rt.label}
-            >
-              {rt.short}
-            </div>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick actions" data-testid="overview-quick-actions">
+      {canMutate ? (
+        <button type="button" onClick={onDeploy} className="btn-primary !min-h-9">
+          <Rocket className="h-4 w-4" aria-hidden />
+          Deploy YAML
+        </button>
+      ) : null}
+      <button type="button" onClick={onValidate} className="btn-quiet">
+        <ClipboardCheck className="h-3.5 w-3.5" aria-hidden />
+        Validate a spec
+      </button>
+      <button type="button" onClick={() => onNavigate('editor')} className="btn-quiet">
+        <Wrench className="h-3.5 w-3.5" aria-hidden />
+        Visual editor
+      </button>
+      <button type="button" onClick={() => onNavigate('compose')} className="btn-quiet">
+        <FileCode2 className="h-3.5 w-3.5" aria-hidden />
+        Import Compose
+      </button>
     </div>
+  );
+}
+
+function RecentEvents({
+  events,
+  onRetry,
+  goFiltered,
+}: {
+  events: Event[] | null;
+  onRetry: () => void;
+  goFiltered: (view: AppView, params?: Record<string, string>) => void;
+}) {
+  const newest = [...(events ?? [])].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 6);
+  return (
+    <section className="glass p-5" aria-labelledby="recent-events-title">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 id="recent-events-title" className="text-base font-semibold text-foreground">Recent events</h2>
+        <button type="button" onClick={() => goFiltered('events')} className="text-[13px] text-primary hover:underline">
+          View all
+        </button>
+      </div>
+      {events === null ? (
+        <p className="py-4 text-sm text-muted" role="alert">
+          Events could not be loaded.{' '}
+          <button type="button" onClick={onRetry} className="text-primary hover:underline">Retry</button>
+        </p>
+      ) : newest.length === 0 ? (
+        <p className="py-4 text-sm text-muted">No events have been recorded yet.</p>
+      ) : (
+        <ul className="divide-y divide-[var(--border)]">
+          {newest.map((ev, i) => (
+            <li key={`${ev.timestamp}-${i}`} data-testid={`overview-recent-event-${i}`} className="flex items-start gap-3 py-2.5">
+              <span className="w-[4.5rem] shrink-0 pt-0.5"><SeverityBadge severity={ev.severity} /></span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">{ev.title}</div>
+                <div className="truncate text-xs text-muted">{ev.message}</div>
+                {ev.workload ? (
+                  <button type="button" className="text-xs text-primary hover:underline" onClick={() => goFiltered('events', { workload: ev.workload! })}>
+                    {ev.workload}
+                  </button>
+                ) : null}
+              </div>
+              <time className="shrink-0 pt-0.5 text-xs text-subtle" dateTime={ev.timestamp} title={formatTimestamp(ev.timestamp)}>
+                {formatRelativeTime(ev.timestamp)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -478,11 +557,8 @@ function OverviewExplore({
   sseConnected,
   platformLoading,
   setupHints,
-  failedEndpoints,
-  load,
   clusterSummary,
   isEmptyPlatform,
-  events,
   quickLinks,
   aetherManagedCount,
   healthy,
@@ -496,11 +572,8 @@ function OverviewExplore({
   sseConnected: boolean;
   platformLoading: boolean;
   setupHints: string[];
-  failedEndpoints: OverviewEndpoint[];
-  load: () => Promise<void>;
   clusterSummary: ClusterSummary | null;
   isEmptyPlatform: boolean;
-  events: Event[];
   quickLinks: QuickLink[];
   aetherManagedCount: number;
   healthy: number;
@@ -526,7 +599,7 @@ function OverviewExplore({
           className="mb-0 flex-1"
           label="Explore"
           title="More from this fleet"
-          description="Platform tools, recent events, and inventory links"
+          description="Platform status, setup hints, and inventory links"
         />
         {open ? <ChevronDown className="h-5 w-5 text-subtle" /> : <ChevronRight className="h-5 w-5 text-subtle" />}
       </button>
@@ -626,66 +699,6 @@ function OverviewExplore({
                 </button>
               ))}
             </div>
-          </section>
-
-          <section className="space-y-6">
-            <div className="flex items-end justify-between gap-4">
-              <SectionHeader
-                className="mb-0"
-                label="Activity"
-                title="Recent events"
-                description="Latest signals across the fleet"
-              />
-              <button
-                type="button"
-                onClick={() => goFiltered('events')}
-                className="text-sm text-primary hover:underline shrink-0"
-              >
-                View all
-              </button>
-            </div>
-            {failedEndpoints.includes('events') ? (
-              <EmptyState
-                icon={<WifiOff size={40} />}
-                title="Events unavailable"
-                description="Could not load events from the API."
-                action={
-                  <button type="button" onClick={() => void load()} className="text-sm text-primary hover:underline">
-                    Retry
-                  </button>
-                }
-              />
-            ) : events.length === 0 ? (
-              <EmptyState icon={<Inbox size={48} />} title="No events" description="No events have been recorded yet" />
-            ) : (
-              <div className="divide-y divide-[var(--border)]">
-                {events.slice(0, 8).map((ev, i) => (
-                  <div
-                    key={i}
-                    data-testid={`overview-recent-event-${i}`}
-                    className="flex items-start gap-4 py-5"
-                  >
-                    <SeverityBadge severity={ev.severity} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground truncate">{ev.title}</div>
-                      <div className="text-xs text-subtle mt-0.5">{ev.message}</div>
-                      <div className="text-xs text-subtle mt-1 flex flex-wrap items-center gap-2">
-                        {formatTimestamp(ev.timestamp)}
-                        {ev.workload ? (
-                          <button
-                            type="button"
-                            className="text-primary hover:underline"
-                            onClick={() => goFiltered('events', { workload: ev.workload! })}
-                          >
-                            {ev.workload}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </section>
         </div>
       ) : null}

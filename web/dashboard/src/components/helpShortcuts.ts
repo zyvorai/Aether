@@ -1,21 +1,37 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
-const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform);
-const modKey = isMac ? '⌘' : 'Ctrl';
+import { GO_SHORTCUTS } from '../utils/goShortcuts';
+import { modKeyLabel } from '../utils/platformKeys';
 
-export const helpShortcuts: { keys: string[]; description: string }[] = [
-  { keys: [modKey, 'K'], description: 'Command palette' },
-  { keys: ['g', 'd'], description: 'Go to Dashboard' },
-  { keys: ['g', 'w'], description: 'Go to Workloads' },
-  { keys: ['g', 'c'], description: 'Go to Cluster Browser' },
-  { keys: ['g', 'h'], description: 'Go to Health Monitor' },
-  { keys: ['g', 'e'], description: 'Go to Events' },
-  { keys: ['g', 'b'], description: 'Go to Backups' },
-  { keys: ['g', 'u'], description: 'Go to Audit Trail' },
-  { keys: ['g', 'm'], description: 'Go to Metrics' },
-  { keys: ['g', 'y'], description: 'Go to Policy Check' },
-  { keys: ['g', 's'], description: 'Go to Secrets' },
-  { keys: ['r'], description: 'Refresh data' },
-  { keys: ['?'], description: 'Help (shortcuts & about)' },
+export interface HelpShortcut {
+  keys: string[];
+  description: string;
+}
+
+export const helpShortcutGroups: { title: string; shortcuts: HelpShortcut[] }[] = [
+  {
+    title: 'Everywhere',
+    shortcuts: [
+      { keys: [modKeyLabel, 'K'], description: 'Command palette' },
+      { keys: ['/'], description: 'Focus the search or filter on this page' },
+      { keys: ['['], description: 'Collapse or expand the sidebar' },
+      { keys: ['p'], description: 'Pin or unpin this page' },
+      { keys: ['r'], description: 'Refresh data' },
+      { keys: ['?'], description: 'Help (shortcuts & about)' },
+    ],
+  },
+  {
+    title: 'Tables and details',
+    shortcuts: [
+      { keys: ['j'], description: 'Next row or record' },
+      { keys: ['k'], description: 'Previous row or record' },
+      { keys: ['Enter'], description: 'Open the selected row' },
+      { keys: ['Esc'], description: 'Close the side panel or dialog' },
+    ],
+  },
+  {
+    title: 'Go to',
+    shortcuts: GO_SHORTCUTS.map(({ key, label }) => ({ keys: ['g', key], description: `Go to ${label}` })),
+  },
 ];

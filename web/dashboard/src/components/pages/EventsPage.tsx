@@ -15,17 +15,24 @@ import Badge, { SeverityBadge } from '../Badge';
 import EmptyState from '../EmptyState';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
+import StatRibbon from '../StatRibbon';
+import { clockTime, groupByDay } from '../../utils/eventGroups';
 import { WorkloadContextBanner, WorkloadScopedCrossLinks } from '../QueryContextBanner';
 import type { Event, EventSummary } from '../../types/api';
+
+const PAGE_SIZE = 100;
 
 function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
   const [events, setEvents] = useState<Event[]>([]);
   const [summary, setSummary] = useState<EventSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState<string | undefined>(undefined);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [search, setSearch] = useQueryParam('q');
   const [severity, setSeverity] = useQueryParam('severity', 'all');
+  const [ack, setAck] = useQueryParam('ack', 'all');
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const [category, setCategory] = useQueryParam('category', 'all');
   const [workloadFilter, setWorkloadFilter] = useQueryParam('workload');
   const [bufferedWorkloadFilter, setBufferedWorkloadFilter] = useBufferedValue(workloadFilter, setWorkloadFilter);
@@ -37,6 +44,7 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
         const copy = new URLSearchParams(prev);
         copy.delete('q');
         copy.delete('severity');
+        copy.delete('ack');
         copy.delete('category');
         copy.delete('workload');
         return copy;
@@ -56,12 +64,14 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
       apiFetchSettled<Event[]>(`/events${query}`),
       apiFetchSettled<EventSummary>('/events/summary'),
     ]);
-    if (!ev.ok && !s.ok) {
+    // An empty list must mean "no events", never "the request failed".
+    if (!ev.ok) {
       setLoadFailed(true);
+      setLoadError(ev.detail);
       setEvents([]);
       setSummary(null);
     } else {
-      setEvents(ev.ok ? ev.data : []);
+      setEvents(ev.data);
       setSummary(s.ok ? s.data : null);
     }
     setLoading(false);
@@ -82,6 +92,7 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
     const q = search.trim().toLowerCase();
     return events.filter((ev) => {
       if (severity !== 'all' && ev.severity.toLowerCase() !== severity) return false;
+      if (ack === 'open' && ev.acknowledged) return false;
       if (!q) return true;
       return (
         ev.message.toLowerCase().includes(q) ||
@@ -89,14 +100,14 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
         (ev.workload?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [events, search, severity]);
+  }, [events, search, severity, ack]);
 
   if (loading && !hasLoadedOnce && !loadFailed) {
     return <PageLoading rows={5} />;
   }
 
   if (loadFailed) {
-    return <PageLoadError title="Events unavailable" onRetry={() => void load()} />;
+    return <PageLoadError title="Events unavailable" detail={loadError} onRetry={() => void load()} />;
   }
 
   return (
@@ -169,30 +180,26 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="mb-10 space-y-6">
-        <div className="flex flex-wrap gap-x-10 gap-y-4">
-          <button type="button" onClick={() => setCategory('all')} className="text-left text-sm text-muted hover:text-foreground">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.total_events}</div>Total
-          </button>
-          <button type="button" onClick={() => setSeverity('warning')} className="text-left text-sm text-muted hover:text-foreground">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.unacknowledged}</div>Unacknowledged
-          </button>
-          <button type="button" onClick={() => setSeverity('critical')} className="text-left text-sm text-muted hover:text-foreground">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.critical_unacked}</div>Critical
-          </button>
+        <div className="flex flex-wrap items-end gap-3">
+          <StatRibbon
+            items={[
+              { label: 'Total', value: summary.total_events, onClick: clearFilters, testId: 'events-total-stat' },
+              { label: 'Unacknowledged', value: summary.unacknowledged, onClick: () => setAck(ack === 'open' ? 'all' : 'open'), active: ack === 'open', testId: 'events-unacked-stat' },
+              { label: 'Critical open', value: summary.critical_unacked, tone: summary.critical_unacked > 0 ? 'red' : 'white', onClick: () => setSeverity(severity === 'critical' ? 'all' : 'critical'), active: severity === 'critical', testId: 'events-critical-stat' },
+            ]}
+          />
           <Link
             to={
               workloadFilter.trim()
                 ? pathWithQuery(viewToPath('alerts'), { workload: workloadFilter.trim() })
                 : viewToPath('alerts')
             }
-            className="text-xs text-primary hover:underline self-end mb-1"
+            className="mb-1 text-xs text-primary hover:underline"
             data-testid="events-alerts-link"
           >
             Alert channels →
           </Link>
         </div>
-        </section>
       )}
 
       <PageToolbar
@@ -277,7 +284,7 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
                 </option>
               ))}
             </select>
-            {(search || severity !== 'all' || category !== 'all' || workloadFilter.trim()) && (
+            {(search || severity !== 'all' || ack !== 'all' || category !== 'all' || workloadFilter.trim()) && (
               <button
                 type="button"
                 data-testid="events-clear-filters"
@@ -296,42 +303,46 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : filtered.length === 0 ? (
         <EmptyState icon={<Inbox size={48} />} title="No matching events" description="Try adjusting search or severity filter" />
       ) : (
-        <div className="glass" data-testid="events-list">
-          <div className="space-y-3 max-h-[600px] overflow-auto">
-            {filtered.map((ev, i) => (
-              <div key={`${ev.timestamp}-${i}`} className="glass flex items-start gap-3 p-4">
-                <div className="flex flex-col gap-1.5 shrink-0">
-                  <SeverityBadge severity={ev.severity} />
-                  <Badge text={ev.category} variant="muted" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground">{ev.title}</div>
-                  <div className="text-xs text-muted mt-1">{ev.message}</div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-subtle flex-wrap">
-                    <span>{formatTimestamp(ev.timestamp)}</span>
-                    {ev.workload ? (
-                      <span>
-                        Workload:{' '}
-                        <Link
-                          to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })}
-                          className="text-primary hover:underline"
-                        >
-                          {ev.workload}
-                        </Link>
-                      </span>
-                    ) : null}
-                    {ev.workload && ev.category === 'drift' ? (
-                      <Link to={viewToPath('drift')} className="text-primary hover:underline">
-                        Open drift page
-                      </Link>
-                    ) : null}
-                    <span>Source: {ev.source}</span>
-                    {ev.acknowledged && <Badge text="ACK" variant="green" />}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="glass event-list" data-testid="events-list">
+          {groupByDay(filtered.slice(0, limit)).map((group) => (
+            <section key={group.day} aria-label={group.label}>
+              <h2 className="event-day">{group.label}</h2>
+              <ul>
+                {group.items.map((ev, i) => (
+                  <li key={`${ev.timestamp}-${i}`} className="event-row">
+                    <span className="event-severity"><SeverityBadge severity={ev.severity} /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground">{ev.title}</div>
+                      <div className="break-words text-xs text-muted">{ev.message}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-subtle">
+                        <Badge text={ev.category} variant="muted" />
+                        {ev.workload ? (
+                          <Link to={pathWithQuery(viewToPath('workloads'), { workload: ev.workload })} className="text-primary hover:underline">
+                            {ev.workload}
+                          </Link>
+                        ) : null}
+                        {ev.workload && ev.category === 'drift' ? (
+                          <Link to={viewToPath('drift')} className="text-primary hover:underline">
+                            Open drift page
+                          </Link>
+                        ) : null}
+                        <span>Source: {ev.source}</span>
+                        {ev.acknowledged && <Badge text="ACK" variant="green" />}
+                      </div>
+                    </div>
+                    <time className="event-time" dateTime={ev.timestamp} title={formatTimestamp(ev.timestamp)}>
+                      {clockTime(ev.timestamp)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {filtered.length > limit ? (
+            <button type="button" className="mt-2 text-sm text-primary hover:underline" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
+              Show more ({filtered.length - limit} left)
+            </button>
+          ) : null}
         </div>
       )}
     </div>

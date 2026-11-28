@@ -217,8 +217,10 @@ test.describe('Deploy workload UX', () => {
 
     await page.goto('/workloads?source=aether');
 
-    await expect(page.getByRole('button', { name: 'Deploy' }).first()).toBeVisible({ timeout: 15_000 });
-    await page.getByRole('button', { name: 'Deploy' }).first().click();
+    // scoped to the page: the sidebar has a "Build and deploy" section button
+    const deploy = page.getByRole('main').getByRole('button', { name: 'Deploy' }).first();
+    await expect(deploy).toBeVisible({ timeout: 15_000 });
+    await deploy.click();
 
     const dialog = page.getByRole('dialog', { name: 'Deploy New Workload' });
     await expect(dialog).toBeVisible({ timeout: 10_000 });

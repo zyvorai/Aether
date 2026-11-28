@@ -30,6 +30,10 @@ import GlassSection from './GlassSection';
 
 type Tab = 'timeline' | 'budget' | 'postmortem' | 'oncall' | 'escalation' | 'mttr' | 'chaos' | 'gamedays';
 
+/** Time to recovery is null until an incident has recovered. */
+const mttrText = (minutes: number | null | undefined) =>
+  minutes === null || minutes === undefined ? 'no recovered incident' : `${minutes.toFixed(1)} min`;
+
 export default function SreReliabilityPanel() {
   const [tab, setTab] = useState<Tab>('timeline');
   const [loading, setLoading] = useState(true);
@@ -91,14 +95,16 @@ export default function SreReliabilityPanel() {
 
   async function testOnCall() {
     setExecuting(true);
-    const res = await apiPost<{ message: string }>('/intelligence/sre/on-call/test', {
+    const res = await apiPost<{ message: string; sent: boolean }>('/intelligence/sre/on-call/test', {
       dry_run: true,
       provider: 'pagerduty',
     });
     setExecuting(false);
     if (res.success) {
       window.dispatchEvent(
-        new CustomEvent('aether-toast', { detail: { message: res.data?.message ?? 'Test sent', type: 'success' } }),
+        new CustomEvent('aether-toast', {
+          detail: { message: res.data?.message ?? 'No result', type: res.data?.sent ? 'success' : 'info' },
+        }),
       );
     }
   }
@@ -196,6 +202,10 @@ export default function SreReliabilityPanel() {
         </ul>
       ) : null}
 
+      {tab === 'budget' && budgets?.unobserved?.length ? (
+        <p className="mb-2 text-xs text-muted">No health data for: {budgets.unobserved.join(', ')}</p>
+      ) : null}
+
       {tab === 'budget' ? (
         <ul className="space-y-2" data-testid="error-budget-panel">
           {(budgets?.entries ?? []).slice(0, 8).map((e) => (
@@ -272,12 +282,12 @@ export default function SreReliabilityPanel() {
       {tab === 'mttr' ? (
         <div data-testid="mttr-panel">
           <p className="mb-3 text-sm text-success">
-            Fleet avg MTTR: {(mttr?.fleet_avg_mttr_minutes ?? 0).toFixed(1)} min
+            Fleet avg MTTR: {mttrText(mttr?.fleet_avg_mttr_minutes)}
           </p>
           <ul className="space-y-2">
             {(mttr?.entries ?? []).slice(0, 6).map((e) => (
               <li key={e.workload} className="rounded-lg border glass-divider px-3 py-2 text-sm text-muted">
-                {e.workload}: {e.incidents} incidents · avg {e.avg_recovery_minutes.toFixed(0)} min
+                {e.workload}: {e.incidents} incidents · avg {mttrText(e.avg_recovery_minutes)}
               </li>
             ))}
           </ul>

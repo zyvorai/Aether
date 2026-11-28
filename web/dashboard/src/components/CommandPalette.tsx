@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
+import { ArrowRight, CornerDownRight, History, Layers, Search, Star, Wrench, Zap, type LucideIcon } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { DASHBOARD_VIEWS } from '../utils/dashboardNav';
 import { viewToPath } from '../utils/dashboardRoutes';
@@ -14,8 +15,48 @@ import { useAuth } from '../contexts/AuthContext';
 import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { partitionNavViews } from '../utils/navCapabilities';
 import { inferFixRecommendations } from '../utils/k8sUx';
+import { getSectionLabel } from '../utils/navSections';
+import { groupByCategory, parseQuery, scoreCommand, type PaletteScope } from '../utils/paletteRank';
+import { copyToClipboard } from '../utils/clipboard';
+import { usePreferences } from '../hooks/usePreferences';
+import { useTheme } from '../contexts/ThemeContext';
 
-type CommandCategory = 'recent' | 'recent-action' | 'navigation' | 'setup' | 'workload' | 'workload-action' | 'action';
+type CommandCategory = 'pinned' | 'recent' | 'recent-action' | 'navigation' | 'setup' | 'workload' | 'workload-action' | 'action';
+
+const MAX_RESULTS = 60;
+
+const CATEGORY_LABELS: Record<CommandCategory, string> = {
+  pinned: 'Pinned',
+  recent: 'Recent pages',
+  'recent-action': 'Recent actions',
+  navigation: 'Pages',
+  setup: 'Setup required',
+  workload: 'Workloads',
+  'workload-action': 'Workload actions',
+  action: 'Actions',
+};
+
+const CATEGORY_ICONS: Record<CommandCategory, LucideIcon> = {
+  pinned: Star,
+  recent: History,
+  'recent-action': History,
+  navigation: ArrowRight,
+  setup: Wrench,
+  workload: Layers,
+  'workload-action': CornerDownRight,
+  action: Zap,
+};
+
+const SCOPE_CATEGORIES: Record<Exclude<PaletteScope, 'all'>, CommandCategory[]> = {
+  pages: ['pinned', 'recent', 'navigation', 'setup'],
+  workloads: ['workload', 'workload-action'],
+  actions: ['recent-action', 'action'],
+};
+
+/** Offered before anything is typed. */
+const START_ACTIONS = ['action-deploy', 'action-validate', 'action-theme', 'action-density'];
+
+const VIEW_META = new Map(DASHBOARD_VIEWS.map((v) => [v.view, v]));
 
 interface CommandAction {
   id: string;
@@ -56,22 +97,6 @@ const NAV_ITEMS: CommandAction[] = [...DASHBOARD_VIEWS]
   view: v.view,
 }));
 
-function fuzzyScore(query: string, text: string): number {
-  const q = query.toLowerCase().trim();
-  const t = text.toLowerCase();
-  if (!q) return 1;
-  if (t.includes(q)) return 100 + (t.startsWith(q) ? 20 : 0) + (t === q ? 30 : 0);
-  let qi = 0;
-  let score = 0;
-  for (let i = 0; i < t.length && qi < q.length; i++) {
-    if (t[i] === q[qi]) {
-      score += 10 - Math.min(i, 5);
-      qi++;
-    }
-  }
-  return qi === q.length ? score : 0;
-}
-
 function paletteToast(message: string, type: 'success' | 'error') {
   window.dispatchEvent(new CustomEvent('aether-toast', { detail: { message, type } }));
 }
@@ -91,6 +116,8 @@ export default function CommandPalette({
   const navigate = useNavigate();
   const { canMutate } = useAuth();
   const { capabilities, gitopsConfigured } = useServerCapabilities();
+  const { pinnedViews, density, sidebarCollapsed, setPreferences } = usePreferences();
+  const { theme, setTheme, toggleDarkLight } = useTheme();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentViews, setRecentViews] = useState<AppView[]>([]);
@@ -395,44 +422,12 @@ export default function CommandPalette({
         run: () => navigate(pathWithQuery(viewToPath('drift'), { workload: name })),
       },
       {
-        id: `workload-${name}-audit-trail`,
-        label: `Audit trail: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `audit compliance trail ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('audit'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-policy-scoped`,
-        label: `Policy check: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `policy opa validate ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('policy'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-backups-restore`,
-        label: `Backups: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `backup restore snapshot ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('backups'), { workload: name })),
-      },
-      {
         id: `workload-${name}-compose-deps`,
         label: `Compose deps: ${name}`,
         category: 'workload-action' as const,
         searchText: `compose dependencies stack ${name}`,
         workloadName: name,
         run: () => navigate(pathWithQuery(viewToPath('deps'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-fleet-hub`,
-        label: `Fleet hub: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `fleet multi cluster hub ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('fleet'), { workload: name })),
       },
       {
         id: `workload-${name}-scoring`,
@@ -966,6 +961,49 @@ export default function CommandPalette({
       );
     }
 
+    const interfaceItems: CommandAction[] = [
+      {
+        id: 'action-theme',
+        label: 'Switch between light and dark theme',
+        category: 'action',
+        searchText: 'theme appearance light dark mode toggle colour color',
+        run: toggleDarkLight,
+      },
+      ...(theme === 'system'
+        ? []
+        : [{
+            id: 'action-theme-system',
+            label: 'Follow the system theme',
+            category: 'action' as const,
+            searchText: 'theme appearance system automatic os',
+            run: () => setTheme('system'),
+          }]),
+      {
+        id: 'action-density',
+        label: density === 'compact' ? 'Use comfortable density' : 'Use compact density',
+        category: 'action',
+        searchText: 'density compact comfortable spacing rows tables appearance',
+        run: () => setPreferences({ density: density === 'compact' ? 'comfortable' : 'compact' }),
+      },
+      {
+        id: 'action-sidebar',
+        label: sidebarCollapsed ? 'Expand the sidebar' : 'Collapse the sidebar',
+        category: 'action',
+        searchText: 'sidebar navigation rail collapse expand hide show',
+        run: () => setPreferences({ sidebarCollapsed: !sidebarCollapsed }),
+      },
+      {
+        id: 'action-copy-link',
+        label: 'Copy link to this view',
+        category: 'action',
+        searchText: 'copy share link url page filters',
+        run: async () => {
+          const ok = await copyToClipboard(window.location.href);
+          paletteToast(ok ? 'Link copied' : 'Could not copy the link', ok ? 'success' : 'error');
+        },
+      },
+    ];
+
     const platform = capabilities?.platform ?? null;
     const navMeta = DASHBOARD_VIEWS.map((v) => ({
       view: v.view,
@@ -987,8 +1025,8 @@ export default function CommandPalette({
       },
     }));
 
-    return [...visibleNav, ...setupCommands, ...workloadItems, ...actionItems];
-  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, onNavigate, canMutate, capabilities, gitopsConfigured]);
+    return [...visibleNav, ...setupCommands, ...workloadItems, ...actionItems, ...interfaceItems];
+  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, onNavigate, canMutate, capabilities, gitopsConfigured, theme, setTheme, toggleDarkLight, density, sidebarCollapsed, setPreferences]);
 
   const recentCommands = useMemo((): CommandAction[] => {
     const items: CommandAction[] = [];
@@ -1012,16 +1050,41 @@ export default function CommandPalette({
     return items;
   }, [recentViews, recentActionIds, allCommands]);
 
+  const pinnedCommands = useMemo(
+    (): CommandAction[] =>
+      pinnedViews.flatMap((view) => {
+        const meta = DASHBOARD_VIEWS.find((v) => v.view === view);
+        return meta
+          ? [{ id: `pinned-${view}`, label: meta.label, category: 'pinned' as const, searchText: `pinned ${meta.label}`, view }]
+          : [];
+      }),
+    [pinnedViews],
+  );
+
   const filtered = useMemo(() => {
-    const q = query.trim();
+    const { scope, text: q } = parseQuery(query);
+    const inScope = (cmd: CommandAction) => scope === 'all' || SCOPE_CATEGORIES[scope].includes(cmd.category);
     const recentIds = new Set(recentCommands.map((c) => c.id));
     const base = allCommands.filter((cmd) => !recentIds.has(cmd.id));
-    const pool = q ? [...recentCommands, ...base] : [...recentCommands, ...base];
-    const scored = pool
-      .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.searchText || cmd.label) }))
-      .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score);
-    let results = (q ? scored.map(({ cmd }) => cmd) : pool).slice(0, 40);
+
+    let results: CommandAction[];
+    if (q) {
+      // Search each destination once: recent and pinned copies are for browsing.
+      const ranked = allCommands
+        .filter(inScope)
+        // The page id is searchable too ("deps", "rbac", "sbom").
+        .map((cmd) => ({ cmd, score: scoreCommand(q, { label: cmd.label, searchText: `${cmd.searchText} ${cmd.view ?? ''}` }) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(({ cmd }) => cmd);
+      results = groupByCategory(ranked.slice(0, MAX_RESULTS));
+    } else if (scope !== 'all') {
+      results = base.filter(inScope).slice(0, MAX_RESULTS);
+    } else {
+      const shortcuts = base.filter((cmd) => START_ACTIONS.includes(cmd.id));
+      const pages = base.filter((cmd) => cmd.category === 'navigation');
+      results = [...pinnedCommands, ...recentCommands, ...shortcuts, ...pages].slice(0, MAX_RESULTS);
+    }
 
     const ql = q.toLowerCase();
     const scaleMatch = ql.match(/^scale\s+(.+)$/);
@@ -1068,20 +1131,26 @@ export default function CommandPalette({
 
     if (contextual.length > 0) {
       const seen = new Set(contextual.map((c) => c.id));
-      results = [...contextual, ...results.filter((c) => !seen.has(c.id))].slice(0, 40);
+      results = [...contextual, ...results.filter((c) => !seen.has(c.id))].slice(0, MAX_RESULTS);
     }
 
     return results;
-  }, [allCommands, query, recentCommands, workloads, navigate]);
+  }, [allCommands, query, recentCommands, pinnedCommands, workloads, navigate]);
 
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setSelectedIndex(0);
-      setRecentViews(getRecentViews());
-      setRecentActionIds(getRecentActions().map((a) => a.id));
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    setQuery('');
+    setSelectedIndex(0);
+    setRecentViews(getRecentViews());
+    setRecentActionIds(getRecentActions().map((a) => a.id));
+    inputRef.current?.focus();
+    return () => {
+      // Hand focus back unless the chosen command moved it somewhere else.
+      if (opener?.isConnected && (document.activeElement === document.body || document.activeElement === inputRef.current)) {
+        opener.focus();
+      }
+    };
   }, [open]);
 
   useEffect(() => {
@@ -1096,7 +1165,8 @@ export default function CommandPalette({
 
   const executeCommand = useCallback(
     async (cmd: CommandAction) => {
-      pushRecentAction({ id: cmd.id, label: cmd.label, searchText: cmd.searchText || cmd.label });
+      // Pages are remembered by the recent-pages list; this one is for actions.
+      if (!cmd.view) pushRecentAction({ id: cmd.id, label: cmd.label, searchText: cmd.searchText || cmd.label });
       if (cmd.view) {
         onNavigate(cmd.view);
       } else if (cmd.run) {
@@ -1108,49 +1178,53 @@ export default function CommandPalette({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    const step = (delta: number) => {
+      if (filtered.length === 0) return;
+      setSelectedIndex((i) => (i + delta + filtered.length) % filtered.length);
+    };
+    if (e.key === 'ArrowDown' || (e.ctrlKey && e.key === 'n')) {
       e.preventDefault();
-      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
+      step(1);
+    } else if (e.key === 'ArrowUp' || (e.ctrlKey && e.key === 'p')) {
       e.preventDefault();
-      setSelectedIndex((i) => Math.max(i - 1, 0));
+      step(-1);
+    } else if (e.key === 'Home' && !query) {
+      e.preventDefault();
+      setSelectedIndex(0);
+    } else if (e.key === 'End' && !query) {
+      e.preventDefault();
+      setSelectedIndex(Math.max(0, filtered.length - 1));
     } else if (e.key === 'Enter' && filtered[selectedIndex]) {
+      e.preventDefault();
       void executeCommand(filtered[selectedIndex]);
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       onClose();
+    } else if (e.key === 'Tab') {
+      // The list is driven from the search field, so focus stays there.
+      e.preventDefault();
+      step(e.shiftKey ? -1 : 1);
     }
   };
 
   if (!open) return null;
 
-  const categoryLabels: Record<CommandCategory, string> = {
-    recent: 'Recent pages',
-    'recent-action': 'Recent actions',
-    navigation: 'Navigation',
-    setup: 'Setup required',
-    workload: 'Workloads',
-    'workload-action': 'Workload actions',
-    action: 'Actions',
-  };
-
   let lastCategory: CommandCategory | '' = '';
+  const selected = filtered[selectedIndex];
 
   return (
     <div
       data-testid="command-palette"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
+      className="palette-root"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="fixed inset-0 backdrop-blur-xs" style={{ background: 'var(--scrim)' }} onClick={onClose} />
-      <div
-        className="glass-drawer relative w-full max-w-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center border-b border-rule px-4 py-4">
-          <span className="mr-2 font-mono text-sm text-subtle">{'>'}</span>
+      <div className="fixed inset-0 backdrop-blur-xs" style={{ background: 'var(--scrim)' }} aria-hidden />
+      <div className="glass-drawer palette-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2.5 border-b border-rule px-4 py-3.5">
+          <Search className="h-4 w-4 shrink-0 text-subtle" aria-hidden />
           <input
             ref={inputRef}
             type="text"
@@ -1160,41 +1234,52 @@ export default function CommandPalette({
             onKeyDown={handleKeyDown}
             placeholder="Search pages, workloads, and actions…"
             aria-label="Search pages, workloads, and actions"
-            className="flex-1 bg-transparent text-sm text-foreground outline-hidden placeholder:text-subtle"
+            aria-controls="command-palette-results"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-hidden placeholder:text-subtle"
             autoComplete="off"
+            spellCheck={false}
           />
-          <kbd className="rounded-sm border border-rule px-1.5 py-0.5 text-xs text-subtle">ESC</kbd>
+          <button type="button" onClick={onClose} className="palette-key" aria-label="Close command palette">
+            Esc
+          </button>
         </div>
 
-        <div ref={listRef} className="max-h-[min(24rem,50vh)] overflow-y-auto py-1">
+        <p className="sr-only" role="status" aria-live="polite">
+          {selected ? `${selected.label}, ${selectedIndex + 1} of ${filtered.length}` : 'No results'}
+        </p>
+
+        <div ref={listRef} id="command-palette-results" className="max-h-[min(28rem,55dvh)] overflow-y-auto px-2 py-1.5">
           {filtered.length === 0 ? (
             <div data-testid="command-palette-empty" className="px-4 py-8 text-center text-sm text-subtle">
               No results found
+              <span className="mt-1 block text-xs">Try fewer words, or start with / for pages, @ for workloads, &gt; for actions.</span>
             </div>
           ) : (
             filtered.map((cmd, i) => {
               const showCategory = cmd.category !== lastCategory;
               lastCategory = cmd.category;
+              const meta = cmd.view ? VIEW_META.get(cmd.view) : undefined;
+              const Icon = meta?.icon ?? CATEGORY_ICONS[cmd.category];
+              const hint = meta ? getSectionLabel(meta.view) : cmd.workloadTab;
               return (
                 <div key={cmd.id}>
-                  {showCategory ? (
-                    <div className="px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-subtle">
-                      {categoryLabels[cmd.category]}
-                    </div>
-                  ) : null}
+                  {showCategory ? <div className="palette-heading">{CATEGORY_LABELS[cmd.category]}</div> : null}
                   <button
                     type="button"
+                    tabIndex={-1}
                     data-testid={`command-palette-item-${cmd.id}`}
                     onClick={() => void executeCommand(cmd)}
-                    onMouseEnter={() => setSelectedIndex(i)}
+                    onMouseMove={() => setSelectedIndex(i)}
                     data-selected={i === selectedIndex}
-                    className={`flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
-                      i === selectedIndex ? 'bg-primary-wash text-primary' : 'text-muted hover:bg-hover'
-                    }`}
+                    aria-current={i === selectedIndex ? 'true' : undefined}
+                    className="palette-item"
                   >
-                    <span className="flex-1 truncate">{cmd.label}</span>
-                    {cmd.view ? <span className="shrink-0 text-xs text-subtle">Navigate</span> : null}
-                    {cmd.workloadTab ? <span className="shrink-0 text-xs text-subtle">{cmd.workloadTab}</span> : null}
+                    <Icon className="h-4 w-4 shrink-0 text-subtle" strokeWidth={1.7} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{cmd.label}</span>
+                      {meta && i === selectedIndex ? <span className="palette-sub">{meta.subtitle}</span> : null}
+                    </span>
+                    {hint ? <span className="shrink-0 text-xs text-subtle">{hint}</span> : null}
                   </button>
                 </div>
               );
@@ -1202,11 +1287,13 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule px-4 py-3 text-xs text-subtle">
-          <span>{isMac ? '⌘K' : 'Ctrl+K'} open</span>
-          <span>↑↓ navigate</span>
-          <span>Enter select</span>
-          <span>Esc close</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule px-4 py-2.5 text-xs text-subtle">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
+          <span><kbd>Enter</kbd> select</span>
+          <span><kbd>/</kbd> pages</span>
+          <span><kbd>@</kbd> workloads</span>
+          <span><kbd>&gt;</kbd> actions</span>
+          <span className="ml-auto">{isMac ? '⌘K' : 'Ctrl+K'}</span>
         </div>
       </div>
     </div>

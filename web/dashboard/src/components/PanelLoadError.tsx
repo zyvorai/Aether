@@ -15,7 +15,7 @@ export default function PanelLoadError({
   onRetry,
 }: PanelLoadErrorProps) {
   return (
-    <div className="glass flex flex-col items-center gap-3 rounded-xl border border-danger/20 bg-danger/5 p-6 text-center">
+    <div className="glass flex flex-col items-center gap-3 rounded-xl border border-danger/20 bg-danger/5 p-6 text-center" role="alert">
       <WifiOff className="h-8 w-8 text-danger/80" aria-hidden />
       <div>
         <p className="font-medium text-foreground">{title}</p>

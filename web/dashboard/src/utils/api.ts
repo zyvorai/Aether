@@ -3,6 +3,7 @@
 
 import type { ApiResponse, AuthStatus } from '../types/api';
 import { getActiveTenantId } from './tenantContext';
+import { describeFetchFailure } from './fetchFailure';
 
 const BASE = '/api';
 export const DEFAULT_DASHBOARD_USERNAME = 'admin';
@@ -406,20 +407,26 @@ export async function apiFetchWithError<T>(path: string): Promise<{ data: T | nu
 
 export type FetchSettledResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: 'network' | 'api' };
+  | { ok: false; error: 'network' | 'api'; detail?: string };
 
 /** Like apiFetch but distinguishes network vs API failures for page-level error UI. */
 export async function apiFetchSettled<T>(path: string): Promise<FetchSettledResult<T>> {
+  let res: Response;
   try {
-    const res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
-    notifyIfUnauthorized(res);
+    res = await fetch(BASE + path, withCreds({ headers: authHeaders() }));
+  } catch {
+    return { ok: false, error: 'network', detail: describeFetchFailure(path) };
+  }
+  notifyIfUnauthorized(res);
+  try {
     const json: ApiResponse<T> = await res.json();
     if (json.success && json.data !== undefined && json.data !== null) {
       return { ok: true, data: json.data };
     }
-    return { ok: false, error: 'api' };
+    return { ok: false, error: 'api', detail: describeFetchFailure(path, res.status, json.error) };
   } catch {
-    return { ok: false, error: 'network' };
+    // The server answered, but not with the JSON envelope.
+    return { ok: false, error: 'api', detail: describeFetchFailure(path, res.status) };
   }
 }
 

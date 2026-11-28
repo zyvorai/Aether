@@ -33,7 +33,7 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
   return (
     <section className="apple-chapter">
       {title || subtitle ? (
-        <div className="mb-10 max-w-2xl space-y-2">
+        <div className="mb-4 max-w-2xl space-y-1">
           {title ? <h2 className="text-2xl font-semibold tracking-[var(--tracking-display)] text-foreground sm:text-3xl">{title}</h2> : null}
           {subtitle ? <p className="text-base text-muted">{subtitle}</p> : null}
         </div>
@@ -48,9 +48,9 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
           >
             <div className="hub-band-icon">{link.icon}</div>
             <div className="min-w-0 flex-1 space-y-1">
-              <h3 className="text-lg font-semibold tracking-[var(--tracking-display)] text-foreground">
+              <h2 className="text-[0.9375rem] font-semibold text-foreground">
                 {link.title}
-              </h3>
+              </h2>
               <p className="max-w-xl text-sm leading-relaxed text-muted">{link.description}</p>
             </div>
             <ArrowRight className="hub-band-arrow h-4 w-4 shrink-0" />

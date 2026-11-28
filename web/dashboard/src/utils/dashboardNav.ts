@@ -64,6 +64,7 @@ import {
   ExternalLink,
   RefreshCw,
   AlertTriangle,
+  ClipboardList,
 } from 'lucide-react';
 import type { AppView } from '../types/api';
 
@@ -84,6 +85,7 @@ export interface DashboardViewMeta {
 
 export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { view: 'overview', path: '/', label: 'Overview', breadcrumb: 'Command Center', subtitle: 'Fleet briefing, savings, and capacity intelligence', group: 'primary', icon: LayoutDashboard, paletteLabel: 'Command Center' },
+  { view: 'operations', path: '/operations', label: 'Operations Desk', breadcrumb: 'Operations Desk', subtitle: 'What needs attention, what changed, incidents and previews before you act', group: 'operations', icon: ClipboardList, paletteLabel: 'Operations Desk' },
   { view: 'fabric', path: '/fabric', label: 'Runtime Fabric', breadcrumb: 'Runtime Fabric', subtitle: 'Live Application → Runtime → Cluster → Node topology', group: 'primary', icon: Network, paletteLabel: 'Fabric' },
   { view: 'migrations', path: '/migrations', label: 'Migrations', breadcrumb: 'Migrations', subtitle: 'AI migration planner with risk analysis and strategy', group: 'intelligence', icon: ArrowRightLeft, paletteLabel: 'Migrations' },
   { view: 'observability', path: '/observability', label: 'Observability', breadcrumb: 'Observability', subtitle: 'Health, metrics, events, and correlated diagnostics', group: 'operations', icon: Eye, paletteLabel: 'Observability' },

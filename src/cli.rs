@@ -188,6 +188,16 @@ pub(crate) enum Commands {
         #[arg(short, long, default_value = "blue-green")]
         strategy: String,
 
+        /// Shadows the global `-s/--spec`, which migrate does not use, so that
+        /// `-s` can mean `--strategy` here.
+        #[arg(
+            id = "spec",
+            long = "spec",
+            default_value = "workload.yaml",
+            hide = true
+        )]
+        unused_spec: PathBuf,
+
         /// Skip validation delay
         #[arg(long)]
         no_validation: bool,
@@ -464,16 +474,88 @@ pub(crate) enum Commands {
         name: String,
     },
 
-    /// Rollback a workload to its latest snapshot
+    /// Roll a workload back to an applied revision
     Rollback {
         /// Workload name
         name: String,
-        /// Snapshot version to rollback to (default: latest). Use --list to see available versions.
+        /// Revision to apply (default: the previous one with a different spec,
+        /// or the last good one after a failed change). See `aether history`.
+        #[arg(long, conflicts_with = "version")]
+        revision: Option<u64>,
+        /// Legacy pre-deploy snapshot index. A snapshot only points at a spec
+        /// file, so it redeploys that file as it is now.
         #[arg(long)]
         version: Option<usize>,
-        /// List available snapshots instead of rolling back
+        /// List revisions and snapshots instead of rolling back
         #[arg(long)]
         list: bool,
+    },
+
+    /// Explain a workload: placement, health, changes and what needs attention
+    Explain {
+        /// Workload name
+        name: String,
+    },
+
+    /// Applied spec revisions of a workload
+    History {
+        /// Workload name
+        name: String,
+        /// Print the spec of one revision (secrets redacted)
+        #[arg(long, value_name = "REVISION", conflicts_with = "diff")]
+        show: Option<u64>,
+        /// Compare two revisions
+        #[arg(long, num_args = 2, value_names = ["FROM", "TO"])]
+        diff: Vec<u64>,
+    },
+
+    /// Preview an action on a deployed workload without doing it (exit 2 if blocked)
+    Preview {
+        /// Workload name
+        name: String,
+        #[command(flatten)]
+        action: PreviewArgs,
+    },
+
+    /// What changed: deploys, operations, warnings and incidents, newest first
+    Changes {
+        /// Window: 30m, 24h, 7d, or an RFC 3339 time
+        #[arg(long, default_value = "24h")]
+        since: String,
+        /// Only this workload
+        #[arg(long)]
+        workload: Option<String>,
+        /// Most entries to show
+        #[arg(long, default_value_t = 100)]
+        limit: usize,
+    },
+
+    /// Incidents detected from health checks (list, show, acknowledge, annotate)
+    Incidents {
+        #[command(subcommand)]
+        action: Option<IncidentAction>,
+    },
+
+    /// What needs attention now, most urgent first
+    Attention,
+
+    /// Operations report: availability, incidents, changes and open items
+    OpsReport {
+        /// Window: 24h, 7d, 4w, or an RFC 3339 time
+        #[arg(long, default_value = "7d")]
+        since: String,
+        /// markdown, html or json
+        #[arg(long, default_value = "markdown")]
+        format: String,
+        /// Write to a file instead of standard output
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+
+    /// Protect a workload: Aether refuses changes while it is on hold
+    Hold {
+        #[command(subcommand)]
+        action: HoldAction,
     },
 
     /// Deploy all workloads from a directory
@@ -1118,6 +1200,14 @@ impl Commands {
             Self::HelpAll => "help-all",
             Self::Diff { .. } => "diff",
             Self::Rollback { .. } => "rollback",
+            Self::Explain { .. } => "explain",
+            Self::History { .. } => "history",
+            Self::Preview { .. } => "preview",
+            Self::Changes { .. } => "changes",
+            Self::Incidents { .. } => "incidents",
+            Self::Attention => "attention",
+            Self::OpsReport { .. } => "ops-report",
+            Self::Hold { .. } => "hold",
             Self::Deploy { .. } => "deploy",
             Self::Exec { .. } => "exec",
             Self::PortForward { .. } => "port-forward",
@@ -1452,4 +1542,122 @@ pub(crate) enum PluginAction {
         /// Plugin name
         name: String,
     },
+}
+
+/// The action to preview; exactly one is required.
+#[derive(clap::Args, Debug)]
+#[group(required = true, multiple = false)]
+pub(crate) struct PreviewArgs {
+    /// Apply this edited spec
+    #[arg(long, value_name = "FILE")]
+    pub(crate) update: Option<PathBuf>,
+    /// Delete the workload
+    #[arg(long)]
+    pub(crate) delete: bool,
+    /// Stop it
+    #[arg(long)]
+    pub(crate) stop: bool,
+    /// Restart it
+    #[arg(long)]
+    pub(crate) restart: bool,
+    /// Migrate it to another runtime (podman, kube, kubevirt)
+    #[arg(long, value_name = "TARGET")]
+    pub(crate) migrate: Option<String>,
+    /// Roll it back (to REVISION, or the default target)
+    #[arg(long, value_name = "REVISION", num_args = 0..=1, default_missing_value = "0")]
+    pub(crate) rollback: Option<u64>,
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum IncidentAction {
+    /// List incidents, newest first
+    List {
+        /// Only this workload
+        #[arg(long)]
+        workload: Option<String>,
+        /// Only open incidents
+        #[arg(long)]
+        open: bool,
+    },
+    /// One incident with its timeline and the changes before it
+    Show {
+        /// Incident id
+        id: u64,
+    },
+    /// Write a Markdown post-incident draft
+    Report {
+        /// Incident id
+        id: u64,
+        /// Write to a file instead of standard output
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    /// Acknowledge an incident
+    Ack {
+        /// Incident id
+        id: u64,
+    },
+    /// Add a note to an incident
+    Note {
+        /// Incident id
+        id: u64,
+        /// Note text
+        #[arg(required = true)]
+        text: Vec<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum HoldAction {
+    /// Put a workload on hold
+    Set {
+        /// Workload name
+        name: String,
+        /// Why changes are blocked
+        #[arg(long)]
+        reason: String,
+        /// How long: 30m, 2h, 7d (default: until released)
+        #[arg(long = "for", value_name = "DURATION")]
+        duration: Option<String>,
+    },
+    /// Release a hold
+    Release {
+        /// Workload name
+        name: String,
+    },
+    /// List active holds
+    List,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// Catches clashing flags, which otherwise panic only when the command runs.
+    #[test]
+    fn command_line_definition_is_consistent() {
+        Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn migrate_short_s_is_the_strategy() {
+        let cli = Cli::try_parse_from(["aether", "migrate", "web", "kube", "-s", "rolling"])
+            .expect("parses");
+        let Commands::Migrate { strategy, .. } = cli.command else {
+            panic!("not migrate");
+        };
+        assert_eq!(strategy, "rolling");
+    }
+
+    #[test]
+    fn preview_takes_exactly_one_action() {
+        assert!(Cli::try_parse_from(["aether", "preview", "web"]).is_err());
+        assert!(Cli::try_parse_from(["aether", "preview", "web", "--delete", "--stop"]).is_err());
+        let cli = Cli::try_parse_from(["aether", "preview", "web", "--rollback"]).expect("parses");
+        let Commands::Preview { action, .. } = cli.command else {
+            panic!("not preview");
+        };
+        assert_eq!(action.rollback, Some(0));
+    }
 }

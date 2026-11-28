@@ -3,6 +3,7 @@
 
 @import 'tailwindcss';
 @import './theme.css';
+@import './shell.css';
 
 /* Utilities are generated from the CSS variables in theme.css. */
 @theme inline {
@@ -274,8 +275,7 @@
     backdrop-filter: blur(8px);
   }
 
-  /* ---- Page hero: large headline on the page, generous air ---- */
-  .tahoe-hero { padding-block: clamp(0.5rem, 2vw, 1.5rem) 0; }
+  /* ---- Page header decoration (layout lives in shell.css) ---- */
   .tahoe-hero-shine,
   .tahoe-icon-badge-shine { display: none; }
   .tahoe-icon-badge {
@@ -290,53 +290,6 @@
   }
   .tahoe-stat-value { font-size: 1.75rem; font-weight: 600; letter-spacing: var(--tracking-display); color: var(--foreground); }
   .tahoe-stat-label { font-size: 0.8125rem; color: var(--muted-foreground); }
-
-  .feature-orbit-card {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 28px;
-    align-items: center;
-    padding: clamp(1.5rem, 4vw, 2.5rem);
-    border-radius: var(--radius-card);
-    background: var(--surface-elevated);
-    box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
-  }
-  .feature-orbit-art {
-    position: relative;
-    height: 220px;
-    border-radius: var(--radius-liquid-lg);
-    background: var(--surface);
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-  }
-  .feature-orbit-art .orbit { position: absolute; inset: 14%; border-radius: 50%; border: 1px dashed var(--border-strong); }
-  .feature-orbit-art .node {
-    position: absolute;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-liquid);
-    display: grid;
-    place-items: center;
-    color: var(--surface-elevated);
-    font-size: 11px;
-    font-weight: 700;
-    box-shadow: var(--shadow-raised);
-  }
-  .feature-orbit-art .core {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--radius-card);
-    background: var(--accent-fill);
-    display: grid;
-    place-items: center;
-    color: #fff;
-    font-weight: 700;
-  }
-  @media (max-width: 1024px) {
-    .feature-orbit-card { grid-template-columns: 1fr; }
-    .feature-orbit-art { display: none; }
-  }
 
   .apple-highlights-row { width: 100%; }
   .apple-highlights-kicker {
@@ -383,14 +336,14 @@
   button.hero-swatch[aria-pressed='true'] { border-color: var(--tone-color, var(--primary)); }
   .hero-swatch-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone-color, var(--primary)); flex-shrink: 0; }
 
-  .hub-band-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.875rem; }
+  .hub-band-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 0.75rem; }
   .hub-band {
     position: relative;
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
-    padding: 1.5rem;
-    border-radius: var(--radius-card);
+    gap: 0.875rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-liquid-lg);
     background: var(--surface-elevated);
     box-shadow: 0 0 0 1px var(--card-edge), var(--shadow-card);
     text-decoration: none;
@@ -464,7 +417,7 @@
   }
 
   .page-frame {
-    @apply px-4 py-4 sm:px-6 lg:px-0;
+    @apply px-0 py-0;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -473,16 +426,12 @@
   }
   .page-frame::before { display: none; }
 
-  /* Apple chapter stack — large vertical air between one-idea sections */
-  .apple-chapter {
-    padding-block: clamp(2rem, 4vw, 3.5rem);
-  }
-  .apple-chapter + .apple-chapter {
-    border-top: 1px solid var(--border);
-  }
+  /* Page sections. Vertical rhythm comes from .page-stack (shell.css). */
+  .apple-chapter { padding-block: 0; }
 
   .glass-toolbar {
-    @apply mb-6 flex flex-col gap-4 px-0 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    @apply mb-0 flex flex-col gap-3 px-0 py-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between;
+    margin-bottom: var(--stack-gap);
     background: transparent;
     border: none;
     box-shadow: none;
@@ -743,12 +692,6 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* Dense resource tables (DataTable). */
-.data-row { min-height: 48px; padding-block: 6px; }
-@media (max-width: 640px) {
-  .dash-content .page-frame { padding-inline: 0; }
 }
 
 /* Long code and unbroken values wrap or scroll inside their card. */

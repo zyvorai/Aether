@@ -1,8 +1,9 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
+import { useEffect, useRef } from 'react';
 import { X, Keyboard, Info } from 'lucide-react';
-import { helpShortcuts } from './helpShortcuts';
+import { helpShortcutGroups } from './helpShortcuts';
 import ZyvorAbout from './ZyvorAbout';
 
 export type HelpTab = 'shortcuts' | 'about';
@@ -28,6 +29,24 @@ function Kbd({ children }: { children: string }) {
 }
 
 export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDialogProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const latestClose = useRef(onClose);
+  latestClose.current = onClose;
+
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') latestClose.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (opener?.isConnected) opener.focus();
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -37,9 +56,6 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
       aria-modal="true"
       aria-label="Help"
       onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
-      }}
     >
       <div className="glass-modal-backdrop fixed inset-0" aria-hidden />
       <div
@@ -49,6 +65,7 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
         <div className="flex items-center justify-between glass-divider-b/40 px-5 py-4">
           <h2 className="text-lg font-semibold text-foreground">Help</h2>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-muted transition glass-inset-hover hover:text-foreground"
@@ -77,21 +94,23 @@ export default function HelpDialog({ open, tab, onClose, onTabChange }: HelpDial
         <div tabIndex={0} role="region" aria-label="Help content" className="max-h-[min(70vh,32rem)] overflow-y-auto p-5">
           {tab === 'shortcuts' ? (
             <div role="tabpanel">
-              <ul className="m-0 list-none space-y-3">
-                {helpShortcuts.map((s) => (
-                  <li key={s.description} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-muted">{s.description}</span>
-                    <div className="flex shrink-0 items-center gap-1">
-                      {s.keys.map((k, i) => (
-                        <span key={`${s.description}-${k}-${i}`} className="flex items-center gap-1">
-                          {i > 0 && <span className="text-xs text-subtle">+</span>}
-                          <Kbd>{k}</Kbd>
+              {helpShortcutGroups.map((group) => (
+                <section key={group.title} className="mb-4">
+                  <h3 className="mb-2 text-xs font-semibold text-subtle">{group.title}</h3>
+                  <ul className="m-0 list-none space-y-2">
+                    {group.shortcuts.map((s) => (
+                      <li key={s.description} className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-muted">{s.description}</span>
+                        <span className="flex shrink-0 items-center gap-1">
+                          {s.keys.map((k, i) => (
+                            <Kbd key={`${k}-${i}`}>{k}</Kbd>
+                          ))}
                         </span>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
               <p className="mt-4 space-y-1 glass-divider-t pt-3 text-xs text-subtle">
                 <span>
                   Sequence shortcuts use two letters in order (wait under half a second between keys). Shortcuts are

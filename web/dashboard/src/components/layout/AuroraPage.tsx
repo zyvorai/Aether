@@ -4,16 +4,10 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHero, type Tone } from '../layout/PageHero';
-import { getViewMeta, type NavGroup } from '../../utils/dashboardNav';
+import { getViewMeta } from '../../utils/dashboardNav';
 import type { AppView } from '../../types/api';
 import { cn } from '../../lib/cn';
-
-const GROUP_EYEBROW: Record<NavGroup, string> = {
-  primary: 'Workspace',
-  intelligence: 'Intelligence',
-  operations: 'Operations',
-  resources: 'Resources',
-};
+import SectionTabs from '../SectionTabs';
 
 export type AuroraPageProps = {
   view: AppView;
@@ -48,9 +42,8 @@ export default function AuroraPage({
 }: AuroraPageProps) {
   const meta = getViewMeta(view);
   return (
-    <div className={cn('space-y-10 animate-fade-up', className)} data-testid={`page-${view}`}>
+    <div className={cn('page-stack animate-fade-up', className)} data-testid={`page-${view}`}>
       <PageHero
-        eyebrow={GROUP_EYEBROW[meta.group]}
         title={title ?? meta.label}
         description={description ?? meta.subtitle}
         actions={actions}
@@ -60,7 +53,8 @@ export default function AuroraPage({
         stats={stats}
         statsTestId={statsTestId}
       />
-      <div className="space-y-10">{children}</div>
+      <SectionTabs currentView={view} />
+      <div className="page-stack">{children}</div>
     </div>
   );
 }

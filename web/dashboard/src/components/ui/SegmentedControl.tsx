@@ -16,6 +16,8 @@ interface SegmentedControlProps<T extends string> {
   onChange: (key: T) => void;
   items: SegmentedControlItem<T>[];
   className?: string;
+  /** Accessible name of the group. */
+  label?: string;
 }
 
 export default function SegmentedControl<T extends string>({
@@ -23,6 +25,7 @@ export default function SegmentedControl<T extends string>({
   onChange,
   items,
   className = '',
+  label = 'Filter',
 }: SegmentedControlProps<T>) {
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
@@ -41,7 +44,7 @@ export default function SegmentedControl<T extends string>({
   return (
     <div
       role="tablist"
-      aria-label="Filter"
+      aria-label={label}
       onKeyDown={onKeyDown}
       className={`glass-fill inline-flex items-center gap-0.5 rounded-[var(--radius-md)] p-0.5 ${className}`}
     >

@@ -11,6 +11,9 @@ import { useToast } from './components/Toast';
 import { useEventStream } from './hooks/useEventStream';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useSequenceShortcuts } from './hooks/useSequenceShortcut';
+import { useLiveUpdates } from './hooks/useLiveUpdates';
+import { getPreferences, setPreferences, togglePinned } from './utils/preferences';
+import { GO_SHORTCUTS } from './utils/goShortcuts';
 import { appShellClass } from './utils/themeSurface';
 import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
@@ -70,6 +73,7 @@ import HelmCatalogPage from './components/pages/HelmCatalogPage';
 import HostedPage from './components/pages/HostedPage';
 import OpenApiPage from './components/pages/OpenApiPage';
 
+import OperationsPage from './components/operator/OperationsPage';
 import ObsRootCausePage from './components/pages/ObsRootCausePage';
 import ObsCapacityForecastPage from './components/pages/ObsCapacityForecastPage';
 import ObsCapacityScalePage from './components/pages/ObsCapacityScalePage';
@@ -285,11 +289,17 @@ function AetherDashboard() {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, [isAuthenticated]);
 
+  const applyRefresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+    setLastRefreshed(new Date());
+  }, []);
+  // Automatic refreshes go through here so they can be paused.
+  const live = useLiveUpdates(applyRefresh);
+
   // Real-time updates via SSE
   const { connected: sseConnected } = useEventStream('', (event) => {
     if (event.type === 'workloadChanged' || event.type === 'healthUpdate') {
-      setRefreshKey((k) => k + 1);
-      setLastRefreshed(new Date());
+      live.requestRefresh();
     }
     if (event.type === 'migrationProgress') {
       window.dispatchEvent(new CustomEvent('aether-live-activity', { detail: event }));
@@ -301,7 +311,7 @@ function AetherDashboard() {
           payload.message ?? 'Migration in progress',
         );
       }
-      setRefreshKey((k) => k + 1);
+      live.requestRefresh();
     }
   }, isAuthenticated);
 
@@ -389,12 +399,9 @@ function AetherDashboard() {
   // Auto-refresh every 60 seconds (fallback since SSE provides instant updates)
   useEffect(() => {
     if (!isAuthenticated) return;
-    const interval = setInterval(() => {
-      setRefreshKey((k) => k + 1);
-      setLastRefreshed(new Date());
-    }, 60000);
+    const interval = setInterval(live.requestRefresh, 60000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, live.requestRefresh]);
 
   // Fetch workload names for command palette
   useEffect(() => {
@@ -450,6 +457,10 @@ function AetherDashboard() {
     },
     onCommandPalette: () => setCommandPaletteOpen((o) => !o),
     onOpenHelp: toggleHelp,
+    onToggleSidebar: () => setPreferences({ sidebarCollapsed: !getPreferences().sidebarCollapsed }),
+    onTogglePin: () => {
+      if (currentView) setPreferences({ pinnedViews: togglePinned(getPreferences().pinnedViews, currentView) });
+    },
     enabled: isAuthenticated,
   });
 
@@ -468,29 +479,20 @@ function AetherDashboard() {
   }, [navigate, toast]);
 
   const sequenceShortcuts = useMemo(
-    () => [
-      { sequence: ['g', 'd'] as [string, string], handler: () => handleNavigate('overview') },
-      { sequence: ['g', 'a'] as [string, string], handler: () => handleNavigate('applications') },
-      { sequence: ['g', 'w'] as [string, string], handler: () => handleNavigate('workloads') },
-      { sequence: ['g', 'c'] as [string, string], handler: () => handleNavigate('clusters') },
-      { sequence: ['g', 'h'] as [string, string], handler: () => handleNavigate('health') },
-      { sequence: ['g', 'e'] as [string, string], handler: () => handleNavigate('events') },
-      { sequence: ['g', 'b'] as [string, string], handler: () => handleNavigate('backups') },
-      { sequence: ['g', 'u'] as [string, string], handler: () => handleNavigate('audit') },
-      { sequence: ['g', 'm'] as [string, string], handler: () => handleNavigate('metrics') },
-      { sequence: ['g', 'y'] as [string, string], handler: () => handleNavigate('policy') },
-      { sequence: ['g', 's'] as [string, string], handler: () => handleNavigate('secrets') },
-    ],
+    () =>
+      GO_SHORTCUTS.map(({ key, view }) => ({
+        sequence: ['g', key] as [string, string],
+        handler: () => handleNavigate(view),
+      })),
     [handleNavigate],
   );
 
   useSequenceShortcuts(sequenceShortcuts, isAuthenticated);
 
   const handleRefresh = useCallback(() => {
-    setRefreshKey((k) => k + 1);
-    setLastRefreshed(new Date());
+    applyRefresh();
     toast('Dashboard refreshed', 'info');
-  }, [toast]);
+  }, [applyRefresh, toast]);
 
   if (currentView === null) {
     return <Navigate to="/" replace />;
@@ -731,6 +733,8 @@ function AetherDashboard() {
         return <ObsAutonomousSrePage />;
       case 'obs-extensions':
         return <ObsExtensionsPage />;
+      case 'operations':
+        return <OperationsPage refreshKey={refreshKey} />;
       case 'obs-reliability':
         return <ObsReliabilityPage />;
       case 'settings-identity':
@@ -786,6 +790,9 @@ function AetherDashboard() {
         lastRefreshed={lastRefreshed}
         sseConnected={sseConnected}
         sseBannerVisible={sseBannerVisible}
+        livePaused={live.paused}
+        heldUpdates={live.held}
+        onTogglePause={live.togglePause}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         onRefresh={handleRefresh}
@@ -821,7 +828,7 @@ function AetherDashboard() {
         refreshKey={refreshKey}
         breadcrumbWorkload={breadcrumbWorkload}
       >
-        <ErrorBoundary>
+        <ErrorBoundary resetKey={currentView}>
           <div className="page-frame">{renderPage()}</div>
         </ErrorBoundary>
       </DashboardShell>

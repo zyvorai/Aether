@@ -273,6 +273,8 @@ async fn deploy_workload_inner(
         output::runtime_display(&runtime_kind)
     ));
 
+    ensure_not_held(&workload.metadata.name, "deploy")?;
+
     // Atlas-backed storage: resolve the concrete storage class (rewriting the
     // StatefulSet/KubeVirt manifest to use it) and provision tracked volume(s)
     // before deploy. No-op unless the workload opts in via `storageClass:
@@ -314,7 +316,8 @@ async fn deploy_workload_inner(
         workload.metadata.name.clone(),
         runtime_kind,
         instance,
-        spec_path.to_path_buf(),
+        // Absolute, so `aether serve` finds it from any working directory.
+        std::path::absolute(spec_path).unwrap_or_else(|_| spec_path.to_path_buf()),
     );
     ws.atlas_volume_ids = atlas_volume_ids;
     state.upsert(workload.metadata.name.clone(), ws);
@@ -361,8 +364,22 @@ pub(crate) async fn stop_command(name: &str, cascade: bool) -> Result<()> {
         let ns = get_namespace().map(|s| s.to_string()).unwrap_or_else(|| {
             std::env::var("AETHER_NAMESPACE").unwrap_or_else(|_| "default".to_string())
         });
+        ensure_not_held(name, "stop")?;
         let kube = aether::adapters::KubernetesRuntime::with_namespace(ns).await?;
-        kube.stop_cascade(&ws.instance).await?;
+        let stopped = kube.stop_cascade(&ws.instance).await;
+        record_audit_action(
+            aether::audit::AuditAction::Stop,
+            name,
+            Some("kubernetes"),
+            if stopped.is_ok() {
+                aether::audit::ActionResult::Success
+            } else {
+                aether::audit::ActionResult::Failure
+            },
+            "stop with cascade",
+        );
+        stopped?;
+        aether::ops::incidents::expect_down(&aether::ops::data_dir(), name, ws.runtime, "stopped")?;
     } else {
         if cascade && ws.runtime != aether::runtime::RuntimeKind::Kubernetes {
             output::warning(
@@ -397,18 +414,18 @@ pub(crate) async fn status_command(name: &str) -> Result<()> {
 
     // Record health check (side-effect: status queries feed the health timeline)
     if !output::is_quiet() {
-        let health_path = aether::health::HealthHistory::default_path();
-        let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
-        history.record(aether::health::HealthRecord {
-            timestamp: aether::resources::now_rfc3339(),
+        let observation = aether::ops::incidents::Observation {
             workload: name.to_string(),
             runtime: ws.runtime,
             state: status.state.clone(),
             ready: status.ready,
             restart_count: status.restart_count,
-            latency_ms: None,
-        });
-        let _ = history.save(&health_path);
+            message: status.message.clone(),
+            at: aether::resources::now_rfc3339(),
+        };
+        if let Err(e) = aether::ops::incidents::record(&aether::ops::data_dir(), &observation) {
+            tracing::warn!("Failed to record health check: {:#}", e);
+        }
     }
 
     // JSON/YAML output modes
@@ -497,6 +514,7 @@ pub(crate) async fn logs_command(name: &str, follow: bool) -> Result<()> {
 }
 
 pub(crate) async fn delete_command(name: &str) -> Result<()> {
+    ensure_not_held(name, "delete")?;
     // Confirm destructive action
     if !output::confirm(&format!("Delete workload '{}'?", name)) {
         output::muted("Cancelled.");
@@ -592,6 +610,7 @@ pub(crate) async fn update_command(
 ) -> Result<()> {
     let (mut state, ws, rt) = load_state_and_runtime(name).await?;
     let workload = Workload::from_file(spec_path)?;
+    ensure_not_held(name, "update")?;
 
     output::section_with_icon("🔄", "Updating Workload");
 
@@ -604,7 +623,11 @@ pub(crate) async fn update_command(
 
     state.upsert(
         name.to_string(),
-        updated_workload_state(&ws, new_instance, spec_path.clone()),
+        updated_workload_state(
+            &ws,
+            new_instance,
+            std::path::absolute(spec_path).unwrap_or_else(|_| spec_path.clone()),
+        ),
     );
     state.save(&StateStore::default_path())?;
 
@@ -624,7 +647,13 @@ fn updated_workload_state(
         aether::state::WorkloadState::new(old.name.clone(), old.runtime, new_instance, spec_path);
     ws.atlas_volume_ids = old.atlas_volume_ids.clone();
     ws.created_at = old.created_at.clone();
-    ws
+    ws.os_version = old.os_version.clone();
+    ws.node_labels = old.node_labels.clone();
+    ws.with_cluster_info(
+        old.namespace.clone(),
+        old.cluster_context.clone(),
+        old.k8s_kind.clone(),
+    )
 }
 
 /// Resolve the image reference to deploy on `aether update`.
@@ -679,16 +708,21 @@ fn record_audit_action(
     result: aether::audit::ActionResult,
     message: &str,
 ) {
-    let path = aether::audit::AuditLog::default_path();
-    match aether::audit::AuditLog::load(&path) {
-        Ok(mut log) => {
-            log.record(action, workload, runtime, result, message, None);
-            if let Err(e) = log.save(&path) {
-                tracing::warn!("Failed to save audit log: {}", e);
-            }
-        }
-        Err(e) => tracing::warn!("Failed to load audit log: {}", e),
+    if let Err(e) = aether::ops::journal::audit(
+        &aether::ops::data_dir(),
+        action,
+        workload,
+        runtime,
+        result,
+        message,
+    ) {
+        tracing::warn!("Failed to record audit event: {:#}", e);
     }
+}
+
+/// Refuse early, before any part of a change is made, when `name` is on hold.
+fn ensure_not_held(name: &str, operation: &str) -> Result<()> {
+    aether::ops::holds::check(&aether::ops::data_dir(), name, operation)
 }
 
 /// The PVC names Atlas must create for an Atlas-backed workload, by kind:
@@ -906,6 +940,7 @@ pub(crate) async fn scale_command(name: &str, replicas: i32) -> Result<()> {
         );
     }
 
+    ensure_not_held(name, "scale")?;
     output::section_with_icon("⚖️", "Scaling Workload");
 
     // Determine the workload kind from the spec (defaults to Deployment).
@@ -967,6 +1002,7 @@ pub(crate) async fn scale_command(name: &str, replicas: i32) -> Result<()> {
 /// stop + rebuild + run for local runtimes.
 pub(crate) async fn restart_command(name: &str) -> Result<()> {
     let (state, ws, rt) = load_state_and_runtime(name).await?;
+    ensure_not_held(name, "restart")?;
     output::section_with_icon("🔁", "Restarting Workload");
 
     let result = if matches!(
@@ -1339,9 +1375,22 @@ pub(crate) async fn live_migrate_command(name: &str, watch_timeout: u64) -> Resu
         );
     }
 
+    ensure_not_held(name, "live-migrate")?;
     output::section_with_icon("🔀", &format!("Live-migrating VM '{}'", name));
     let runtime = KubeVirtRuntime::new().await?;
-    let mig_name = runtime.live_migrate(name).await?;
+    let triggered = runtime.live_migrate(name).await;
+    record_audit_action(
+        aether::audit::AuditAction::Migrate,
+        name,
+        Some("kubevirt"),
+        if triggered.is_ok() {
+            aether::audit::ActionResult::Success
+        } else {
+            aether::audit::ActionResult::Failure
+        },
+        "live migration requested",
+    );
+    let mig_name = triggered?;
     output::info(&format!("Created migration '{}'", mig_name));
 
     if watch_timeout == 0 {
@@ -1407,6 +1456,8 @@ pub(crate) async fn migrate_command(
     // Parse strategy
     let strategy: MigrationStrategy = strategy_str.parse()?;
 
+    ensure_not_held(name, "migrate")?;
+
     // Auto-snapshot before migration
     {
         let snap_mgr = aether::backup::SnapshotManager::new();
@@ -1455,7 +1506,16 @@ pub(crate) async fn migrate_command(
     let migration_start = std::time::Instant::now();
     let engine = MigrationEngine::new(StateStore::default_path());
     let sp = output::spinner("Executing migration...");
-    let result = engine.migrate(plan).await?;
+    let reason = format!("migration from {source_runtime} to {target_runtime}");
+    let outcome = aether::ops::with_reason(reason, engine.migrate(plan)).await;
+    aether::ops::journal::record_migration(
+        &aether::ops::data_dir(),
+        name,
+        source_runtime,
+        target_runtime,
+        &outcome,
+    );
+    let result = outcome?;
     let migration_duration = migration_start.elapsed().as_secs_f64();
 
     // Record metrics
@@ -2565,7 +2625,7 @@ pub(crate) async fn sla_command(action: SlaAction) -> Result<()> {
             let engine = load_engine()?;
             let observation = SlaObservation {
                 uptime_pct: uptime,
-                avg_latency_ms: latency,
+                avg_latency_ms: Some(latency),
                 error_rate_pct: error_rate,
                 restarts,
                 observation_period: "24h".to_string(),
@@ -3331,30 +3391,68 @@ pub(crate) async fn affinity_command(action: AffinityAction) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: bool) -> Result<()> {
-    use aether::backup::{Backup, SnapshotManager};
+pub(crate) async fn rollback_command(
+    name: &str,
+    revision: Option<u64>,
+    version: Option<usize>,
+    list: bool,
+) -> Result<()> {
+    use aether::backup::SnapshotManager;
 
+    aether::ops::check_name(name)?;
+    let dir = aether::ops::data_dir();
+    let log = aether::ops::revisions::load(&dir, name)?;
     let snap_mgr = SnapshotManager::new();
 
-    // List mode: show available snapshots and return
+    // List mode: show what can be rolled back to and return
     if list {
-        output::section_with_icon("📋", &format!("Snapshots for workload '{}'", name));
+        output::section_with_icon("📋", &format!("Revisions of workload '{}'", name));
+        print!(
+            "{}",
+            aether::ops::revisions::format_history(name, &log.summaries())
+        );
         let snapshots = snap_mgr.list_snapshots(name)?;
-        if snapshots.is_empty() {
-            output::warning(&format!("No snapshots found for workload '{}'", name));
-            return Ok(());
-        }
-        for (i, snap) in snapshots.iter().enumerate() {
-            output::kv_tree(
-                &format!("#{}", i),
-                &snap.display().to_string(),
-                i == snapshots.len() - 1,
-            );
+        if !snapshots.is_empty() {
+            output::section("Legacy snapshots (--version N)");
+            for (i, snap) in snapshots.iter().enumerate() {
+                output::kv_tree(
+                    &format!("#{}", i),
+                    &snap.display().to_string(),
+                    i == snapshots.len() - 1,
+                );
+            }
         }
         return Ok(());
     }
 
     output::section_with_icon("⏪", &format!("Rolling back workload '{}'", name));
+    ensure_not_held(name, "roll back")?;
+
+    // Applied revisions hold the spec itself; snapshots only point at a file.
+    if revision.is_some() || (version.is_none() && !log.revisions.is_empty()) {
+        let mut state = StateStore::load(&StateStore::default_path())?;
+        let ws = get_workload_state(&state, name)?;
+        let planned = aether::ops::rollback::plan(&dir, &ws, revision)?;
+        let rt = aether::runtime::create_runtime_ns(
+            &ws.runtime,
+            get_namespace().or(ws.namespace.as_deref()),
+        )
+        .await?;
+        let sp = output::spinner("Applying revision...");
+        let new = aether::ops::rollback::apply(&dir, &ws, rt.as_ref(), &planned).await?;
+        output::spinner_success(&sp, "Revision applied");
+        state.upsert(name.to_string(), new);
+        state.save(&StateStore::default_path())?;
+        output::success(&format!(
+            "Rolled '{}' back to revision {}",
+            name, planned.revision
+        ));
+        return Ok(());
+    }
+
+    output::warning(
+        "Using a legacy snapshot: it redeploys the spec file it points at, as that file is now",
+    );
 
     // Find snapshot based on version or latest
     let snapshot_path = if let Some(v) = version {
@@ -3375,7 +3473,7 @@ pub(crate) async fn rollback_command(name: &str, version: Option<usize>, list: b
     output::kv_tree("Found snapshot", &snapshot_path.display().to_string(), true);
 
     // Load snapshot
-    let backup = Backup::load(&snapshot_path)?;
+    let backup = aether::backup::Backup::load(&snapshot_path)?;
     let snapshot_ws = backup
         .workloads
         .first()
@@ -3600,9 +3698,7 @@ pub(crate) async fn diff_command(name: &str) -> Result<()> {
 }
 
 pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
-    use aether::events::{
-        ChannelType, EventBus, EventCategory, EventSeverity, NotificationChannel,
-    };
+    use aether::events::{ChannelType, EventBus, EventSeverity, NotificationChannel};
 
     let path = EventBus::default_path();
     let mut bus = EventBus::load(&path)?;
@@ -3673,21 +3769,11 @@ pub(crate) async fn webhook_command(action: WebhookAction) -> Result<()> {
             );
         }
         WebhookAction::Test { name } => {
-            let channel_exists = bus.channels().iter().any(|c| c.name == name);
-            if !channel_exists {
-                anyhow::bail!("Channel '{}' not found", name);
+            if !bus.send_test(&name) {
+                anyhow::bail!("Enabled channel '{}' not found", name);
             }
-
-            bus.emit_simple(
-                EventSeverity::Info,
-                EventCategory::SystemAlert,
-                "webhook-test",
-                None,
-                "Webhook Test",
-                &format!("Test notification for channel '{}'", name),
-            );
-            bus.save(&path)?;
-            output::success(&format!("Test notification sent to channel '{}'", name));
+            output::success(&format!("Test notification handed to channel '{}'", name));
+            output::muted("A failed HTTP delivery stays in `aether webhook queue`.");
         }
         WebhookAction::Queue => {
             let queue =
@@ -3957,34 +4043,30 @@ pub(crate) fn emit_event(
     title: &str,
     message: &str,
 ) {
-    let path = aether::events::EventBus::default_path();
-    match aether::events::EventBus::load(&path) {
-        Ok(mut bus) => {
-            bus.emit_simple(severity, category, source, workload, title, message);
-            if let Err(e) = bus.save(&path) {
-                tracing::warn!("Failed to save event bus: {}", e);
-            }
-        }
-        Err(e) => {
-            tracing::warn!("Failed to emit event: {}", e);
-        }
+    publish_events(vec![aether::events::EventBus::simple(
+        severity, category, source, workload, title, message,
+    )]);
+}
+
+fn publish_events(events: Vec<aether::events::Event>) {
+    if events.is_empty() {
+        return;
+    }
+    if let Err(e) = aether::ops::journal::publish(&aether::ops::data_dir(), events) {
+        tracing::warn!("Failed to emit event: {:#}", e);
     }
 }
 
-/// Batched event emitter — loads once, accumulates events, saves once on drop.
+/// Batched event emitter — accumulates events and appends them once on drop,
+/// keeping whatever else was written to the bus in the meantime.
+#[derive(Default)]
 pub(crate) struct EventBatch {
-    bus: aether::events::EventBus,
-    path: std::path::PathBuf,
+    events: Vec<aether::events::Event>,
 }
 
 impl EventBatch {
     pub(crate) fn new() -> Self {
-        let path = aether::events::EventBus::default_path();
-        let bus = aether::events::EventBus::load(&path).unwrap_or_else(|e| {
-            tracing::warn!("Failed to load event bus, starting fresh: {}", e);
-            aether::events::EventBus::new()
-        });
-        Self { bus, path }
+        Self::default()
     }
 
     pub(crate) fn emit(
@@ -3996,16 +4078,15 @@ impl EventBatch {
         title: &str,
         message: &str,
     ) {
-        self.bus
-            .emit_simple(severity, category, source, workload, title, message);
+        self.events.push(aether::events::EventBus::simple(
+            severity, category, source, workload, title, message,
+        ));
     }
 }
 
 impl Drop for EventBatch {
     fn drop(&mut self) {
-        if let Err(e) = self.bus.save(&self.path) {
-            tracing::warn!("Failed to save event batch: {}", e);
-        }
+        publish_events(std::mem::take(&mut self.events));
     }
 }
 
@@ -5270,39 +5351,30 @@ pub(crate) async fn health_collect_command() -> Result<()> {
     output::section_with_icon("\u{1F493}", "Collecting Health Data");
 
     let state = StateStore::load(&StateStore::default_path())?;
-    let workloads = state.list();
+    let workloads: Vec<_> = state.list().into_iter().cloned().collect();
 
     if workloads.is_empty() {
         output::info("No workloads to check");
         return Ok(());
     }
 
-    let health_path = aether::health::HealthHistory::default_path();
-    let mut history = aether::health::HealthHistory::load(&health_path).unwrap_or_default();
-    let mut collected = 0u32;
-
-    for ws in &workloads {
-        match aether::runtime::create_runtime_ns(&ws.runtime, get_namespace()).await {
-            Ok(rt) => match rt.status(&ws.instance).await {
-                Ok(status) => {
-                    let record = aether::health::record_from_status(&ws.name, ws.runtime, &status);
-                    history.record(record);
-                    collected += 1;
-                }
-                Err(e) => {
-                    tracing::debug!("Failed to get status for '{}': {}", ws.name, e);
-                }
-            },
-            Err(e) => {
-                tracing::debug!("Failed to create runtime for '{}': {}", ws.name, e);
-            }
-        }
+    let report =
+        aether::ops::incidents::collect(&aether::ops::data_dir(), &workloads, get_namespace())
+            .await?;
+    for e in &report.errors {
+        output::warning(&format!("Could not check {}", e));
     }
-
-    history.save(&health_path)?;
+    for id in &report.opened {
+        output::warning(&format!(
+            "Incident {id} opened (see `aether incidents show {id}`)"
+        ));
+    }
+    for id in &report.resolved {
+        output::success(&format!("Incident {id} resolved"));
+    }
     output::success(&format!(
         "Collected health data for {} workloads",
-        collected
+        report.observed
     ));
     Ok(())
 }
@@ -6235,30 +6307,26 @@ pub(crate) async fn edge_agent_command(
 pub(crate) fn suggest_on_error(err: anyhow::Error) -> anyhow::Error {
     let msg = err.to_string();
 
-    if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
-        return err.context(
-            "Hint: Run `aether list` to see deployed workloads, \
-             or `aether run` to deploy one first.",
-        );
+    let hint =
+        if msg.contains("not found") && (msg.contains("Workload") || msg.contains("workload")) {
+            "Run `aether list` to see deployed workloads, or `aether run` to deploy one first."
+        } else if msg.contains("Podman not found") {
+            "Install podman with `sudo dnf install podman` (Fedora) \
+         or `sudo apt install podman` (Debian/Ubuntu)."
+        } else if msg.contains("error trying to connect") || msg.contains("connection refused") {
+            "Check your Kubernetes cluster with `kubectl cluster-info`, \
+         or set KUBECONFIG to point to a valid kubeconfig file."
+        } else if msg.contains("Unknown runtime") {
+            "Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm)."
+        } else {
+            return err;
+        };
+    if msg.contains("Hint:") {
+        return err;
     }
-    if msg.contains("Podman not found") {
-        return err.context(
-            "Hint: Install podman with `sudo dnf install podman` (Fedora) \
-             or `sudo apt install podman` (Debian/Ubuntu).",
-        );
-    }
-    if msg.contains("error trying to connect") || msg.contains("connection refused") {
-        return err.context(
-            "Hint: Check your Kubernetes cluster with `kubectl cluster-info`, \
-             or set KUBECONFIG to point to a valid kubeconfig file.",
-        );
-    }
-    if msg.contains("Unknown runtime") {
-        return err
-            .context("Hint: Valid runtimes are: podman, kubernetes (kube/k8s), kubevirt (vm).");
-    }
-
-    err
+    // The hint follows the error; wrapping it as context would print only the
+    // hint and hide what went wrong.
+    anyhow::anyhow!("{msg}\nHint: {hint}")
 }
 
 #[cfg(test)]

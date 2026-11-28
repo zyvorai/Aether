@@ -1,30 +1,42 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Search, Sparkles, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Sparkles, Star, X } from 'lucide-react';
 import type { AppView } from '../../../types/api';
 import { getViewMeta, type DashboardViewMeta } from '../../../utils/dashboardNav';
-import { SIDEBAR_PRIMARY, SIDEBAR_SECTIONS, type SidebarSection } from '../../../utils/sidebarNav';
+import {
+  buildNavTree,
+  filterViews,
+  getChildViews,
+  getParentView,
+  getRootView,
+  getSectionId,
+  type NavSection,
+  type NavSectionId,
+} from '../../../utils/navSections';
+import { usePreferences } from '../../../hooks/usePreferences';
 import { cn } from '../../../lib/cn';
 
-const SECTIONS_COLLAPSED_KEY = 'aether-sidebar-sections-collapsed';
+const SECTIONS_KEY = 'aether-sidebar-open-sections';
+const DEFAULT_OPEN: NavSectionId[] = ['workspace', 'observe'];
+const NAV_TREE = buildNavTree();
 
-function loadCollapsedSections(): Set<string> {
+function loadOpenSections(): Set<NavSectionId> {
   try {
-    const raw = localStorage.getItem(SECTIONS_COLLAPSED_KEY);
-    // Default: all sections collapsed (Apple-lite). Only expand what the user opened.
-    if (!raw) return new Set(['intelligence', 'operations', 'resources']);
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? new Set(parsed.filter((x): x is string => typeof x === 'string')) : new Set(['intelligence', 'operations', 'resources']);
+    const raw = localStorage.getItem(SECTIONS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    if (Array.isArray(parsed)) return new Set(parsed.filter((x): x is NavSectionId => typeof x === 'string'));
   } catch {
-    return new Set(['intelligence', 'operations', 'resources']);
+    /* fall through to the default */
   }
+  return new Set(DEFAULT_OPEN);
 }
 
-function saveCollapsedSections(collapsed: Set<string>) {
+function saveOpenSections(open: Set<NavSectionId>) {
   try {
-    localStorage.setItem(SECTIONS_COLLAPSED_KEY, JSON.stringify([...collapsed]));
+    localStorage.setItem(SECTIONS_KEY, JSON.stringify([...open]));
   } catch {
     /* ignore */
   }
@@ -37,188 +49,339 @@ interface AetherSidebarProps {
   onNavigateMobile?: () => void;
 }
 
-function SidebarLink({
-  item,
-  active,
-  onNavigate,
-  className,
-}: {
+/** Modified clicks keep the browser behaviour (open in a new tab or window). */
+function isPlainClick(event: MouseEvent): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
+
+interface PageLinkProps {
   item: DashboardViewMeta;
   active: boolean;
   onNavigate: (view: AppView) => void;
-  className?: string;
-}) {
-  const Icon = item.icon;
-  return (
-    <button
-      type="button"
-      title={item.label}
-      aria-current={active ? 'page' : undefined}
-      onClick={() => onNavigate(item.view)}
-      className={cn(
-        'relative flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm leading-tight transition-colors',
-        active ? 'bg-[var(--selected)] font-semibold text-foreground [&>svg]:text-primary' : 'text-muted hover:bg-hover hover:text-foreground',
-        className,
-      )}
-    >
-      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
-      <span className="truncate">{item.label}</span>
-    </button>
-  );
+  nested?: boolean;
+  hint?: string;
+  pinned?: boolean;
+  onTogglePin?: (view: AppView) => void;
 }
 
-function SidebarSectionBlock({
-  section,
-  currentView,
-  expanded,
-  onToggleExpanded,
-  onNavigate,
-}: {
-  section: SidebarSection;
-  currentView: AppView;
-  expanded: boolean;
-  onToggleExpanded: () => void;
-  onNavigate: (view: AppView) => void;
-}) {
+function PageLink({ item, active, onNavigate, nested, hint, pinned, onTogglePin }: PageLinkProps) {
+  const Icon = item.icon;
   return (
-    <div className="mb-3">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={onToggleExpanded}
-        className="flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-xs font-semibold text-subtle hover:text-foreground"
+    <div className="side-row">
+      <Link
+        to={item.path}
+        title={item.subtitle}
+        aria-current={active ? 'page' : undefined}
+        className={cn('side-link', nested && 'side-link-nested', active && 'side-link-active', onTogglePin && 'side-link-pinnable')}
+        onClick={(event) => {
+          if (!isPlainClick(event)) return;
+          event.preventDefault();
+          onNavigate(item.view);
+        }}
       >
-        <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', expanded ? '' : '-rotate-90')} aria-hidden />
-        <span className="truncate">{section.label}</span>
-      </button>
-      {expanded ? (
-        <ul className="space-y-0.5">
-          {section.items.map((item) => (
-            <li key={item.view}>
-              <SidebarLink item={item} active={item.view === currentView} onNavigate={onNavigate} />
-            </li>
-          ))}
-        </ul>
+        {nested ? null : <Icon className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />}
+        <span className="truncate">{item.label}</span>
+        {hint ? <span className="side-link-hint">{hint}</span> : null}
+      </Link>
+      {onTogglePin ? (
+        <button
+          type="button"
+          className="side-pin"
+          data-pinned={pinned ? 'true' : undefined}
+          aria-pressed={pinned}
+          aria-label={`${pinned ? 'Unpin' : 'Pin'} ${item.label}`}
+          title={pinned ? 'Unpin page' : 'Pin page'}
+          onClick={() => onTogglePin(item.view)}
+        >
+          <Star className={cn('h-3.5 w-3.5', pinned && 'fill-current')} aria-hidden />
+        </button>
       ) : null}
     </div>
   );
 }
 
-export default function AetherSidebar({
-  currentView,
-  onNavigate,
-  mobile = false,
-  onNavigateMobile,
-}: AetherSidebarProps) {
+export default function AetherSidebar({ currentView, onNavigate, mobile = false, onNavigateMobile }: AetherSidebarProps) {
+  const navigate = useNavigate();
+  const { pinnedViews, sidebarCollapsed, setPreferences, togglePin } = usePreferences();
   const [filter, setFilter] = useState('');
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => loadCollapsedSections());
-  const filterNorm = filter.trim().toLowerCase();
+  const [openSections, setOpenSections] = useState<Set<NavSectionId>>(loadOpenSections);
+  const filterRef = useRef<HTMLInputElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const collapsed = sidebarCollapsed && !mobile;
 
-  const activeSectionId = useMemo(() => getViewMeta(currentView).group, [currentView]);
+  const activeSection = useMemo(() => getSectionId(currentView), [currentView]);
+  const [arrivedIn, setArrivedIn] = useState<NavSectionId | null>(activeSection);
+  const rootView = useMemo(() => getRootView(currentView), [currentView]);
 
+  // The section holding the current page opens when you arrive on it. That is
+  // not saved, so browsing around does not leave every section open.
+  useEffect(() => setArrivedIn(activeSection), [activeSection]);
+
+  // Keep the current page visible in a long list.
   useEffect(() => {
-    if (activeSectionId === 'primary') return;
-    setCollapsedSections((prev) => {
-      if (!prev.has(activeSectionId)) return prev;
-      const next = new Set(prev);
-      next.delete(activeSectionId);
-      saveCollapsedSections(next);
-      return next;
-    });
-  }, [activeSectionId]);
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return;
+    const frame = nav.getBoundingClientRect();
+    const box = active.getBoundingClientRect();
+    if (box.top < frame.top || box.bottom > frame.bottom) {
+      nav.scrollTop += box.top - frame.top - frame.height / 3;
+    }
+  }, [currentView, collapsed, arrivedIn]);
 
-  const toggleSection = useCallback((id: string) => {
-    setCollapsedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      saveCollapsedSections(next);
-      return next;
-    });
-  }, []);
+  const isOpen = (id: NavSectionId) => openSections.has(id) || arrivedIn === id;
 
-  const handleNavigate = useCallback((view: AppView) => {
-    onNavigate(view);
-    onNavigateMobile?.();
-  }, [onNavigate, onNavigateMobile]);
+  const toggleSection = (id: NavSectionId) => {
+    const next = new Set(openSections);
+    if (isOpen(id)) {
+      next.delete(id);
+      if (arrivedIn === id) setArrivedIn(null);
+    } else {
+      next.add(id);
+    }
+    saveOpenSections(next);
+    setOpenSections(next);
+  };
 
-  const forceOpen = Boolean(filterNorm);
-  const filteredPrimary = filterNorm
-    ? SIDEBAR_PRIMARY.filter((item) => item.label.toLowerCase().includes(filterNorm))
-    : SIDEBAR_PRIMARY;
-  const filteredSections = filterNorm
-    ? SIDEBAR_SECTIONS.map((section) => ({
-        ...section,
-        items: section.items.filter((item) => item.label.toLowerCase().includes(filterNorm)),
-      })).filter((section) => section.items.length > 0)
-    : SIDEBAR_SECTIONS;
+  const go = useCallback(
+    (view: AppView) => {
+      onNavigate(view);
+      onNavigateMobile?.();
+    },
+    [onNavigate, onNavigateMobile],
+  );
+
+  const expandTo = (section?: NavSectionId) => {
+    setPreferences({ sidebarCollapsed: false });
+    if (section) {
+      setOpenSections((prev) => {
+        const next = new Set(prev).add(section);
+        saveOpenSections(next);
+        return next;
+      });
+    }
+  };
+
+  // A stored pin can name a page this build no longer has.
+  const pinned = pinnedViews.flatMap((view) => {
+    try {
+      return [getViewMeta(view)];
+    } catch {
+      return [];
+    }
+  });
+  const results = filter.trim() ? filterViews(filter) : null;
+
+  const onFilterKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape' && filter) {
+      event.stopPropagation();
+      setFilter('');
+    } else if (event.key === 'Enter' && results?.[0]) {
+      event.preventDefault();
+      setFilter('');
+      navigate(results[0].path);
+      onNavigateMobile?.();
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      navRef.current?.querySelector<HTMLElement>('a, button')?.focus();
+    }
+  };
+
+  const onNavKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    const items = Array.from(navRef.current?.querySelectorAll<HTMLElement>('a, button.side-section') ?? []);
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    if (index < 0) return;
+    event.preventDefault();
+    items[index + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
+  };
+
+  if (collapsed) {
+    const workspace = (NAV_TREE[0]?.items ?? []).filter((item) => !pinnedViews.includes(item.view));
+    return (
+      <aside className="side-shell side-docked side-rail hidden lg:flex" aria-label="Aether navigation">
+        <button
+          type="button"
+          className="side-rail-item mt-2"
+          onClick={() => expandTo()}
+          aria-label="Expand navigation"
+          title="Expand navigation ( [ )"
+        >
+          <PanelLeftOpen className="h-4 w-4" aria-hidden />
+        </button>
+        <nav ref={navRef} className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-1" aria-label="Primary">
+          {[...pinned, ...workspace].map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.view}
+                to={item.path}
+                className={cn('side-rail-item', item.view === rootView && 'side-link-active')}
+                aria-current={item.view === currentView ? 'page' : undefined}
+                aria-label={item.label}
+                title={item.label}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.7} aria-hidden />
+              </Link>
+            );
+          })}
+          <span className="side-rail-rule" aria-hidden />
+          {NAV_TREE.slice(1).map((section) => {
+            const Icon = section.items[0].icon;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                className={cn('side-rail-item', section.id === activeSection && 'side-link-active')}
+                aria-label={`Open ${section.label}`}
+                title={section.label}
+                onClick={() => expandTo(section.id)}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.7} aria-hidden />
+              </button>
+            );
+          })}
+        </nav>
+        <Link to="/zyra" className="side-rail-item mb-2" aria-label="Ask Zyra" title="Ask Zyra">
+          <Sparkles className="h-4 w-4" aria-hidden />
+        </Link>
+      </aside>
+    );
+  }
+
+  const renderPage = (item: DashboardViewMeta) => {
+    const children = item.view === rootView ? getChildViews(item.view) : [];
+    return (
+      <li key={item.view}>
+        <PageLink
+          item={item}
+          active={item.view === currentView}
+          onNavigate={go}
+          pinned={pinnedViews.includes(item.view)}
+          onTogglePin={togglePin}
+        />
+        {children.length > 0 ? (
+          <ul className="side-children" aria-label={`${item.label} pages`}>
+            {children.map((child) => (
+              <li key={child.view}>
+                <PageLink item={child} active={child.view === currentView} onNavigate={go} nested />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </li>
+    );
+  };
+
+  const renderSection = (section: NavSection) => {
+    const open = isOpen(section.id);
+    return (
+      <div key={section.id} className="mb-2">
+        <button type="button" aria-expanded={open} onClick={() => toggleSection(section.id)} className="side-section">
+          <span className="truncate">{section.label}</span>
+          <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', open ? '' : '-rotate-90')} aria-hidden />
+        </button>
+        {open ? <ul className="space-y-px">{section.items.map(renderPage)}</ul> : null}
+      </div>
+    );
+  };
 
   return (
     <aside
       className={cn(
-        'flex shrink-0 flex-col',
-        mobile
-          ? 'h-full w-72 bg-surface-elevated shadow-ambient'
-          : 'hidden lg:flex w-64 border-r border-border sticky top-[var(--nav-h)] self-start h-[calc(100dvh-var(--nav-h))]',
+        'side-shell flex',
+        mobile ? 'h-full w-[min(18rem,86vw)] bg-surface-elevated shadow-ambient' : 'side-docked hidden w-64 lg:flex',
       )}
       aria-label="Aether navigation"
     >
-      <div className="px-3 pb-1 pt-4">
-        <label className="relative block">
+      <div className="flex items-center gap-1 px-3 pb-1 pt-3">
+        <label className="relative block min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle" aria-hidden />
           <input
+            ref={filterRef}
             type="search"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter"
+            onKeyDown={onFilterKeyDown}
+            placeholder="Filter pages"
             aria-label="Filter navigation"
-            className="w-full min-w-0 rounded-lg border border-[var(--border-input)] bg-surface-elevated py-2 pl-8 pr-8 text-sm text-foreground placeholder:text-subtle"
+            className="side-filter"
           />
           {filter ? (
             <button
               type="button"
-              onClick={() => setFilter('')}
+              onClick={() => {
+                setFilter('');
+                filterRef.current?.focus();
+              }}
               aria-label="Clear filter"
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3" aria-hidden />
             </button>
           ) : null}
         </label>
+        {mobile ? null : (
+          <button
+            type="button"
+            className="side-rail-item"
+            onClick={() => setPreferences({ sidebarCollapsed: true })}
+            aria-label="Collapse navigation"
+            title="Collapse navigation ( [ )"
+          >
+            <PanelLeftClose className="h-4 w-4" aria-hidden />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-3 py-3" aria-label="Primary">
-        <ul className="mb-4 space-y-0.5">
-          {filteredPrimary.map((item) => (
-            <li key={item.view}>
-              <SidebarLink item={item} active={item.view === currentView} onNavigate={handleNavigate} />
-            </li>
-          ))}
-        </ul>
-        {filteredSections.map((section) => (
-          <SidebarSectionBlock
-            key={section.id}
-            section={section}
-            currentView={currentView}
-            expanded={forceOpen || !collapsedSections.has(section.id)}
-            onToggleExpanded={() => toggleSection(section.id)}
-            onNavigate={handleNavigate}
-          />
-        ))}
-        {forceOpen && filteredPrimary.length === 0 && filteredSections.length === 0 ? (
-          <p className="px-2 py-6 text-sm text-muted">No matches for "{filter}".</p>
-        ) : null}
+      <nav ref={navRef} onKeyDown={onNavKeyDown} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2" aria-label="Primary">
+        {results ? (
+          results.length > 0 ? (
+            <ul className="space-y-px">
+              {results.map((item) => {
+                const parent = getParentView(item.view);
+                return (
+                  <li key={item.view}>
+                    <PageLink
+                      item={item}
+                      active={item.view === currentView}
+                      onNavigate={(view) => {
+                        setFilter('');
+                        go(view);
+                      }}
+                      hint={parent ? getViewMeta(parent).label : undefined}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="px-2 py-6 text-sm text-muted" role="status">
+              No page matches "{filter}".
+            </p>
+          )
+        ) : (
+          <>
+            {pinned.length > 0 ? (
+              <div className="mb-2">
+                <p className="side-section side-section-static">Pinned</p>
+                <ul className="space-y-px">
+                  {pinned.map((item) => (
+                    <li key={item.view}>
+                      <PageLink item={item} active={item.view === currentView} onNavigate={go} pinned onTogglePin={togglePin} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {NAV_TREE.map(renderSection)}
+          </>
+        )}
       </nav>
 
       <div className="border-t border-border p-3">
-        <button
-          type="button"
-          onClick={() => handleNavigate('zyra')}
-          title="Ask Zyra"
-          className="flex w-full items-center gap-2.5 rounded-xl bg-surface-elevated border border-border px-3 py-2.5 text-left transition-colors hover:bg-hover"
-        >
-          <span
-            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-accent-fill text-white"
-          >
+        <button type="button" onClick={() => go('zyra')} title="Ask Zyra" className="side-assistant">
+          <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-accent-fill text-white">
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
           </span>
           <span className="min-w-0">

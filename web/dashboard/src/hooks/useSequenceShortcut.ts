@@ -17,7 +17,7 @@ export function useSequenceShortcuts(shortcuts: SequenceShortcut[], enabled = tr
     if (!enabled) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isInputFocused()) return;
+      if (isInputFocused() || document.querySelector('[aria-modal="true"]')) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const key = e.key.toLowerCase();
@@ -33,6 +33,8 @@ export function useSequenceShortcuts(shortcuts: SequenceShortcut[], enabled = tr
         for (const s of shortcuts) {
           if (s.sequence[0] === first && s.sequence[1] === key) {
             e.preventDefault();
+            // "g p" must not also pin the page.
+            e.stopImmediatePropagation();
             s.handler();
             return;
           }
@@ -49,9 +51,9 @@ export function useSequenceShortcuts(shortcuts: SequenceShortcut[], enabled = tr
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [shortcuts, enabled]);

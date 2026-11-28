@@ -31,9 +31,12 @@ const SEVERITY_RANK: Record<string, number> = {
 
 const DEFAULT_RANK = 10;
 
+// Runtimes report both "Failed" and "failed".
+const RANK_BY_LOWERCASE = new Map(Object.entries(SEVERITY_RANK).map(([k, v]) => [k.toLowerCase(), v]));
+
 export function severityRank(status: string | undefined | null): number {
   if (!status) return DEFAULT_RANK;
-  return SEVERITY_RANK[status] ?? DEFAULT_RANK;
+  return RANK_BY_LOWERCASE.get(status.toLowerCase()) ?? DEFAULT_RANK;
 }
 
 export type SeverityTone = 'danger' | 'warn' | 'neutral';

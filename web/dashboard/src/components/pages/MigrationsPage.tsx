@@ -13,7 +13,7 @@ function MigrationsPage() {
   const [workload] = useQueryParam('workload');
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-5">
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted" data-testid="migrations-hub-context">
         <span>Migrations</span>
         <Link to={viewToPath('health')} className="text-primary hover:underline" data-testid="migrations-context-orchestrator-link">

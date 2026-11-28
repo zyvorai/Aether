@@ -905,9 +905,9 @@ export default function WorkloadDetail({
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 glass-divider-b glass-inset-surface">
         <div className="flex flex-wrap items-center gap-3">
           <div>
-            <h3 className="text-lg font-bold text-foreground">
+            <h2 className="text-lg font-bold text-foreground">
               {isKubeWorkload ? applicationLabel(workload) : workload.name}
-            </h3>
+            </h2>
             {isKubeWorkload && (
               <p className="text-xs text-subtle">
                 Application · {workspaceLabel(workload.namespace)}
@@ -1217,7 +1217,7 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && clusterDetail && clusterDetail.pods.length > 0 ? (
               <div className="mt-4" data-testid="workload-pod-info">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Pods</h4>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Pods</h3>
                 <div className="overflow-x-auto rounded-lg border glass-divider">
                   <table className="w-full min-w-[28rem] text-left text-xs">
                     <thead>
@@ -1294,7 +1294,7 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && clusterDetail && clusterDetail.conditions.length > 0 ? (
               <div className="mt-4" data-testid="workload-conditions">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Conditions</h4>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Conditions</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {clusterDetail.conditions.map((condition) => (
                     <span
@@ -1318,7 +1318,7 @@ export default function WorkloadDetail({
               <div className="mt-4 grid gap-4 sm:grid-cols-2" data-testid="workload-ownership">
                 {(clusterDetail.owner_references?.length ?? 0) > 0 ? (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Owned by</h4>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Owned by</h3>
                     <ul className="space-y-1 text-xs text-muted">
                       {clusterDetail.owner_references!.map((owner) => (
                         <li key={`${owner.kind}/${owner.name}`} className="font-mono">
@@ -1331,7 +1331,7 @@ export default function WorkloadDetail({
                 ) : null}
                 {(clusterDetail.owned_resources?.length ?? 0) > 0 ? (
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Owns</h4>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Owns</h3>
                     <ul className="max-h-28 space-y-1 overflow-auto text-xs text-muted">
                       {clusterDetail.owned_resources!.slice(0, 12).map((child) => (
                         <li key={`${child.kind}/${child.name}`} className="font-mono">
@@ -1353,9 +1353,9 @@ export default function WorkloadDetail({
                 <div className="mt-3 space-y-3">
                 {(imageDrift || observedImages.length > 0) ? (
                   <div data-testid="workload-image-drift">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">
                       Images{imageDrift ? <span className="ml-2 text-warning normal-case tracking-normal">· drift detected</span> : null}
-                    </h4>
+                    </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {(observedImages.length > 0 ? observedImages : containerResources.map((c) => c.image).filter(Boolean) as string[]).map((image) => (
                         <code key={image} className="rounded-sm glass-inset-surface px-2 py-1 text-[11px] text-muted">{image}</code>
@@ -1365,7 +1365,7 @@ export default function WorkloadDetail({
                 ) : null}
                 {containerResources.length > 0 ? (
                   <div data-testid="workload-resources">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Resources</h4>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Resources</h3>
                     <div className="overflow-x-auto rounded-lg border glass-divider">
                       <table className="w-full min-w-[24rem] text-left text-xs">
                         <thead>
@@ -1396,7 +1396,7 @@ export default function WorkloadDetail({
                   <div className="grid gap-4 sm:grid-cols-2">
                     {labelEntries.length > 0 ? (
                       <div data-testid="workload-labels">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Labels</h4>
+                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Labels</h3>
                         <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
                           {labelEntries.map(([key, value]) => (
                             <div key={key} className="flex gap-2 font-mono">
@@ -1409,7 +1409,7 @@ export default function WorkloadDetail({
                     ) : null}
                     {annotationEntries.length > 0 ? (
                       <div data-testid="workload-annotations">
-                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Annotations</h4>
+                        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Annotations</h3>
                         <div className="max-h-28 space-y-1 overflow-auto text-[11px]">
                           {annotationEntries.slice(0, 20).map(([key, value]) => (
                             <div key={key} className="flex gap-2 font-mono">
@@ -1443,7 +1443,7 @@ export default function WorkloadDetail({
                 <div className="grid gap-4 lg:grid-cols-2">
                 {clusterMetrics.length > 0 ? (
                   <div data-testid="workload-live-metrics">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Live usage</h4>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Live usage</h3>
                     <div className="overflow-x-auto rounded-lg border glass-divider">
                       <table className="w-full min-w-[16rem] text-left text-xs">
                         <thead>
@@ -1468,7 +1468,7 @@ export default function WorkloadDetail({
                 ) : null}
                 {clusterEvents.length > 0 ? (
                   <div data-testid="workload-recent-events">
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Recent cluster events</h4>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Recent cluster events</h3>
                     <div className="max-h-40 space-y-1.5 overflow-auto rounded-lg border glass-divider p-2">
                       {clusterEvents.map((event, index) => (
                         <div key={`${event.timestamp}-${event.reason}-${index}`} className="rounded-sm glass-inset-surface px-2.5 py-1.5">
@@ -1492,7 +1492,7 @@ export default function WorkloadDetail({
             {!isAetherManaged && workload.kind === 'HelmRelease' && helmHistory.length > 0 ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-helm-history">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle">Helm revisions</h4>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">Helm revisions</h3>
                   {canMutate ? (
                     <div className="flex items-center gap-2">
                       <select
@@ -1533,7 +1533,7 @@ export default function WorkloadDetail({
             {!isAetherManaged && isRolloutClusterKind(workload.kind) ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-rollout">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle">Rollout</h4>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">Rollout</h3>
                   {rollout ? (
                     <span className="text-xs text-muted">{rollout.status || 'unknown'}</span>
                   ) : (
@@ -1571,7 +1571,7 @@ export default function WorkloadDetail({
 
             {!isAetherManaged && canMutate && canPortForwardClusterKind(workload.kind) && (workload.kind === 'Service' || (clusterDetail?.pods.length ?? 0) > 0 || portForwardPod) ? (
               <div className="mt-4 rounded-lg border glass-divider p-3" data-testid="workload-port-forward">
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Port forward</h4>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Port forward</h3>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                   <select
                     value={workload.kind === 'Service' ? clusterResourceName : portForwardPod}
@@ -1716,7 +1716,7 @@ export default function WorkloadDetail({
             })() : null}
 
             <div className="mt-4" data-testid="workload-quick-links">
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Next</h4>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-subtle">Next</h3>
               <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -1740,7 +1740,7 @@ export default function WorkloadDetail({
 
             {isAetherManaged ? (
               <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">
-                <h4 className="mb-2 text-sm font-semibold text-foreground">Snapshots</h4>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">Snapshots</h3>
                 {snapshotsLoading ? (
                   <p className="text-xs text-subtle">Loading snapshots…</p>
                 ) : snapshots.length === 0 ? (
@@ -1771,7 +1771,7 @@ export default function WorkloadDetail({
 
             {isKubeWorkload && (
               <div className="mt-4 glass-drawer p-3">
-                <h4 className="mb-3 text-sm font-semibold text-foreground">Network policies</h4>
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Network policies</h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-subtle">NetworkPolicy</dt>
@@ -1826,7 +1826,7 @@ export default function WorkloadDetail({
 
                 {clusterDetail.conditions.length > 0 && (
                   <div className="glass-drawer p-3">
-                    <h4 className="mb-3 text-sm font-semibold text-foreground">Conditions</h4>
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">Conditions</h3>
                     <div className="space-y-2">
                       {clusterDetail.conditions.map((condition) => (
                         <div key={`${condition.type_}:${condition.reason ?? 'none'}`} className="glass-table-row rounded-md px-3 py-2 text-sm">
@@ -1846,7 +1846,7 @@ export default function WorkloadDetail({
 
                 {clusterDetail.pods.length > 0 && (
                   <div className="glass-drawer p-3">
-                    <h4 className="mb-3 text-sm font-semibold text-foreground">Pods</h4>
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">Pods</h3>
                     <div className="space-y-2">
                       {clusterDetail.pods.map((pod) => (
                         <div key={pod.name} className="grid grid-cols-5 gap-3 glass-table-row rounded-md px-3 py-2 text-sm">
@@ -1864,7 +1864,7 @@ export default function WorkloadDetail({
                 )}
 
                 <div className="glass-drawer p-3">
-                  <h4 className="mb-3 text-sm font-semibold text-foreground">Manifest</h4>
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Manifest</h3>
                   <pre tabIndex={0} className="glass-code-block-body max-h-96 overflow-auto text-xs">
                     {JSON.stringify(clusterDetail.manifest, null, 2)}
                   </pre>

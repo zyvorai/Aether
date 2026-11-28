@@ -238,7 +238,7 @@ async fn make_runtime<T: serde::Serialize>(
 }
 
 /// Emit a server-sent event for real-time dashboard updates.
-fn emit_sse(app_state: &AppState, event: &ServerEvent) {
+pub(crate) fn emit_sse(app_state: &AppState, event: &ServerEvent) {
     if let Ok(json) = serde_json::to_string(event) {
         let _ = app_state.event_tx.send(json);
     }
@@ -336,10 +336,34 @@ fn record_audit_event(
     message: &str,
     details: Option<&str>,
 ) {
-    let path = crate::audit::AuditLog::default_path();
-    let mut log = crate::audit::AuditLog::load(&path).unwrap_or_default();
-    log.record(action, workload, runtime, result, message, details);
-    let _ = log.save(&path);
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
+        action,
+        workload,
+        runtime,
+        result,
+        message,
+        details,
+    ) {
+        tracing::warn!("could not record audit event: {e:#}");
+    }
+}
+
+/// 409 when `name` is on hold; 500 when the hold store cannot be read.
+pub(crate) fn ensure_not_held<T: serde::Serialize>(
+    name: &str,
+    operation: &str,
+) -> Result<(), (StatusCode, Json<ApiResponse<T>>)> {
+    crate::ops::holds::check(&crate::ops::data_dir(), name, operation).map_err(|e| {
+        if e.downcast_ref::<crate::ops::holds::Held>().is_some() {
+            (
+                StatusCode::CONFLICT,
+                Json(ApiResponse::error(e.to_string())),
+            )
+        } else {
+            err_internal(format!("cannot check holds: {e:#}"))
+        }
+    })
 }
 
 fn extract_bearer_token(headers: &HeaderMap) -> Option<String> {
@@ -1097,6 +1121,7 @@ async fn deploy_workload_spec(
     };
 
     let name = request.spec.metadata.name.clone();
+    ensure_not_held(&name, "deploy")?;
 
     let runtime = make_runtime::<String>(&runtime_kind).await?;
     let image = runtime.build(&request.spec).await.map_err(err_internal)?;
@@ -1223,6 +1248,10 @@ pub(crate) async fn delete_workload(
         Err(e) => return e,
     };
 
+    if let Err(e) = ensure_not_held(&name, "delete") {
+        return e;
+    }
+
     let rt = match make_runtime::<String>(&workload.runtime).await {
         Ok(r) => r,
         Err(e) => return e,
@@ -1286,6 +1315,10 @@ pub(crate) async fn start_workload(
         Ok(w) => w,
         Err(e) => return e,
     };
+
+    if let Err(e) = ensure_not_held(&name, "start") {
+        return e;
+    }
 
     // Load workload spec (validates path against traversal)
     let spec = match load_spec_safe::<String>(&workload_state.spec_path) {
@@ -1396,6 +1429,10 @@ pub(crate) async fn stop_workload(
         Err(e) => return e,
     };
 
+    if let Err(e) = ensure_not_held(&name, "stop") {
+        return e;
+    }
+
     let rt = match make_runtime::<String>(&workload.runtime).await {
         Ok(r) => r,
         Err(e) => return e,
@@ -1450,6 +1487,11 @@ pub(crate) async fn update_workload(
         Err(e) => return e,
     };
 
+    // Before the spec file is rewritten: a refused update must change nothing.
+    if let Err(e) = ensure_not_held(&name, "update") {
+        return e;
+    }
+
     let mut spec_path = workload_state.spec_path.clone();
     if spec_path.as_path() == std::path::Path::new("api_created")
         || Workload::from_file(&spec_path).is_err()
@@ -1478,13 +1520,20 @@ pub(crate) async fn update_workload(
         Ok(r) => r,
         Err(e) => return e,
     };
-    let _ = rt.stop(&workload_state.instance).await;
-
+    // Build first, so a build failure leaves the running instance alone.
     let image = match rt.build(&spec).await {
         Ok(img) => img,
         Err(e) => return err_internal::<String>(e),
     };
-    let instance = match rt.run(&image, &spec).await {
+    let applied = crate::ops::rollback::replace(
+        rt.as_ref(),
+        workload_state.runtime,
+        &workload_state.instance,
+        &image,
+        &spec,
+    )
+    .await;
+    let instance = match applied {
         Ok(inst) => inst,
         Err(e) => return err_internal::<String>(e),
     };
@@ -1517,15 +1566,6 @@ pub(crate) async fn update_workload(
             name: name.clone(),
             action: "updated".to_string(),
         },
-    );
-
-    record_audit_event(
-        crate::audit::AuditAction::ConfigChange,
-        &name,
-        None,
-        crate::audit::ActionResult::Success,
-        "workload updated via API",
-        None,
     );
 
     (
@@ -4228,6 +4268,10 @@ pub(crate) async fn migrate_workload(
         }
     };
 
+    if let Err(e) = ensure_not_held(&name, "migrate") {
+        return e;
+    }
+
     let strategy_str = format!("{:?}", strategy);
     let plan = MigrationPlan::new(name.clone(), source_runtime, target_runtime, strategy, true);
 
@@ -4252,7 +4296,16 @@ pub(crate) async fn migrate_workload(
     );
 
     let engine = MigrationEngine::new(app_state.state_path.clone());
-    let result = match engine.migrate(plan).await {
+    let reason = format!("migration from {source_runtime} to {target_runtime}");
+    let outcome = crate::ops::with_reason(reason, engine.migrate(plan)).await;
+    crate::ops::journal::record_migration(
+        &crate::ops::data_dir(),
+        &name,
+        source_runtime,
+        target_runtime,
+        &outcome,
+    );
+    let result = match outcome {
         Ok(r) => r,
         Err(e) => {
             emit_sse(
@@ -4851,28 +4904,20 @@ pub(crate) async fn api_webhook_channel_delete(Path(name): Path<String>) -> impl
 
 /// POST /api/webhooks/test — Queue a test notification for a channel (see `aether webhook test`).
 pub(crate) async fn api_webhook_test(Json(req): Json<WebhookTestRequest>) -> impl IntoResponse {
-    use crate::events::{EventBus, EventCategory, EventSeverity};
+    use crate::events::EventBus;
 
     let path = EventBus::default_path();
-    let mut bus = match EventBus::load(&path) {
+    let bus = match EventBus::load(&path) {
         Ok(b) => b,
         Err(e) => return err_internal::<String>(e),
     };
-    if !bus.channels().iter().any(|c| c.name == req.channel) {
-        return err_not_found::<String>(format!("Channel '{}' not found", req.channel));
+    if !bus.send_test(&req.channel) {
+        return err_not_found::<String>(format!("Enabled channel '{}' not found", req.channel));
     }
-    bus.emit_simple(
-        EventSeverity::Info,
-        EventCategory::SystemAlert,
-        "api",
-        None,
-        "Webhook Test",
-        &format!("Test notification for channel '{}'", req.channel),
-    );
-    if let Err(e) = bus.save(&path) {
-        return err_internal::<String>(e);
-    }
-    ok_json(format!("Test event emitted for '{}'", req.channel))
+    ok_json(format!(
+        "Test notification handed to '{}'; a failed HTTP delivery stays in the webhook queue",
+        req.channel
+    ))
 }
 
 /// GET /api/server — Process capabilities (auth modes, persistence).
@@ -5308,22 +5353,19 @@ pub(crate) async fn serve_openapi() -> impl IntoResponse {
 
 /// POST /api/audit/events — Append an audit row (admin only; integrity hash applied).
 pub(crate) async fn api_audit_append(Json(req): Json<AuditAppendRequest>) -> impl IntoResponse {
-    use crate::audit::AuditLog;
-
-    let path = AuditLog::default_path();
-    let mut log = AuditLog::load(&path).unwrap_or_default();
     let action = parse_audit_action_from_str(&req.action);
     let result = parse_action_result_from_str(&req.result);
-    log.record(
+    // Locked, and a trail that cannot be read is an error rather than replaced.
+    if let Err(e) = crate::ops::journal::audit_with(
+        &crate::ops::data_dir(),
         action,
         &req.workload,
         req.runtime.as_deref(),
         result,
         &req.message,
         req.details.as_deref(),
-    );
-    if let Err(e) = log.save(&path) {
-        return err_internal::<String>(e);
+    ) {
+        return err_internal::<String>(format!("{e:#}"));
     }
     ok_json("audit event recorded".to_string())
 }

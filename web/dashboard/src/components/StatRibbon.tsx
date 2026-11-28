@@ -9,6 +9,8 @@ export interface RibbonItem {
   tone?: RibbonTone;
   onClick?: () => void;
   testId?: string;
+  /** Marks a clickable stat whose filter is applied. */
+  active?: boolean;
 }
 
 const valueTone: Record<RibbonTone, string> = {
@@ -32,15 +34,15 @@ interface StatRibbonProps {
 export default function StatRibbon({ items, testId, className }: StatRibbonProps) {
   return (
     <section
-      className={`flex flex-wrap gap-x-10 gap-y-4 ${className ?? ''}`}
+      className={`stat-ribbon ${className ?? ''}`}
       data-testid={testId}
     >
       {items.map((item) => {
         const tone = item.tone ?? 'white';
         const inner = (
           <>
-            <div className={`text-2xl font-semibold tabular-nums ${valueTone[tone]}`}>{item.value}</div>
-            <div className="mt-1 text-sm text-muted">{item.label}</div>
+            <div className={`text-2xl font-semibold leading-tight tabular-nums ${valueTone[tone]}`}>{item.value}</div>
+            <div className="text-[13px] text-muted">{item.label}</div>
           </>
         );
         if (item.onClick) {
@@ -50,14 +52,15 @@ export default function StatRibbon({ items, testId, className }: StatRibbonProps
               type="button"
               onClick={item.onClick}
               data-testid={item.testId}
-              className="text-left transition hover:opacity-80"
+              aria-pressed={item.active}
+              className="stat-item stat-item-button"
             >
               {inner}
             </button>
           );
         }
         return (
-          <div key={item.label} data-testid={item.testId} className="text-left">
+          <div key={item.label} data-testid={item.testId} className="stat-item">
             {inner}
           </div>
         );

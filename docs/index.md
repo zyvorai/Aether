@@ -173,7 +173,7 @@ Baseline latency ranges from `benchmarks/aether-bench.sh` — numbers vary by ha
 |---------|-------------|
 | `aether migrate <name> <target> [--strategy <s>]` | Migrate workload to a different runtime |
 | `aether migration-advice <name> <target>` | AI-powered migration path recommendations |
-| `aether rollback <name>` | Rollback to the latest snapshot |
+| `aether rollback <name>` | Roll back to an applied revision ([Operations desk](guides/operations/OPERATIONS-DESK.md)) |
 | `aether diff <name>` | Compare spec vs stored vs live state |
 
 #### AI & Analysis

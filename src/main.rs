@@ -5,6 +5,7 @@
 
 mod cli;
 mod commands;
+mod operator_commands;
 
 use aether::state::StateStore;
 use anyhow::Result;
@@ -52,6 +53,16 @@ async fn main() -> Result<()> {
     aether::output::set_yes(cli.yes);
     commands::set_skip_policy(cli.skip_policy);
     commands::set_namespace(cli.namespace.clone());
+
+    // Who changes made by this process are attributed to.
+    aether::ops::set_process_actor(if matches!(cli.command, Commands::Serve { .. }) {
+        "serve".to_string()
+    } else {
+        let user = std::env::var("USER")
+            .or_else(|_| std::env::var("USERNAME"))
+            .unwrap_or_else(|_| "unknown".to_string());
+        format!("cli:{user}")
+    });
 
     // Initialize metrics
     aether::metrics::init();
@@ -104,6 +115,7 @@ async fn main() -> Result<()> {
             no_validation,
             no_rollback,
             verbose_trace,
+            ..
         } => {
             if cli.dry_run {
                 aether::output::info(&format!(
@@ -212,9 +224,49 @@ async fn main() -> Result<()> {
         Commands::Diff { name } => commands::diff_command(&name).await,
         Commands::Rollback {
             name,
+            revision,
             version,
             list,
-        } => commands::rollback_command(&name, version, list).await,
+        } => {
+            if cli.dry_run {
+                operator_commands::preview_command(
+                    &name,
+                    &cli::PreviewArgs {
+                        update: None,
+                        delete: false,
+                        stop: false,
+                        restart: false,
+                        migrate: None,
+                        rollback: Some(revision.unwrap_or(0)),
+                    },
+                )
+                .map(|_| ())
+            } else {
+                commands::rollback_command(&name, revision, version, list).await
+            }
+        }
+        Commands::Explain { name } => operator_commands::explain_command(&name),
+        Commands::History { name, show, diff } => {
+            operator_commands::history_command(&name, show, &diff)
+        }
+        Commands::Preview { name, action } => {
+            match operator_commands::preview_command(&name, &action) {
+                Ok(0) => Ok(()),
+                Ok(code) => std::process::exit(code),
+                Err(e) => Err(e),
+            }
+        }
+        Commands::Changes {
+            since,
+            workload,
+            limit,
+        } => operator_commands::changes_command(&since, workload, limit),
+        Commands::Incidents { action } => operator_commands::incidents_command(action),
+        Commands::Attention => operator_commands::attention_command(),
+        Commands::OpsReport { since, format, out } => {
+            operator_commands::ops_report_command(&since, &format, out.as_deref())
+        }
+        Commands::Hold { action } => operator_commands::hold_command(action),
         Commands::Deploy {
             dir,
             runtime,
