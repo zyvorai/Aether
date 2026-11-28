@@ -53,6 +53,10 @@ pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineRe
 }
 
 fn render_sparkline(samples: &[f64]) -> String {
+    // Without a single check there is nothing to draw; a flat bar would read as 0%.
+    if samples.is_empty() {
+        return "····".to_string();
+    }
     const BARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
     samples
         .iter()
@@ -498,6 +502,8 @@ mod tests {
     fn sparkline_renders_bars() {
         let s = render_sparkline(&[0.0, 50.0, 100.0]);
         assert_eq!(s.chars().count(), 3);
+        // No data is shown as such, not as nothing and not as a bar at zero.
+        assert_eq!(render_sparkline(&[]), "····");
     }
 
     #[test]
