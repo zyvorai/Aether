@@ -3,9 +3,13 @@
 
 /** Search and ordering for the command palette. */
 
+/** `self` opens the workload, `primary` is offered for its name alone, `secondary` once the action is named too. */
+export type WorkloadTier = 'self' | 'primary' | 'secondary';
+
 export interface Searchable {
   label: string;
   searchText: string;
+  workload?: { name: string; tier: WorkloadTier };
 }
 
 export type PaletteScope = 'all' | 'actions' | 'workloads' | 'pages';
@@ -62,6 +66,49 @@ export function scoreCommand(query: string, command: Searchable): number {
   else if (label.includes(phrase)) score += 15;
   // Between equal matches the shorter label is the closer one.
   return score + Math.max(0, 10 - Math.floor(label.length / 8));
+}
+
+const TIER_BONUS: Record<WorkloadTier, number> = { self: 40, primary: 20, secondary: 0 };
+
+/** Without the workload's own name, so that only the action is matched. */
+const withoutName = (text: string, name: string) => text.toLowerCase().split(name).join(' ').replace(/[:?]/g, ' ');
+
+/**
+ * Matching commands, best first. Typing a workload's name asks about that
+ * workload: it comes first, then what one usually does with it, and entries
+ * that only match through another workload or hidden text are left out.
+ * Equal scores keep the order of `commands`.
+ */
+export function rankCommands<T extends Searchable>(query: string, commands: T[]): T[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const names = [...new Set(commands.flatMap((c) => (c.workload ? [c.workload.name.toLowerCase()] : [])))];
+  const nameTerms = terms.filter((term) => names.some((name) => startsWord(name, term)));
+  const actionTerms = terms.filter((term) => !nameTerms.includes(term)).join(' ');
+  const namedExactly = names.some((name) => name === terms.join(' '));
+
+  const score = (command: T): number => {
+    if (!command.workload || nameTerms.length === 0) {
+      // For an exact workload name, a page has to say it in its title.
+      if (namedExactly && !terms.every((term) => command.label.toLowerCase().includes(term))) return 0;
+      return scoreCommand(query, command);
+    }
+    const name = command.workload.name.toLowerCase();
+    if (!nameTerms.every((term) => startsWord(name, term))) return 0;
+    if (!actionTerms && command.workload.tier === 'secondary') return 0;
+    const action = actionTerms
+      ? scoreCommand(actionTerms, { label: withoutName(command.label, name), searchText: withoutName(command.searchText, name) })
+      : 0;
+    if (actionTerms && action === 0) return 0;
+    // Workloads outrank pages; an exact name outranks a longer one.
+    const closeness = nameTerms.includes(name) ? 200 : 140;
+    return closeness + action + TIER_BONUS[command.workload.tier];
+  };
+
+  return commands
+    .map((command) => ({ command, score: score(command) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.command);
 }
 
 /**

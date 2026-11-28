@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from 'react-router';
-import type { AppView } from './types/api';
+import type { AppView, WorkloadResponse } from './types/api';
 import DashboardShell from './components/DashboardShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import HelpDialog, { type HelpTab } from './components/HelpDialog';
@@ -168,7 +168,7 @@ function AetherDashboard() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpTab, setHelpTab] = useState<HelpTab>('shortcuts');
-  const [workloadNames, setWorkloadNames] = useState<string[]>([]);
+  const [paletteWorkloads, setPaletteWorkloads] = useState<WorkloadResponse[]>([]);
   const [selectedWorkloadFromPalette, setSelectedWorkloadFromPalette] = useState<string | null>(null);
   const [sseBannerVisible, setSseBannerVisible] = useState(false);
   const { toast, ToastContainer } = useToast();
@@ -406,8 +406,8 @@ function AetherDashboard() {
   // Fetch workload names for command palette
   useEffect(() => {
     if (!isAuthenticated) return;
-    apiFetch<Array<{ name: string }>>('/workloads').then((r) => {
-      if (r) setWorkloadNames(r.map((w) => w.name));
+    apiFetch<WorkloadResponse[]>('/workloads').then((r) => {
+      if (r) setPaletteWorkloads(r);
     });
   }, [isAuthenticated, refreshKey]);
 
@@ -802,7 +802,7 @@ function AetherDashboard() {
             open={commandPaletteOpen}
             onClose={() => setCommandPaletteOpen(false)}
             onNavigate={handleNavigate}
-            workloads={workloadNames}
+            workloads={paletteWorkloads}
             onSelectWorkload={(name) => setSelectedWorkloadFromPalette(name)}
             onRefresh={() => {
               setRefreshKey((k) => k + 1);

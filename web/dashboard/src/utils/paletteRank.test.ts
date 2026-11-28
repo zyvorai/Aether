@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { describe, expect, it } from 'vitest';
-import { groupByCategory, parseQuery, scoreCommand } from './paletteRank';
+import { groupByCategory, parseQuery, rankCommands, scoreCommand } from './paletteRank';
+import { workloadCommands } from './paletteWorkloads';
+import type { WorkloadResponse } from '../types/api';
 
 const cmd = (label: string, searchText = '') => ({ label, searchText });
 const best = (query: string, commands: Array<{ label: string; searchText: string }>) =>
@@ -42,5 +44,65 @@ describe('command palette search', () => {
       { id: 3, category: 'workload' },
     ];
     expect(groupByCategory(ranked).map((c) => c.id)).toEqual([1, 3, 2]);
+  });
+});
+
+describe('searching for a workload by name', () => {
+  const workload = (name: string, status: string, extra: Partial<WorkloadResponse> = {}): WorkloadResponse => ({
+    name, status, runtime: 'Podman', image: 'x', created_at: '', source: 'aether', ...extra,
+  });
+  const fleet = [workload('billing', 'running'), workload('web', 'stopped unexpectedly'), workload('web-api', 'running')];
+  const commands = [
+    ...fleet.flatMap((w) => workloadCommands(w, { gitopsConfigured: false })),
+    cmd('Go to Alerts', 'alerts webhooks notifications'),
+    cmd('Go to Test webhook', 'webhook test'),
+    cmd('Open API explorer', 'openapi api routes'),
+  ];
+  const search = (query: string) => rankCommands(query, commands).map((c) => c.label);
+
+  it('puts the workload first, then what you would do with it', () => {
+    const found = search('web');
+    expect(found.slice(0, 2)).toEqual(['Open workload: web', 'View logs: web']);
+    expect(found).toContain('Why is web failing?');
+    expect(found.indexOf('Open workload: web')).toBeLessThan(found.indexOf('Open workload: web-api'));
+    expect(found.indexOf('Open workload: web-api')).toBeLessThan(found.indexOf('Go to Test webhook'));
+    // One screen, not every page that exists once per workload.
+    expect(found.filter((label) => label.endsWith(': web')).length).toBeLessThanOrEqual(7);
+  });
+
+  it('drops other workloads, hidden matches and actions that mean nothing for one', () => {
+    const found = search('web');
+    expect(found.filter((label) => label.includes('billing'))).toEqual([]);
+    expect(found).not.toContain('Go to Alerts');
+    for (const noise of ['Templates', 'Plugins', 'RBAC', 'OpenAPI', 'Compose', 'Platform', 'Backups', 'Secrets', 'Fleet view']) {
+      expect(commands.filter((c) => c.label.startsWith(noise))).toEqual([]);
+    }
+  });
+
+  it('finds the less common actions once they are named', () => {
+    expect(search('web')).not.toContain('Policy check: web');
+    expect(search('policy web')[0]).toBe('Policy check: web');
+    expect(search('web sla')[0]).toBe('SLA compliance: web');
+    expect(search('logs billing')[0]).toBe('View logs: billing');
+    expect(search('logs')).toContain('View logs: billing');
+  });
+
+  it('offers only actions the workload can take now', () => {
+    const labels = (w: WorkloadResponse) => workloadCommands(w, { gitopsConfigured: false }).map((c) => c.label);
+    expect(labels(workload('a', 'running'))).toContain('Stop workload: a');
+    expect(labels(workload('a', 'running'))).not.toContain('Start workload: a');
+    expect(labels(workload('a', 'running'))).not.toContain('Why is a failing?');
+    expect(labels(workload('a', 'stopped'))).toContain('Start workload: a');
+    expect(labels(workload('a', 'stopped'))).not.toContain('Stop workload: a');
+    expect(labels(workload('a', 'unknown'))).toEqual(expect.arrayContaining(['Start workload: a', 'Stop workload: a']));
+    expect(labels(workload('a', 'running'))).not.toContain('Scale application: a');
+    const discovered = labels(workload('c/n/app', 'running', { source: 'cluster', runtime: 'Kubernetes' }));
+    expect(discovered).toContain('Scale application: c/n/app');
+    expect(discovered).not.toContain('Stop workload: c/n/app');
+    expect(labels(workload('a', 'running'))).not.toContain('GitOps sync: a');
+  });
+
+  it('leaves a page search alone when a longer phrase asks for the page', () => {
+    expect(rankCommands('api explorer', [...commands, ...workloadCommands(workload('api', 'running'), { gitopsConfigured: false })]).map((c) => c.label)).toEqual(['Open API explorer']);
   });
 });
