@@ -167,6 +167,6 @@ network:
     await dialog.getByTestId('workloads-deploy-submit').click({ force: true });
     await expect(dialog.getByTestId('deploy-success-panel')).toBeVisible({ timeout: 15_000 });
     await dialog.getByTestId('deploy-success-fleet-link').click();
-    await expect(page).toHaveURL(new RegExp(`/fleet\\?workload=${unique}`), { timeout: 10_000 });
+    await expect(page).toHaveURL(new RegExp(`/fleet/placement\\?workload=${unique}`), { timeout: 10_000 });
   });
 });

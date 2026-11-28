@@ -21,7 +21,11 @@ test.describe('Phases 2131–2180 features', () => {
   test('phase 2131: fabric fleet link', async ({ page }) => {
     await page.goto('/fabric?workload=web');
     await expect(page.getByTestId('fabric-workload-context')).toContainText('web', { timeout: 10_000 });
-    await followTestLink(page, 'fabric-context-fleet-link', /\/fleet\?workload=web/);
+    const link = page.getByTestId('fabric-context-fleet-link');
+    await expect(link).toBeVisible({ timeout: 10_000 });
+    await expect(link).toHaveAttribute('href', /\/fleet\?workload=web/);
+    await page.goto((await link.getAttribute('href'))!);
+    await expect(page).toHaveURL(/\/fleet\/placement\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 2136: migrations fabric link', async ({ page }) => {

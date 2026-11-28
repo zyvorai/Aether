@@ -102,7 +102,7 @@ test.describe('Phases 1631–1680 features', () => {
     await page.goto('/platform?workload=web');
     await expect(page.getByTestId('breadcrumb-workload')).toHaveText('web', { timeout: 10_000 });
     await page.getByTestId('breadcrumb-workload').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1651: rbac workload context openapi link', async ({ page }) => {

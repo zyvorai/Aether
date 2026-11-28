@@ -47,7 +47,7 @@ test.describe('Phases 181–280 features', () => {
     );
     await page.goto('/clusters?tab=network');
     await expect(page).toHaveURL(/tab=network/, { timeout: 10_000 });
-    await expect(page.getByTestId('clusters-page-tabs')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('section-tabs')).toBeVisible({ timeout: 10_000 });
   });
 
   test('phase 182: overview health monitor quick link', async ({ page }) => {
