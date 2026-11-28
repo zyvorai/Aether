@@ -51,10 +51,10 @@ export default function EntityCard({
     <article
       data-testid={testId}
       style={{ animationDelay: cardRiseDelay(index) }}
-      className={`card-rise group relative flex flex-col overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
+      className={`card-rise group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
         selected
           ? 'border-primary bg-surface-elevated shadow-card'
-          : 'border-border bg-surface-elevated shadow-card hover:border-rule-strong'
+          : 'border-[var(--card-edge)] bg-surface-elevated shadow-card hover:border-rule-strong'
       }`}
     >
       <div className="relative flex h-full flex-col p-4">

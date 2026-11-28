@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn';
 import { Eyebrow } from '../ui/Typography';
 import AppleHighlightsRow from '../ui/AppleHighlightsRow';
 
-export type Tone = 'sky' | 'violet' | 'emerald' | 'amber' | 'pink' | 'teal' | 'rust';
+export type Tone = 'sky' | 'violet' | 'emerald' | 'amber' | 'pink' | 'teal' | 'rust' | 'slate';
 
 interface HeroStat {
   label: string;
@@ -30,6 +30,8 @@ interface PageHeroProps {
   description?: string;
   actions?: ReactNode;
   icon?: LucideIcon;
+  /** Colour of the icon tile. */
+  tileTone?: Tone;
   accent?: Tone;
   swatches?: HeroSwatch[];
   stats?: HeroStat[];
@@ -38,11 +40,17 @@ interface PageHeroProps {
   className?: string;
 }
 
-export function PageHero({ eyebrow, title, description, actions, accent, swatches, stats, statsTestId, className }: PageHeroProps) {
+export function PageHero({ eyebrow, title, description, actions, icon: Icon, tileTone, accent, swatches, stats, statsTestId, className }: PageHeroProps) {
   return (
     <section data-tone={accent} className={cn('tahoe-hero apple-editorial-hero page-header', className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 max-w-3xl">
+        <div className="page-head-row min-w-0 max-w-3xl">
+          {Icon ? (
+            <span className="page-tile" data-tone={tileTone ?? accent ?? 'sky'} aria-hidden>
+              <Icon strokeWidth={1.8} />
+            </span>
+          ) : null}
+          <div className="min-w-0">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
           <h1 className="page-title">{title}</h1>
           {description ? <p className="page-lede">{description}</p> : null}
@@ -70,6 +78,7 @@ export function PageHero({ eyebrow, title, description, actions, accent, swatche
               )}
             </div>
           ) : null}
+          </div>
         </div>
         {actions ? <div className="flex flex-wrap gap-2 shrink-0">{actions}</div> : null}
       </div>

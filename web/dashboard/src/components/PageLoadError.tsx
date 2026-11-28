@@ -33,9 +33,11 @@ export default function PageLoadError({
 
   return (
     <div className="glass-empty-state state-panel" role="alert">
-      <WifiOff size={36} className="text-subtle" aria-hidden />
-      <h3 className="mt-3 text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted">{description}</p>
+      <div className="state-orb" data-tone="danger" aria-hidden>
+        <WifiOff />
+      </div>
+      <h3 className="state-title">{title}</h3>
+      <p className="state-body">{description}</p>
       {detail ? <code className="state-detail">{detail}</code> : null}
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         <button type="button" onClick={() => void retry()} disabled={retrying} className="btn-primary inline-flex items-center gap-2">

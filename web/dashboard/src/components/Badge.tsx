@@ -16,36 +16,34 @@ const variantClasses: Record<BadgeVariant, string> = {
   yellow: 'bg-warning/10 text-warning border-warning/20',
   blue: 'bg-primary/10 text-primary border-primary/20',
   purple: 'bg-lavender/10 text-lavender border-lavender/20',
-  muted: 'glass-inset-surface text-muted border glass-divider',
+  muted: 'bg-hover text-muted border-border',
   accent: 'bg-primary/10 text-primary border-primary/20',
 };
 
+/** Status variants get a dot, so a state reads at a glance and long text can still wrap. */
+const DOTTED: BadgeVariant[] = ['green', 'red', 'yellow'];
+
 export default function Badge({ text, variant }: BadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${variantClasses[variant]}`}
-    >
-      {text}
+    <span className={`pill ${variantClasses[variant]}`} title={text}>
+      {DOTTED.includes(variant) ? <span className="pill-dot" aria-hidden /> : null}
+      <span className="pill-text">{text}</span>
     </span>
   );
 }
 
 export function RuntimeBadge({ runtime }: { runtime: string }) {
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRuntimeBg(runtime)}`}
-    >
-      {runtime}
+    <span className={`pill ${getRuntimeBg(runtime)}`}>
+      <span className="pill-text">{runtime}</span>
     </span>
   );
 }
 
 export function SeverityBadge({ severity }: { severity: string }) {
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getSeverityColor(severity)}`}
-    >
-      {severity}
+    <span className={`pill ${getSeverityColor(severity)}`}>
+      <span className="pill-text">{severity}</span>
     </span>
   );
 }

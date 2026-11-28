@@ -7,6 +7,7 @@ import { PageHero, type Tone } from '../layout/PageHero';
 import { getViewMeta } from '../../utils/dashboardNav';
 import type { AppView } from '../../types/api';
 import { cn } from '../../lib/cn';
+import { sectionTone } from '../../utils/sectionTone';
 import SectionTabs from '../SectionTabs';
 
 export type AuroraPageProps = {
@@ -47,7 +48,8 @@ export default function AuroraPage({
         title={title ?? meta.label}
         description={description ?? meta.subtitle}
         actions={actions}
-        icon={icon}
+        icon={icon ?? meta.icon}
+        tileTone={accent ?? sectionTone(view)}
         accent={accent}
         swatches={swatches}
         stats={stats}

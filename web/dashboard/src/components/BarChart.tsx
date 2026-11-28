@@ -18,10 +18,10 @@ export default function BarChart({ label, percent, detail }: BarChartProps) {
         <span className="text-sm text-muted">{label}</span>
         <div className="flex items-center gap-2">
           {detail && <span className="text-xs text-subtle">{detail}</span>}
-          <span className="text-sm font-medium text-foreground">{clamped.toFixed(1)}%</span>
+          <span className="text-sm font-semibold tabular-nums text-foreground">{clamped.toFixed(1)}%</span>
         </div>
       </div>
-      <div className="h-2.5 rounded-full overflow-hidden border glass-divider glass">
+      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--track)]">
         <div
           className={`h-full rounded-full transition-all duration-500 ${getBarColor(clamped)}`}
           style={{ width: `${clamped}%` }}
