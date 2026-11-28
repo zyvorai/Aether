@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Status board
+Guide: `docs/guides/operations/STATUS-BOARD.md`. Dashboard page `/board`.
+- **Live status board:** one tile per managed workload with the observed state, an uptime strip built from recorded health checks (1h to 30d), open incidents, holds and the last applied revision. Periods without checks are shown as no data, and old checks as stale. Updates through the event stream (new `observationRound` event) with a slow poll as backup.
+- **Wall mode** for a shared monitor (`/board?wall=1`); works from 390 px wide, light and dark.
+- **API:** `GET /api/board`.
+
 - **Dashboard console:** sectioned sidebar with pins and filter, an attention-first Overview that includes the operations queue, live pause and event inbox, improved command palette, keyboard tables and a workload side panel, compact headers, clearer loading and error states. Fixes failed requests shown as empty, invisible loading skeletons and one crashed page blocking the others.
 
 ### Operations desk

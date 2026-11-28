@@ -33,7 +33,7 @@ const MAX_NOTE_CHARS: usize = 2_000;
 const AVAILABILITY_DAYS: i64 = 31;
 /// A ready observation this soon after a stop is the runtime still winding
 /// down, not somebody starting the workload again.
-const STOP_GRACE_SECS: i64 = 120;
+pub const STOP_GRACE_SECS: i64 = 120;
 /// How far before an incident a change is listed as a possible cause.
 pub const SUSPECT_WINDOW_SECS: i64 = 1_800;
 
@@ -311,7 +311,8 @@ pub struct Counter {
     pub ready: u32,
 }
 
-fn hour_key(t: chrono::DateTime<chrono::Utc>) -> String {
+/// The key of the hourly counter containing `t`.
+pub fn hour_key(t: chrono::DateTime<chrono::Utc>) -> String {
     t.format("%Y-%m-%dT%H").to_string()
 }
 

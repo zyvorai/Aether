@@ -57,6 +57,7 @@
     "/api/workloads/{name}/preview": { "post": { "summary": "Preview an action without doing it" } },
     "/api/attention": { "get": { "summary": "What needs attention now" } },
     "/api/changes": { "get": { "summary": "Change feed (?since=24h&workload=&limit=)" } },
+    "/api/board": { "get": { "summary": "Live status board: observed state, uptime strip, incidents and holds per workload (?window=1h|6h|24h|7d|30d)" } },
     "/api/incidents": { "get": { "summary": "Incidents and measured time to recovery (?workload=&open=)" } },
     "/api/incidents/{id}": { "get": { "summary": "Incident with timeline and preceding changes" } },
     "/api/incidents/{id}/report": { "get": { "summary": "Markdown post-incident draft" } },
