@@ -16,7 +16,7 @@ Universal runtime portability — deploy once, run on Podman, Kubernetes, or Kub
 | Product overview | [PRODUCT.md](PRODUCT.md) |
 | Ecosystem | [ECOSYSTEM.md](ECOSYSTEM.md) |
 | Migration internals | [MIGRATION-INTERNALS](guides/migration/MIGRATION-INTERNALS.md) |
-| Full index | [index.md](index.md) |
+| Full index | [documentation.md](documentation.md) |
 | User journeys | [USER_STORIES.md](USER_STORIES.md) |
 
 ## By topic

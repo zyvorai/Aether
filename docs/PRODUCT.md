@@ -109,7 +109,7 @@ aether migrate my-app kubernetes --strategy blue-green
 
 ## Learn more
 
-- [Documentation index](index.md)
+- [Documentation index](documentation.md)
 - [Architecture](architecture/ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)
 - [Ecosystem (Zyvor platform)](ECOSYSTEM.md)

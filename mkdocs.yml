@@ -8,10 +8,16 @@ docs_dir: docs
 site_dir: site
 exclude_docs: |
   /README.md
+  /overrides/
+copyright: Aether is a Zyvor product. &copy; 2026 Zyvor AI Labs Private Limited.
 theme:
   name: material
-  logo: assets/readme/zyvor-logo.svg
-  favicon: assets/readme/zyvor-logo.png
+  # The product home page (docs/index.md) is a template of its own here.
+  custom_dir: docs/overrides/theme
+  logo: assets/brand/aether-icon.svg
+  favicon: assets/brand/favicon.svg
+  # System fonts: no request to a font service.
+  font: false
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -43,12 +49,7 @@ markdown_extensions:
   - toc: {permalink: true}
 nav:
   - Home: index.md
-  - Product overview: PRODUCT.md
-  - Ecosystem: ECOSYSTEM.md
-  - Roadmap: ROADMAP.md
-  - Research (portability): RESEARCH.md
-  - User stories: USER_STORIES.md
-  - Test plan: TEST_PLAN.md
+  - Documentation: documentation.md
   - Getting Started:
       - Installation: getting-started/01-Installation.md
       - Quick Start: getting-started/02-Quick-Start.md
@@ -174,6 +175,13 @@ nav:
   - Examples & Labs:
       - KubeVirt lab: examples/labs/kubevirt/README.md
       - OPA lab: examples/labs/opa/README.md
+  - Product:
+      - Product overview: PRODUCT.md
+      - Ecosystem: ECOSYSTEM.md
+      - Roadmap: ROADMAP.md
+      - Research (portability): RESEARCH.md
+      - User stories: USER_STORIES.md
+      - Test plan: TEST_PLAN.md
   - Legal:
       - Overview: legal/README.md
       - Corporate reference: legal/CORPORATE.md

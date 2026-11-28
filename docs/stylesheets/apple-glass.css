@@ -358,11 +358,13 @@
 }
 .md-tabs {
   background: transparent;
+  color: var(--foreground);
   border-bottom: 1px solid var(--border);
 }
 .md-tabs__link {
   color: var(--muted-foreground);
 }
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link--active,
 .md-tabs__link:hover {
   color: var(--foreground);
@@ -511,4 +513,93 @@
 .apple-footnotes a {
   color: var(--muted-foreground);
   text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Landing page tokens (docs/overrides/theme/landing.html). The layout is   */
+/* in landing.css; only the colour values live here.                        */
+/* Text pairs are chosen for WCAG AA on every surface they are used on.     */
+/* ---------------------------------------------------------------------- */
+
+.lp,
+.lp-chapter-night {
+  --lp-bg: #ffffff;
+  --lp-bg-alt: #f3f4f8;
+  --lp-card: #ffffff;
+  --lp-card-alt: #f3f4f8;
+  --lp-text: #14161c;
+  --lp-muted: #4d515e;
+  --lp-line: #dcdfe7;
+  --lp-accent: #005cc4;
+  --lp-accent-hover: #004a9e;
+  --lp-on-accent: #ffffff;
+  --lp-grad-a: #005fcc;
+  --lp-grad-b: #6b3fd4;
+  --lp-glow: rgba(47, 155, 255, 0.22);
+  --lp-nav: rgba(255, 255, 255, 0.82);
+  --lp-shadow: rgba(20, 30, 60, 0.18);
+  --lp-ok: #176b30;
+  --lp-part: #8a4600;
+  --lp-no: #9c1c33;
+  --lp-code-bg: #10131b;
+  --lp-code-text: #e8ebf2;
+  --lp-code-key: #7cc0ff;
+  --lp-code-value: #c5b3ff;
+  --lp-code-note: #a2a8b8;
+  --lp-code-line: #2a2e3a;
+  --lp-lane-container: #7a3fd0;
+  --lp-lane-kube: #005fcc;
+  --lp-lane-kubevirt: #00707c;
+}
+
+/* A section that is dark in both themes. */
+.lp .lp-chapter-night,
+.lp-chapter-night {
+  --lp-bg: #05060a;
+  --lp-bg-alt: #05060a;
+  --lp-card: #14161e;
+  --lp-card-alt: #14161e;
+  --lp-text: #f4f5f8;
+  --lp-muted: #a9adba;
+  --lp-line: #2a2e3a;
+  --lp-accent: #5cb0ff;
+  --lp-accent-hover: #8ac6ff;
+  --lp-on-accent: #04101f;
+  --lp-grad-a: #5cb0ff;
+  --lp-grad-b: #b9a0ff;
+  --lp-glow: rgba(47, 155, 255, 0.28);
+  --lp-shadow: rgba(0, 0, 0, 0.7);
+  --lp-ok: #4ade80;
+  --lp-part: #fbbf24;
+  --lp-no: #ff8a94;
+  --lp-lane-container: #c4a4ff;
+  --lp-lane-kube: #5cb0ff;
+  --lp-lane-kubevirt: #5fd4e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lp {
+    --lp-bg: #000000;
+    --lp-bg-alt: #0d0f15;
+    --lp-card: #14161e;
+    --lp-card-alt: #1a1d27;
+    --lp-text: #f4f5f8;
+    --lp-muted: #a9adba;
+    --lp-line: #2a2e3a;
+    --lp-accent: #5cb0ff;
+    --lp-accent-hover: #8ac6ff;
+    --lp-on-accent: #04101f;
+    --lp-grad-a: #5cb0ff;
+    --lp-grad-b: #b9a0ff;
+    --lp-glow: rgba(47, 155, 255, 0.28);
+    --lp-nav: rgba(0, 0, 0, 0.78);
+    --lp-shadow: rgba(0, 0, 0, 0.7);
+    --lp-ok: #4ade80;
+    --lp-part: #fbbf24;
+    --lp-no: #ff8a94;
+    --lp-code-bg: #11131b;
+    --lp-lane-container: #c4a4ff;
+    --lp-lane-kube: #5cb0ff;
+    --lp-lane-kubevirt: #5fd4e0;
+  }
 }
