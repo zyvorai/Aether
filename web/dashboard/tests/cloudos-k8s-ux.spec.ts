@@ -64,7 +64,7 @@ test.describe('CloudOS Kubernetes UX', () => {
         body: JSON.stringify({ success: true, data: { pods: [] } }),
       }),
     );
-    await page.goto('/activity');
+    await page.goto('/activity/cpu');
     await expect(page.getByTestId('activity-monitor-page')).toBeVisible({ timeout: 15_000 });
   });
 
@@ -107,7 +107,7 @@ test.describe('CloudOS Kubernetes UX', () => {
         body: JSON.stringify({ success: true, data: { configured: false, reachable: false } }),
       }),
     );
-    await page.goto('/security');
+    await page.goto('/security/overview');
     await expect(page.getByTestId('security-center-page')).toBeVisible({ timeout: 15_000 });
   });
 

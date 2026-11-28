@@ -63,7 +63,7 @@ test.describe('AI Infrastructure OS v13 — FinOps & Cost', () => {
   });
 
   test('finops platform panel on cost page', async ({ page }) => {
-    await page.goto('/cost');
+    await page.goto('/cost/finops');
     await expect(page.getByTestId('finops-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('finops-trends-panel')).toBeVisible();
     await page.getByRole('button', { name: 'Multi-cloud' }).click();

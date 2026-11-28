@@ -81,7 +81,7 @@ test.describe('Phases 1931–1980 features', () => {
     await page.goto('/metrics?workload=web');
     await expect(page.getByTestId('metrics-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('metrics-context-intelligence-link').click();
-    await expect(page).toHaveURL(/\/intelligence\?workload=web.*tab=predictions/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/intelligence\/predictions\?workload=web.*tab=predictions/, { timeout: 10_000 });
   });
 
   test('phase 1961: compose secrets link', async ({ page }) => {

@@ -79,7 +79,7 @@ test.describe('AI Infrastructure OS v19 — Live Labs & Reference Cluster', () =
   });
 
   test('live labs panel on labs page', async ({ page }) => {
-    await page.goto('/labs');
+    await page.goto('/labs/live');
     await expect(page.getByTestId('live-labs-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('live-labs-runner-panel')).toBeVisible();
 

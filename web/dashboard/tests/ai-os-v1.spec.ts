@@ -21,17 +21,17 @@ test.describe('AI Infrastructure OS v1', () => {
   });
 
   test('runtime fabric page loads graph', async ({ page }) => {
-    await page.goto('/fabric');
+    await page.goto('/fabric/topology');
     await expect(page.getByTestId('runtime-fabric-graph')).toBeVisible({ timeout: 15_000 });
   });
 
   test('migration planner shell renders', async ({ page }) => {
-    await page.goto('/migrations');
+    await page.goto('/migrations/planner');
     await expect(page.getByTestId('migration-planner')).toBeVisible({ timeout: 15_000 });
   });
 
   test('fleet intelligence brief on fleet page', async ({ page }) => {
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await expect(page.getByTestId('fleet-intelligence-brief')).toBeVisible({ timeout: 15_000 });
   });
 
@@ -55,7 +55,7 @@ test.describe('AI Infrastructure OS v1', () => {
   });
 
   test('observability root cause panel', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/root-cause');
     await expect(page.getByTestId('fleet-root-cause-panel')).toBeVisible({ timeout: 15_000 });
   });
 

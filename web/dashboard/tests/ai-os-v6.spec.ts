@@ -55,17 +55,17 @@ test.describe('AI Infrastructure OS v6', () => {
   });
 
   test('capacity scale panel on observability', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/capacity-scale');
     await expect(page.getByTestId('capacity-scale-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('gitops agent panel', async ({ page }) => {
-    await page.goto('/gitops');
+    await page.goto('/gitops/agent');
     await expect(page.getByTestId('gitops-agent-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('evolution dry-run on migrations', async ({ page }) => {
-    await page.goto('/migrations');
+    await page.goto('/migrations/placement');
     await expect(page.getByTestId('evolution-dry-run')).toBeVisible({ timeout: 15_000 });
   });
 });

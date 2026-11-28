@@ -47,7 +47,7 @@ test.describe('Phases 181–280 features', () => {
     );
     await page.goto('/clusters?tab=network');
     await expect(page).toHaveURL(/tab=network/, { timeout: 10_000 });
-    await expect(page.getByTestId('clusters-page-tabs')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('section-tabs')).toBeVisible({ timeout: 10_000 });
   });
 
   test('phase 182: overview health monitor quick link', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('Phases 181–280 features', () => {
         }),
       }),
     );
-    await page.goto('/metrics');
+    await page.goto('/metrics/chargeback');
     await page.getByTestId('metrics-cost-estimator-link').click();
     await expect(page).toHaveURL(/\/cost/, { timeout: 10_000 });
   });
@@ -151,7 +151,7 @@ test.describe('Phases 181–280 features', () => {
     await page.route('**/api/server', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { integrations: {} } }) }),
     );
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await page.getByTestId('fleet-workloads-stat').click();
     await expect(page).toHaveURL(/source=cluster/, { timeout: 10_000 });
   });

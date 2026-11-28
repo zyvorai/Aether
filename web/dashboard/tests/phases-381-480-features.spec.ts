@@ -162,7 +162,7 @@ test.describe('Phases 381–480 features', () => {
     await page.route('**/api/platform/recommendations', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { items: [] } }) }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/observability');
     await page.getByTestId('platform-metrics-link').click();
     await expect(page).toHaveURL(/\/metrics/, { timeout: 10_000 });
   });
@@ -203,7 +203,7 @@ test.describe('Phases 381–480 features', () => {
         body: JSON.stringify({ success: true, data: { configured: false, hint: 'Not configured' } }),
       }),
     );
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     await expect(page.getByTestId('gitops-status-panel')).toBeVisible({ timeout: 10_000 });
   });
 

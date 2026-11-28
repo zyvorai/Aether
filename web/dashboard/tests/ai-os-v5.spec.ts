@@ -39,7 +39,7 @@ test.describe('AI Infrastructure OS v5', () => {
   });
 
   test('self-healing healer execute controls', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/self-healing');
     await expect(page.getByTestId('self-healing-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('healer-dry-run')).toBeVisible();
   });

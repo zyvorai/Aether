@@ -99,10 +99,11 @@ test.describe('Cilium & observability UI', () => {
   });
 
   test('Platform page shows Kubernetes / Cilium card', async ({ page }) => {
-    await page.goto('/platform');
+    await page.goto('/platform/cilium');
     await expect(page.getByRole('heading', { name: 'Kubernetes / Cilium' }).first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('allow-aether-egress')).toBeVisible();
     await expect(page.getByText('permissive')).toBeVisible();
+    await page.goto('/platform/observability');
     await expect(page.getByRole('link', { name: /Grafana/i })).toBeVisible();
   });
 
@@ -149,7 +150,7 @@ test.describe('Cilium & observability UI', () => {
       }),
     );
 
-    await page.goto('/metrics');
+    await page.goto('/metrics/summary');
     await expect(page.getByText('API requests')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Workloads by runtime')).toBeVisible();
     await expect(page.getByText('Cluster & Cilium')).toBeVisible();
@@ -243,8 +244,8 @@ test.describe('Cilium & observability UI', () => {
     });
 
     await page.goto('/clusters?tab=network');
-    await expect(page.getByTestId('clusters-page-tabs')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('clusters-page-tabs').getByRole('tab', { name: 'Network' })).toBeVisible({
+    await expect(page.getByTestId('section-tabs')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('section-tabs').getByRole('link', { name: 'Network' })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByRole('button', { name: 'allow-aether-egress' }).first()).toBeVisible({ timeout: 15_000 });

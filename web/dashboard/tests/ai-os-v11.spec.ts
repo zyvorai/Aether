@@ -59,7 +59,7 @@ test.describe('AI Infrastructure OS v11 — macOS Native OS', () => {
   });
 
   test('macOS platform panel on settings', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('/settings/macos');
     await expect(page.getByTestId('macos-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('tray-sparkline-panel')).toBeVisible();
     await expect(page.getByTestId('universal-links-panel')).toBeVisible();

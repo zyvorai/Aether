@@ -40,7 +40,7 @@ test.describe('Phases 1831–1880 features', () => {
     await expect(page.getByTestId('drift-workload-context')).toContainText('web', { timeout: 15_000 });
     await page.getByTestId('drift-workload-context').getByTestId('drift-links-more').click();
     await page.getByTestId('drift-workload-context').getByTestId('drift-platform-link').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1836: cost intelligence link', async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe('Phases 1831–1880 features', () => {
     await page.goto('/cost?workload=web');
     await expect(page.getByTestId('cost-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('cost-intelligence-link').click();
-    await expect(page).toHaveURL(/\/intelligence\?workload=web.*tab=cost/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/intelligence\/cost\?workload=web.*tab=cost/, { timeout: 10_000 });
   });
 
   test('phase 1846: overview copilot link', async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe('Phases 1831–1880 features', () => {
     await page.goto('/scheduler?workload=web');
     await expect(page.getByTestId('scheduler-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('scheduler-affinity-link').click();
-    await expect(page).toHaveURL(/\/affinity\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/affinity\/recommend\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1866: workload detail compose quick link', async ({ page }) => {

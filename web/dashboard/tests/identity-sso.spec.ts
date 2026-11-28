@@ -10,7 +10,7 @@ test.describe('Identity & SSO settings', () => {
   });
 
   test('settings page shows identity panels', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('/settings/identity');
     await expect(page.getByTestId('identity-sso-panel')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('identity-oidc-panel')).toBeVisible();
     await expect(page.getByTestId('identity-saml-panel')).toBeVisible();

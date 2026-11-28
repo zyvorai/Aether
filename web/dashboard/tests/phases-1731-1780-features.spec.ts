@@ -41,7 +41,7 @@ test.describe('Phases 1731–1780 features', () => {
     await expect(page.getByTestId('gitops-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('gitops-links-more').click();
     await page.getByTestId('gitops-platform-link').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1746: audit openapi link', async ({ page }) => {

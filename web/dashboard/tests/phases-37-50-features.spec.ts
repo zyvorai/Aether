@@ -72,7 +72,7 @@ test.describe('Phases 37–50 features', () => {
       }),
     );
 
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await page.getByTestId('fleet-cluster-prod').click();
     await expect(page).toHaveURL(/cluster=prod/, { timeout: 10_000 });
   });
@@ -118,7 +118,7 @@ test.describe('Phases 37–50 features', () => {
       }),
     );
 
-    await page.goto('/platform');
+    await page.goto('/platform/recommendations');
     await expect(page.getByText('Configure OPA')).toBeVisible({ timeout: 10_000 });
     await page.getByTestId('platform-rec-dismiss-opa-missing').click();
     await expect(page.getByText('Configure OPA')).not.toBeVisible({ timeout: 5_000 });

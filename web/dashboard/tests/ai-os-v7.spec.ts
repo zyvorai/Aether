@@ -68,7 +68,7 @@ test.describe('AI Infrastructure OS v7 — Intent Platform', () => {
   });
 
   test('intent gitops diff panel', async ({ page }) => {
-    await page.goto('/gitops');
+    await page.goto('/gitops/intent');
     await expect(page.getByTestId('intent-gitops-diff-panel')).toBeVisible({ timeout: 15_000 });
   });
 });

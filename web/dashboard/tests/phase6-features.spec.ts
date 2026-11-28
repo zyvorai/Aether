@@ -78,7 +78,7 @@ test.describe('Phase 6 features', () => {
       }),
     );
 
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     await page.getByRole('button', { name: 'Sync now' }).click();
     await page.getByTestId('gitops-diff-preview').getByRole('button', { name: /workloads\/httpd\.yaml/i }).click();
     await expect(page).toHaveURL(/workload=httpd/, { timeout: 10_000 });

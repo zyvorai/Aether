@@ -45,17 +45,17 @@ test.describe('AI Infrastructure OS v4', () => {
   });
 
   test('autonomous SRE panel on observability', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/autonomous-sre');
     await expect(page.getByTestId('autonomous-sre-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('multicloud panel on fleet', async ({ page }) => {
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await expect(page.getByTestId('multicloud-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('autonomous placement on migrations', async ({ page }) => {
-    await page.goto('/migrations');
+    await page.goto('/migrations/placement');
     await expect(page.getByTestId('autonomous-placement-panel')).toBeVisible({ timeout: 15_000 });
   });
 });
