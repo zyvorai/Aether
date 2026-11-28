@@ -5,7 +5,8 @@ import { withAuroraPage } from '../layout/AuroraPage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Inbox } from 'lucide-react';
-import { apiFetchSettled } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { formatTimestamp } from '../../utils/formatters';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam } from '../../utils/urlState';
@@ -82,6 +83,18 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const { canMutate } = useAuth();
+
+  async function acknowledge(id: number) {
+    const res = await apiPost(`/events/${id}/acknowledge`);
+    if (!res.success) {
+      window.dispatchEvent(
+        new CustomEvent('aether-toast', { detail: { message: `Acknowledge failed: ${res.error ?? 'unknown error'}`, type: 'error' } }),
+      );
+    }
+    await load();
+  }
 
   const severityOptions = useMemo(() => {
     const levels = new Set(events.map((e) => e.severity.toLowerCase()));
@@ -327,7 +340,19 @@ function EventsPage({ refreshKey }: { refreshKey?: number } = {}) {
                           </Link>
                         ) : null}
                         <span>Source: {ev.source}</span>
-                        {ev.acknowledged && <Badge text="ACK" variant="green" />}
+                        {ev.acknowledged ? (
+                          <Badge text="ACK" variant="green" />
+                        ) : canMutate ? (
+                          <button
+                            type="button"
+                            className="text-primary hover:underline"
+                            onClick={() => void acknowledge(ev.id)}
+                            aria-label={`Acknowledge ${ev.title}`}
+                            data-testid={`events-ack-${ev.id}`}
+                          >
+                            Acknowledge
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                     <time className="event-time" dateTime={ev.timestamp} title={formatTimestamp(ev.timestamp)}>

@@ -17,6 +17,7 @@ pub mod explain;
 pub mod holds;
 pub mod incidents;
 pub mod journal;
+pub mod observed;
 pub mod planned;
 pub mod preview;
 pub mod report;

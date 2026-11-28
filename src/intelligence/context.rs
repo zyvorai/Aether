@@ -10,6 +10,7 @@ use crate::health::HealthHistory;
 use crate::intelligence::store::IntelligenceStore;
 use crate::kubecluster;
 use crate::observability;
+use crate::ops::observed::{Condition, Snapshot};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use serde::Serialize;
@@ -67,6 +68,8 @@ pub async fn build_context_snapshot(state_path: &Path) -> anyhow::Result<Context
     let detector = DriftDetector::new();
     let intel = IntelligenceStore::load(&IntelligenceStore::default_path()).unwrap_or_default();
 
+    let observed = Snapshot::load(&crate::ops::data_dir());
+    let now = chrono::Utc::now();
     let mut workloads = Vec::new();
     let mut drift_workloads = 0usize;
     let mut total_drifts = 0usize;
@@ -77,11 +80,12 @@ pub async fn build_context_snapshot(state_path: &Path) -> anyhow::Result<Context
             drift_workloads += 1;
             total_drifts += drift_items;
         }
+        let status = observed.status(ws, now).condition;
         workloads.push(WorkloadContextEntry {
             name: ws.name.clone(),
             runtime: format!("{}", ws.runtime),
-            state: format!("{:?}", ws.instance.id),
-            ready: health.uptime_percent(&ws.name) >= 99.0 || health.restart_count(&ws.name) == 0,
+            state: status.label().to_string(),
+            ready: status == Condition::Running,
             uptime_pct: health.uptime_percent(&ws.name),
             restart_count: health.restart_count(&ws.name),
             has_drift,

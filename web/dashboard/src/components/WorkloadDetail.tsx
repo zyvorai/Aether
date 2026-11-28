@@ -10,6 +10,9 @@ import { formatTimestamp } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
+import { statusVariant } from '../utils/workloadStatus';
+import { expectSuccess } from '../utils/workloadActions';
+import AppliedSpec from './AppliedSpec';
 import {
   pickExecPodName,
   pickExecReadyPodName,
@@ -84,14 +87,6 @@ interface WorkloadDetailProps {
   /** When true, open the Shell modal as soon as the panel mounts. */
   initialShellOpen?: boolean;
   canMutate?: boolean;
-}
-
-function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy') return 'green';
-  if (s === 'error' || s === 'failed') return 'red';
-  if (s === 'stopped' || s === 'exited') return 'muted';
-  return 'yellow';
 }
 
 export default function WorkloadDetail({
@@ -658,12 +653,8 @@ export default function WorkloadDetail({
     setActionLoading(action);
     try {
       if (isAetherManaged) {
-        if (action === 'stop') await apiPost(`/workloads/${workload.name}/stop`);
-        else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
-        else if (action === 'restart') {
-          await apiPost(`/workloads/${workload.name}/restart`);
-        }         else if (action === 'rollback') {
-          await apiPost(`/workloads/${workload.name}/rollback`, {});
+        if (action === 'stop' || action === 'start' || action === 'restart' || action === 'rollback') {
+          expectSuccess(await apiPost(`/workloads/${workload.name}/${action}`, {}), action);
         } else if (action === 'build') {
           const res = await apiPost<{ full_name?: string; message?: string }>(`/workloads/${workload.name}/build`);
           if (res.success) {
@@ -672,7 +663,9 @@ export default function WorkloadDetail({
             setBuildResult(res.error ?? 'Build failed');
           }
         } else if (action === 'delete') {
-          await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          const res = await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          if (res.error === 'cancelled') return;
+          expectSuccess(res, action);
           onClose();
         }
       } else if (workload.cluster && workload.namespace && workload.kind) {
@@ -690,7 +683,7 @@ export default function WorkloadDetail({
           replicas: Number.isFinite(scaleReplicas) ? scaleReplicas : undefined,
         });
         if (!response.success) {
-          throw new Error(response.error ?? `cluster action ${action} failed`);
+          expectSuccess(response, action);
         }
         if (action === 'scale' && typeof scaleReplicas === 'number' && Number.isFinite(scaleReplicas)) {
           setReplicasInput(String(scaleReplicas));
@@ -711,7 +704,8 @@ export default function WorkloadDetail({
         }
       }
     } catch (e) {
-      console.error(`Action ${action} failed:`, e);
+      toast(e instanceof Error ? e.message : `${action} failed`, 'error');
+      onAction();
     } finally {
       setActionLoading('');
     }
@@ -915,7 +909,7 @@ export default function WorkloadDetail({
               </p>
             )}
           </div>
-          <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
+          <Badge text={workload.status} variant={statusVariant(workload.status)} />
           {!isAetherManaged && clusterHealth ? (
             <Badge
               text={`health: ${clusterHealth.level}`}
@@ -1181,7 +1175,11 @@ export default function WorkloadDetail({
             <div className="fact-grid">
               <div><span className="text-subtle">Runtime</span><p className="text-foreground">{workload.runtime}</p></div>
               <div><span className="text-subtle">Image</span><p className="break-all font-mono text-xs text-foreground">{workload.image}</p></div>
-              <div><span className="text-subtle">Status</span><p className="text-foreground">{workload.status}</p></div>
+              <div data-testid="workload-status">
+                <span className="text-subtle">Status</span>
+                <p className="text-foreground">{workload.status}</p>
+                {workload.status_detail ? <p className="text-xs text-muted">{workload.status_detail}</p> : null}
+              </div>
               <div><span className="text-subtle">Created</span><p className="text-foreground">{workload.created_at ? formatTimestamp(workload.created_at) : ''}</p></div>
               {workload.cluster && <div><span className="text-subtle">Cluster</span><p className="text-foreground">{workload.cluster}</p></div>}
               {workload.namespace && <div><span className="text-subtle">Namespace</span><p className="text-foreground">{workload.namespace}</p></div>}
@@ -1811,7 +1809,7 @@ export default function WorkloadDetail({
         {activeTab === 'manifest' && (
           <div className="space-y-4">
             {isAetherManaged ? (
-              <p className="text-subtle">Manifest inspection is currently available for Kubernetes resources discovered directly from the cluster.</p>
+              <AppliedSpec name={workload.name} />
             ) : !clusterDetail ? (
               <p className="text-subtle">Loading Kubernetes resource details...</p>
             ) : (

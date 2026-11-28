@@ -155,10 +155,13 @@ impl RevisionLog {
             .position(|r| r.id == id)
             .ok_or_else(|| anyhow::anyhow!("revision {id} not found"))?;
         let r = &self.revisions[i];
+        let redacted: serde_yaml::Value =
+            serde_yaml::from_str(&redacted_yaml(&r.spec_yaml)?).context("failed to parse spec")?;
         Ok(RevisionView {
             summary: self.summary_at(i),
             decision: r.decision.clone(),
-            spec_yaml: redacted_yaml(&r.spec_yaml)?,
+            spec_yaml: crate::specrender::yaml_without_nulls(&redacted)
+                .context("failed to serialise spec")?,
         })
     }
 
@@ -360,6 +363,8 @@ pub(crate) mod tests {
         let view = serde_json::to_string(&log.view(1).unwrap()).unwrap();
         assert!(!view.contains("hunter2"), "{view}");
         assert!(view.contains("***"));
+        let shown = log.view(1).unwrap().spec_yaml;
+        assert!(!shown.contains("null"), "{shown}");
         let summaries = serde_json::to_string(&log.summaries()).unwrap();
         assert!(!summaries.contains("hunter2"));
     }

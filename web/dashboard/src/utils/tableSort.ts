@@ -34,3 +34,14 @@ export function moveIndex(key: string, index: number, length: number): number | 
   if (key === 'End') return length - 1;
   return null;
 }
+
+/** Whether a key pressed outside any row should move focus into the table, as the footer promises. */
+export function entersTable(
+  event: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; defaultPrevented: boolean },
+  target: { tagName?: string; isContentEditable?: boolean } | null,
+  dialogOpen: boolean,
+): boolean {
+  if (event.key !== 'j' && event.key !== 'k') return false;
+  if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented || dialogOpen) return false;
+  return !(target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? ''));
+}

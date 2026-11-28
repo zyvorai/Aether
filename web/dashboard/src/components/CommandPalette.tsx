@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowRight, CornerDownRight, History, Layers, Search, Star, Wrench, Zap, type LucideIcon } from 'lucide-react';
-import type { AppView } from '../types/api';
+import type { AppView, WorkloadResponse } from '../types/api';
 import { DASHBOARD_VIEWS } from '../utils/dashboardNav';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
@@ -16,7 +16,8 @@ import { useServerCapabilities } from '../contexts/ServerCapabilitiesContext';
 import { partitionNavViews } from '../utils/navCapabilities';
 import { inferFixRecommendations } from '../utils/k8sUx';
 import { getSectionLabel } from '../utils/navSections';
-import { groupByCategory, parseQuery, scoreCommand, type PaletteScope } from '../utils/paletteRank';
+import { groupByCategory, parseQuery, rankCommands, type PaletteScope, type WorkloadTier } from '../utils/paletteRank';
+import { workloadCommands } from '../utils/paletteWorkloads';
 import { copyToClipboard } from '../utils/clipboard';
 import { usePreferences } from '../hooks/usePreferences';
 import { useTheme } from '../contexts/ThemeContext';
@@ -64,8 +65,9 @@ interface CommandAction {
   category: CommandCategory;
   searchText: string;
   view?: AppView;
-  workloadName?: string;
+  workload?: { name: string; tier: WorkloadTier };
   workloadTab?: string;
+  status?: string;
   run?: () => void | Promise<void>;
 }
 
@@ -75,7 +77,7 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   onNavigate: (view: AppView) => void;
-  workloads: string[];
+  workloads: WorkloadResponse[];
   onSelectWorkload?: (name: string) => void;
   onRefresh?: () => void;
   onLogout?: () => void;
@@ -125,386 +127,37 @@ export default function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const runLifecycle = useCallback(
+    async (name: string, action: 'start' | 'stop') => {
+      if (!canMutate) {
+        paletteToast(`Your role cannot ${action} workloads`, 'error');
+        return;
+      }
+      const res = await apiPost(`/workloads/${name}/${action}`);
+      paletteToast(
+        res.success
+          ? `${action === 'start' ? 'Started' : 'Stopped'} "${name}"`
+          : `${action === 'start' ? 'Start' : 'Stop'} failed: ${res.error ?? 'unknown error'}`,
+        res.success ? 'success' : 'error',
+      );
+      onRefresh?.();
+    },
+    [canMutate, onRefresh],
+  );
+
   const allCommands = useMemo((): CommandAction[] => {
-    const workloadItems: CommandAction[] = workloads.flatMap((name) => [
-      {
-        id: `application-${name}`,
-        label: `Open application: ${name}`,
-        category: 'workload' as const,
-        searchText: `application app kubernetes ${name}`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('applications'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}`,
-        label: `Open workload: ${name}`,
-        category: 'workload' as const,
-        searchText: `workload ${name}`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('workloads'), { workload: name }));
-          onSelectWorkload?.(name);
-        },
-      },
-      {
-        id: `workload-${name}-logs`,
-        label: `View logs: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `logs ${name} workload`,
-        workloadName: name,
-        workloadTab: 'logs',
-        run: () => {
-          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'logs' }));
-          onSelectWorkload?.(name);
-        },
-      },
-      {
-        id: `workload-${name}-drift`,
-        label: `Check drift: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `drift ${name} workload reconcile`,
-        workloadName: name,
-        workloadTab: 'drift',
-        run: () => {
-          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'drift' }));
-          onSelectWorkload?.(name);
-        },
-      },
-      {
-        id: `workload-${name}-events`,
-        label: `View events: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `events ${name} workload`,
-        workloadName: name,
-        workloadTab: 'events',
-        run: () => {
-          navigate(pathWithQuery(viewToPath('events'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-zyra`,
-        label: `Ask Zyra about: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `copilot ask health ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(
-            pathWithQuery(viewToPath('zyra'), {
-              workload: name,
-              q: `Why is ${name} unhealthy?`,
-            }),
-          );
-        },
-      },
-      {
-        id: `workload-${name}-alerts`,
-        label: `Alert rules: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `alerts webhooks ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('alerts'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-audit`,
-        label: `Audit trail: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `audit trail history ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('audit'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-health`,
-        label: `Health monitor: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `health monitor liveness ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('health'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-gitops`,
-        label: `GitOps sync: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `gitops sync reconcile ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('gitops'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-metrics`,
-        label: `Metrics: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `metrics grafana prometheus ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('metrics'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-deps`,
-        label: `Dependencies: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `dependencies graph startup ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('deps'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-affinity`,
-        label: `Runtime affinity: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `affinity runtime class ${name} workload`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('affinity'), { workload: name }));
-        },
-      },
-      {
-        id: `workload-${name}-sla`,
-        label: `SLA compliance: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `sla uptime compliance ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('sla'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-envs`,
-        label: `Environments: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `environments promote ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('envs'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-templates`,
-        label: `Templates: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `templates scaffold ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('templates'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-plugins`,
-        label: `Plugins: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `plugins runtime ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('plugins'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-cost`,
-        label: `Cost estimate: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `cost chargeback ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('cost'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-scheduler`,
-        label: `Scheduler: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `scheduler placement ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('scheduler'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-policy`,
-        label: `Policy check: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `policy opa validate ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('policy'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-intelligence`,
-        label: `Intelligence: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `intelligence predictions threats ${name}`,
-        workloadName: name,
-        run: () =>
-          navigate(pathWithQuery(viewToPath('intelligence'), { workload: name, tab: 'predictions' })),
-      },
-      {
-        id: `workload-${name}-editor`,
-        label: `Visual editor: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `editor visual yaml ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('editor'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-platform`,
-        label: `Platform context: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `platform ha integrations ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('platform'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-rbac`,
-        label: `RBAC keys: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `rbac api keys roles ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('rbac'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-openapi`,
-        label: `OpenAPI routes: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `openapi api routes swagger ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('openapi'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-clusters`,
-        label: `Cluster browser: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `clusters kubernetes browse ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('clusters'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-compose`,
-        label: `Compose stack: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `compose docker stack import ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('compose'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-fleet-scoped`,
-        label: `Fleet view: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `fleet multi cluster ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('fleet'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-backups`,
-        label: `Backups: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `backup restore snapshot ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('backups'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-secrets`,
-        label: `Secrets: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `secrets vault keys ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('secrets'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-ai`,
-        label: `AI engine: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `ai scoring intent ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('ai'), { workload: name, tab: 'analyze' })),
-      },
-      {
-        id: `workload-${name}-drift-page`,
-        label: `Drift page: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `drift reconcile page ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('drift'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-compose-deps`,
-        label: `Compose deps: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `compose dependencies stack ${name}`,
-        workloadName: name,
-        run: () => navigate(pathWithQuery(viewToPath('deps'), { workload: name })),
-      },
-      {
-        id: `workload-${name}-scoring`,
-        label: `Open scoring: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `scoring ai intent ${name}`,
-        workloadName: name,
-        workloadTab: 'scoring',
-        run: () => {
-          navigate(pathWithQuery(viewToPath('workloads'), { workload: name, tab: 'scoring' }));
-          onSelectWorkload?.(name);
-        },
-      },
-      {
-        id: `workload-${name}-start`,
-        label: `Start workload: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `start run ${name}`,
-        workloadName: name,
-        run: async () => {
-          if (!canMutate) {
-            paletteToast('Your role cannot start workloads', 'error');
-            return;
-          }
-          const res = await apiPost(`/workloads/${name}/start`);
-          paletteToast(
-            res.success ? `Started "${name}"` : `Start failed: ${res.error ?? 'unknown error'}`,
-            res.success ? 'success' : 'error',
-          );
-          onRefresh?.();
-        },
-      },
-      {
-        id: `workload-${name}-scale`,
-        label: `Scale application: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `scale replicas application ${name}`,
-        workloadName: name,
-        run: () => {
-          navigate(pathWithQuery(viewToPath('applications'), { workload: name, tab: 'overview' }));
-        },
-      },
-      {
-        id: `workload-${name}-why-failing`,
-        label: `Why is ${name} failing?`,
-        category: 'workload-action' as const,
-        searchText: `why failing troubleshoot diagnose ${name}`,
-        workloadName: name,
-        run: () => {
-          navigate(
-            pathWithQuery(viewToPath('zyra'), {
-              workload: name,
-              q: `Why is ${name} failing?`,
-            }),
-          );
-        },
-      },
-      {
-        id: `workload-${name}-stop`,
-        label: `Stop workload: ${name}`,
-        category: 'workload-action' as const,
-        searchText: `stop halt ${name}`,
-        workloadName: name,
-        run: async () => {
-          if (!canMutate) {
-            paletteToast('Your role cannot stop workloads', 'error');
-            return;
-          }
-          const res = await apiPost(`/workloads/${name}/stop`);
-          paletteToast(
-            res.success ? `Stopped "${name}"` : `Stop failed: ${res.error ?? 'unknown error'}`,
-            res.success ? 'success' : 'error',
-          );
-          onRefresh?.();
-        },
-      },
-    ]);
+    const workloadItems: CommandAction[] = workloads
+      .flatMap((w) => workloadCommands(w, { gitopsConfigured: gitopsConfigured === true }))
+      .map(({ to, action, ...command }) => ({
+        ...command,
+        run: action
+          ? () => runLifecycle(command.workload.name, action)
+          : () => {
+              if (!to) return;
+              navigate(pathWithQuery(viewToPath(to.view), to.params));
+              if (to.select) onSelectWorkload?.(command.workload.name);
+            },
+      }));
 
     const actionItems: CommandAction[] = [];
 
@@ -1026,7 +679,7 @@ export default function CommandPalette({
     }));
 
     return [...visibleNav, ...setupCommands, ...workloadItems, ...actionItems, ...interfaceItems];
-  }, [workloads, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, onNavigate, canMutate, capabilities, gitopsConfigured, theme, setTheme, toggleDarkLight, density, sidebarCollapsed, setPreferences]);
+  }, [workloads, runLifecycle, navigate, onSelectWorkload, onRefresh, onLogout, onOpenHelp, onNavigate, canMutate, capabilities, gitopsConfigured, theme, setTheme, toggleDarkLight, density, sidebarCollapsed, setPreferences]);
 
   const recentCommands = useMemo((): CommandAction[] => {
     const items: CommandAction[] = [];
@@ -1070,13 +723,11 @@ export default function CommandPalette({
     let results: CommandAction[];
     if (q) {
       // Search each destination once: recent and pinned copies are for browsing.
-      const ranked = allCommands
-        .filter(inScope)
-        // The page id is searchable too ("deps", "rbac", "sbom").
-        .map((cmd) => ({ cmd, score: scoreCommand(q, { label: cmd.label, searchText: `${cmd.searchText} ${cmd.view ?? ''}` }) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .map(({ cmd }) => cmd);
+      // The page id is searchable too ("deps", "rbac", "sbom").
+      const ranked = rankCommands(
+        q,
+        allCommands.filter(inScope).map((cmd) => (cmd.view ? { ...cmd, searchText: `${cmd.searchText} ${cmd.view}` } : cmd)),
+      );
       results = groupByCategory(ranked.slice(0, MAX_RESULTS));
     } else if (scope !== 'all') {
       results = base.filter(inScope).slice(0, MAX_RESULTS);
@@ -1091,9 +742,9 @@ export default function CommandPalette({
     const whyMatch = ql.match(/^why\s+(.+?)\s+failing\??$/);
 
     const contextual: CommandAction[] = [];
+    const names = workloads.map((w) => w.name);
     const resolveName = (needle: string) =>
-      workloads.find((w) => w.toLowerCase() === needle) ??
-      workloads.find((w) => w.toLowerCase().includes(needle));
+      names.find((n) => n.toLowerCase() === needle) ?? names.find((n) => n.toLowerCase().includes(needle));
 
     if (scaleMatch) {
       const match = resolveName(scaleMatch[1].trim().toLowerCase());
@@ -1260,7 +911,7 @@ export default function CommandPalette({
               lastCategory = cmd.category;
               const meta = cmd.view ? VIEW_META.get(cmd.view) : undefined;
               const Icon = meta?.icon ?? CATEGORY_ICONS[cmd.category];
-              const hint = meta ? getSectionLabel(meta.view) : cmd.workloadTab;
+              const hint = meta ? getSectionLabel(meta.view) : (cmd.status ?? cmd.workloadTab);
               return (
                 <div key={cmd.id}>
                   {showCategory ? <div className="palette-heading">{CATEGORY_LABELS[cmd.category]}</div> : null}

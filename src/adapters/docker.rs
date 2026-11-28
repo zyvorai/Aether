@@ -3,6 +3,7 @@
 
 //! Docker container runtime adapter
 
+use crate::adapters::local;
 use crate::runtime::{Image, Instance, InstanceState, Runtime, RuntimeKind, Status};
 use crate::spec::Workload;
 use async_trait::async_trait;
@@ -161,7 +162,22 @@ impl Runtime for DockerRuntime {
         }
         cmd.arg(image.full_name());
 
-        let output = exec_docker(cmd, "run").await?;
+        // A stopped container of this workload still holds the name.
+        let previous = local::set_aside("docker", &spec.metadata.name).await?;
+        let output = match exec_docker(cmd, "run").await {
+            Ok(output) => output,
+            Err(e) => {
+                if let Some(previous) = previous {
+                    if let Err(restore) = previous.restore().await {
+                        return Err(e.context(format!("{restore:#}")));
+                    }
+                }
+                return Err(e);
+            }
+        };
+        if let Some(previous) = previous {
+            previous.discard().await;
+        }
         let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
         Ok(Instance::new(
@@ -180,6 +196,17 @@ impl Runtime for DockerRuntime {
         exec_docker(cmd, "stop").await?;
 
         Ok(())
+    }
+
+    async fn update(
+        &self,
+        instance: &Instance,
+        _image: &Image,
+        spec: &Workload,
+    ) -> crate::Result<Instance> {
+        // Build before touching the container that is serving.
+        let image = self.build(spec).await?;
+        local::update("docker", self, instance, &image, spec).await
     }
 
     async fn status(&self, instance: &Instance) -> crate::Result<Status> {

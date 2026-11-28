@@ -391,8 +391,8 @@ pub fn record_error(dir: &Path, workload: &str, message: &str) -> Result<()> {
     })
 }
 
-/// Store an observation and update incidents and availability.
-pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
+/// Add an observation to the health history.
+fn append_history(dir: &Path, o: &Observation) -> Result<()> {
     store::update(&health_path(dir), |h: &mut HealthHistory| {
         h.records.push(HealthRecord {
             timestamp: o.at.clone(),
@@ -418,6 +418,39 @@ pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
         // trims globally, from discarding what was just kept.
         h.max_records = h.max_records.max(h.records.len() + RECORDS_PER_WORKLOAD);
     })?;
+    Ok(())
+}
+
+/// Look at a workload once, right after it was deployed or started, so that its
+/// status does not read `unknown` until the next observation round. Only the
+/// health history is written: one early look does not count toward incidents or
+/// availability.
+pub async fn first_look(dir: &Path, ws: &WorkloadState) {
+    const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+    let status = tokio::time::timeout(TIMEOUT, async {
+        let rt = crate::runtime::create_runtime_ns(&ws.runtime, ws.namespace.as_deref()).await?;
+        rt.status(&ws.instance).await
+    })
+    .await;
+    // No answer leaves the status unknown; the observation loop reports why.
+    let Ok(Ok(status)) = status else { return };
+    let o = Observation {
+        workload: ws.name.clone(),
+        runtime: ws.runtime,
+        state: status.state,
+        ready: status.ready,
+        restart_count: status.restart_count,
+        message: status.message,
+        at: crate::resources::now_rfc3339(),
+    };
+    if let Err(e) = append_history(dir, &o) {
+        tracing::warn!("could not record the status of {}: {e:#}", ws.name);
+    }
+}
+
+/// Store an observation and update incidents and availability.
+pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
+    append_history(dir, o)?;
     let threshold = threshold();
     let transition = store::update(&path(dir), |s: &mut IncidentStore| s.apply(o, threshold))?;
     if !matches!(transition, Transition::Planned) {

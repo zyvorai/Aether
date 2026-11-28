@@ -38,3 +38,10 @@ export async function deleteWorkload(w: WorkloadResponse): Promise<ApiResponse<u
   }
   return apiPost('/cluster/action', { ...ref, action: 'delete' });
 }
+
+/** Throws what the server said when an action did not happen, so it can be shown. */
+export function expectSuccess(res: ApiResponse<unknown>, action: string): void {
+  if (res.success) return;
+  const verb = action.charAt(0).toUpperCase() + action.slice(1);
+  throw new Error(`${verb} failed: ${res.error?.trim() || 'unknown error'}`);
+}

@@ -57,11 +57,21 @@ pub async fn execute_tool(
 
     match name {
         "list_workloads" => {
+            let observed = crate::ops::observed::Snapshot::load(&crate::ops::data_dir());
+            let now = chrono::Utc::now();
             let store = ctx.state.read().await;
             let list: Vec<_> = store
                 .list()
                 .iter()
-                .map(|w| json!({"name": w.name, "runtime": format!("{}", w.runtime)}))
+                .map(|w| {
+                    let status = observed.status(w, now);
+                    json!({
+                        "name": w.name,
+                        "runtime": format!("{}", w.runtime),
+                        "status": status.condition.label(),
+                        "status_detail": status.detail,
+                    })
+                })
                 .collect();
             Ok(json!({"workloads": list}))
         }

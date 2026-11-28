@@ -50,6 +50,24 @@ fn canon(v: Value) -> Value {
     }
 }
 
+/// YAML for people to read and apply: unset fields are left out rather than
+/// written as `null`. Field order is kept.
+pub fn yaml_without_nulls<T: Serialize>(value: &T) -> Result<String, serde_yaml::Error> {
+    fn strip(v: &mut serde_yaml::Value) {
+        match v {
+            serde_yaml::Value::Mapping(m) => {
+                m.retain(|_, child| !child.is_null());
+                m.iter_mut().for_each(|(_, child)| strip(child));
+            }
+            serde_yaml::Value::Sequence(s) => s.iter_mut().for_each(strip),
+            _ => {}
+        }
+    }
+    let mut doc = serde_yaml::to_value(value)?;
+    strip(&mut doc);
+    serde_yaml::to_string(&doc)
+}
+
 fn digest(v: &Value) -> String {
     let bytes = serde_json::to_vec(v).unwrap_or_default();
     format!("sha256:{}", hex_lower(Sha256::digest(&bytes)))
