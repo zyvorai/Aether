@@ -25,7 +25,7 @@ const DOTTED: BadgeVariant[] = ['green', 'red', 'yellow'];
 
 export default function Badge({ text, variant }: BadgeProps) {
   return (
-    <span className={`pill ${variantClasses[variant]}`} title={text}>
+    <span className={`pill ${variantClasses[variant]}`}>
       {DOTTED.includes(variant) ? <span className="pill-dot" aria-hidden /> : null}
       <span className="pill-text">{text}</span>
     </span>
