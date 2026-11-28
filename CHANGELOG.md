@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed: stop, then start or restart, on Podman and Docker
+- Start and Restart failed with `name "<workload>" is already in use`, because a stopped container keeps its name (API, CLI `restart` and `run`, self-healing, snapshot rollback). The stopped container Aether created is now renamed aside, removed once its replacement runs, and restored if it does not. A running container, or one Aether did not create, is never moved.
+- A failed `update` on Podman or Docker removed the old container first and could leave nothing. The old container is now kept and started again.
+- Start replaces the container, as it always rebuilt from the spec: files written inside the old container are not carried over.
+
 ### Fixed: status reflects what was observed
 - Managed workloads reported `deployed (<runtime>)` and counted as running even when their container had stopped. `GET /api/workloads`, `aether list`, `aether metrics`, the assistant tools and the dashboard now show the last observed condition, `stopped` only for a stop made through Aether, `stopped unexpectedly` otherwise, and `unknown` without a current check. Responses gain `status_detail` and `observed_at`. API clients that matched `deployed` must be updated.
 - The Command Center briefing counted never-checked and stopped workloads as healthy and reported no issues for them. `fleet_health_pct` now covers checked workloads only and is `null` without any; the new `fleet` object has the counts.

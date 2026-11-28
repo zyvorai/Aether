@@ -315,6 +315,8 @@ curl http://localhost:5090/api/workloads/my-app/logs
 
 Rebuilds and runs a workload from its stored spec. Guards against concurrent deletion.
 
+On Podman and Docker the stopped container is replaced by a new one, so anything written inside the old container's filesystem is not carried over. The old container is removed only once the new one runs; if that fails it keeps its name. Starting a workload that is already running is refused.
+
 ```bash
 curl -X POST http://localhost:5090/api/workloads/my-app/start
 ```
