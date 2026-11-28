@@ -12,8 +12,11 @@ test.describe('Cluster exec + port-forward (kind)', () => {
   test('exec terminal shows command output', async ({ page }) => {
     await openNginxPlaywrightPodTerminal(page);
 
-    await page.getByRole('button', { name: /connect/i }).click();
+    // Exact: "Disconnect" and the live-updates button also contain "connect".
+    await page.getByRole('button', { name: 'Connect', exact: true }).click();
     await page.getByPlaceholder(/command/i).fill('echo aether-exec-ok');
+    // Send is enabled once the exec socket is open; Enter before that is ignored.
+    await expect(page.getByRole('button', { name: 'Send' })).toBeEnabled({ timeout: 15_000 });
     await page.keyboard.press('Enter');
 
     await expect(page.locator('pre').filter({ hasText: 'aether-exec-ok' })).toBeVisible({
@@ -31,7 +34,7 @@ test.describe('Cluster exec + port-forward (kind)', () => {
     const active = page.getByTestId('clusters-port-forward-active');
     await expect(active).toBeVisible({ timeout: 20_000 });
 
-    const localUrl = await active.locator('.text-emerald-300').textContent();
+    const localUrl = await page.getByTestId('clusters-port-forward-url').textContent();
     expect(localUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
 
     let ready = false;

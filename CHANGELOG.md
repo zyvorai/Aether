@@ -22,6 +22,7 @@ Guide: `docs/guides/operations/STATUS-BOARD.md`. Dashboard page `/board`.
 - The AI pipeline showed a spec full of `null`.
 - The command palette buried the workload under dozens of unrelated entries.
 - `j` and `k` did nothing until a table row had focus.
+- Typing in a dialog moved focus to its close button when the page updated, so Enter closed the dialog. This made the cluster browser's terminal unusable from the keyboard.
 - Opening the Overview in a browser no longer writes the macOS offline cache.
 
 ### Added

@@ -9,11 +9,21 @@ use aether::migration::volume::{
     execute_volume_replication, plan_volume_replication, VolumeReplicationRequest,
 };
 use aether::state::StateStore;
+use std::sync::{Mutex, MutexGuard};
+
+/// `HOME` belongs to the whole process, so tests that point it at their own directory must not
+/// run at the same time. Keep the returned values alive until the test ends.
+fn isolated_home() -> (tempfile::TempDir, MutexGuard<'static, ()>) {
+    static HOME: Mutex<()> = Mutex::new(());
+    let lock = HOME.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let dir = tempfile::tempdir().unwrap();
+    std::env::set_var("HOME", dir.path());
+    (dir, lock)
+}
 
 #[test]
 fn tenant_key_issue_verify() {
-    let dir = tempfile::tempdir().unwrap();
-    std::env::set_var("HOME", dir.path());
+    let _home = isolated_home();
     let mut store = TenantKeyStore::load();
     let (plain, _) = store.issue("tenant-x", "ci").unwrap();
     assert!(store.verify(&plain).is_some());
@@ -21,16 +31,14 @@ fn tenant_key_issue_verify() {
 
 #[test]
 fn metering_records_requests() {
-    let dir = tempfile::tempdir().unwrap();
-    std::env::set_var("HOME", dir.path());
+    let _home = isolated_home();
     UsageMeter::record("tenant-a", "/api/workloads");
     assert!(UsageMeter::load().requests_for("tenant-a") >= 1);
 }
 
 #[test]
 fn tenant_upgrade_plan() {
-    let dir = tempfile::tempdir().unwrap();
-    std::env::set_var("HOME", dir.path());
+    let _home = isolated_home();
     let mut store = TenantStore::load();
     let t = store.create("Acme", "acme", TenantPlan::Free).unwrap();
     store.upgrade_plan(&t.id, TenantPlan::Team).unwrap();
