@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import { severityColorVar, severityRank, sortBySeverity } from '../../utils/severity';
-import { moveIndex, nextSort, sortByValue, type SortState } from '../../utils/tableSort';
+import { entersTable, moveIndex, nextSort, sortByValue, type SortState } from '../../utils/tableSort';
 
 export interface DataTableColumn<T> {
   key: string;
@@ -82,6 +82,20 @@ export default function DataTable<T>({
     observer.observe(scroller);
     return () => observer.disconnect();
   }, [rows.length]);
+
+  // j or k pressed before any row has focus enters the table.
+  useEffect(() => {
+    if (!interactive) return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!entersTable(event, event.target as HTMLElement | null, Boolean(document.querySelector('[aria-modal="true"]')))) return;
+      const row = bodyRef.current?.children[current] as HTMLElement | undefined;
+      if (!row) return;
+      event.preventDefault();
+      row.focus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [interactive, current]);
 
   if (rows.length === 0) {
     return (
