@@ -48,6 +48,25 @@ function eventSeverity(severity: string): AttentionSeverity | null {
   return null;
 }
 
+const incidentNumber = (event: Event) => /^incident (\d+):/i.exec(event.message)?.[1];
+
+/**
+ * Drops events that no longer describe a problem: recoveries, and openings of
+ * incidents that have since ended. The server queue lists every open incident,
+ * so when it loaded, an opening it does not list is over.
+ */
+function stillCurrent(events: Event[], operator: AttentionQueue | null): Event[] {
+  const ended = new Set(events.filter((e) => /^incident resolved$/i.test(e.title)).map(incidentNumber));
+  const stillOpen = new Set((operator?.items ?? []).filter((i) => i.kind === 'open-incident').map((i) => i.workload));
+  return events.filter((event) => {
+    if (/^incident resolved$/i.test(event.title)) return false;
+    if (!/^incident opened$/i.test(event.title)) return true;
+    const number = incidentNumber(event);
+    if (number !== undefined && ended.has(number)) return false;
+    return operator === null || stillOpen.has(event.workload);
+  });
+}
+
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 /** Which events only announce something a server queue entry already reports. */
@@ -64,7 +83,8 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
   const items: AttentionItem[] = [];
   // Informational entries (holds, stale data) stay on the Operations Desk.
   const recorded = (operator?.items ?? []).filter((entry) => entry.level !== 'info');
-  const allOpen = (events ?? []).filter((event) => !event.acknowledged && eventSeverity(event.severity));
+  // Recoveries count as evidence even when somebody has acknowledged them.
+  const allOpen = stillCurrent(events ?? [], operator).filter((event) => !event.acknowledged && eventSeverity(event.severity));
   // One problem, one row: the server's entry says more than the event that announced it.
   const open = allOpen.filter((event) => !recorded.some((entry) => announces(event, entry)));
   const escalates = (entry: AttentionEntry) =>

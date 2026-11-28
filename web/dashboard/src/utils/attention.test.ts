@@ -180,14 +180,43 @@ describe('attention lists each problem once', () => {
   it('keeps other events and other workloads apart', () => {
     const items = buildAttention({
       ...healthy,
-      events: [opened, event('Disk filling', 'warning', 'web'), { ...opened, workload: 'api' }],
+      events: [opened, event('Disk filling', 'warning', 'web'), event('stop failed', 'error', 'api')],
       operator: queue([incident]),
     });
-    expect(items.map((i) => i.title).sort()).toEqual(['Disk filling', 'Incident opened', 'web: Incident 1 is open']);
+    expect(items.map((i) => i.title).sort()).toEqual(['Disk filling', 'stop failed', 'web: Incident 1 is open']);
   });
 
   it('keeps the incident event when the server queue did not load', () => {
     const items = buildAttention({ ...healthy, events: [opened], operator: null });
     expect(items.map((i) => i.title)).toEqual(['Incident opened']);
+  });
+
+  const recovered: Event = {
+    ...event('Incident resolved', 'warning', 'web'),
+    message: 'incident 1: web recovered after 4m 0s',
+  };
+
+  for (const [when, operator] of [
+    ['the server queue loaded', queue([])],
+    ['the server queue did not load', null],
+  ] as const) {
+    it(`lists nothing for a recovered incident when ${when}`, () => {
+      expect(buildAttention({ ...healthy, events: [recovered, opened], operator })).toEqual([]);
+    });
+  }
+
+  it('still counts a recovery that somebody acknowledged', () => {
+    const items = buildAttention({ ...healthy, events: [{ ...recovered, acknowledged: true }, opened], operator: null });
+    expect(items).toEqual([]);
+  });
+
+  it('drops an incident the server queue no longer lists, such as a deleted workload', () => {
+    expect(buildAttention({ ...healthy, events: [opened], operator: queue([]) })).toEqual([]);
+  });
+
+  it('keeps a later incident that is still open', () => {
+    const again: Event = { ...opened, message: 'incident 2: web is not ready (stopped) after 2 consecutive checks' };
+    const items = buildAttention({ ...healthy, events: [again, recovered, opened], operator: null });
+    expect(items.map((i) => [i.title, i.detail])).toEqual([['Incident opened', again.message]]);
   });
 });
