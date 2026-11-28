@@ -219,13 +219,28 @@ curl http://localhost:5090/api/workloads
       "name": "my-app",
       "runtime": "Podman",
       "image": "my-app:latest",
-      "status": "deployed (podman)",
+      "status": "running",
+      "status_detail": "checked 12s ago: running, ready",
+      "observed_at": "2026-01-15T10:05:00Z",
       "created_at": "2026-01-15T10:00:00Z"
     }
   ],
   "error": null
 }
 ```
+
+For workloads Aether manages, `status` is what was last observed, not whether they were deployed:
+
+| `status` | Meaning |
+|---|---|
+| `running` | Found running and ready |
+| `unhealthy`, `pending`, `not ready` | Observed, but not ready |
+| `failed` | The runtime reports a failure |
+| `stopped unexpectedly` | Found stopped, and nobody asked Aether to stop it |
+| `stopped` | Stopped through Aether |
+| `unknown` | Never checked, not checked for 15 minutes (longer if `AETHER_OBSERVE_SECS` is), not checked since the last deploy or start, or the status could not be read |
+
+`status_detail` says what the status rests on. Observations come from `aether serve`, `aether status` and `aether health collect`. Discovered cluster workloads carry the status the cluster reports at request time.
 
 ---
 
@@ -275,7 +290,9 @@ curl http://localhost:5090/api/workloads/my-app
     "name": "my-app",
     "runtime": "Podman",
     "image": "my-app:latest",
-    "status": "deployed (podman)",
+    "status": "running",
+    "status_detail": "checked 12s ago: running, ready",
+    "observed_at": "2026-01-15T10:05:00Z",
     "created_at": "2026-01-15T10:00:00Z"
   },
   "error": null

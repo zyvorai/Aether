@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed: status reflects what was observed
+- Managed workloads reported `deployed (<runtime>)` and counted as running even when their container had stopped. `GET /api/workloads`, `aether list`, `aether metrics`, the assistant tools and the dashboard now show the last observed condition, `stopped` only for a stop made through Aether, `stopped unexpectedly` otherwise, and `unknown` without a current check. Responses gain `status_detail` and `observed_at`. API clients that matched `deployed` must be updated.
+- The Command Center briefing counted never-checked and stopped workloads as healthy and reported no issues for them. `fleet_health_pct` now covers checked workloads only and is `null` without any; the new `fleet` object has the counts.
+
 - **Dashboard console:** sectioned sidebar with pins and filter, an attention-first Overview that includes the operations queue, live pause and event inbox, improved command palette, keyboard tables and a workload side panel, compact headers, clearer loading and error states. Fixes failed requests shown as empty, invisible loading skeletons and one crashed page blocking the others.
 
 ### Operations desk

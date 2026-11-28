@@ -7,6 +7,7 @@ use super::types::*;
 use crate::config::Config;
 use crate::engine::Engine;
 use crate::kubecluster::ClusterLogsRequest;
+use crate::ops::observed::Snapshot;
 use crate::runtime::{self, RuntimeKind};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
@@ -991,6 +992,36 @@ fn cluster_workload_dedup_key(workload: &crate::kubecluster::ClusterWorkload) ->
     format!("{}/{}/{}", workload.namespace, workload.kind, workload.name)
 }
 
+/// A workload in the state store, with the status it was last observed in.
+fn managed_workload_response(
+    w: &WorkloadState,
+    observed: &Snapshot,
+    now: chrono::DateTime<chrono::Utc>,
+) -> WorkloadResponse {
+    let status = observed.status(w, now);
+    WorkloadResponse {
+        name: w.name.clone(),
+        runtime: format!("{:?}", w.runtime),
+        image: w.instance.image.clone(),
+        status: status.condition.label().to_string(),
+        status_detail: Some(status.detail),
+        observed_at: status.observed_at,
+        created_at: w.created_at.clone(),
+        source: Some("aether".to_string()),
+        cluster: w.cluster_context.clone(),
+        namespace: w.namespace.clone(),
+        kind: w.k8s_kind.clone(),
+    }
+}
+
+/// Record the status of a workload that was just deployed, started or updated.
+async fn look_at_workload(app_state: &AppState, name: &str) {
+    let workload = app_state.state.read().await.get(name).cloned();
+    if let Some(ws) = workload {
+        crate::ops::incidents::first_look(&crate::ops::data_dir(), &ws).await;
+    }
+}
+
 /// GET /api/workloads - List all workloads (state store + live discovery)
 pub(crate) async fn list_workloads(
     AxumState(app_state): AxumState<AppState>,
@@ -998,23 +1029,15 @@ pub(crate) async fn list_workloads(
 ) -> impl IntoResponse {
     // Start with state store entries
     let mut seen = std::collections::HashSet::new();
+    let observed = Snapshot::load(&crate::ops::data_dir());
+    let now = chrono::Utc::now();
     let state = app_state.state.read().await;
     let mut workloads: Vec<WorkloadResponse> = state
         .list()
         .iter()
         .map(|w| {
             seen.insert(w.name.clone());
-            WorkloadResponse {
-                name: w.name.clone(),
-                runtime: format!("{:?}", w.runtime),
-                image: w.instance.image.clone(),
-                status: format!("deployed ({})", w.runtime),
-                created_at: w.created_at.clone(),
-                source: Some("aether".to_string()),
-                cluster: w.cluster_context.clone(),
-                namespace: w.namespace.clone(),
-                kind: w.k8s_kind.clone(),
-            }
+            managed_workload_response(w, &observed, now)
         })
         .collect();
     drop(state);
@@ -1044,6 +1067,9 @@ pub(crate) async fn list_workloads(
                 status: workload.status,
                 created_at: workload.created_at,
                 source: Some("cluster".to_string()),
+                // Read from the cluster for this request.
+                status_detail: None,
+                observed_at: None,
                 cluster: Some(workload.cluster),
                 namespace: Some(workload.namespace),
                 kind: Some(workload.kind),
@@ -1186,6 +1212,8 @@ async fn deploy_workload_spec(
     if let Err(e) = persist_workload_api(app_state, &state).await {
         return Err(err_internal(e));
     }
+    drop(state);
+    look_at_workload(app_state, &name).await;
 
     emit_sse(
         app_state,
@@ -1224,17 +1252,8 @@ pub(crate) async fn get_workload(
         Err(e) => return e,
     };
 
-    let response = WorkloadResponse {
-        name: workload.name.clone(),
-        runtime: format!("{:?}", workload.runtime),
-        image: workload.instance.image.clone(),
-        status: format!("deployed ({})", workload.runtime),
-        created_at: workload.created_at.clone(),
-        source: Some("aether".to_string()),
-        cluster: workload.cluster_context.clone(),
-        namespace: workload.namespace.clone(),
-        kind: workload.k8s_kind.clone(),
-    };
+    let observed = Snapshot::load(&crate::ops::data_dir());
+    let response = managed_workload_response(&workload, &observed, chrono::Utc::now());
     ok_json(response)
 }
 
@@ -1377,6 +1396,9 @@ pub(crate) async fn start_workload(
     if let Err(e) = persist_workload_api(&app_state, &state).await {
         return err_internal::<String>(e);
     }
+
+    drop(state);
+    look_at_workload(&app_state, &name).await;
 
     emit_sse(
         &app_state,
@@ -1559,6 +1581,9 @@ pub(crate) async fn update_workload(
     if let Err(e) = persist_workload_api(&app_state, &state).await {
         return err_internal::<String>(e);
     }
+
+    drop(state);
+    look_at_workload(&app_state, &name).await;
 
     emit_sse(
         &app_state,

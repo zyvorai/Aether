@@ -22,7 +22,7 @@ pub struct TraySparklineReport {
     pub generated_at: String,
     pub samples: Vec<f64>,
     pub sparkline: String,
-    pub fleet_health_pct: f64,
+    pub fleet_health_pct: Option<f64>,
 }
 
 pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineReport> {
@@ -31,14 +31,16 @@ pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineRe
     let store = StateStore::load(state_path)?;
 
     let mut samples = Vec::new();
-    for ws in store.list().iter().take(12) {
-        samples.push(history.uptime_percent(&ws.name));
+    for ws in store.list() {
+        // A workload without a single check has no uptime to draw.
+        if history.records.iter().any(|r| r.workload == ws.name) {
+            samples.push(history.uptime_percent(&ws.name));
+        }
     }
-    if samples.is_empty() {
-        samples.push(briefing.fleet_health_pct);
-    }
-    while samples.len() < 8 {
-        samples.push(briefing.fleet_health_pct);
+    if let Some(pct) = briefing.fleet_health_pct {
+        while samples.len() < 8 {
+            samples.push(pct);
+        }
     }
     samples.truncate(12);
 

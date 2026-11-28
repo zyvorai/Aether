@@ -10,7 +10,8 @@ test.describe('AI Infrastructure OS v1', () => {
     const body = await res.json();
     const data = body.data ?? body;
     expect(data.greeting).toBeTruthy();
-    expect(typeof data.fleet_health_pct).toBe('number');
+    // null until at least one workload has a current health check.
+    expect(data.fleet_health_pct === null || typeof data.fleet_health_pct === 'number').toBe(true);
   });
 
   test('command center briefing renders on overview', async ({ page }) => {
