@@ -1,8 +1,13 @@
 <div align="center">
 
-<img src="docs/assets/readme/zyvor-logo.png" alt="Zyvor" width="72" height="72"/>
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/aether-lockup-dark.svg">
+    <img src="docs/assets/readme/aether-lockup-light.svg" alt="Aether" height="56">
+  </picture>
+</h1>
 
-# Aether
+<sub>A <a href="https://zyvor.dev"><img src="docs/assets/readme/zyvor-logo.png" alt="" width="14" height="14" align="top"> Zyvor</a> product</sub>
 
 [![License](https://img.shields.io/badge/license-Zyvor%20Production-orange?style=for-the-badge)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/zyvorai/Aether?style=for-the-badge&color=f97316)](https://github.com/zyvorai/Aether/releases)
