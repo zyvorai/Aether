@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
+import { workloadCondition } from '../utils/workloadStatus';
 import type { CommandCenterBriefingData } from '../components/CommandCenterBriefing';
 import type { CostOptimizeReport, PredictionReport, ThreatReport, WorkloadResponse } from '../types/api';
 
@@ -51,7 +52,7 @@ export function useFleetIntelligence(refreshKey = 0): FleetIntelligenceSnapshot 
     };
   }, [refreshKey]);
 
-  const healthy = workloads.filter((w) => w.status.toLowerCase() === 'running').length;
+  const healthy = workloads.filter((w) => workloadCondition(w.status) === 'running').length;
   const riskCount =
     predictions?.predictions.filter((p) => p.risk_level === 'high' || p.risk_level === 'critical').length ?? 0;
   const savings = cost?.recommendations.reduce((sum, r) => sum + r.savings_monthly_usd, 0) ?? 0;

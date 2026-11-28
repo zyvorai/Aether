@@ -36,7 +36,7 @@ const healthy: AttentionSources = {
 describe('workloadCondition', () => {
   it('reads runtime status strings regardless of case', () => {
     expect(workloadCondition('Running')).toBe('running');
-    expect(workloadCondition('deployed (kubernetes)')).toBe('running');
+    expect(workloadCondition('deployed (kubernetes)')).toBe('unknown');
     expect(workloadCondition('CrashLoopBackOff')).toBe('failing');
     expect(workloadCondition('NotReady')).toBe('degraded');
     expect(workloadCondition('exited')).toBe('stopped');

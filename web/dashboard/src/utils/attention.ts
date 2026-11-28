@@ -10,7 +10,7 @@
 import type { AppView, Event, HealthSummary, SecretSummary, WorkloadResponse } from '../types/api';
 import type { AttentionQueue } from '../types/operator';
 import { attentionTarget } from './operator';
-import { workloadCondition } from './workloadStatus';
+import { countByCondition, workloadCondition } from './workloadStatus';
 
 export type AttentionSeverity = 'critical' | 'warning';
 
@@ -67,7 +67,7 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
       title: `${workload.name} is ${workload.status}`,
       detail: latest
         ? `${latest.title}: ${latest.message}${related.length > 1 ? ` (+${plural(related.length - 1, 'more open event')})` : ''}`
-        : `${workload.runtime} workload`,
+        : (workload.status_detail ?? `${workload.runtime} workload`),
       view: 'workloads',
       query: { workload: workload.name },
     });
@@ -169,6 +169,11 @@ export function attentionVerdict(items: AttentionItem[], sources: AttentionSourc
   }
   if (unchecked.length > 0) {
     return { tone: 'unknown', headline: 'Status is incomplete', checked, unchecked };
+  }
+  // A list that loaded can still hold workloads nobody has looked at lately.
+  const blind = countByCondition(sources.workloads ?? []).unknown;
+  if (blind > 0) {
+    return { tone: 'unknown', headline: `${plural(blind, 'workload')} ${blind === 1 ? 'has' : 'have'} no current status`, checked, unchecked };
   }
   return { tone: 'clear', headline: 'Nothing needs attention', checked, unchecked };
 }

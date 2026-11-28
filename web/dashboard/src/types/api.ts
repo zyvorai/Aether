@@ -14,6 +14,9 @@ export interface WorkloadResponse {
   runtime: string;
   image: string;
   status: string;
+  /** What a managed workload's status is based on, in words. */
+  status_detail?: string | null;
+  observed_at?: string | null;
   created_at: string;
   source?: string | null;
   cluster?: string | null;
@@ -1849,7 +1852,7 @@ export interface TraySparklineReport {
   generated_at: string;
   samples: number[];
   sparkline: string;
-  fleet_health_pct: number;
+  fleet_health_pct: number | null;
 }
 
 export interface LiveActivityEntry {

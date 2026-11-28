@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
-import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
+import { countByCondition, needsAttention } from '../../utils/workloadStatus';
 import type { AttentionSources } from '../../utils/attention';
 import AttentionPanel from '../overview/AttentionPanel';
 import type { AttentionQueue } from '../../types/operator';
@@ -318,11 +318,12 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
     };
   });
 
+  const counts = sources.workloads ? countByCondition(sources.workloads) : null;
   const kpis: Array<{ label: string; value: number | null; tone?: 'danger' | 'success'; testId: string; onClick: () => void }> = [
     { label: 'Workloads', value: sources.workloads?.length ?? null, testId: 'overview-kpi-workloads', onClick: () => onNavigate('workloads') },
     {
       label: 'Running',
-      value: sources.workloads?.filter((w) => workloadCondition(w.status) === 'running').length ?? null,
+      value: counts?.running ?? null,
       tone: 'success',
       testId: 'overview-kpi-running',
       onClick: () => goFiltered('workloads', { status: 'running' }),
@@ -334,6 +335,9 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
       testId: 'overview-kpi-attention',
       onClick: () => goFiltered('workloads', { status: 'attention' }),
     },
+    ...(counts && counts.unknown > 0
+      ? [{ label: 'Status unknown', value: counts.unknown, testId: 'overview-kpi-unknown', onClick: () => goFiltered('workloads', { status: 'unknown' }) }]
+      : []),
     {
       label: 'Unacknowledged events',
       value: loaded('eventsSummary', eventSummary)?.unacknowledged ?? null,

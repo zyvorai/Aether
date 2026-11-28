@@ -6,15 +6,8 @@ import Badge, { RuntimeBadge } from './Badge';
 import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../utils/clusterExec';
 import { formatRelativeTime } from '../utils/formatters';
 import { isAetherManaged } from '../utils/workloadFilters';
+import { statusVariant } from '../utils/workloadStatus';
 import type { WorkloadResponse } from '../types/api';
-
-function statusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy' || s.includes('deployed')) return 'green';
-  if (s === 'error' || s === 'failed') return 'red';
-  if (['stopped', 'exited', 'succeeded'].includes(s)) return 'muted';
-  return 'yellow';
-}
 
 function kindGlyph(kind?: string) {
   const k = (kind ?? '').toLowerCase();
@@ -129,7 +122,9 @@ export default function WorkloadCard({
               </button>
             </div>
             <div className="mt-2">
-              <Badge text={workload.status} variant={variant} />
+              <span title={workload.status_detail ?? undefined}>
+                <Badge text={workload.status} variant={variant} />
+              </span>
             </div>
           </div>
         </div>

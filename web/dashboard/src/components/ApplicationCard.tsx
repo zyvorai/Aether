@@ -21,12 +21,12 @@ export default function ApplicationCard({ app, onOpen, onLogs, onScale, onRestar
       ? 'border-success/30 hover:border-success/50'
       : tone === 'critical'
         ? 'border-danger/40 hover:border-danger/60'
-        : tone === 'stopped'
+        : tone === 'stopped' || tone === 'unknown'
           ? 'glass-divider hover:border-primary/30'
           : 'border-warning/30 hover:border-warning/50';
 
   const statusVariant =
-    tone === 'healthy' ? 'green' : tone === 'critical' ? 'red' : tone === 'stopped' ? 'muted' : 'yellow';
+    tone === 'healthy' ? 'green' : tone === 'critical' ? 'red' : tone === 'warning' ? 'yellow' : 'muted';
 
   return (
     <article

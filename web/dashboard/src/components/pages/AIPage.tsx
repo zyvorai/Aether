@@ -25,6 +25,7 @@ import PageTabs from '../PageTabs';
 import { SectionHeader } from '../layout/SectionHeader';
 import WorkloadSelect from '../WorkloadSelect';
 import SectionHubPage from '../SectionHubPage';
+import { workloadCondition } from '../../utils/workloadStatus';
 import type { WorkloadResponse, ScoringResult, ScalingAdvice, RuntimeScore } from '../../types/api';
 
 function toast(message: string, type: 'success' | 'error') {
@@ -337,7 +338,7 @@ export function AIStudio({ refreshKey, forcedTab }: { refreshKey?: number; force
     setWorkloadQuery(name);
   };
 
-  const runningCount = workloads.filter((w) => w.status?.toLowerCase() === 'running').length;
+  const runningCount = workloads.filter((w) => workloadCondition(w.status) === 'running').length;
 
   async function handleRecommend(yaml: string) {
     setRecommendLoading(true);

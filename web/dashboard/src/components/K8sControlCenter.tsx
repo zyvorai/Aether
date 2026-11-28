@@ -24,6 +24,7 @@ export default function K8sControlCenter({
   const healthy = apps.filter((a) => healthTone(a.status) === 'healthy').length;
   const failing = apps.filter((a) => healthTone(a.status) === 'critical').length;
   const warnings = apps.filter((a) => healthTone(a.status) === 'warning').length;
+  const unchecked = apps.filter((a) => healthTone(a.status) === 'unknown').length;
   const clusters = clusterSummary?.cluster_count ?? 0;
   const greeting = username ? username.split('@')[0] : 'Operator';
 
@@ -43,9 +44,11 @@ export default function K8sControlCenter({
         label="Kubernetes"
         title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${greeting}`}
         description={
-          failing === 0 && warnings === 0
-            ? 'Production Kubernetes looks healthy.'
-            : `${failing + warnings} application${failing + warnings === 1 ? '' : 's'} need attention.`
+          failing + warnings > 0
+            ? `${failing + warnings} application${failing + warnings === 1 ? '' : 's'} need attention.`
+            : unchecked > 0
+              ? `${unchecked} application${unchecked === 1 ? ' has' : 's have'} no current status.`
+              : 'Production Kubernetes looks healthy.'
         }
       />
 

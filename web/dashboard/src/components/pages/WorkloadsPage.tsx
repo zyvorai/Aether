@@ -25,7 +25,7 @@ import StatRibbon from '../StatRibbon';
 import SegmentedControl from '../ui/SegmentedControl';
 import { categoricalDotClass } from '../../utils/categoricalColor';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
-import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
+import { countByCondition, needsAttention, statusVariant, workloadCondition } from '../../utils/workloadStatus';
 import Modal from '../Modal';
 import Drawer from '../ui/Drawer';
 import YamlInput from '../YamlInput';
@@ -49,14 +49,6 @@ interface WorkloadsPageProps {
    * event, silently dropping in-progress Exec/port-forward sessions, open
    * modals, and filters. */
   refreshKey?: number;
-}
-
-function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const condition = workloadCondition(status);
-  if (condition === 'running') return 'green';
-  if (condition === 'failing') return 'red';
-  if (condition === 'stopped') return 'muted';
-  return 'yellow';
 }
 
 function toast(message: string, type: 'success' | 'error') {
@@ -547,13 +539,10 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     const matchesKind = kindFilter === 'all' || workload.kind === kindFilter;
     const matchesCluster = clusterFilter === 'all' || workload.cluster === clusterFilter;
     const matchesNamespace = namespaceFilter === 'all' || workload.namespace === namespaceFilter;
-    const status = workload.status.toLowerCase();
-    const isRunning = status === 'running' || status.includes('deployed');
-    const isStopped = ['stopped', 'exited'].includes(status);
+    const condition = workloadCondition(workload.status);
     const matchesStatus =
       statusFilter === 'all' ||
-      (statusFilter === 'running' && isRunning) ||
-      (statusFilter === 'stopped' && isStopped) ||
+      statusFilter === condition ||
       (statusFilter === 'attention' && needsAttention(workload.status));
     const matchesPinned = !pinnedOnly || pinnedNames.includes(workload.name);
     return matchesSearch && matchesSource && matchesKind && matchesCluster && matchesNamespace && matchesStatus && matchesPinned;
@@ -602,11 +591,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
 
   const aetherManagedCount = countAetherManaged(workloads);
   const clusterDiscoveredCount = workloads.length - aetherManagedCount;
-  const runningCount = workloads.filter((w) => {
-    const s = w.status.toLowerCase();
-    return s === 'running' || s.includes('deployed');
-  }).length;
-  const stoppedCount = workloads.filter((w) => ['stopped', 'exited'].includes(w.status.toLowerCase())).length;
+  const { running: runningCount, stopped: stoppedCount, unknown: unknownCount } = countByCondition(workloads);
   const attentionCount = workloads.filter((w) => needsAttention(w.status)).length;
 
   const filterSelectClass = 'glass-select';
@@ -696,7 +681,11 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       header: 'Status',
       width: 120,
       sortValue: (w) => w.status,
-      render: (w) => <Badge text={w.status} variant={getStatusVariant(w.status)} />,
+      render: (w) => (
+        <span title={w.status_detail ?? undefined}>
+          <Badge text={w.status} variant={statusVariant(w.status)} />
+        </span>
+      ),
     },
     {
       key: 'actions',
@@ -750,6 +739,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           { label: 'Running', value: runningCount, tone: 'emerald', testId: 'workloads-running-stat', onClick: () => setStatusFilter(statusFilter === 'running' ? 'all' : 'running'), active: statusFilter === 'running' },
           { label: 'Needs attention', value: attentionCount, tone: attentionCount > 0 ? 'red' : 'white', testId: 'workloads-attention-stat', onClick: () => setStatusFilter(statusFilter === 'attention' ? 'all' : 'attention'), active: statusFilter === 'attention' },
           { label: 'Stopped', value: stoppedCount, testId: 'workloads-stopped-stat', onClick: () => setStatusFilter(statusFilter === 'stopped' ? 'all' : 'stopped'), active: statusFilter === 'stopped' },
+          ...(unknownCount > 0 || statusFilter === 'unknown'
+            ? [{ label: 'Status unknown', value: unknownCount, testId: 'workloads-unknown-stat', onClick: () => setStatusFilter(statusFilter === 'unknown' ? 'all' : 'unknown'), active: statusFilter === 'unknown' }]
+            : []),
           { label: 'Aether', value: aetherManagedCount, tone: 'sky', testId: 'workloads-aether-stat', onClick: () => setSourceFilter(sourceFilterVal === 'aether' ? 'all' : 'aether'), active: sourceFilterVal === 'aether' },
           { label: 'Discovered', value: clusterDiscoveredCount, testId: 'workloads-discovered-stat', onClick: () => setSourceFilter(sourceFilterVal === 'cluster' ? 'all' : 'cluster'), active: sourceFilterVal === 'cluster' },
         ]}
@@ -776,6 +768,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
               <option value="attention">Needs attention</option>
+              <option value="unknown">Status unknown</option>
             </select>
           </>
         }
