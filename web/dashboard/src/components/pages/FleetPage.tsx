@@ -50,6 +50,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
   const navigate = useNavigate();
   const [workloadFocus] = useQueryParam('workload');
   const focusedWorkload = workloadFocus.trim();
+  const [clusterFocus] = useQueryParam('cluster');
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [integrations, setIntegrations] = useState<Integrations>({});
   const [workloads, setWorkloads] = useState<WorkloadResponse[]>([]);
@@ -510,6 +511,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
                   key={c.name}
                   index={i}
                   testId={`fleet-cluster-${c.name}`}
+                  selected={c.name === clusterFocus}
                   icon={<Server size={18} className={categoricalDotClass(c.name).replace('bg-', 'text-')} />}
                   statusTone={c.reachable ? 'green' : 'red'}
                   pulse={c.reachable}

@@ -19,6 +19,7 @@ import { ServerCapabilitiesProvider } from './contexts/ServerCapabilitiesContext
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { pathToView, viewToPath } from './utils/dashboardRoutes';
+import { hubRedirect } from './utils/hubLinks';
 import { pathWithQuery } from './utils/urlState';
 import type { UniversalLinkResolveReport } from './types/api';
 import { syncMacOSLiveActivity, subscribeMacOSNavigate } from './utils/macosBridge';
@@ -159,6 +160,9 @@ function AetherDashboard() {
   const breadcrumbWorkload = searchParams.get('workload')?.trim() || undefined;
 
   const currentView = useMemo(() => pathToView(location.pathname), [location.pathname]);
+  // A hub address that carries filters belongs to the sub-page that reads them.
+  const filteredPage = currentView ? hubRedirect(currentView, location) : null;
+  const leavingHub = filteredPage !== null;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authBootstrapping, setAuthBootstrapping] = useState(true);
@@ -421,10 +425,10 @@ function AetherDashboard() {
   );
 
   useEffect(() => {
-    if (isAuthenticated && currentView) {
+    if (isAuthenticated && currentView && !leavingHub) {
       pushRecentView(currentView);
     }
-  }, [currentView, isAuthenticated]);
+  }, [currentView, isAuthenticated, leavingHub]);
 
   useEffect(() => {
     const onPageToast = (event: Event) => {
@@ -526,6 +530,8 @@ function AetherDashboard() {
   const shellClass = appShellClass();
 
   function renderPage() {
+    // Replace, so that Back does not return to the address that redirects.
+    if (filteredPage) return <Navigate to={filteredPage} replace />;
     switch (currentView) {
       case 'overview':
         return <OverviewPage username={username} onNavigate={handleNavigate} sseConnected={sseConnected} refreshKey={refreshKey} />;
