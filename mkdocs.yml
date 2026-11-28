@@ -113,6 +113,7 @@ nav:
       - Templates: reference/TEMPLATES.md
       - Web UI: reference/WEBUI.md
       - Zyra: reference/ZYRA.md
+      - Project reference: reference/PROJECT-REFERENCE.md
       - REST API reference: reference/api/API-Reference.md
   - Quick Reference: quick-reference/QUICK_REFERENCE.md
   - User Guide:
