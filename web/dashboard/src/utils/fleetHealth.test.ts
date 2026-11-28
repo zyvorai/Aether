@@ -21,7 +21,7 @@ describe('fleet health wording', () => {
 
   it('does not call a partly checked fleet healthy', () => {
     expect(fleetSubtitle(0, 100, fleet(1, 0, 0, 1))).toBe('1 of 2 workloads has no current health check');
-    expect(fleetSubtitle(1, 80, fleet(4, 1, 0, 0))).toBe('1 signal need attention · Fleet at 80% health');
+    expect(fleetSubtitle(1, 80, fleet(4, 1, 0, 0))).toBe('1 signal needs attention · Fleet at 80% health');
   });
 
   it('counts each group', () => {

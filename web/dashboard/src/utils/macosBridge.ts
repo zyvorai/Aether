@@ -1,6 +1,8 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
+import { apiPost } from './api';
+
 type TauriInvoke = (cmd: string, args?: object) => Promise<unknown>;
 
 function tauriInvoke(): TauriInvoke | undefined {
@@ -23,6 +25,12 @@ export async function syncMacOSTray(
   if (sparkline) {
     await invoke('tray_sparkline_update', { sparkline, health: fleetHealthPct }).catch(() => {});
   }
+}
+
+/** Only the macOS app reads the offline cache; a browser must not write it by looking at a page. */
+export async function refreshMacOSOfflineCache(): Promise<void> {
+  if (!tauriInvoke()) return;
+  await apiPost('/intelligence/macos/offline-cache').catch(() => {});
 }
 
 export async function syncMacOSDockBadge(issueCount: number): Promise<void> {

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed: dashboard
+- The Overview listed one incident twice (the event and the operations queue entry).
+- Failed Start, Stop, Restart, Delete and bulk actions were not reported; bulk actions always said "completed".
+- The SLA page logged a 404 for every workload without a target.
+- The AI pipeline showed a spec full of `null`.
+- The command palette buried the workload under dozens of unrelated entries.
+- `j` and `k` did nothing until a table row had focus.
+- Opening the Overview in a browser no longer writes the macOS offline cache.
+
 ### Added
 - The workload panel's Spec tab shows the last applied revision of a managed workload, with secret values redacted.
 - Events can be acknowledged: `POST /api/events/{id}/acknowledge` (Operator or Admin) and a button on the Events page, which already showed unacknowledged counts.

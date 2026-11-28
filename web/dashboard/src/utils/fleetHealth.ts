@@ -28,7 +28,7 @@ export function fleetBreakdown(fleet: FleetCounts | undefined): string {
 export function fleetSubtitle(issueCount: number, pct: number | null | undefined, fleet: FleetCounts | undefined): string {
   const at = typeof pct === 'number' ? `Fleet at ${pct.toFixed(0)}% health` : 'Fleet health not checked';
   if (issueCount > 0) {
-    return `${issueCount} signal${issueCount === 1 ? '' : 's'} need attention · ${at}`;
+    return `${issueCount} signal${issueCount === 1 ? ' needs' : 's need'} attention · ${at}`;
   }
   if (!fleet || fleet.total === 0) {
     return 'Connect workloads to activate fleet intelligence and proactive monitoring';

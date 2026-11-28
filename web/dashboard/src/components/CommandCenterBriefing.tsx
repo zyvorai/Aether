@@ -11,8 +11,8 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import { apiFetch, apiPost } from '../utils/api';
-import { syncMacOSDockBadge, syncMacOSTray } from '../utils/macosBridge';
+import { apiFetch } from '../utils/api';
+import { refreshMacOSOfflineCache, syncMacOSDockBadge, syncMacOSTray } from '../utils/macosBridge';
 import { formatUSD } from '../utils/formatters';
 import { fleetBreakdown, fleetPercent, fleetSubtitle, type FleetCounts } from '../utils/fleetHealth';
 import type { AppView } from '../types/api';
@@ -82,7 +82,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
             void syncMacOSTray(data.fleet_health_pct, issues, sparkline?.sparkline);
           }
           void syncMacOSDockBadge(issues);
-          void apiPost('/intelligence/macos/offline-cache').catch(() => {});
+          void refreshMacOSOfflineCache();
         }
       }
     });
