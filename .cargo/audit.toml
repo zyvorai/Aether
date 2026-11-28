@@ -1,0 +1,23 @@
+# cargo-audit configuration. Every ignore needs a reason and a way out.
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071: Marvin attack, a timing side channel in RSA private-key
+    # operations. The only affected copy left in Cargo.lock is rsa 0.9.10.
+    #
+    # It comes from openidconnect 4.1.0, the newest release, which requires
+    # rsa 0.9. Aether's own RSA code uses rsa 0.10, which the advisory lists as
+    # patched.
+    #
+    # The vulnerable operation is not reachable: openidconnect uses an RSA
+    # private key only in CoreRsaPrivateSigningKey. Aether is an OpenID relying
+    # party and only verifies ID token signatures, which takes the public key.
+    #
+    # cargo-audit ignores by advisory, not by crate version, so
+    # tests/rsa_advisory_guard.rs fails if another crate starts depending on the
+    # old rsa, or if Aether starts using that signing key.
+    #
+    # Follow-up: remove this entry and the guard test once an openidconnect
+    # release depends on rsa 0.10 or later.
+    "RUSTSEC-2023-0071",
+]
