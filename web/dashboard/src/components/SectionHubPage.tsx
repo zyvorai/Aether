@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { AppView } from '../types/api';
 import { viewToPath } from '../utils/dashboardRoutes';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import { pathWithQuery } from '../utils/urlState';
 import type { Tone } from './layout/PageHero';
 
 export interface HubLink {
@@ -28,8 +29,10 @@ interface SectionHubPageProps {
  * order (one distinct color per destination), capped at DESIGN.md's ~6 rows. */
 const TONE_CYCLE: Tone[] = ['sky', 'violet', 'emerald', 'amber', 'pink', 'teal', 'rust'];
 
-/** Services-style hub — one full-width, tone-tinted band per destination. */
+/** Services-style hub — one full-width, tone-tinted band per destination. The workload in focus is carried over. */
 export default function SectionHubPage({ title, subtitle, links }: SectionHubPageProps) {
+  const [params] = useSearchParams();
+  const workload = params.get('workload') ?? undefined;
   return (
     <section className="apple-chapter">
       {title || subtitle ? (
@@ -42,7 +45,7 @@ export default function SectionHubPage({ title, subtitle, links }: SectionHubPag
         {links.map((link, index) => (
           <Link
             key={link.view}
-            to={viewToPath(link.view)}
+            to={pathWithQuery(viewToPath(link.view), { workload })}
             data-tone={link.tone ?? TONE_CYCLE[index % TONE_CYCLE.length]}
             className="hub-band"
           >
