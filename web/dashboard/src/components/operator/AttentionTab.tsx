@@ -1,13 +1,19 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
-import { CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, OctagonAlert } from 'lucide-react';
 import type { AttentionQueue } from '../../types/operator';
 import { attentionTarget, levelTone, type OperatorTab } from '../../utils/operator';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import { Button } from '../ui/Button';
 import { Loadable, Section, useApi } from './shared';
+
+const LEVEL_MARK = {
+  critical: { Icon: OctagonAlert, tone: 'pink' },
+  warning: { Icon: AlertTriangle, tone: 'amber' },
+  info: { Icon: Info, tone: 'sky' },
+} as const;
 
 export default function AttentionTab({
   refreshKey,
@@ -30,9 +36,13 @@ export default function AttentionTab({
           <ul className="divide-y divide-[var(--border)]" data-testid="attention-list">
             {data.items.map((item) => {
               const target = attentionTarget(item);
+              const { Icon, tone } = LEVEL_MARK[item.level] ?? LEVEL_MARK.info;
               return (
-                <li key={`${item.kind}-${item.workload}-${item.title}`} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
+                <li key={`${item.kind}-${item.workload}-${item.title}`} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-start sm:gap-4">
+                  <span className="level-mark" data-tone={tone} aria-hidden>
+                    <Icon />
+                  </span>
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge text={item.level} variant={levelTone(item.level)} />
                       <span className="font-medium text-foreground">{item.title}</span>

@@ -87,10 +87,10 @@ export function ErrorText({ children }: { children: ReactNode }) {
 export function ChangeList({ changes, empty }: { changes: Change[]; empty: string }) {
   if (changes.length === 0) return <p className="text-sm text-muted">{empty}</p>;
   return (
-    <ol className="divide-y divide-[var(--border)]">
+    <ol className="timeline">
       {changes.map((c, i) => (
-        <li key={`${c.at}-${c.title}-${i}`} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:gap-4">
-          <time className="shrink-0 font-mono text-xs text-muted" dateTime={c.at}>
+        <li key={`${c.at}-${c.title}-${i}`} className="timeline-item flex flex-col gap-1 sm:flex-row sm:gap-4" data-level={c.level}>
+          <time className="shrink-0 font-mono text-xs leading-5 text-muted" dateTime={c.at}>
             {formatTimestamp(c.at)}
           </time>
           <div className="min-w-0 flex-1">
