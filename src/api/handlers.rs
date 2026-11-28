@@ -4712,12 +4712,14 @@ pub(crate) async fn sse_events(
     impl futures::stream::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>,
 > {
     let rx = state.event_tx.subscribe();
-    let stream = tokio_stream::wrappers::BroadcastStream::new(rx).filter_map(|msg| async move {
-        match msg {
-            Ok(data) => Some(Ok(axum::response::sse::Event::default().data(data))),
-            Err(_) => None,
-        }
-    });
+    let stream = tokio_stream::wrappers::BroadcastStream::new(rx)
+        .filter_map(|msg| async move {
+            match msg {
+                Ok(data) => Some(Ok(axum::response::sse::Event::default().data(data))),
+                Err(_) => None,
+            }
+        })
+        .take_until(crate::api::shutdown_requested());
     axum::response::Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 

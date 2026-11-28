@@ -15,6 +15,7 @@ Guide: `docs/guides/operations/STATUS-BOARD.md`. Dashboard page `/board`.
 - **API:** `GET /api/board`.
 
 ### Fixed: dashboard
+- The Overview kept listing recovered or closed incidents, and recoveries, as needing attention.
 - The Overview listed one incident twice (the event and the operations queue entry).
 - Failed Start, Stop, Restart, Delete and bulk actions were not reported; bulk actions always said "completed".
 - The SLA page logged a 404 for every workload without a target.
@@ -31,6 +32,9 @@ Guide: `docs/guides/operations/STATUS-BOARD.md`. Dashboard page `/board`.
 - Start and Restart failed with `name "<workload>" is already in use`, because a stopped container keeps its name (API, CLI `restart` and `run`, self-healing, snapshot rollback). The stopped container Aether created is now renamed aside, removed once its replacement runs, and restored if it does not. A running container, or one Aether did not create, is never moved.
 - A failed `update` on Podman or Docker removed the old container first and could leave nothing. The old container is now kept and started again.
 - Start replaces the container, as it always rebuilt from the spec: files written inside the old container are not carried over.
+
+### Fixed: server shutdown
+- `aether serve` did not exit on SIGTERM or Ctrl+C while a dashboard held the live event stream open; it stopped listening but kept running its health checks. The stream now ends on the signal, and any other open connection is closed after 30 seconds.
 
 ### Fixed: status reflects what was observed
 - Managed workloads reported `deployed (<runtime>)` and counted as running even when their container had stopped. `GET /api/workloads`, `aether list`, `aether metrics`, the assistant tools and the dashboard now show the last observed condition, `stopped` only for a stop made through Aether, `stopped unexpectedly` otherwise, and `unknown` without a current check. Responses gain `status_detail` and `observed_at`. API clients that matched `deployed` must be updated.

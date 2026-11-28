@@ -417,8 +417,18 @@ async fn auth_middleware(
     Err(StatusCode::UNAUTHORIZED)
 }
 
+/// How long requests in flight may take to finish after a shutdown signal.
+const SHUTDOWN_GRACE: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Create a shutdown signal that listens for Ctrl+C and SIGTERM.
 async fn shutdown_signal() {
+    shutdown_requested().await;
+    println!("\n🛑 Received shutdown signal, draining connections...");
+}
+
+/// Resolves on Ctrl+C or SIGTERM. Responses that never end by themselves, such
+/// as the event stream, finish on this so they cannot keep the server alive.
+pub(crate) async fn shutdown_requested() {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -440,8 +450,6 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-
-    println!("\n🛑 Received shutdown signal, draining connections...");
 }
 
 /// Run a single background health check cycle.
@@ -2362,7 +2370,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         // Spawn shutdown signal handler
         tokio::spawn(async move {
             shutdown_signal().await;
-            shutdown_handle.graceful_shutdown(Some(std::time::Duration::from_secs(30)));
+            shutdown_handle.graceful_shutdown(Some(SHUTDOWN_GRACE));
         });
 
         axum_server::bind_rustls(addr, tls_config)
@@ -2372,9 +2380,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     } else {
         // Plain HTTP
         let listener = tokio::net::TcpListener::bind(&addr).await?;
-        axum::serve(listener, app)
-            .with_graceful_shutdown(shutdown_signal())
-            .await?;
+        let server = axum::serve(listener, app).with_graceful_shutdown(shutdown_signal());
+        // A connection that never closes must not keep the process, and with it
+        // the background loops, running after the listener has gone.
+        tokio::select! {
+            result = std::future::IntoFuture::into_future(server) => result?,
+            _ = async {
+                shutdown_requested().await;
+                tokio::time::sleep(SHUTDOWN_GRACE).await;
+            } => println!("Closing connections still open after {}s", SHUTDOWN_GRACE.as_secs()),
+        }
     }
 
     println!("🛑 Server stopped");
