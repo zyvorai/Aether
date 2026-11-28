@@ -6,6 +6,7 @@ import { Link, useLocation } from 'react-router';
 import type { AppView } from '../types/api';
 import { getSectionTabs } from '../utils/navSections';
 import { pathWithQuery } from '../utils/urlState';
+import { SHOW_HUB_STATE } from '../utils/hubLinks';
 import { cn } from '../lib/cn';
 
 /** Tabs across a hub and its sub-pages. The workload in focus is carried over. */
@@ -34,6 +35,8 @@ export default function SectionTabs({ currentView }: { currentView: AppView }) {
             key={tab.view}
             ref={active ? activeRef : undefined}
             to={pathWithQuery(tab.path, { workload })}
+            // Summary asks for the hub itself, which a filtered address would otherwise leave.
+            state={index === 0 ? SHOW_HUB_STATE : undefined}
             aria-current={active ? 'page' : undefined}
             className={cn('section-tab', active && 'section-tab-active')}
           >
