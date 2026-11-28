@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, CircleHelp, Info, Keyboard, LogOut, Menu, Palette, Search, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import ThemeToggle from '../../ThemeToggle';
+import { AetherLockup } from '../../brand';
 import type { HelpTab } from '../../HelpDialog';
 import type { AppView } from '../../../types/api';
 import { apiFetchHealth, type HealthPayload } from '../../../utils/api';
@@ -49,9 +50,8 @@ export function GlobalNav({
           <Menu size={20} aria-hidden />
         </button>
         <button className={styles.mark} type="button" onClick={() => navigate('/')}>
-          <span className={styles.markBadge} aria-hidden="true">Æ</span>
-          <span className={styles.word}>aether</span>
-          <span className="sr-only"> home</span>
+          <AetherLockup size={18} wordmarkClassName={styles.word} />
+          <span className="sr-only">aether home</span>
         </button>
         {health ? (
           <span

@@ -1,16 +1,16 @@
 // Copyright 2026 ZyvorAI Labs Private Limited
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
-import { ExternalLink, Hexagon } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { ZYVOR_URL, ZYVOR_BRAND, ZYVOR_COPY, ZYVOR_LINE } from './ZyvorBrand';
 import { ZYVOR_HELP, AETHER_HELP } from '../config/zyvorHelp';
+import { AetherIcon } from './brand';
 
 export const AETHER_PRODUCT = AETHER_HELP.name;
 export const AETHER_VERSION = AETHER_HELP.version;
 export const AETHER_TAGLINE = `${AETHER_HELP.tagline} — one spec, three runtimes, one tool.`;
 
 const ORANGE = '#f97316';
-const AETHER = '#d35400';
 
 export type HelpDocLink = {
   label: string;
@@ -53,16 +53,7 @@ export default function ZyvorAbout({ className = '' }: { className?: string }) {
   return (
     <div className={`space-y-5 text-sm ${'text-muted'} ${className}`.trim()}>
       <div className="flex items-start gap-4">
-        <div
-          className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, ${AETHER}33, ${AETHER}99)`,
-            borderColor: `${AETHER}55`,
-            boxShadow: `0 8px 24px ${AETHER}22`,
-          }}
-        >
-          <Hexagon className="w-8 h-8 text-primary" aria-hidden />
-        </div>
+        <AetherIcon size={56} className="shrink-0" />
         <div className="min-w-0 pt-0.5">
           <h3 className={`text-lg font-semibold ${'text-foreground'}`}>{AETHER_PRODUCT}</h3>
           <p className="text-xs text-subtle mt-0.5">Version {AETHER_VERSION}</p>
