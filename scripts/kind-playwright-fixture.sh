@@ -18,6 +18,9 @@ if ! kind get clusters 2>/dev/null | grep -qx "${CLUSTER}"; then
 fi
 
 kubectl config use-context "kind-${CLUSTER}"
+# A new cluster creates the default ServiceAccount shortly after it comes up,
+# and refuses Pods until it exists.
+kubectl wait --for=create serviceaccount/default -n default --timeout=60s
 kubectl apply -f - <<'YAML'
 apiVersion: v1
 kind: Pod
