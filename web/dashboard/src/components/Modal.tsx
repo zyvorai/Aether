@@ -19,11 +19,18 @@ const FOCUSABLE =
 export default function Modal({ isOpen, onClose, title, children, size = 'default' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
+  // Callers pass a new onClose on every render. Reading it through a ref keeps
+  // the effect below from re-running, which would move focus out of the field
+  // being typed in and onto the close button.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !panelRef.current) return;
@@ -43,7 +50,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'defaul
         first.focus();
       }
     },
-    [onClose],
+    [],
   );
 
   useEffect(() => {
