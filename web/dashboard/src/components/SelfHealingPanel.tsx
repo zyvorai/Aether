@@ -91,7 +91,7 @@ export default function SelfHealingPanel() {
             type="button"
             onClick={() => void runHealer(true)}
             disabled={executing}
-            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success hover:border-success/50 disabled:opacity-60"
+            className="btn-tint btn-tint-success"
             data-testid="healer-dry-run"
           >
             Dry-run healer
@@ -100,7 +100,7 @@ export default function SelfHealingPanel() {
             type="button"
             onClick={() => void runHealer(false)}
             disabled={executing || !(preview?.would_execute.length ?? 0)}
-            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger hover:border-danger/50 disabled:opacity-60"
+            className="btn-tint btn-tint-danger"
             data-testid="healer-execute"
           >
             Execute healer

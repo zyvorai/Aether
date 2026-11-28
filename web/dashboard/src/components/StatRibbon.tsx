@@ -38,11 +38,12 @@ export default function StatRibbon({ items, testId, className }: StatRibbonProps
       data-testid={testId}
     >
       {items.map((item) => {
-        const tone = item.tone ?? 'white';
+        // Colour draws the eye to a count that means something; zero and "not loaded" stay neutral.
+        const tone = item.value === 0 || item.value === '0' || item.value === '—' ? 'white' : (item.tone ?? 'white');
         const inner = (
           <>
-            <div className={`text-2xl font-semibold leading-tight tabular-nums ${valueTone[tone]}`}>{item.value}</div>
-            <div className="text-[13px] text-muted">{item.label}</div>
+            <div className={`stat-number ${valueTone[tone]}`}>{item.value}</div>
+            <div className="stat-caption">{item.label}</div>
           </>
         );
         if (item.onClick) {

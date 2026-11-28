@@ -148,7 +148,7 @@ export default function SreReliabilityPanel() {
             type="button"
             onClick={() => void executeRunbook()}
             disabled={executing}
-            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger disabled:opacity-60"
+            className="btn-tint btn-tint-danger"
             data-testid="runbook-execute-dry-run"
           >
             Execute runbook (dry-run)

@@ -33,7 +33,7 @@ const MAX_NOTE_CHARS: usize = 2_000;
 const AVAILABILITY_DAYS: i64 = 31;
 /// A ready observation this soon after a stop is the runtime still winding
 /// down, not somebody starting the workload again.
-const STOP_GRACE_SECS: i64 = 120;
+pub const STOP_GRACE_SECS: i64 = 120;
 /// How far before an incident a change is listed as a possible cause.
 pub const SUSPECT_WINDOW_SECS: i64 = 1_800;
 
@@ -311,7 +311,8 @@ pub struct Counter {
     pub ready: u32,
 }
 
-fn hour_key(t: chrono::DateTime<chrono::Utc>) -> String {
+/// The key of the hourly counter containing `t`.
+pub fn hour_key(t: chrono::DateTime<chrono::Utc>) -> String {
     t.format("%Y-%m-%dT%H").to_string()
 }
 
@@ -390,8 +391,8 @@ pub fn record_error(dir: &Path, workload: &str, message: &str) -> Result<()> {
     })
 }
 
-/// Store an observation and update incidents and availability.
-pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
+/// Add an observation to the health history.
+fn append_history(dir: &Path, o: &Observation) -> Result<()> {
     store::update(&health_path(dir), |h: &mut HealthHistory| {
         h.records.push(HealthRecord {
             timestamp: o.at.clone(),
@@ -417,6 +418,39 @@ pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
         // trims globally, from discarding what was just kept.
         h.max_records = h.max_records.max(h.records.len() + RECORDS_PER_WORKLOAD);
     })?;
+    Ok(())
+}
+
+/// Look at a workload once, right after it was deployed or started, so that its
+/// status does not read `unknown` until the next observation round. Only the
+/// health history is written: one early look does not count toward incidents or
+/// availability.
+pub async fn first_look(dir: &Path, ws: &WorkloadState) {
+    const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+    let status = tokio::time::timeout(TIMEOUT, async {
+        let rt = crate::runtime::create_runtime_ns(&ws.runtime, ws.namespace.as_deref()).await?;
+        rt.status(&ws.instance).await
+    })
+    .await;
+    // No answer leaves the status unknown; the observation loop reports why.
+    let Ok(Ok(status)) = status else { return };
+    let o = Observation {
+        workload: ws.name.clone(),
+        runtime: ws.runtime,
+        state: status.state,
+        ready: status.ready,
+        restart_count: status.restart_count,
+        message: status.message,
+        at: crate::resources::now_rfc3339(),
+    };
+    if let Err(e) = append_history(dir, &o) {
+        tracing::warn!("could not record the status of {}: {e:#}", ws.name);
+    }
+}
+
+/// Store an observation and update incidents and availability.
+pub fn record(dir: &Path, o: &Observation) -> Result<Transition> {
+    append_history(dir, o)?;
     let threshold = threshold();
     let transition = store::update(&path(dir), |s: &mut IncidentStore| s.apply(o, threshold))?;
     if !matches!(transition, Transition::Planned) {

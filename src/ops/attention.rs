@@ -6,15 +6,14 @@
 
 use crate::audit::{ActionResult, AuditLog};
 use crate::health::HealthHistory;
-use crate::ops::{self, changes::Level, explain::SpecSources, holds, incidents, journal, store};
+use crate::ops::{
+    self, changes::Level, explain::SpecSources, holds, incidents, journal, observed, store,
+};
 use crate::state::{StateStore, WorkloadState};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::path::Path;
-
-/// A health record older than this no longer describes the present.
-const STALE_SECS: i64 = 900;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Item {
@@ -115,7 +114,7 @@ pub fn for_workload(dir: &Path, ws: &WorkloadState, now: DateTime<Utc>) -> Resul
                 "no status check has been recorded; `aether serve` records them".to_string(),
                 Some("aether health collect".to_string()),
             ),
-            Some(t) if (now - t).num_seconds() > STALE_SECS => push(
+            Some(t) if (now - t).num_seconds() > observed::stale_secs() => push(
                 Level::Info,
                 "stale-health",
                 "Health data is stale".to_string(),

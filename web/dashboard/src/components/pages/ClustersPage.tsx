@@ -1061,7 +1061,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
             }
             setCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10"
+          className="btn-tint btn-tint-success"
         >
           <Plus size={16} />
           Create Resource
@@ -1201,21 +1201,21 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('drain')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-danger bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-danger"
                   >
                     {actionLoading === 'drain' ? 'Draining...' : 'Drain'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('cordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-warning"
                   >
                     {actionLoading === 'cordon' ? 'Cordoning...' : 'Cordon'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('uncordon')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     {actionLoading === 'uncordon' ? 'Uncordoning...' : 'Uncordon'}
                   </button>
@@ -1226,14 +1226,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('start')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     {actionLoading === 'start' ? 'Starting...' : 'Start'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('stop')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-warning"
                   >
                     {actionLoading === 'stop' ? 'Stopping...' : 'Stop'}
                   </button>
@@ -1244,14 +1244,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('suspend')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-warning"
                   >
                     {actionLoading === 'suspend' ? 'Suspending...' : 'Suspend'}
                   </button>
                   <button
                     onClick={() => handleResourceAction('resume')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     {actionLoading === 'resume' ? 'Resuming...' : 'Resume'}
                   </button>
@@ -1272,7 +1272,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleResourceAction('scale')}
                     disabled={!!actionLoading || !canMutateCluster}
-                    className="flex items-center gap-2 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-primary"
                   >
                     {actionLoading === 'scale' ? 'Scaling...' : 'Scale'}
                   </button>
@@ -1291,7 +1291,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
               <button
                 onClick={() => handleResourceAction('delete')}
                 disabled={!!actionLoading || selected.kind === 'Node' || !canDeleteCluster}
-                className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-50"
+                className="btn-tint btn-tint-danger"
               >
                 <Trash2 size={14} />
                 {selected.kind === 'Node' ? 'Delete Disabled' : actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
@@ -1478,21 +1478,21 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleRolloutAction('pause')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-warning bg-warning/10 px-3 py-2 text-sm text-warning hover:bg-warning/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-warning"
                   >
                     {actionLoading === 'rollout-pause' ? 'Pausing...' : 'Pause'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('resume')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     {actionLoading === 'rollout-resume' ? 'Resuming...' : 'Resume'}
                   </button>
                   <button
                     onClick={() => handleRolloutAction('restart')}
                     disabled={!!actionLoading}
-                    className="rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-primary"
                   >
                     {actionLoading === 'rollout-restart' ? 'Restarting...' : 'Rollout Restart'}
                   </button>
@@ -1563,14 +1563,14 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={() => handleHelmAction('upgrade')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-primary"
                   >
                     {actionLoading === 'helm-upgrade' ? 'Upgrading...' : 'Upgrade'}
                   </button>
                   <button
                     onClick={() => handleHelmAction('install')}
                     disabled={!!actionLoading || !helmChart}
-                    className="rounded-lg border border-success bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     {actionLoading === 'helm-install' ? 'Installing...' : 'Install'}
                   </button>
@@ -1642,7 +1642,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                     <button
                       onClick={connectExec}
                       disabled={!execPod}
-                      className="flex-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                      className="btn-tint btn-tint-primary flex-1"
                     >
                       Connect
                     </button>
@@ -1672,7 +1672,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                   <button
                     onClick={sendExecLine}
                     disabled={!execConnected || !execInput}
-                    className="rounded-lg border border-success bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                    className="btn-tint btn-tint-success"
                   >
                     Send
                   </button>
@@ -1710,7 +1710,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                       data-testid="clusters-port-forward-start"
                       onClick={handlePortForwardStart}
                       disabled={!portForwardPod || !portForwardRemotePort || !!portForwardSession}
-                      className="flex-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/10 disabled:opacity-50"
+                      className="btn-tint btn-tint-primary flex-1"
                     >
                       {actionLoading === 'port-forward' ? 'Starting...' : 'Start'}
                     </button>
@@ -1739,7 +1739,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                 <button
                   onClick={handleApply}
                   disabled={!!actionLoading || selected.kind === 'HelmRelease'}
-                  className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+                  className="btn-tint btn-tint-success"
                 >
                   <Save size={14} />
                   {actionLoading === 'apply' ? 'Applying...' : selected.kind === 'HelmRelease' ? 'Managed by Helm' : 'Apply Changes'}
@@ -1830,7 +1830,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
             <button
               onClick={handleCreateResource}
               disabled={!!actionLoading || (kind === 'HelmRelease' && (!createHelmRelease || !createHelmChart))}
-              className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+              className="btn-tint btn-tint-success"
             >
               <Save size={14} />
               {actionLoading === 'create' ? (kind === 'HelmRelease' ? 'Installing...' : 'Applying...') : (kind === 'HelmRelease' ? 'Install Release' : 'Create / Apply')}

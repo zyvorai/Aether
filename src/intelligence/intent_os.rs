@@ -11,6 +11,7 @@ use crate::intelligence::pipeline::{
 };
 use crate::policy::PolicyEngine;
 use crate::spec::{ComplianceSpec, IntentGoal, IntentSpec, ResilienceLevel, Workload};
+use crate::specrender::yaml_without_nulls;
 use crate::state::StateStore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -105,8 +106,8 @@ pub fn parse_nl_intent(req: &NlIntentRequest) -> anyhow::Result<NlIntentReport> 
     spec.intent = Some(intent);
     spec.validate()?;
 
-    let intent_yaml = serde_yaml::to_string(spec.intent.as_ref().unwrap())?;
-    let spec_yaml = serde_yaml::to_string(&spec)?;
+    let intent_yaml = yaml_without_nulls(spec.intent.as_ref().unwrap())?;
+    let spec_yaml = yaml_without_nulls(&spec)?;
     let confidence = if keywords.len() >= 2 { 0.85 } else { 0.65 };
 
     Ok(NlIntentReport {
@@ -761,7 +762,7 @@ pub fn record_intent_version(workload: &str, spec: &Workload) -> anyhow::Result<
     let entry = IntentVersionEntry {
         version_id: format!("v{}", store.get(workload).map(|v| v.len()).unwrap_or(0) + 1),
         recorded_at: crate::resources::now_rfc3339(),
-        intent_yaml: serde_yaml::to_string(intent)?,
+        intent_yaml: yaml_without_nulls(intent)?,
         goal: goal_label(&intent.goal).into(),
     };
     store.entry(workload.into()).or_default().insert(0, entry);

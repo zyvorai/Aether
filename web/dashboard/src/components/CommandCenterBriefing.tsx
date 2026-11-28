@@ -11,16 +11,19 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
-import { apiFetch, apiPost } from '../utils/api';
-import { syncMacOSDockBadge, syncMacOSTray } from '../utils/macosBridge';
+import { apiFetch } from '../utils/api';
+import { refreshMacOSOfflineCache, syncMacOSDockBadge, syncMacOSTray } from '../utils/macosBridge';
 import { formatUSD } from '../utils/formatters';
+import { fleetBreakdown, fleetPercent, fleetSubtitle, type FleetCounts } from '../utils/fleetHealth';
 import type { AppView } from '../types/api';
 import CommandMetricCard from './CommandMetricCard';
 
 export interface CommandCenterBriefingData {
   generated_at: string;
   greeting: string;
-  fleet_health_pct: number;
+  /** Null when no workload has a current health check. */
+  fleet_health_pct: number | null;
+  fleet?: FleetCounts;
   issues: Array<{
     severity: string;
     title: string;
@@ -53,19 +56,6 @@ function severityTone(severity: string): string {
   return 'glass text-muted';
 }
 
-function contextualSubtitle(issueCount: number, fleetHealth: number): string {
-  if (issueCount > 0) {
-    return `${issueCount} signal${issueCount === 1 ? '' : 's'} need attention · Fleet at ${fleetHealth.toFixed(0)}% health`;
-  }
-  if (fleetHealth >= 99) {
-    return 'All systems nominal · Intelligence layer is monitoring your fleet';
-  }
-  if (fleetHealth > 0) {
-    return `Fleet operating at ${fleetHealth.toFixed(0)}% health · No critical signals detected`;
-  }
-  return 'Connect workloads to activate fleet intelligence and proactive monitoring';
-}
-
 export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clusterContext }: CommandCenterBriefingProps) {
   const [briefing, setBriefing] = useState<CommandCenterBriefingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,9 +77,12 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           const sparkline = await apiFetch<{ sparkline: string }>('/intelligence/macos/tray-sparkline').catch(
             () => null,
           );
-          void syncMacOSTray(data.fleet_health_pct, issues, sparkline?.sparkline);
+          // The tray shows a percentage, so there is nothing to send without one.
+          if (data.fleet_health_pct !== null) {
+            void syncMacOSTray(data.fleet_health_pct, issues, sparkline?.sparkline);
+          }
           void syncMacOSDockBadge(issues);
-          void apiPost('/intelligence/macos/offline-cache').catch(() => {});
+          void refreshMacOSOfflineCache();
         }
       }
     });
@@ -116,7 +109,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
 
   const issueCount = briefing.issues.filter((i) => i.severity !== 'info').length;
   const topCapacity = briefing.capacity_risks[0];
-  const fleetEmpty = briefing.fleet_health_pct === 0;
+  const fleetEmpty = briefing.fleet_health_pct === null;
   const issuesEmpty = issueCount === 0;
   const savingsEmpty = briefing.potential_savings_usd === 0;
   const migrationsEmpty = briefing.migration_opportunities === 0;
@@ -132,7 +125,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           <h2 className="text-lg font-semibold tracking-tight text-foreground">{briefing.greeting}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="max-w-2xl text-sm leading-relaxed text-muted">
-              {contextualSubtitle(issueCount, briefing.fleet_health_pct)}
+              {fleetSubtitle(issueCount, briefing.fleet_health_pct, briefing.fleet)}
             </p>
             {clusterContext ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
@@ -152,10 +145,10 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <CommandMetricCard
           label="Fleet Health"
-          value={`${briefing.fleet_health_pct.toFixed(0)}%`}
+          value={fleetPercent(briefing.fleet_health_pct)}
           icon={<Gauge className="h-3.5 w-3.5" />}
           accent={fleetEmpty ? 'muted' : 'emerald'}
-          hint={fleetEmpty ? 'Deploy workloads to begin monitoring' : 'View health dashboard →'}
+          hint={fleetBreakdown(briefing.fleet)}
           isEmpty={fleetEmpty}
           onClick={() => onNavigate('health')}
           testId="briefing-fleet-health"
@@ -164,7 +157,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
             <div className="relative mt-4 h-1.5 glass-progress-track">
               <div
                 className="h-full rounded-full bg-accent-fill transition-all"
-                style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct))}%` }}
+                style={{ width: `${Math.min(100, Math.max(4, briefing.fleet_health_pct ?? 0))}%` }}
               />
             </div>
           ) : (
@@ -222,7 +215,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           <div className="min-w-0 flex-1 text-sm text-warning">
             <span className="font-medium">Predicted capacity risk — </span>
             {topCapacity.summary}
-            <span className="text-warning/80"> · {topCapacity.days_remaining} days</span>
+            <span className="text-warning"> · {topCapacity.days_remaining} days</span>
           </div>
           <button
             type="button"

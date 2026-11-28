@@ -5,21 +5,30 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   AlertTriangle,
+  Bell,
+  Boxes,
   ChevronDown,
   ChevronRight,
+  CircleCheck,
+  CircleHelp,
   ClipboardCheck,
   FileCode2,
   RefreshCw,
   Rocket,
+  Server,
+  Siren,
   Wrench,
+  type LucideIcon,
 } from 'lucide-react';
 import { apiFetchSettled } from '../../utils/api';
 import { formatRelativeTime, formatTimestamp } from '../../utils/formatters';
-import { needsAttention, workloadCondition } from '../../utils/workloadStatus';
+import { countByCondition, needsAttention } from '../../utils/workloadStatus';
 import type { AttentionSources } from '../../utils/attention';
 import AttentionPanel from '../overview/AttentionPanel';
 import type { AttentionQueue } from '../../types/operator';
 import WelcomeCard from '../overview/WelcomeCard';
+import FleetShape from '../overview/FleetShape';
+import type { Tone } from '../layout/PageHero';
 import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import { useAuth } from '../../contexts/AuthContext';
@@ -318,29 +327,41 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
     };
   });
 
-  const kpis: Array<{ label: string; value: number | null; tone?: 'danger' | 'success'; testId: string; onClick: () => void }> = [
-    { label: 'Workloads', value: sources.workloads?.length ?? null, testId: 'overview-kpi-workloads', onClick: () => onNavigate('workloads') },
+  const counts = sources.workloads ? countByCondition(sources.workloads) : null;
+  const kpis: Array<{ label: string; value: number | null; tone?: 'danger' | 'success'; icon: LucideIcon; iconTone: Tone; testId: string; onClick: () => void }> = [
+    { label: 'Workloads', value: sources.workloads?.length ?? null, icon: Boxes, iconTone: 'sky', testId: 'overview-kpi-workloads', onClick: () => onNavigate('workloads') },
     {
+      icon: CircleCheck,
+      iconTone: 'emerald',
       label: 'Running',
-      value: sources.workloads?.filter((w) => workloadCondition(w.status) === 'running').length ?? null,
+      value: counts?.running ?? null,
       tone: 'success',
       testId: 'overview-kpi-running',
       onClick: () => goFiltered('workloads', { status: 'running' }),
     },
     {
+      icon: Siren,
+      iconTone: 'pink',
       label: 'Workloads needing attention',
       value: sources.workloads?.filter((w) => needsAttention(w.status)).length ?? null,
       tone: 'danger',
       testId: 'overview-kpi-attention',
       onClick: () => goFiltered('workloads', { status: 'attention' }),
     },
+    ...(counts && counts.unknown > 0
+      ? [{ label: 'Status unknown', value: counts.unknown, icon: CircleHelp, iconTone: 'slate' as const, testId: 'overview-kpi-unknown', onClick: () => goFiltered('workloads', { status: 'unknown' }) }]
+      : []),
     {
+      icon: Bell,
+      iconTone: 'amber',
       label: 'Unacknowledged events',
       value: loaded('eventsSummary', eventSummary)?.unacknowledged ?? null,
       testId: 'overview-kpi-events',
       onClick: () => goFiltered('events', { ack: 'open' }),
     },
     {
+      icon: Server,
+      iconTone: 'teal',
       label: 'Clusters',
       value: loaded('clusters', clusterSummary)?.cluster_count ?? null,
       testId: 'overview-kpi-clusters',
@@ -375,13 +396,18 @@ function OverviewPage({ username = '', onNavigate, sseConnected = false, refresh
           <div className="kpi-grid" data-testid="overview-apple-highlights">
             {kpis.map((kpi) => (
               <button key={kpi.label} type="button" className="kpi" onClick={kpi.onClick} data-testid={kpi.testId}>
-                <span className={`kpi-value ${kpi.value && kpi.tone === 'danger' ? 'text-danger' : kpi.value && kpi.tone === 'success' ? 'text-success' : ''}`}>
+                <span className="kpi-icon" data-tone={kpi.iconTone} aria-hidden>
+                  <kpi.icon />
+                </span>
+                <span className={`kpi-value ${kpi.value && kpi.tone === 'danger' ? '!text-danger' : ''}`}>
                   {kpi.value ?? '—'}
                 </span>
                 <span className="kpi-label">{kpi.value === null ? `${kpi.label} (not loaded)` : kpi.label}</span>
               </button>
             ))}
           </div>
+
+          <FleetShape workloads={sources.workloads} onRuntime={(runtime) => goFiltered('workloads', { q: runtime })} />
 
           <QuickActions
             canMutate={canMutate}

@@ -137,9 +137,12 @@ pub async fn build_sre_runbook(state_path: &Path) -> anyhow::Result<SreRunbookRe
         .map(|r| r.savings_monthly_usd)
         .sum::<f64>()
         .max(0.0); // a net-negative or -0.0 sum must not render as "$-0/mo savings"
+    let health = briefing
+        .fleet_health_pct
+        .map_or_else(|| "not checked".to_string(), |pct| format!("{pct:.0}%"));
     let summary = format!(
-        "Fleet health {:.0}% · {} issues · {} healing actions · ${:.0}/mo savings potential",
-        briefing.fleet_health_pct,
+        "Fleet health {} · {} issues · {} healing actions · ${:.0}/mo savings potential",
+        health,
         briefing.issues.len(),
         healer.would_execute.len(),
         total_savings_usd

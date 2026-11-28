@@ -22,7 +22,7 @@ pub struct TraySparklineReport {
     pub generated_at: String,
     pub samples: Vec<f64>,
     pub sparkline: String,
-    pub fleet_health_pct: f64,
+    pub fleet_health_pct: Option<f64>,
 }
 
 pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineReport> {
@@ -31,14 +31,16 @@ pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineRe
     let store = StateStore::load(state_path)?;
 
     let mut samples = Vec::new();
-    for ws in store.list().iter().take(12) {
-        samples.push(history.uptime_percent(&ws.name));
+    for ws in store.list() {
+        // A workload without a single check has no uptime to draw.
+        if history.records.iter().any(|r| r.workload == ws.name) {
+            samples.push(history.uptime_percent(&ws.name));
+        }
     }
-    if samples.is_empty() {
-        samples.push(briefing.fleet_health_pct);
-    }
-    while samples.len() < 8 {
-        samples.push(briefing.fleet_health_pct);
+    if let Some(pct) = briefing.fleet_health_pct {
+        while samples.len() < 8 {
+            samples.push(pct);
+        }
     }
     samples.truncate(12);
 
@@ -51,6 +53,10 @@ pub fn build_tray_sparkline(state_path: &Path) -> anyhow::Result<TraySparklineRe
 }
 
 fn render_sparkline(samples: &[f64]) -> String {
+    // Without a single check there is nothing to draw; a flat bar would read as 0%.
+    if samples.is_empty() {
+        return "····".to_string();
+    }
     const BARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
     samples
         .iter()
@@ -496,6 +502,8 @@ mod tests {
     fn sparkline_renders_bars() {
         let s = render_sparkline(&[0.0, 50.0, 100.0]);
         assert_eq!(s.chars().count(), 3);
+        // No data is shown as such, not as nothing and not as a bar at zero.
+        assert_eq!(render_sparkline(&[]), "····");
     }
 
     #[test]

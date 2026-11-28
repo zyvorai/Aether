@@ -7,6 +7,7 @@
 //! Supports optional API key authentication via AETHER_API_KEY environment variable.
 //! Supports optional HTTPS via --tls-cert and --tls-key flags.
 
+mod board_handlers;
 mod ecosystem_handlers;
 mod fleet_handlers;
 mod handlers;
@@ -416,8 +417,18 @@ async fn auth_middleware(
     Err(StatusCode::UNAUTHORIZED)
 }
 
+/// How long requests in flight may take to finish after a shutdown signal.
+const SHUTDOWN_GRACE: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Create a shutdown signal that listens for Ctrl+C and SIGTERM.
 async fn shutdown_signal() {
+    shutdown_requested().await;
+    println!("\n🛑 Received shutdown signal, draining connections...");
+}
+
+/// Resolves on Ctrl+C or SIGTERM. Responses that never end by themselves, such
+/// as the event stream, finish on this so they cannot keep the server alive.
+pub(crate) async fn shutdown_requested() {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -439,8 +450,6 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-
-    println!("\n🛑 Received shutdown signal, draining connections...");
 }
 
 /// Run a single background health check cycle.
@@ -940,6 +949,14 @@ async fn run_observation_loop(every_secs: u64, app_state: AppState) {
         let workloads: Vec<_> = store.list().into_iter().cloned().collect();
         match crate::ops::incidents::collect(&crate::ops::data_dir(), &workloads, None).await {
             Ok(report) => {
+                // New checks were recorded: live views reload from the records.
+                let round = types::ServerEvent::ObservationRound {
+                    observed: report.observed,
+                    errors: report.errors.len(),
+                };
+                if let Ok(json) = serde_json::to_string(&round) {
+                    let _ = app_state.event_tx.send(json);
+                }
                 if !report.opened.is_empty() || !report.resolved.is_empty() {
                     let event = types::ServerEvent::HealthUpdate {
                         workload: "fleet".to_string(),
@@ -2039,6 +2056,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/sla/{workload}", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
+        .route("/api/events/{id}/acknowledge", post(api_event_acknowledge))
         .route(
             "/api/platform/recommendations",
             get(api_platform_recommendations),
@@ -2121,6 +2139,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route("/api/workloads/{name}/explain", get(api_explain))
         .route("/api/workloads/{name}/preview", post(api_preview))
+        .route("/api/board", get(board_handlers::api_board))
+        .route(
+            "/api/workloads/{name}/timeline",
+            get(board_handlers::api_timeline),
+        )
         .route("/api/changes", get(api_changes))
         .route("/api/attention", get(api_attention))
         .route("/api/ops-report", get(api_ops_report))
@@ -2347,7 +2370,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         // Spawn shutdown signal handler
         tokio::spawn(async move {
             shutdown_signal().await;
-            shutdown_handle.graceful_shutdown(Some(std::time::Duration::from_secs(30)));
+            shutdown_handle.graceful_shutdown(Some(SHUTDOWN_GRACE));
         });
 
         axum_server::bind_rustls(addr, tls_config)
@@ -2357,9 +2380,16 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
     } else {
         // Plain HTTP
         let listener = tokio::net::TcpListener::bind(&addr).await?;
-        axum::serve(listener, app)
-            .with_graceful_shutdown(shutdown_signal())
-            .await?;
+        let server = axum::serve(listener, app).with_graceful_shutdown(shutdown_signal());
+        // A connection that never closes must not keep the process, and with it
+        // the background loops, running after the listener has gone.
+        tokio::select! {
+            result = std::future::IntoFuture::into_future(server) => result?,
+            _ = async {
+                shutdown_requested().await;
+                tokio::time::sleep(SHUTDOWN_GRACE).await;
+            } => println!("Closing connections still open after {}s", SHUTDOWN_GRACE.as_secs()),
+        }
     }
 
     println!("🛑 Server stopped");

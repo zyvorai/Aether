@@ -25,7 +25,7 @@ export default function FixItPanel({ workload, onAction }: FixItPanelProps) {
         <Wrench className="text-warning shrink-0 mt-0.5" size={18} />
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold text-warning">{fix.title}</h4>
-          <p className="text-sm text-warning/80 mt-1">{fix.summary}</p>
+          <p className="text-sm text-warning mt-1">{fix.summary}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {fix.actions.map((a) => (
               <button

@@ -1,6 +1,6 @@
 # Aether Dashboard Design System
 
-A quiet, neutral interface: large tight headlines, generous space, flat cards, one blue accent, and light and dark themes that are equals.
+A quiet, neutral interface: large tight headlines, generous space, soft depth, one blue accent, and light and dark themes that are equals.
 
 ## Tokens
 
@@ -8,11 +8,11 @@ Every colour is a CSS variable in `src/theme.css`. `src/index.css` maps them ont
 
 | Role | Token / utility | Light | Dark |
 |------|-----------------|-------|------|
-| Page | `bg-background` | `#f5f5f7` | `#000000` |
-| Card | `bg-surface-elevated`, `.glass` | `#ffffff` | `#1d1d1f` |
-| Inset fill | `bg-surface` | `#f2f2f4` | `#2a2a2c` |
+| Page | `bg-background` | `#f5f5f7` | `#07070a` |
+| Card | `bg-surface-elevated`, `.glass` | `#ffffff` | `#17171b` |
+| Inset fill | `bg-surface` | `#f2f2f4` | `#252529` |
 | Text | `text-foreground` / `text-muted` / `text-subtle` | `#1d1d1f` / `#515154` / `#68686d` | `#f5f5f7` / `#b4b4b9` / `#9d9da2` |
-| Accent text, icons, tints | `text-primary`, `bg-primary/10` | `#005cb9` | `#409cff` |
+| Accent text, icons, tints | `text-primary`, `bg-primary/10` | `#005cb9` | `#4da3ff` |
 | Accent fill under white text | `bg-accent-fill` | `#0071e3` | `#0071e3` |
 | Status text | `text-success` / `text-warning` / `text-danger` | AA on every surface | AA on every surface |
 | Status fill under white text | `bg-success-fill` / `bg-warning-fill` / `bg-danger-fill` | | |
@@ -32,16 +32,20 @@ The inline script in `index.html` resolves the theme and sets `<html data-theme=
 
 ## Type
 
-System fonts only (`-apple-system`, SF Pro, then Inter / Segoe UI / system-ui). No webfont downloads. Body is 17px; page titles are `.page-title` (26px, 22px on phones) so that data starts on the first screen; `text-display` is for the sign-in page; mono is SF Mono / `ui-monospace`.
+System fonts only (`-apple-system`, SF Pro, then Inter / Segoe UI / system-ui). No webfont downloads. Body is 17px; page titles are `.page-title` (30px bold, 24px on phones) so that data starts on the first screen; `text-display` is for the sign-in page; mono is SF Mono / `ui-monospace`.
 
 ## Shape and layout
 
-- Cards: 18px radius, hairline edge, soft shadow. A card inside a card becomes an inset fill.
-- Controls: pill buttons (44px primary on touch, 36px with a fine pointer; `.btn-quiet` for secondary toolbar actions), 12px inputs.
+- Cards: 20px radius, hairline edge, layered soft shadow. A card inside a card becomes an inset fill.
+- Every page header carries the page's icon on a tile coloured by sidebar section (`utils/sectionTone.ts`).
+- Controls: pill buttons (44px primary on touch, 36px with a fine pointer). `.btn-secondary` is tinted, `.btn-quiet` is for toolbar and record actions (`data-tone-action` colours them), `.btn-tint` plus a tone for compact panel actions, `.icon-btn` for row actions. 12px inputs.
+- Tab groups (`.section-tabs`, `.tab-group`, `.segmented`) share one segmented look.
+- Status text goes in `Badge` (`.pill`), which wraps or ellipsises instead of clipping.
 - `rounded-sm` to `rounded-2xl` come from the `@theme` radius scale.
-- Navigation bar: 52px, sticky, translucent and blurred. Dialogs and menus use the same material.
+- Navigation bar: 54px, sticky, translucent and blurred. Dialogs and menus use the same material.
 - Hub pages are a grid of one card per destination (`.hub-band`), coloured only by the icon (`data-tone`).
-- Headline metrics use `StatRibbon` (clickable stats double as filters); do not stack it with `PageHero` `stats`.
+- Headline metrics use `StatRibbon` (clickable stats double as filters; zero and not-loaded stay neutral); do not stack it with `PageHero` `stats`.
+- Charts (`ui/ShareBar`, `BarChart`) draw only values from the API. No data means a sentence saying so, never an invented shape.
 - Vertical rhythm is `.page-stack` and `--stack-gap`; do not add larger `space-y-*` gaps between page sections.
 
 ## Console shell (`src/shell.css`)
@@ -64,6 +68,7 @@ Keyboard shortcuts are listed in the Help dialog (`?`); `g` sequences come from 
 - Focus is always visible: a 2px ring on `:focus-visible`, unlayered so utilities cannot remove it.
 - Icon-only controls need an `aria-label`; form controls need a label.
 - Motion is disabled under `prefers-reduced-motion`.
+- Entrance animations fill `backwards` only, so no transform lingers to trap fixed-position children.
 
 ## Cascade layers (Tailwind 4)
 

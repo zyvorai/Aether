@@ -61,7 +61,7 @@ export default function ZyraContextBar({ onAskZyra, refreshKey = 0 }: ZyraContex
               key={action}
               type="button"
               onClick={() => onAskZyra?.(action)}
-              className="rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs text-primary hover:border-primary/40"
+              className="btn-tint btn-tint-primary"
             >
               {action}
             </button>

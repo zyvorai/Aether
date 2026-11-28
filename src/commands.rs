@@ -1273,19 +1273,27 @@ pub(crate) async fn list_command() -> Result<()> {
         } else if output::is_yaml() {
             println!("workloads: []");
         } else {
-            output::muted("No workloads running");
+            output::muted("No workloads deployed");
         }
         return Ok(());
     }
+
+    // The state store says what was deployed; observations say what it does now.
+    let observed = aether::ops::observed::Snapshot::load(&aether::ops::data_dir());
+    let now = chrono::Utc::now();
 
     // JSON output
     if output::is_json() {
         let list: Vec<serde_json::Value> = workloads
             .iter()
             .map(|w| {
+                let status = observed.status(w, now);
                 serde_json::json!({
                     "name": w.name,
                     "runtime": w.runtime.to_string(),
+                    "status": status.condition.label(),
+                    "status_detail": status.detail,
+                    "observed_at": status.observed_at,
                     "instance_id": w.instance.id,
                     "image": w.instance.image,
                     "spec_path": w.spec_path.display().to_string(),
@@ -1303,9 +1311,13 @@ pub(crate) async fn list_command() -> Result<()> {
         let list: Vec<serde_json::Value> = workloads
             .iter()
             .map(|w| {
+                let status = observed.status(w, now);
                 serde_json::json!({
                     "name": w.name,
                     "runtime": w.runtime.to_string(),
+                    "status": status.condition.label(),
+                    "status_detail": status.detail,
+                    "observed_at": status.observed_at,
                     "instance_id": w.instance.id,
                     "image": w.instance.image,
                     "created_at": w.created_at,
@@ -1316,7 +1328,9 @@ pub(crate) async fn list_command() -> Result<()> {
         return Ok(());
     }
 
-    output::section_with_icon("📋", "Running Workloads");
+    output::section_with_icon("📋", "Workloads");
+    let status_of =
+        |w: &aether::state::WorkloadState| observed.status(w, now).condition.label().to_string();
 
     // Wide mode: show extra columns
     if output::is_wide() {
@@ -1326,6 +1340,7 @@ pub(crate) async fn list_command() -> Result<()> {
                 vec![
                     w.name.clone(),
                     output::runtime_display(&w.runtime),
+                    status_of(w),
                     w.instance.id.chars().take(12).collect::<String>(),
                     w.instance.image.clone(),
                     w.spec_path.display().to_string(),
@@ -1336,7 +1351,15 @@ pub(crate) async fn list_command() -> Result<()> {
         println!(
             "{}",
             output::table(
-                &["Name", "Runtime", "Instance ID", "Image", "Spec", "Created"],
+                &[
+                    "Name",
+                    "Runtime",
+                    "Status",
+                    "Instance ID",
+                    "Image",
+                    "Spec",
+                    "Created",
+                ],
                 rows,
             )
         );
@@ -1347,13 +1370,14 @@ pub(crate) async fn list_command() -> Result<()> {
                 vec![
                     w.name.clone(),
                     output::runtime_display(&w.runtime),
+                    status_of(w),
                     w.instance.id.chars().take(12).collect::<String>(),
                 ]
             })
             .collect();
         println!(
             "{}",
-            output::table(&["Name", "Runtime", "Instance ID"], rows)
+            output::table(&["Name", "Runtime", "Status", "Instance ID"], rows)
         );
     }
 
@@ -1742,17 +1766,16 @@ pub(crate) async fn metrics_command() {
     // Update workload state metrics from state store
     if let Ok(state) = StateStore::load(&StateStore::default_path()) {
         let workloads = state.list();
+        let observed = aether::ops::observed::Snapshot::load(&aether::ops::data_dir());
+        let now = chrono::Utc::now();
         let states: Vec<(String, String)> = workloads
             .iter()
-            .map(|w| (w.runtime.to_string(), "running".to_string()))
+            .map(|w| {
+                let status = observed.status(w, now).condition.label();
+                (w.runtime.to_string(), status.to_string())
+            })
             .collect();
         aether::metrics::update_workload_states(&states);
-
-        // Update running workload count
-        let mut runtime_counts = std::collections::HashMap::new();
-        for w in workloads {
-            *runtime_counts.entry(w.runtime.to_string()).or_insert(0) += 1;
-        }
     }
 
     // Gather and print metrics

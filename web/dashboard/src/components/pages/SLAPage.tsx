@@ -5,7 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { withAuroraPage } from '../layout/AuroraPage';
 import { Link } from 'react-router';
 import { Inbox } from 'lucide-react';
-import { apiFetch, apiFetchSettled, apiPost } from '../../utils/api';
+import { apiFetchSettled, apiPost } from '../../utils/api';
+import { loadSlaTargets } from '../../utils/slaTargets';
 import { viewToPath } from '../../utils/dashboardRoutes';
 import { pathWithQuery, useQueryParam, useWorkloadOrSearchFilter } from '../../utils/urlState';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,23 +39,16 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
       setLoading(false);
       return;
     }
-    const wl = result.data;
-    setWorkloads(wl);
-    const results: Record<string, SlaTarget | null> = {};
-    // Fetch in small concurrent batches rather than firing one request per workload
-    // at once — with dozens of workloads that starves the browser's per-origin
-    // connection pool and stalls the whole page for many seconds.
-    const CONCURRENCY = 8;
-    for (let i = 0; i < wl.length; i += CONCURRENCY) {
-      const batch = wl.slice(i, i + CONCURRENCY);
-      await Promise.all(
-        batch.map(async (w) => {
-          const sla = await apiFetch<SlaTarget>(`/sla/${w.name}`);
-          results[w.name] = sla;
-        })
-      );
+    const targets = await loadSlaTargets();
+    if (!targets) {
+      setLoadFailed(true);
+      setWorkloads([]);
+      setSlaData({});
+      setLoading(false);
+      return;
     }
-    setSlaData(results);
+    setWorkloads(result.data);
+    setSlaData(targets);
     setLoading(false);
   }, [refreshKey]);
 
@@ -209,10 +203,10 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {workloads.length > 0 && (
         <section className="mb-10">
-        <div className="flex flex-wrap gap-x-10 gap-y-4">
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{slaConfiguredCount}</div>With SLA</div>
-          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left text-sm text-muted hover:text-foreground" data-testid="sla-breach-stat">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{complianceGapCount}</div>Compliance gaps
+        <div className="stat-ribbon">
+          <div className="stat-item"><div className="stat-number text-foreground">{slaConfiguredCount}</div>With SLA</div>
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="stat-item stat-item-button text-[13px] text-muted" data-testid="sla-breach-stat">
+            <div className="stat-number text-foreground">{complianceGapCount}</div>Compliance gaps
           </Link>
         </div>
         </section>

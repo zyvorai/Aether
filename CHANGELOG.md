@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Status board
+Guide: `docs/guides/operations/STATUS-BOARD.md`. Dashboard page `/board`.
+- **Live status board:** one tile per managed workload with the observed state, an uptime strip built from recorded health checks (1h to 30d), open incidents, holds and the last applied revision. Periods without checks are shown as no data, and old checks as stale. Updates through the event stream (new `observationRound` event) with a slow poll as backup.
+- **Wall mode** for a shared monitor (`/board?wall=1`); works from 390 px wide, light and dark.
+- **Workload timeline:** applied revisions, operations, health transitions and gaps, incidents, notes and holds in one filtered view, with revision diffs. On each board tile, as `aether timeline <name>` and `GET /api/workloads/{name}/timeline`.
+- **API:** `GET /api/board`.
+
+### Fixed: dashboard
+- The Overview kept listing recovered or closed incidents, and recoveries, as needing attention.
+- The Overview listed one incident twice (the event and the operations queue entry).
+- Failed Start, Stop, Restart, Delete and bulk actions were not reported; bulk actions always said "completed".
+- The SLA page logged a 404 for every workload without a target.
+- The AI pipeline showed a spec full of `null`.
+- The command palette buried the workload under dozens of unrelated entries.
+- `j` and `k` did nothing until a table row had focus.
+- Opening the Overview in a browser no longer writes the macOS offline cache.
+
+### Added
+- The workload panel's Spec tab shows the last applied revision of a managed workload, with secret values redacted.
+- Events can be acknowledged: `POST /api/events/{id}/acknowledge` (Operator or Admin) and a button on the Events page, which already showed unacknowledged counts.
+
+### Fixed: stop, then start or restart, on Podman and Docker
+- Start and Restart failed with `name "<workload>" is already in use`, because a stopped container keeps its name (API, CLI `restart` and `run`, self-healing, snapshot rollback). The stopped container Aether created is now renamed aside, removed once its replacement runs, and restored if it does not. A running container, or one Aether did not create, is never moved.
+- A failed `update` on Podman or Docker removed the old container first and could leave nothing. The old container is now kept and started again.
+- Start replaces the container, as it always rebuilt from the spec: files written inside the old container are not carried over.
+
+### Fixed: server shutdown
+- `aether serve` did not exit on SIGTERM or Ctrl+C while a dashboard held the live event stream open; it stopped listening but kept running its health checks. The stream now ends on the signal, and any other open connection is closed after 30 seconds.
+
+### Fixed: status reflects what was observed
+- Managed workloads reported `deployed (<runtime>)` and counted as running even when their container had stopped. `GET /api/workloads`, `aether list`, `aether metrics`, the assistant tools and the dashboard now show the last observed condition, `stopped` only for a stop made through Aether, `stopped unexpectedly` otherwise, and `unknown` without a current check. Responses gain `status_detail` and `observed_at`. API clients that matched `deployed` must be updated.
+- The Command Center briefing counted never-checked and stopped workloads as healthy and reported no issues for them. `fleet_health_pct` now covers checked workloads only and is `null` without any; the new `fleet` object has the counts.
+
 - **Dashboard console:** sectioned sidebar with pins and filter, an attention-first Overview that includes the operations queue, live pause and event inbox, improved command palette, keyboard tables and a workload side panel, compact headers, clearer loading and error states. Fixes failed requests shown as empty, invisible loading skeletons and one crashed page blocking the others.
 
 ### Operations desk

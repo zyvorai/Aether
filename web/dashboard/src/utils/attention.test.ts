@@ -36,7 +36,7 @@ const healthy: AttentionSources = {
 describe('workloadCondition', () => {
   it('reads runtime status strings regardless of case', () => {
     expect(workloadCondition('Running')).toBe('running');
-    expect(workloadCondition('deployed (kubernetes)')).toBe('running');
+    expect(workloadCondition('deployed (kubernetes)')).toBe('unknown');
     expect(workloadCondition('CrashLoopBackOff')).toBe('failing');
     expect(workloadCondition('NotReady')).toBe('degraded');
     expect(workloadCondition('exited')).toBe('stopped');
@@ -126,5 +126,97 @@ describe('attention', () => {
   it('reports open circuit breakers', () => {
     const items = buildAttention({ ...healthy, health: { healthy: 0, degraded: 0, unhealthy: 0, unknown: 0, circuits_open: 2 } });
     expect(items[0]).toMatchObject({ id: 'circuits-open', severity: 'critical', title: '2 circuit breakers open' });
+  });
+});
+
+describe('attention lists each problem once', () => {
+  const incident = {
+    level: 'critical' as const,
+    kind: 'open-incident',
+    title: 'Incident 1 is open',
+    workload: 'web',
+    detail: 'stopped for 2m 0s, 4 failed checks, not acknowledged',
+    next: null,
+  };
+  const opened: Event = {
+    ...event('Incident opened', 'critical', 'web'),
+    message: 'incident 1: web is not ready (stopped) after 2 consecutive checks',
+  };
+  const queue = (items: NonNullable<AttentionSources['operator']>['items']) => ({ generated_at: '', workloads_checked: 1, items });
+
+  for (const [when, workloads] of [
+    ['the workload is listed as down', [workload('web', 'stopped unexpectedly')]],
+    ['the workload status is unknown', [workload('web', 'unknown')]],
+    ['the workload list did not load', null],
+  ] as const) {
+    it(`shows one incident once when ${when}`, () => {
+      const items = buildAttention({
+        ...healthy,
+        workloads: workloads ? [...workloads] : null,
+        events: [opened],
+        operator: queue([incident]),
+      });
+      expect(items).toHaveLength(1);
+      expect(items[0].severity).toBe('critical');
+      const text = `${items[0].title} ${items[0].detail}`;
+      expect(text).toContain('Incident 1 is open');
+      expect(text).toContain('4 failed checks');
+      expect(text).not.toContain('Incident opened');
+    });
+  }
+
+  it('folds a failed operation event into the server count of failures', () => {
+    const items = buildAttention({
+      ...healthy,
+      events: [{ ...event('stop failed', 'error', 'web'), message: 'stop failed on podman: boom' }],
+      operator: queue([
+        { level: 'warning', kind: 'failed-operation', title: '1 failed operation(s) in 24h', workload: 'web', detail: 'latest: stop failed on podman: boom', next: null },
+      ]),
+    });
+    expect(items.map((i) => i.title)).toEqual(['web: 1 failed operation(s) in 24h']);
+    expect(items[0].severity).toBe('critical');
+  });
+
+  it('keeps other events and other workloads apart', () => {
+    const items = buildAttention({
+      ...healthy,
+      events: [opened, event('Disk filling', 'warning', 'web'), event('stop failed', 'error', 'api')],
+      operator: queue([incident]),
+    });
+    expect(items.map((i) => i.title).sort()).toEqual(['Disk filling', 'stop failed', 'web: Incident 1 is open']);
+  });
+
+  it('keeps the incident event when the server queue did not load', () => {
+    const items = buildAttention({ ...healthy, events: [opened], operator: null });
+    expect(items.map((i) => i.title)).toEqual(['Incident opened']);
+  });
+
+  const recovered: Event = {
+    ...event('Incident resolved', 'warning', 'web'),
+    message: 'incident 1: web recovered after 4m 0s',
+  };
+
+  for (const [when, operator] of [
+    ['the server queue loaded', queue([])],
+    ['the server queue did not load', null],
+  ] as const) {
+    it(`lists nothing for a recovered incident when ${when}`, () => {
+      expect(buildAttention({ ...healthy, events: [recovered, opened], operator })).toEqual([]);
+    });
+  }
+
+  it('still counts a recovery that somebody acknowledged', () => {
+    const items = buildAttention({ ...healthy, events: [{ ...recovered, acknowledged: true }, opened], operator: null });
+    expect(items).toEqual([]);
+  });
+
+  it('drops an incident the server queue no longer lists, such as a deleted workload', () => {
+    expect(buildAttention({ ...healthy, events: [opened], operator: queue([]) })).toEqual([]);
+  });
+
+  it('keeps a later incident that is still open', () => {
+    const again: Event = { ...opened, message: 'incident 2: web is not ready (stopped) after 2 consecutive checks' };
+    const items = buildAttention({ ...healthy, events: [again, recovered, opened], operator: null });
+    expect(items.map((i) => [i.title, i.detail])).toEqual([['Incident opened', again.message]]);
   });
 });

@@ -48,6 +48,8 @@ pub enum ServerEvent {
     EventEmitted { message: String, severity: String },
     /// Health status update
     HealthUpdate { workload: String, status: String },
+    /// A round of health checks was recorded
+    ObservationRound { observed: usize, errors: usize },
     /// Migration progress for live activity cards
     MigrationProgress {
         workload: String,
@@ -458,7 +460,15 @@ pub(crate) struct WorkloadResponse {
     pub(crate) name: String,
     pub(crate) runtime: String,
     pub(crate) image: String,
+    /// For managed workloads, the last observed condition (`running`,
+    /// `stopped`, `stopped unexpectedly`, `unknown`, ...); for discovered
+    /// ones, what the cluster reports now.
     pub(crate) status: String,
+    /// What a managed workload's status is based on.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) status_detail: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) observed_at: Option<String>,
     pub(crate) created_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) source: Option<String>,
@@ -896,6 +906,8 @@ mod tests {
             runtime: "Podman".to_string(),
             image: "my-app:latest".to_string(),
             status: "running".to_string(),
+            status_detail: None,
+            observed_at: None,
             created_at: "2026-01-01T00:00:00Z".to_string(),
             source: None,
             cluster: None,
@@ -914,6 +926,8 @@ mod tests {
             runtime: "Kubernetes".to_string(),
             image: "registry.io/web:v2".to_string(),
             status: "deployed (kubernetes)".to_string(),
+            status_detail: None,
+            observed_at: None,
             created_at: "2026-06-15T12:30:00Z".to_string(),
             source: None,
             cluster: None,
@@ -938,6 +952,8 @@ mod tests {
             runtime: "KubeVirt".to_string(),
             image: "img:latest".to_string(),
             status: "deployed".to_string(),
+            status_detail: None,
+            observed_at: None,
             created_at: "2026-01-01T00:00:00Z".to_string(),
             source: None,
             cluster: None,
@@ -1492,6 +1508,8 @@ mod tests {
             runtime: "KubeVirt".to_string(),
             image: "registry.io/api-svc:v1".to_string(),
             status: "deployed (kubevirt)".to_string(),
+            status_detail: None,
+            observed_at: None,
             created_at: "2026-03-10T08:00:00Z".to_string(),
             source: None,
             cluster: None,
@@ -1521,6 +1539,8 @@ mod tests {
                 runtime: "Podman".to_string(),
                 image: "app-a:latest".to_string(),
                 status: "running".to_string(),
+                status_detail: None,
+                observed_at: None,
                 created_at: "2026-01-01T00:00:00Z".to_string(),
                 source: None,
                 cluster: None,
@@ -1532,6 +1552,8 @@ mod tests {
                 runtime: "Kubernetes".to_string(),
                 image: "app-b:v2".to_string(),
                 status: "deployed".to_string(),
+                status_detail: None,
+                observed_at: None,
                 created_at: "2026-02-01T00:00:00Z".to_string(),
                 source: None,
                 cluster: None,

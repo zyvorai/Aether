@@ -3,13 +3,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Link2 } from 'lucide-react';
+import { Link2, X } from 'lucide-react';
 import { apiFetch, apiPost, apiDelete, apiWebSocketUrl } from '../utils/api';
 import { copyToClipboard } from '../utils/clipboard';
 import { formatTimestamp } from '../utils/formatters';
 import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
+import { statusVariant } from '../utils/workloadStatus';
+import { expectSuccess } from '../utils/workloadActions';
+import AppliedSpec from './AppliedSpec';
 import {
   pickExecPodName,
   pickExecReadyPodName,
@@ -84,14 +87,6 @@ interface WorkloadDetailProps {
   /** When true, open the Shell modal as soon as the panel mounts. */
   initialShellOpen?: boolean;
   canMutate?: boolean;
-}
-
-function getStatusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy') return 'green';
-  if (s === 'error' || s === 'failed') return 'red';
-  if (s === 'stopped' || s === 'exited') return 'muted';
-  return 'yellow';
 }
 
 export default function WorkloadDetail({
@@ -658,12 +653,8 @@ export default function WorkloadDetail({
     setActionLoading(action);
     try {
       if (isAetherManaged) {
-        if (action === 'stop') await apiPost(`/workloads/${workload.name}/stop`);
-        else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
-        else if (action === 'restart') {
-          await apiPost(`/workloads/${workload.name}/restart`);
-        }         else if (action === 'rollback') {
-          await apiPost(`/workloads/${workload.name}/rollback`, {});
+        if (action === 'stop' || action === 'start' || action === 'restart' || action === 'rollback') {
+          expectSuccess(await apiPost(`/workloads/${workload.name}/${action}`, {}), action);
         } else if (action === 'build') {
           const res = await apiPost<{ full_name?: string; message?: string }>(`/workloads/${workload.name}/build`);
           if (res.success) {
@@ -672,7 +663,9 @@ export default function WorkloadDetail({
             setBuildResult(res.error ?? 'Build failed');
           }
         } else if (action === 'delete') {
-          await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          const res = await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          if (res.error === 'cancelled') return;
+          expectSuccess(res, action);
           onClose();
         }
       } else if (workload.cluster && workload.namespace && workload.kind) {
@@ -690,7 +683,7 @@ export default function WorkloadDetail({
           replicas: Number.isFinite(scaleReplicas) ? scaleReplicas : undefined,
         });
         if (!response.success) {
-          throw new Error(response.error ?? `cluster action ${action} failed`);
+          expectSuccess(response, action);
         }
         if (action === 'scale' && typeof scaleReplicas === 'number' && Number.isFinite(scaleReplicas)) {
           setReplicasInput(String(scaleReplicas));
@@ -711,7 +704,8 @@ export default function WorkloadDetail({
         }
       }
     } catch (e) {
-      console.error(`Action ${action} failed:`, e);
+      toast(e instanceof Error ? e.message : `${action} failed`, 'error');
+      onAction();
     } finally {
       setActionLoading('');
     }
@@ -900,12 +894,12 @@ export default function WorkloadDetail({
 
   return (
     <>
-    <Card className="animate-ac-slide mt-4 overflow-hidden p-0">
+    <Card className="record-card animate-ac-slide mt-4 overflow-hidden p-0">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 glass-divider-b glass-inset-surface">
+      <div className="record-head">
         <div className="flex flex-wrap items-center gap-3">
           <div>
-            <h2 className="text-lg font-bold text-foreground">
+            <h2 className="record-title">
               {isKubeWorkload ? applicationLabel(workload) : workload.name}
             </h2>
             {isKubeWorkload && (
@@ -915,7 +909,7 @@ export default function WorkloadDetail({
               </p>
             )}
           </div>
-          <Badge text={workload.status} variant={getStatusVariant(workload.status)} />
+          <Badge text={workload.status} variant={statusVariant(workload.status)} />
           {!isAetherManaged && clusterHealth ? (
             <Badge
               text={`health: ${clusterHealth.level}`}
@@ -936,7 +930,7 @@ export default function WorkloadDetail({
           <button
             type="button"
             onClick={() => setShowShortcuts((v) => !v)}
-            className="btn-secondary px-2.5 py-1 text-xs"
+            className="btn-quiet !min-w-9 !px-2"
             title="Keyboard shortcuts (?)"
             data-testid="workload-shortcuts-toggle"
           >
@@ -945,13 +939,13 @@ export default function WorkloadDetail({
           <button
             type="button"
             onClick={() => void copyShareLink()}
-            className="btn-secondary inline-flex items-center gap-1.5 px-2.5 py-1 text-xs"
+            className="btn-quiet"
             title="Copy shareable link"
           >
             <Link2 className="h-3.5 w-3.5" />
             {linkCopied ? 'Copied' : 'Share link'}
           </button>
-          <button type="button" onClick={onClose} className="text-muted hover:text-foreground text-xl leading-none" aria-label="Close">&times;</button>
+          <button type="button" onClick={onClose} className="icon-btn" aria-label="Close"><X className="h-4 w-4" aria-hidden /></button>
         </div>
       </div>
 
@@ -965,7 +959,8 @@ export default function WorkloadDetail({
       ) : null}
 
       {/* Tabs */}
-      <div className="sticky top-0 z-10 flex flex-wrap gap-2 px-4 py-3 glass-divider-b glass-inset-surface/95 backdrop-blur-xs">
+      <div className="record-tabs">
+        <div className="tab-group">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -977,10 +972,11 @@ export default function WorkloadDetail({
             {tab.label}
           </button>
         ))}
+        </div>
       </div>
 
       {/* Tab Content */}
-      <div className="p-4">
+      <div className="p-4 sm:p-5">
         {activeTab === 'overview' && (
           <div>
             {isKubeWorkload && (
@@ -1002,7 +998,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setShellOpen(true);
                     }}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/10 text-success hover:bg-success/10 border border-success/30 transition-colors"
+                    className="btn-quiet" data-tone-action="accent"
                   >
                     Exec
                   </button>
@@ -1012,7 +1008,7 @@ export default function WorkloadDetail({
                     data-testid="workload-shell-button-denied"
                     disabled
                     title="Exec requires Operator or Admin role"
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-surface text-subtle border border-border cursor-not-allowed"
+                    className="btn-quiet"
                   >
                     Exec
                   </button>
@@ -1022,13 +1018,8 @@ export default function WorkloadDetail({
                     key={action}
                     onClick={() => (action === 'delete' ? setConfirmDelete(true) : handleAction(action))}
                     disabled={!!actionLoading}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${
-                      action === 'delete'
-                        ? 'bg-danger/10 text-danger hover:bg-danger/10 border border-danger/30'
-                        : action === 'rollback'
-                          ? 'bg-warning/10 text-warning hover:bg-warning/10 border border-warning/30'
-                        : 'glass-inset-surface text-muted hover:bg-hover border glass-divider'
-                    } disabled:opacity-50`}
+                    className="btn-quiet"
+                    data-tone-action={action === 'delete' ? 'danger' : action === 'rollback' ? 'warning' : undefined}
                   >
                     {actionLoading === action ? '...' : action.charAt(0).toUpperCase() + action.slice(1)}
                   </button>
@@ -1037,7 +1028,7 @@ export default function WorkloadDetail({
                   <button
                     type="button"
                     onClick={() => onMigrate(workload.name)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/10 text-primary hover:bg-primary/10 border border-primary/30 transition-colors"
+                    className="btn-quiet" data-tone-action="accent"
                   >
                     Migrate
                   </button>
@@ -1072,7 +1063,7 @@ export default function WorkloadDetail({
                         setShellWantConnect(false);
                         setShellOpen(true);
                       }}
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-success/10 text-success hover:bg-success/10 border border-success/30 transition-colors"
+                      className="btn-quiet" data-tone-action="accent"
                     >
                       Exec
                     </button>
@@ -1082,7 +1073,7 @@ export default function WorkloadDetail({
                       data-testid="workload-shell-button-denied"
                       disabled
                       title="Exec requires Operator or Admin role"
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm bg-surface text-subtle border border-border cursor-not-allowed"
+                      className="btn-quiet"
                     >
                       Exec
                     </button>
@@ -1090,7 +1081,7 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-hover border glass-divider disabled:opacity-50"
+                    className="btn-quiet"
                   >
                     {actionLoading === 'restart' ? '...' : 'Restart'}
                   </button>
@@ -1139,7 +1130,7 @@ export default function WorkloadDetail({
                       <button
                         onClick={() => handleAction('scale')}
                         disabled={!!actionLoading}
-                        className="px-3 py-1.5 text-sm font-medium rounded-sm bg-primary/10 text-primary hover:bg-primary/10 border border-primary/30 disabled:opacity-50"
+                        className="btn-quiet" data-tone-action="accent"
                       >
                         {actionLoading === 'scale' ? '...' : 'Scale'}
                       </button>
@@ -1150,7 +1141,7 @@ export default function WorkloadDetail({
                       workload: workload.name,
                       q: `Diagnose ${workload.kind ?? 'workload'} ${clusterResourceName} in ${workload.namespace ?? 'default'}`,
                     })}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-lavender/20 text-lavender hover:bg-lavender/30 border border-lavender/30 transition-colors"
+                    className="btn-quiet" data-tone-action="accent"
                     data-testid="workload-diagnose-link"
                   >
                     Diagnose
@@ -1163,7 +1154,7 @@ export default function WorkloadDetail({
                         kind: workload.kind,
                         workload: workload.name,
                       })}
-                      className="px-3 py-1.5 text-sm font-medium rounded-sm glass-inset-surface text-muted hover:bg-hover border glass-divider transition-colors"
+                      className="btn-quiet"
                       data-testid="workload-open-clusters-link"
                     >
                       Open in Clusters
@@ -1172,7 +1163,7 @@ export default function WorkloadDetail({
                   <button
                     onClick={() => setConfirmDelete(true)}
                     disabled={!!actionLoading}
-                    className="px-3 py-1.5 text-sm font-medium rounded-sm bg-danger/10 text-danger hover:bg-danger/10 border border-danger/30 disabled:opacity-50"
+                    className="btn-quiet" data-tone-action="danger"
                   >
                     {actionLoading === 'delete' ? '...' : 'Delete'}
                   </button>
@@ -1181,17 +1172,21 @@ export default function WorkloadDetail({
             )}
 
             {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="fact-grid">
               <div><span className="text-subtle">Runtime</span><p className="text-foreground">{workload.runtime}</p></div>
-              <div><span className="text-subtle">Image</span><p className="text-foreground font-mono text-xs">{workload.image}</p></div>
-              <div><span className="text-subtle">Status</span><p className="text-foreground">{workload.status}</p></div>
+              <div><span className="text-subtle">Image</span><p className="break-all font-mono text-xs text-foreground">{workload.image}</p></div>
+              <div data-testid="workload-status">
+                <span className="text-subtle">Status</span>
+                <p className="text-foreground">{workload.status}</p>
+                {workload.status_detail ? <p className="text-xs text-muted">{workload.status_detail}</p> : null}
+              </div>
               <div><span className="text-subtle">Created</span><p className="text-foreground">{workload.created_at ? formatTimestamp(workload.created_at) : ''}</p></div>
               {workload.cluster && <div><span className="text-subtle">Cluster</span><p className="text-foreground">{workload.cluster}</p></div>}
               {workload.namespace && <div><span className="text-subtle">Namespace</span><p className="text-foreground">{workload.namespace}</p></div>}
               {workload.kind && <div><span className="text-subtle">Kind</span><p className="text-foreground">{workload.kind}</p></div>}
               <div><span className="text-subtle">Source</span><p className="text-foreground capitalize">{workload.source ?? 'aether'}</p></div>
               {!isAetherManaged && clusterHealth ? (
-                <div className="col-span-2" data-testid="workload-health-summary">
+                <div className="fact-wide" data-testid="workload-health-summary">
                   <span className="text-subtle">Cluster health</span>
                   <p className="text-foreground">
                     {clusterHealth.summary}{' '}
@@ -1307,7 +1302,7 @@ export default function WorkloadDetail({
                       title={[condition.reason, condition.message].filter(Boolean).join(' — ')}
                     >
                       {condition.type_}
-                      <span className="opacity-70">{condition.status}</span>
+                      <span>{condition.status}</span>
                     </span>
                   ))}
                 </div>
@@ -1627,7 +1622,7 @@ export default function WorkloadDetail({
                       type="button"
                       onClick={() => void handlePortForwardStart()}
                       disabled={!!portForwardSession || !!actionLoading || (!portForwardPod && workload.kind !== 'Service')}
-                      className="flex-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1.5 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
+                      className="btn-tint btn-tint-primary flex-1"
                       data-testid="workload-pf-start"
                     >
                       {actionLoading === 'port-forward' ? '...' : 'Start'}
@@ -1730,7 +1725,7 @@ export default function WorkloadDetail({
                   key={link.label}
                   href={link.path}
                   data-testid={`workload-link-${link.slug}`}
-                  className="rounded-lg border glass-divider px-2.5 py-1 text-xs text-muted hover:border-primary/40 hover:text-primary transition-colors"
+                  className="quick-link-chip"
                 >
                   {link.label}
                 </a>
@@ -1739,7 +1734,7 @@ export default function WorkloadDetail({
             </div>
 
             {isAetherManaged ? (
-              <div className="mt-4 glass-drawer p-3" data-testid="workload-snapshots">
+              <div className="glass-inset-surface mt-4 p-4" data-testid="workload-snapshots">
                 <h3 className="mb-2 text-sm font-semibold text-foreground">Snapshots</h3>
                 {snapshotsLoading ? (
                   <p className="text-xs text-subtle">Loading snapshots…</p>
@@ -1757,7 +1752,7 @@ export default function WorkloadDetail({
                             type="button"
                             onClick={() => void rollbackSnapshot(snap.version)}
                             disabled={!!actionLoading}
-                            className="rounded-sm border border-warning/40 px-2 py-1 text-xs text-warning hover:bg-warning/10 disabled:opacity-50"
+                            className="btn-quiet" data-tone-action="warning"
                           >
                             {actionLoading === `rollback-v${snap.version}` ? 'Rolling back…' : 'Rollback'}
                           </button>
@@ -1770,7 +1765,7 @@ export default function WorkloadDetail({
             ) : null}
 
             {isKubeWorkload && (
-              <div className="mt-4 glass-drawer p-3">
+              <div className="glass-inset-surface mt-4 p-4">
                 <h3 className="mb-3 text-sm font-semibold text-foreground">Network policies</h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
@@ -1814,7 +1809,7 @@ export default function WorkloadDetail({
         {activeTab === 'manifest' && (
           <div className="space-y-4">
             {isAetherManaged ? (
-              <p className="text-subtle">Manifest inspection is currently available for Kubernetes resources discovered directly from the cluster.</p>
+              <AppliedSpec name={workload.name} />
             ) : !clusterDetail ? (
               <p className="text-subtle">Loading Kubernetes resource details...</p>
             ) : (
@@ -2063,7 +2058,7 @@ export default function WorkloadDetail({
                     setShellWantConnect(true);
                   }}
                   disabled={shellResolving || !shellPod || !selectedPodExecReady}
-                  className="text-xs px-3 py-1 rounded-sm border border-success bg-success/10 text-success hover:bg-success/10 disabled:opacity-50"
+                  className="btn-tint btn-tint-success"
                   data-testid="workload-shell-connect"
                 >
                   Connect
@@ -2140,7 +2135,7 @@ export default function WorkloadDetail({
                       setShellWantConnect(false);
                       setActiveTab('logs');
                     }}
-                    className="rounded-sm border border-warning/40 bg-warning/10 px-2 py-0.5 text-xs text-warning hover:bg-warning/10"
+                    className="btn-tint btn-tint-warning"
                     data-testid="workload-shell-open-logs"
                   >
                     Open Logs

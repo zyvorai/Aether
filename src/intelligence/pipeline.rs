@@ -6,6 +6,7 @@
 use crate::engine::Engine;
 use crate::intelligence::placement::{GlobalPlacementEngine, PlacementRecommendation};
 use crate::spec::{IntentGoal, Workload};
+use crate::specrender::yaml_without_nulls;
 use crate::state::{StateStore, WorkloadState};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -65,7 +66,7 @@ pub async fn build_intent_pipeline(
         .unwrap_or_default();
     let placement = GlobalPlacementEngine::recommend(&spec, &clusters);
     let intent_yaml = intent_block_yaml(&spec);
-    let spec_yaml = serde_yaml::to_string(&spec)?;
+    let spec_yaml = yaml_without_nulls(&spec)?;
 
     let steps = vec![
         IntentPipelineStep {
@@ -192,7 +193,7 @@ fn intent_goal_label(goal: &IntentGoal) -> &'static str {
 
 pub fn intent_block_yaml(spec: &Workload) -> String {
     if let Some(intent) = &spec.intent {
-        serde_yaml::to_string(intent)
+        yaml_without_nulls(intent)
             .unwrap_or_else(|_| format!("goal: {}", intent_goal_label(&intent.goal)))
     } else {
         "goal: balanced".into()
@@ -237,5 +238,21 @@ mod tests {
         assert_eq!(report.workload_name, "shop");
         assert_eq!(report.steps.len(), 4);
         assert!(!report.spec_yaml.is_empty());
+        // Unset fields are left out; the dashboard shows these documents.
+        for yaml in [&report.spec_yaml, &report.intent_yaml] {
+            assert!(!yaml.contains("null"), "{yaml}");
+        }
+        let shown: Workload = serde_yaml::from_str(&report.spec_yaml).unwrap();
+        let built = build_spec_from_goals(&IntentPipelineRequest {
+            yaml: None,
+            goals: vec!["cost".into()],
+            workload_name: Some("shop".into()),
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(shown).unwrap(),
+            serde_json::to_value(built).unwrap(),
+            "leaving the nulls out changes nothing"
+        );
     }
 }

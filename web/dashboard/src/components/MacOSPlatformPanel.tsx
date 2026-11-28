@@ -27,6 +27,7 @@ import type {
   TraySparklineReport,
   UniversalLinkRegistry,
 } from '../types/api';
+import { fleetPercent } from '../utils/fleetHealth';
 import GlassSection from './GlassSection';
 
 export default function MacOSPlatformPanel() {
@@ -92,7 +93,7 @@ export default function MacOSPlatformPanel() {
     ><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="tray-sparkline-panel">
           <div className="font-mono text-2xl text-success">{sparkline?.sparkline ?? '▁▁▁▁'}</div>
-          <div className="text-xs text-subtle">Tray sparkline · {sparkline?.fleet_health_pct.toFixed(0) ?? 0}%</div>
+          <div className="text-xs text-subtle">Tray sparkline · {fleetPercent(sparkline?.fleet_health_pct)}</div>
         </div>
         <div className="tahoe-stat-tile rounded-[var(--radius-md)] border border-border bg-surface p-4" data-testid="dock-badge-panel">
           <div className="text-2xl font-semibold text-foreground">{dock?.issue_count ?? 0}</div>

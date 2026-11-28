@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, SearchX } from 'lucide-react';
 import { severityColorVar, severityRank, sortBySeverity } from '../../utils/severity';
-import { moveIndex, nextSort, sortByValue, type SortState } from '../../utils/tableSort';
+import { entersTable, moveIndex, nextSort, sortByValue, type SortState } from '../../utils/tableSort';
 
 export interface DataTableColumn<T> {
   key: string;
@@ -83,11 +83,26 @@ export default function DataTable<T>({
     return () => observer.disconnect();
   }, [rows.length]);
 
+  // j or k pressed before any row has focus enters the table.
+  useEffect(() => {
+    if (!interactive) return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!entersTable(event, event.target as HTMLElement | null, Boolean(document.querySelector('[aria-modal="true"]')))) return;
+      const row = bodyRef.current?.children[current] as HTMLElement | undefined;
+      if (!row) return;
+      event.preventDefault();
+      row.focus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [interactive, current]);
+
   if (rows.length === 0) {
     return (
-      <div className="px-6 py-14 text-center" role="status">
-        <div className="mb-2 text-[17px] font-semibold tracking-[-0.01em] text-foreground">{emptyTitle}</div>
-        <div className="text-[13.5px] text-muted">{emptyBody}</div>
+      <div className="glass-empty-state state-panel" role="status">
+        <div className="state-orb" aria-hidden><SearchX /></div>
+        <div className="state-title">{emptyTitle}</div>
+        <div className="state-body">{emptyBody}</div>
       </div>
     );
   }
@@ -111,7 +126,7 @@ export default function DataTable<T>({
     `data-cell ${col.width ? '' : 'flex-1 min-w-[12rem]'} ${col.align === 'right' ? 'data-cell-right' : ''}`;
 
   return (
-    <div className="data-table rounded-2xl bg-surface-elevated shadow-card ring-1 ring-[var(--card-edge)]" data-testid={testId}>
+    <div className="data-table" data-testid={testId}>
       <div ref={scrollerRef} className="data-scroller" data-fits={fits ? 'true' : undefined}>
         <div className="min-w-fit" role="table" aria-label={label} aria-rowcount={rows.length + 1}>
           <div className="data-head" role="row">

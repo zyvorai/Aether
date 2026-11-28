@@ -15,6 +15,7 @@ import PageLoading from '../PageLoading';
 import PageLoadError from '../PageLoadError';
 import type { ClusterMetricsSummary, ClusterSummary, Event, WorkloadResponse } from '../../types/api';
 import { isK8sApplication } from '../../utils/k8sUx';
+import { needsAttention } from '../../utils/workloadStatus';
 
 type MonitorTab = 'cpu' | 'memory' | 'restarts' | 'errors';
 
@@ -119,7 +120,7 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
   const { connected: sseConnected } = useEventStream('', onStreamEvent, liveEnabled);
 
   const k8sApps = useMemo(() => workloads.filter(isK8sApplication), [workloads]);
-  const failingApps = useMemo(() => k8sApps.filter((w) => /fail|error|crash/i.test(w.status)), [k8sApps]);
+  const failingApps = useMemo(() => k8sApps.filter((w) => needsAttention(w.status)), [k8sApps]);
   const warningEvents = useMemo(
     () => events.filter((e) => e.severity === 'warning' || e.severity === 'error').slice(0, 10),
     [events],
@@ -193,11 +194,11 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
         </div>
       </div>
 
-      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics?.pod_count ?? 0}</div>Pods</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{k8sApps.length}</div>Applications</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{failingApps.length}</div>Failing apps</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics ? `${metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
+      <section className="stat-ribbon mb-6">
+        <div className="stat-item"><div className="stat-number text-foreground">{metrics?.pod_count ?? 0}</div>Pods</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{k8sApps.length}</div>Applications</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{failingApps.length}</div>Failing apps</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{metrics ? `${metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
       </section>
 
       {!forcedTab ? (

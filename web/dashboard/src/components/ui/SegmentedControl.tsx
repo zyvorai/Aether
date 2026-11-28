@@ -46,7 +46,7 @@ export default function SegmentedControl<T extends string>({
       role="tablist"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className={`glass-fill inline-flex items-center gap-0.5 rounded-[var(--radius-md)] p-0.5 ${className}`}
+      className={`segmented ${className}`}
     >
       {items.map((item) => {
         const isActive = item.key === value;
@@ -59,21 +59,11 @@ export default function SegmentedControl<T extends string>({
             disabled={item.disabled}
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(item.key)}
-            className={[
-              'flex items-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 py-1.5 text-[12.5px] transition-colors',
-              item.disabled ? 'cursor-default opacity-45 text-subtle' : 'cursor-pointer',
-              isActive
-                ? 'glass text-foreground font-medium'
-                : item.disabled
-                  ? ''
-                  : `text-muted hover:text-foreground ${item.tone ?? ''}`,
-            ].join(' ')}
+            className={`segmented-item ${!isActive && !item.disabled ? (item.tone ?? '') : ''}`}
           >
             {item.label}
             {item.count !== undefined ? (
-              <span className={`font-mono text-[11.5px] ${isActive ? 'text-muted' : 'text-subtle'}`}>
-                {item.count}
-              </span>
+              <span className="segmented-count">{item.count}</span>
             ) : null}
           </button>
         );

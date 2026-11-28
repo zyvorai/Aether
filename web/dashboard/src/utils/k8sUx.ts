@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import type { WorkloadResponse } from '../types/api';
+import { workloadCondition } from './workloadStatus';
 
 /** Treat a workload as a Kubernetes "Application" (managed or discovered). */
 export function isK8sApplication(w: WorkloadResponse): boolean {
@@ -67,7 +68,7 @@ export function inferFixRecommendations(w: WorkloadResponse): FixRecommendation 
       ],
     };
   }
-  if (status.includes('fail') || status.includes('error') || status.includes('unhealthy')) {
+  if (status.includes('fail') || status.includes('error') || status.includes('unhealthy') || status.includes('unexpectedly')) {
     return {
       title: `${name} needs attention`,
       summary: 'Health checks or deployment conditions report a problem.',
@@ -81,10 +82,8 @@ export function inferFixRecommendations(w: WorkloadResponse): FixRecommendation 
   return null;
 }
 
-export function healthTone(status: string): 'healthy' | 'warning' | 'critical' | 'stopped' {
-  const s = status.toLowerCase();
-  if (s.includes('running') || s.includes('healthy') || s.includes('deployed')) return 'healthy';
-  if (s.includes('stop') || s.includes('exit')) return 'stopped';
-  if (s.includes('fail') || s.includes('error') || s.includes('crash')) return 'critical';
-  return 'warning';
+const TONES = { running: 'healthy', degraded: 'warning', failing: 'critical', stopped: 'stopped', unknown: 'unknown' } as const;
+
+export function healthTone(status: string): (typeof TONES)[keyof typeof TONES] {
+  return TONES[workloadCondition(status)];
 }

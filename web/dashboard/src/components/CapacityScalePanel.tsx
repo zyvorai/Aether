@@ -56,7 +56,7 @@ export default function CapacityScalePanel() {
             type="button"
             onClick={() => void execute(true)}
             disabled={executing}
-            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning hover:border-warning/50 disabled:opacity-60"
+            className="btn-tint btn-tint-warning"
             data-testid="capacity-scale-dry-run"
           >
             Dry-run scale

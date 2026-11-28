@@ -247,7 +247,7 @@ function PolicyPage({ refreshKey }: { refreshKey?: number } = {}) {
           <button
             type="button"
             onClick={() => navigate(viewToPath('platform'))}
-            className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+            className="btn-tint btn-tint-primary"
           >
             Open Platform
           </button>

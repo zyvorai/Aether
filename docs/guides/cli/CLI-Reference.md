@@ -333,6 +333,18 @@ aether --dry-run migrate hello-web kubevirt --strategy blue-green
 
 ---
 
+### timeline
+
+One workload's changes, health transitions, incidents, notes and holds, newest first.
+
+```
+aether [OPTIONS] timeline <NAME> [--since 24h] [--only changes,health,incidents,notes,holds] [--limit 100]
+```
+
+Everything comes from Aether's own records; a stretch without health checks is shown as a gap. See the [status board guide](../operations/STATUS-BOARD.md).
+
+---
+
 ### rollback
 
 Rollback a workload to its latest pre-deploy snapshot.

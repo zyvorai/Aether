@@ -6,15 +6,8 @@ import Badge, { RuntimeBadge } from './Badge';
 import { clusterResourceName, hasClusterLogs, isShellableClusterKind } from '../utils/clusterExec';
 import { formatRelativeTime } from '../utils/formatters';
 import { isAetherManaged } from '../utils/workloadFilters';
+import { statusVariant } from '../utils/workloadStatus';
 import type { WorkloadResponse } from '../types/api';
-
-function statusVariant(status: string): 'green' | 'red' | 'yellow' | 'muted' {
-  const s = status.toLowerCase();
-  if (s === 'running' || s === 'healthy' || s.includes('deployed')) return 'green';
-  if (s === 'error' || s === 'failed') return 'red';
-  if (['stopped', 'exited', 'succeeded'].includes(s)) return 'muted';
-  return 'yellow';
-}
 
 function kindGlyph(kind?: string) {
   const k = (kind ?? '').toLowerCase();
@@ -94,10 +87,10 @@ export default function WorkloadCard({
     <article
       data-testid={`workload-card-${shortName}`}
       style={{ animationDelay: `${delayMs}ms` }}
-      className={`workload-card-rise group relative overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-0.5 ${
+      className={`card-rise group relative overflow-hidden rounded-[var(--radius-card)] border transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
         selected
           ? 'border-primary bg-surface-elevated shadow-card'
-          : 'border-border bg-surface-elevated shadow-card hover:border-rule-strong'
+          : 'border-[var(--card-edge)] bg-surface-elevated shadow-card hover:border-rule-strong'
       }`}
     >
       <div className="relative flex h-full flex-col p-4">
@@ -129,7 +122,9 @@ export default function WorkloadCard({
               </button>
             </div>
             <div className="mt-2">
-              <Badge text={workload.status} variant={variant} />
+              <span title={workload.status_detail ?? undefined}>
+                <Badge text={workload.status} variant={variant} />
+              </span>
             </div>
           </div>
         </div>

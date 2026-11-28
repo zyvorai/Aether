@@ -4,11 +4,11 @@
 //! Command Center briefing — aggregates intelligence into a narrative snapshot.
 
 use crate::config::Config;
-use crate::health::HealthHistory;
 use crate::intelligence::evolution::EvolutionEngine;
 use crate::intelligence::finops::FinOpsEngine;
 use crate::intelligence::policy::AutonomyPolicy;
 use crate::intelligence::predict::FailurePredictor;
+use crate::ops::observed::{Condition, Snapshot};
 use crate::spec::Workload;
 use crate::state::{StateStore, WorkloadState};
 use chrono::Timelike;
@@ -19,7 +19,10 @@ use std::path::Path;
 pub struct CommandCenterBriefing {
     pub generated_at: String,
     pub greeting: String,
-    pub fleet_health_pct: f64,
+    /// `None` (JSON `null`) when no workload has a current health check.
+    pub fleet_health_pct: Option<f64>,
+    #[serde(default)]
+    pub fleet: FleetHealth,
     pub issues: Vec<BriefingIssue>,
     pub potential_savings_usd: f64,
     pub migration_opportunities: u32,
@@ -62,20 +65,87 @@ fn greeting_for_hour(hour: u32) -> &'static str {
     }
 }
 
+/// What the recorded observations say about the managed workloads.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetHealth {
+    pub total: usize,
+    pub running: usize,
+    /// Checked recently and found in trouble.
+    pub unhealthy: usize,
+    /// Stopped on request; not part of the percentage.
+    pub stopped: usize,
+    /// No current check; not part of the percentage.
+    pub unknown: usize,
+}
+
+impl FleetHealth {
+    /// Share of the checked workloads that are running, or `None` when none
+    /// has a current check.
+    pub fn pct(&self) -> Option<f64> {
+        let checked = self.running + self.unhealthy;
+        (checked > 0).then(|| self.running as f64 * 100.0 / checked as f64)
+    }
+}
+
+fn fleet_health(
+    observed: &Snapshot,
+    store: &StateStore,
+    now: chrono::DateTime<chrono::Utc>,
+) -> FleetHealth {
+    let mut fleet = FleetHealth::default();
+    for ws in store.list() {
+        fleet.total += 1;
+        match observed.status(ws, now).condition {
+            Condition::Running => fleet.running += 1,
+            Condition::Stopped => fleet.stopped += 1,
+            Condition::Unknown => fleet.unknown += 1,
+            Condition::Unhealthy
+            | Condition::Pending
+            | Condition::Failed
+            | Condition::Down
+            | Condition::NotReady => fleet.unhealthy += 1,
+        }
+    }
+    fleet
+}
+
+/// One issue per workload that was observed in trouble, worst first.
+fn current_issues(
+    observed: &Snapshot,
+    store: &StateStore,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Vec<BriefingIssue> {
+    let mut issues: Vec<_> = store
+        .list()
+        .iter()
+        .filter_map(|ws| {
+            let status = observed.status(ws, now);
+            let severity = match status.condition {
+                Condition::Failed | Condition::Down => "critical",
+                Condition::Unhealthy | Condition::Pending | Condition::NotReady => "medium",
+                Condition::Running | Condition::Stopped | Condition::Unknown => return None,
+            };
+            Some(BriefingIssue {
+                severity: severity.into(),
+                title: format!("{} is {}", ws.name, status.condition.label()),
+                detail: status.detail,
+                workload: Some(ws.name.clone()),
+            })
+        })
+        .collect();
+    issues.sort_by(|a, b| {
+        (a.severity != "critical", &a.workload).cmp(&(b.severity != "critical", &b.workload))
+    });
+    issues
+}
+
 pub fn build_command_center_briefing(state_path: &Path) -> anyhow::Result<CommandCenterBriefing> {
     let store = StateStore::load(state_path)?;
     let pairs = workload_pairs(&store);
 
-    let health = HealthHistory::load(&HealthHistory::default_path()).unwrap_or_default();
-    let ready = pairs
-        .iter()
-        .filter(|(_, ws)| {
-            health.uptime_percent(&ws.name) >= 99.0 || health.restart_count(&ws.name) == 0
-        })
-        .count();
-    let total = pairs.len().max(1);
-    let fleet_health_pct = ((ready as f64 / total as f64) * 100.0).min(100.0);
-
+    let observed = Snapshot::load(&crate::ops::data_dir());
+    let now = chrono::Utc::now();
+    let fleet = fleet_health(&observed, &store, now);
     let predictions = FailurePredictor::predict_fleet(&pairs);
     let cost = FinOpsEngine::optimize_fleet(&pairs);
     let config = Config::load();
@@ -83,7 +153,8 @@ pub fn build_command_center_briefing(state_path: &Path) -> anyhow::Result<Comman
         AutonomyPolicy::from_config_and_workload(config.reconciliation.auto_reconcile, None);
     let evolution = EvolutionEngine::status_for_fleet(&pairs, &policy);
 
-    let mut issues = Vec::new();
+    // What is wrong now comes before what might go wrong.
+    let mut issues = current_issues(&observed, &store, now);
     for p in &predictions.predictions {
         if p.risk_level == "critical" || p.risk_level == "high" {
             let detail = p
@@ -151,7 +222,8 @@ pub fn build_command_center_briefing(state_path: &Path) -> anyhow::Result<Comman
     Ok(CommandCenterBriefing {
         generated_at: crate::resources::now_rfc3339(),
         greeting: greeting_for_hour(hour).into(),
-        fleet_health_pct,
+        fleet_health_pct: fleet.pct(),
+        fleet,
         issues,
         potential_savings_usd,
         migration_opportunities,
@@ -192,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn briefing_computes_health_from_workloads_without_restarts() {
+    fn briefing_reports_no_health_for_a_workload_nobody_checked() {
         let dir = tempfile::tempdir().unwrap();
         let state_path = dir.path().join("state.json");
         let spec_path = dir.path().join("web.yaml");
@@ -229,10 +301,44 @@ mod tests {
         store.save(&state_path).unwrap();
 
         let briefing = build_command_center_briefing(&state_path).unwrap();
-        assert!(
-            briefing.fleet_health_pct >= 99.0,
-            "expected healthy fleet, got {}",
-            briefing.fleet_health_pct
-        );
+        // The data directory is the real one here, which never saw this fleet.
+        assert_ne!(briefing.fleet_health_pct, Some(100.0));
+    }
+
+    #[test]
+    fn fleet_health_counts_only_what_was_observed() {
+        use crate::ops::incidents::{self, tests::obs};
+        use crate::runtime::InstanceState;
+        let dir = tempfile::tempdir().unwrap();
+        let d = dir.path();
+        let now = chrono::Utc::now();
+        let mut store = StateStore::new();
+        for name in ["api", "web", "worker"] {
+            let instance =
+                Instance::new(name.into(), name.into(), RuntimeKind::Podman, name.into());
+            let mut ws = WorkloadState::new(
+                name.into(),
+                RuntimeKind::Podman,
+                instance,
+                "web.yaml".into(),
+            );
+            ws.updated_at = (now - chrono::Duration::hours(1)).to_rfc3339();
+            store.upsert(name.into(), ws);
+        }
+        let nothing = fleet_health(&Snapshot::load(d), &store, now);
+        assert_eq!((nothing.unknown, nothing.pct()), (3, None));
+
+        incidents::record(d, &obs("api", true, &now.to_rfc3339())).unwrap();
+        let mut down = obs("web", false, &now.to_rfc3339());
+        down.state = InstanceState::Stopped;
+        incidents::record(d, &down).unwrap();
+        let snapshot = Snapshot::load(d);
+        let fleet = fleet_health(&snapshot, &store, now);
+        assert_eq!((fleet.running, fleet.unhealthy, fleet.unknown), (1, 1, 1));
+        assert_eq!(fleet.pct(), Some(50.0));
+        let issues = current_issues(&snapshot, &store, now);
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].title, "web is stopped unexpectedly");
+        assert_eq!(issues[0].severity, "critical");
     }
 }

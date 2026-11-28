@@ -11,6 +11,7 @@ pub mod kube_manifest;
 pub mod kube_policy_extras;
 pub mod kube_reconcile;
 pub mod kubevirt;
+mod local;
 pub mod podman;
 
 #[cfg(test)]

@@ -8,9 +8,9 @@
  */
 
 import type { AppView, Event, HealthSummary, SecretSummary, WorkloadResponse } from '../types/api';
-import type { AttentionQueue } from '../types/operator';
+import type { AttentionItem as AttentionEntry, AttentionQueue } from '../types/operator';
 import { attentionTarget } from './operator';
-import { workloadCondition } from './workloadStatus';
+import { countByCondition, workloadCondition } from './workloadStatus';
 
 export type AttentionSeverity = 'critical' | 'warning';
 
@@ -48,12 +48,49 @@ function eventSeverity(severity: string): AttentionSeverity | null {
   return null;
 }
 
+const incidentNumber = (event: Event) => /^incident (\d+):/i.exec(event.message)?.[1];
+
+/**
+ * Drops events that no longer describe a problem: recoveries, and openings of
+ * incidents that have since ended. The server queue lists every open incident,
+ * so when it loaded, an opening it does not list is over.
+ */
+function stillCurrent(events: Event[], operator: AttentionQueue | null): Event[] {
+  const ended = new Set(events.filter((e) => /^incident resolved$/i.test(e.title)).map(incidentNumber));
+  const stillOpen = new Set((operator?.items ?? []).filter((i) => i.kind === 'open-incident').map((i) => i.workload));
+  return events.filter((event) => {
+    if (/^incident resolved$/i.test(event.title)) return false;
+    if (!/^incident opened$/i.test(event.title)) return true;
+    const number = incidentNumber(event);
+    if (number !== undefined && ended.has(number)) return false;
+    return operator === null || stillOpen.has(event.workload);
+  });
+}
+
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** Which events only announce something a server queue entry already reports. */
+const ANNOUNCEMENTS: Record<string, RegExp> = {
+  'open-incident': /^incident opened$/i,
+  'failed-operation': /^(build|deploy|update|stop|delete) failed$/i,
+};
+
+function announces(event: Event, entry: AttentionEntry): boolean {
+  return event.workload === entry.workload && (ANNOUNCEMENTS[entry.kind]?.test(event.title) ?? false);
+}
 
 export function buildAttention({ workloads, events, secrets, health, operator }: AttentionSources): AttentionItem[] {
   const items: AttentionItem[] = [];
-  const open = (events ?? []).filter((event) => !event.acknowledged && eventSeverity(event.severity));
+  // Informational entries (holds, stale data) stay on the Operations Desk.
+  const recorded = (operator?.items ?? []).filter((entry) => entry.level !== 'info');
+  // Recoveries count as evidence even when somebody has acknowledged them.
+  const allOpen = stillCurrent(events ?? [], operator).filter((event) => !event.acknowledged && eventSeverity(event.severity));
+  // One problem, one row: the server's entry says more than the event that announced it.
+  const open = allOpen.filter((event) => !recorded.some((entry) => announces(event, entry)));
+  const escalates = (entry: AttentionEntry) =>
+    entry.level === 'critical' || allOpen.some((event) => announces(event, entry) && eventSeverity(event.severity) === 'critical');
   const covered = new Set<Event>();
+  const listed = new Set<AttentionEntry>();
 
   for (const workload of workloads ?? []) {
     const condition = workloadCondition(workload.status);
@@ -61,13 +98,19 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
     const related = open.filter((event) => event.workload === workload.name);
     related.forEach((event) => covered.add(event));
     const latest = related[0];
+    const known = recorded.filter((entry) => entry.workload === workload.name);
+    known.forEach((entry) => listed.add(entry));
+    const detail = [
+      ...known.map((entry) => `${entry.title}: ${entry.detail}`),
+      ...(latest
+        ? [`${latest.title}: ${latest.message}${related.length > 1 ? ` (+${plural(related.length - 1, 'more open event')})` : ''}`]
+        : []),
+    ].join('; ');
     items.push({
       id: `workload-${workload.name}`,
-      severity: condition === 'failing' ? 'critical' : 'warning',
+      severity: condition === 'failing' || known.some(escalates) ? 'critical' : 'warning',
       title: `${workload.name} is ${workload.status}`,
-      detail: latest
-        ? `${latest.title}: ${latest.message}${related.length > 1 ? ` (+${plural(related.length - 1, 'more open event')})` : ''}`
-        : `${workload.runtime} workload`,
+      detail: detail || (workload.status_detail ?? `${workload.runtime} workload`),
       view: 'workloads',
       query: { workload: workload.name },
     });
@@ -117,20 +160,13 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
     });
   }
 
-  // Informational entries (holds, stale data) stay on the Operations Desk. A workload already listed
-  // above keeps its one row and gains what the server knows about it.
-  for (const entry of operator?.items ?? []) {
-    if (entry.level === 'info') continue;
-    const row = items.find((item) => item.id === `workload-${entry.workload}`);
-    if (row) {
-      row.detail = `${row.detail}; ${entry.title}`;
-      if (entry.level === 'critical') row.severity = 'critical';
-      continue;
-    }
+  // What the server recorded about workloads that have no row of their own yet.
+  for (const entry of recorded) {
+    if (listed.has(entry)) continue;
     const target = attentionTarget(entry);
     items.push({
       id: `operator-${entry.kind}-${entry.workload ?? ''}-${entry.title}`,
-      severity: entry.level,
+      severity: escalates(entry) ? 'critical' : 'warning',
       title: entry.workload ? `${entry.workload}: ${entry.title}` : entry.title,
       detail: entry.detail,
       view: target ? 'operations' : 'audit',
@@ -169,6 +205,11 @@ export function attentionVerdict(items: AttentionItem[], sources: AttentionSourc
   }
   if (unchecked.length > 0) {
     return { tone: 'unknown', headline: 'Status is incomplete', checked, unchecked };
+  }
+  // A list that loaded can still hold workloads nobody has looked at lately.
+  const blind = countByCondition(sources.workloads ?? []).unknown;
+  if (blind > 0) {
+    return { tone: 'unknown', headline: `${plural(blind, 'workload')} ${blind === 1 ? 'has' : 'have'} no current status`, checked, unchecked };
   }
   return { tone: 'clear', headline: 'Nothing needs attention', checked, unchecked };
 }

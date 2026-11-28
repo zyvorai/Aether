@@ -10,11 +10,12 @@ import { pathWithQuery } from '../../utils/urlState';
 
 const COLLAPSED_ROWS = 5;
 
-const TONE: Record<AttentionVerdict['tone'], { icon: typeof AlertTriangle; className: string }> = {
-  critical: { icon: OctagonAlert, className: 'text-danger' },
-  warning: { icon: AlertTriangle, className: 'text-warning' },
-  clear: { icon: CheckCircle2, className: 'text-success' },
-  unknown: { icon: CircleHelp, className: 'text-muted' },
+// The colour comes from data-verdict on the panel (shell.css).
+const VERDICT_ICON: Record<AttentionVerdict['tone'], typeof AlertTriangle> = {
+  critical: OctagonAlert,
+  warning: AlertTriangle,
+  clear: CheckCircle2,
+  unknown: CircleHelp,
 };
 
 function listWords(words: string[]): string {
@@ -33,16 +34,18 @@ export default function AttentionPanel({ sources, checkedAt, refreshing, onRefre
   const [expanded, setExpanded] = useState(false);
   const items = buildAttention(sources);
   const verdict = attentionVerdict(items, sources);
-  const { icon: Icon, className } = TONE[verdict.tone];
+  const Icon = VERDICT_ICON[verdict.tone];
   const shown = expanded ? items : items.slice(0, COLLAPSED_ROWS);
 
   return (
-    <section className="glass attention" aria-labelledby="attention-headline" data-testid="overview-attention">
+    <section className="glass attention" aria-labelledby="attention-headline" data-testid="overview-attention" data-verdict={verdict.tone}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${className}`} aria-hidden />
+        <div className="flex min-w-0 flex-1 basis-64 items-center gap-4">
+          <span className="attention-orb" aria-hidden>
+            <Icon />
+          </span>
           <div className="min-w-0">
-            <h2 id="attention-headline" className="text-lg font-semibold leading-snug text-foreground">
+            <h2 id="attention-headline" className="attention-headline">
               {verdict.headline}
             </h2>
             <p className="mt-0.5 text-[13px] text-muted">

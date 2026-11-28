@@ -40,7 +40,7 @@ export default function PageTabs<T extends string>({
     <div
       role="tablist"
       aria-label="Page sections"
-      className={`mb-6 flex flex-wrap gap-2 ${className}`}
+      className={`tab-group mb-6 ${className}`}
       onKeyDown={onKeyDown}
     >
       {tabs.map((tab) => {

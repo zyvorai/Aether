@@ -11,16 +11,20 @@
 //! [`data_dir`]) so the logic can be tested against a temporary directory.
 
 pub mod attention;
+pub mod board;
 pub mod changes;
 pub mod explain;
 pub mod holds;
 pub mod incidents;
 pub mod journal;
+pub mod observed;
+pub mod planned;
 pub mod preview;
 pub mod report;
 pub mod revisions;
 pub mod rollback;
 pub mod store;
+pub mod timeline;
 
 use std::path::PathBuf;
 use std::sync::OnceLock;

@@ -3,6 +3,7 @@
 
 import { withAuroraPage } from '../layout/AuroraPage';
 import SectionHubPage from '../SectionHubPage';
+import ObservabilityPulse from '../overview/ObservabilityPulse';
 import {
   Activity,
   BarChart3,
@@ -12,8 +13,10 @@ import {
   Search,
 } from 'lucide-react';
 
-function ObservabilityPage() {
+function ObservabilityPage({ refreshKey }: { refreshKey?: number }) {
   return (
+    <>
+    <ObservabilityPulse refreshKey={refreshKey} />
     <SectionHubPage
       links={[
         {
@@ -54,6 +57,7 @@ function ObservabilityPage() {
         },
       ]}
     />
+    </>
   );
 }
 

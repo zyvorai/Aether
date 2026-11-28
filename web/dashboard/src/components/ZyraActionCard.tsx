@@ -28,7 +28,7 @@ export default function ZyraActionCard({ title, summary, actions = [], testId }:
                   key={a.label}
                   type="button"
                   onClick={a.onClick}
-                  className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:border-primary/50"
+                  className="btn-tint btn-tint-primary"
                 >
                   {a.label}
                 </button>

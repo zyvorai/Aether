@@ -120,11 +120,11 @@ test.describe('Phases 381–480 features', () => {
         body: JSON.stringify({ success: true, data: [{ name: 'web', status: 'running', runtime: 'kube' }] }),
       }),
     );
-    await page.route('**/api/sla/web', (route) =>
+    await page.route('**/api/sla', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { uptime_target_pct: 99.9, max_latency_ms: null, max_error_rate_pct: null, max_restarts_per_day: null } }),
+        body: JSON.stringify({ success: true, data: [{ workload: 'web', uptime_target_pct: 99.9, max_latency_ms: null, max_error_rate_pct: null, max_restarts_per_day: null }] }),
       }),
     );
     await page.goto('/sla');
