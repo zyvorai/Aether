@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   Database,
   Download,
@@ -31,7 +32,13 @@ import GlassSection from './GlassSection';
 type Tab = 'impact' | 'blast' | 'threats' | 'search' | 'snapshots' | 'cmdb' | 'placement' | 'export';
 
 export default function GraphPlatformPanel() {
-  const [tab, setTab] = useState<Tab>('impact');
+  const [params] = useSearchParams();
+  const wantsSearch = params.get('tab') === 'graph-search';
+  const [tab, setTab] = useState<Tab>(wantsSearch ? 'search' : 'impact');
+  // The command palette can ask for search while this panel is already open.
+  useEffect(() => {
+    if (wantsSearch) setTab('search');
+  }, [wantsSearch]);
   const [loading, setLoading] = useState(true);
   const [workload, setWorkload] = useState('');
   const [searchQ, setSearchQ] = useState('');
