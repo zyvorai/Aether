@@ -431,7 +431,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
                   href={grafanaDashboardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/10"
+                  className="btn-tint btn-tint-primary"
                 >
                   Open Aether dashboard <ExternalLink size={14} />
                 </a>
@@ -467,7 +467,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
               href={integrations.hubble_ui_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-lavender/50 bg-lavender/30 px-4 py-2 text-sm text-lavender hover:bg-lavender/50"
+              className="btn-tint btn-tint-violet"
             >
               Hubble UI <ExternalLink size={14} />
             </a>
@@ -477,7 +477,7 @@ export function PlatformStudio({ refreshKey, forcedSection }: { refreshKey?: num
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/50"
+              className="btn-tint btn-tint-primary"
             >
               PacketWolf <ExternalLink size={14} />
             </a>

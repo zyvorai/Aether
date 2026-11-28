@@ -193,11 +193,11 @@ export function ActivityStudio({ forcedTab }: { forcedTab?: MonitorTab } = {}) {
         </div>
       </div>
 
-      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics?.pod_count ?? 0}</div>Pods</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{k8sApps.length}</div>Applications</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{failingApps.length}</div>Failing apps</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{metrics ? `${metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
+      <section className="stat-ribbon mb-6">
+        <div className="stat-item"><div className="stat-number text-foreground">{metrics?.pod_count ?? 0}</div>Pods</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{k8sApps.length}</div>Applications</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{failingApps.length}</div>Failing apps</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{metrics ? `${metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
       </section>
 
       {!forcedTab ? (

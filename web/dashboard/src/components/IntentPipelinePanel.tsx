@@ -96,7 +96,7 @@ export default function IntentPipelinePanel() {
             type="button"
             onClick={() => void deployPipeline(true)}
             disabled={deploying}
-            className="rounded-xl border border-lavender/30 bg-lavender/10 px-3 py-2 text-xs text-lavender disabled:opacity-60"
+            className="btn-tint btn-tint-violet"
             data-testid="intent-pipeline-deploy-dry-run"
           >
             Dry-run deploy

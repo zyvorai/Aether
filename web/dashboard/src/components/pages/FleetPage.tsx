@@ -462,26 +462,26 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
 
       {activeTab === 'overview' ? (
       <>
-      <div className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-        <div className="text-sm text-muted">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.cluster_count ?? 0}</div>
+      <div className="stat-ribbon mb-6">
+        <div className="stat-item">
+          <div className="stat-number text-foreground">{summary?.cluster_count ?? 0}</div>
           Clusters
         </div>
-        <button type="button" onClick={() => navigate(viewToPath('health'))} className="text-left text-sm text-muted hover:text-foreground" data-testid="fleet-healthy-stat">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.healthy_clusters ?? 0}</div>
+        <button type="button" onClick={() => navigate(viewToPath('health'))} className="stat-item stat-item-button text-[13px] text-muted" data-testid="fleet-healthy-stat">
+          <div className="stat-number text-foreground">{summary?.healthy_clusters ?? 0}</div>
           Healthy
         </button>
         <button
           type="button"
           data-testid="fleet-workloads-stat"
           onClick={() => navigate(pathWithQuery(viewToPath('workloads'), { source: 'cluster' }))}
-          className="text-left text-sm text-muted hover:text-foreground"
+          className="stat-item stat-item-button text-[13px] text-muted"
         >
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.workload_count ?? 0}</div>
+          <div className="stat-number text-foreground">{summary?.workload_count ?? 0}</div>
           Workloads
         </button>
-        <div className="text-sm text-muted">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{summary?.connected ? 'On' : 'Off'}</div>
+        <div className="stat-item">
+          <div className="stat-number text-foreground">{summary?.connected ? 'On' : 'Off'}</div>
           Backend
         </div>
       </div>
@@ -545,7 +545,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
             <button
               type="button"
               onClick={() => void loadAllPods()}
-              className="rounded-xl border border-lavender/30 bg-lavender/20 px-3 py-1.5 text-xs text-lavender hover:bg-lavender/40"
+              className="btn-tint btn-tint-violet"
             >
               Expand all &amp; load pods
             </button>
@@ -658,7 +658,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
               href={integrations.grafana_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/10"
+              className="btn-tint btn-tint-primary"
             >
               Grafana <ExternalLink size={14} />
             </a>
@@ -678,7 +678,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
               href={integrations.hubble_ui_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-lavender/50 bg-lavender/30 px-4 py-2 text-sm text-lavender hover:bg-lavender/50"
+              className="btn-tint btn-tint-violet"
             >
               Hubble UI <ExternalLink size={14} />
             </a>
@@ -692,7 +692,7 @@ export function FleetStudio({ refreshKey, forcedTab }: { refreshKey?: number; fo
               href={integrations.packetwolf_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/50"
+              className="btn-tint btn-tint-primary"
             >
               PacketWolf <ExternalLink size={14} />
             </a>

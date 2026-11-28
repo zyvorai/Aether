@@ -209,10 +209,10 @@ function SLAPage({ refreshKey }: { refreshKey?: number } = {}) {
 
       {workloads.length > 0 && (
         <section className="mb-10">
-        <div className="flex flex-wrap gap-x-10 gap-y-4">
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{slaConfiguredCount}</div>With SLA</div>
-          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="text-left text-sm text-muted hover:text-foreground" data-testid="sla-breach-stat">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{complianceGapCount}</div>Compliance gaps
+        <div className="stat-ribbon">
+          <div className="stat-item"><div className="stat-number text-foreground">{slaConfiguredCount}</div>With SLA</div>
+          <Link to={pathWithQuery(viewToPath('events'), { category: 'sla' })} className="stat-item stat-item-button text-[13px] text-muted" data-testid="sla-breach-stat">
+            <div className="stat-number text-foreground">{complianceGapCount}</div>Compliance gaps
           </Link>
         </div>
         </section>

@@ -222,7 +222,7 @@ export default function CommandCenterBriefing({ onNavigate, refreshKey = 0, clus
           <div className="min-w-0 flex-1 text-sm text-warning">
             <span className="font-medium">Predicted capacity risk — </span>
             {topCapacity.summary}
-            <span className="text-warning/80"> · {topCapacity.days_remaining} days</span>
+            <span className="text-warning"> · {topCapacity.days_remaining} days</span>
           </div>
           <button
             type="button"

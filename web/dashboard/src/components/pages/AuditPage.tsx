@@ -257,24 +257,24 @@ function AuditPage({ refreshKey }: { refreshKey?: number } = {}) {
         </Link>
       </div>
 
-      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="text-left text-sm text-muted hover:text-foreground">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.total_events}</div>Total events
+      <section className="stat-ribbon mb-6">
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); setSearch(''); }} className="stat-item stat-item-button text-[13px] text-muted">
+          <div className="stat-number text-foreground">{audit.summary.total_events}</div>Total events
         </button>
-        <button type="button" onClick={() => setResultFilter('success')} className="text-left text-sm text-muted hover:text-foreground">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.successes}</div>Successes
+        <button type="button" onClick={() => setResultFilter('success')} className="stat-item stat-item-button text-[13px] text-muted">
+          <div className="stat-number text-foreground">{audit.summary.successes}</div>Successes
         </button>
-        <button type="button" onClick={() => setResultFilter('failure')} className="text-left text-sm text-muted hover:text-foreground">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.failures}</div>Failures
+        <button type="button" onClick={() => setResultFilter('failure')} className="stat-item stat-item-button text-[13px] text-muted">
+          <div className="stat-number text-foreground">{audit.summary.failures}</div>Failures
         </button>
-        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); }} className="text-left text-sm text-muted hover:text-foreground">
-          <div className="text-2xl font-semibold tabular-nums text-foreground">{audit.summary.unique_workloads}</div>Workloads
+        <button type="button" onClick={() => { setResultFilter(''); setWorkloadFilter(''); }} className="stat-item stat-item-button text-[13px] text-muted">
+          <div className="stat-number text-foreground">{audit.summary.unique_workloads}</div>Workloads
         </button>
         {verify ? (
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{verify.verified}</div>Verified</div>
+          <div className="stat-item"><div className="stat-number text-foreground">{verify.verified}</div>Verified</div>
         ) : null}
         {verify ? (
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{verify.tampered}</div>Tampered</div>
+          <div className="stat-item"><div className="stat-number text-foreground">{verify.tampered}</div>Tampered</div>
         ) : null}
       </section>
 

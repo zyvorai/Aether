@@ -85,7 +85,7 @@ export default function CostIntelligencePanel() {
             type="button"
             onClick={() => void enforceBudget(true)}
             disabled={applying}
-            className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning hover:border-warning/50 disabled:opacity-60"
+            className="btn-tint btn-tint-warning"
             data-testid="intent-budget-enforce"
           >
             Enforce budget
@@ -94,7 +94,7 @@ export default function CostIntelligencePanel() {
             type="button"
             onClick={() => void applyPatches(true)}
             disabled={applying || !(report?.recommendations.length ?? 0)}
-            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success hover:border-success/50 disabled:opacity-60"
+            className="btn-tint btn-tint-success"
             data-testid="cost-apply-dry-run"
           >
             Dry-run right-size

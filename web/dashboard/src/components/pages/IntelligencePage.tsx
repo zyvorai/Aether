@@ -243,21 +243,21 @@ export function IntelligenceStudio({ refreshKey, forcedTab }: { refreshKey?: num
 
       {!forcedTab ? (
       <section className="mb-10 space-y-8">
-        <div className="flex flex-wrap gap-x-10 gap-y-4">
-          <div className="text-sm text-muted">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}</div>
+        <div className="stat-ribbon">
+          <div className="stat-item">
+            <div className="stat-number text-foreground">{predictions ? formatPercent(predictions.fleet_risk_score, 1) : '—'}</div>
             Fleet risk
           </div>
-          <div className="text-sm text-muted">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{threats?.threats.length ?? 0}</div>
+          <div className="stat-item">
+            <div className="stat-number text-foreground">{threats?.threats.length ?? 0}</div>
             Threats
           </div>
-          <div className="text-sm text-muted">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}</div>
+          <div className="stat-item">
+            <div className="stat-number text-foreground">{cost ? `${cost.total_potential_savings_pct.toFixed(1)}%` : '—'}</div>
             Cost saves
           </div>
-          <div className="text-sm text-muted">
-            <div className="text-2xl font-semibold tabular-nums text-foreground">{evolution?.workloads.length ?? 0}</div>
+          <div className="stat-item">
+            <div className="stat-number text-foreground">{evolution?.workloads.length ?? 0}</div>
             Evolution
           </div>
         </div>

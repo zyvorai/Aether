@@ -251,11 +251,11 @@ export function MetricsStudio({ refreshKey, forcedSection }: { refreshKey?: numb
             title="Platform metrics"
             description="API traffic, migrations, and cluster resource signals"
           />
-        <div className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.api_http_requests_total)}</div>API requests</div>
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.migrations_total)}</div>Migrations</div>
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{Math.round(summary.migration_rollbacks_total)}</div>Rollbacks</div>
-          <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{summary.cluster_metrics ? `${summary.cluster_metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
+        <div className="stat-ribbon mb-6">
+          <div className="stat-item"><div className="stat-number text-foreground">{Math.round(summary.api_http_requests_total)}</div>API requests</div>
+          <div className="stat-item"><div className="stat-number text-foreground">{Math.round(summary.migrations_total)}</div>Migrations</div>
+          <div className="stat-item"><div className="stat-number text-foreground">{Math.round(summary.migration_rollbacks_total)}</div>Rollbacks</div>
+          <div className="stat-item"><div className="stat-number text-foreground">{summary.cluster_metrics ? `${summary.cluster_metrics.total_cpu_millicores}m` : '—'}</div>Cluster CPU</div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -420,7 +420,7 @@ export function MetricsStudio({ refreshKey, forcedSection }: { refreshKey?: numb
                 href={grafanaUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary/10"
+                className="btn-tint btn-tint-primary"
               >
                 Open Grafana <ExternalLink size={14} />
               </a>

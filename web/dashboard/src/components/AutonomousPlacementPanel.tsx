@@ -68,7 +68,7 @@ export default function AutonomousPlacementPanel() {
             type="button"
             onClick={() => void runEvolution(true)}
             disabled={executing}
-            className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success hover:border-success/50 disabled:opacity-60"
+            className="btn-tint btn-tint-success"
             data-testid="evolution-dry-run"
           >
             Dry-run evolution
