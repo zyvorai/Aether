@@ -27,12 +27,12 @@ test.describe('AI Infrastructure OS smoke', () => {
   });
 
   test('knowledge graph on fabric page', async ({ page }) => {
-    await page.goto('/fabric');
+    await page.goto('/fabric/knowledge-graph');
     await expect(page.getByTestId('knowledge-graph-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('runtime advisor default on AI studio', async ({ page }) => {
-    await page.goto('/ai');
+    await page.goto('/ai/advisor');
     await expect(page.getByTestId('runtime-advisor-panel')).toBeVisible({ timeout: 15_000 });
   });
 });

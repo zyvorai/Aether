@@ -79,14 +79,14 @@ test.describe('AI Infrastructure OS v10 — Knowledge & Graph', () => {
         }),
       }),
     );
-    await page.goto('/labs');
+    await page.goto('/labs/knowledge-graph');
     await expect(page.getByTestId('knowledge-graph-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('graph-edge-filters')).toBeVisible();
     await expect(page.getByTestId('interactive-graph-canvas')).toBeVisible();
   });
 
   test('graph platform panel', async ({ page }) => {
-    await page.goto('/labs');
+    await page.goto('/labs/graph-platform');
     await expect(page.getByTestId('graph-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('graph-impact-panel')).toBeVisible();
   });

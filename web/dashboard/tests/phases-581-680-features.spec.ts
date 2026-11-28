@@ -49,7 +49,7 @@ test.describe('Phases 581–680 features', () => {
         }),
       }),
     );
-    await page.goto('/metrics');
+    await page.goto('/metrics/observability');
     await expect(page.getByTestId('metrics-observability-panel')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -83,7 +83,7 @@ test.describe('Phases 581–680 features', () => {
     await page.route('**/api/server', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }) }),
     );
-    await page.goto('/clusters');
+    await page.goto('/clusters/browse');
     await expect(page.getByTestId('clusters-resource-table')).toBeVisible({ timeout: 15_000 });
   });
 
@@ -163,7 +163,7 @@ test.describe('Phases 581–680 features', () => {
     await page.route('**/api/platform/recommendations', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { items: [] } }) }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/observability');
     await expect(page.getByTestId('platform-observability-panel')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -234,7 +234,7 @@ test.describe('Phases 581–680 features', () => {
     await page.route('**/api/webhooks/**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
     );
-    await page.goto('/alerts');
+    await page.goto('/alerts/rules');
     await expect(page.getByTestId('alerts-rules-panel')).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -169,7 +169,7 @@ test.describe('Phase 5 features', () => {
       }),
     );
 
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     await page.getByRole('button', { name: 'Sync now' }).click();
     const preview = page.getByTestId('gitops-diff-preview');
     await expect(preview).toBeVisible({ timeout: 10_000 });

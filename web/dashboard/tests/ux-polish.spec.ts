@@ -50,7 +50,7 @@ test.describe('Dashboard UX polish', () => {
         body: JSON.stringify({ success: false, error: 'unavailable' }),
       }),
     );
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     await expect(page.getByText('GitOps status unavailable')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
   });
@@ -159,7 +159,7 @@ test.describe('Dashboard UX polish', () => {
         body: 'unavailable',
       }),
     );
-    await page.goto('/metrics');
+    await page.goto('/metrics/summary');
     await expect(page.getByText(/Metrics unavailable|Data unavailable/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Retry' }).first()).toBeVisible();
   });

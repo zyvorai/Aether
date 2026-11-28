@@ -26,19 +26,19 @@ test.describe('Phases 2281–2330 features', () => {
   });
 
   test('phase 2286: security intelligence link', async ({ page }) => {
-    await page.goto('/security');
+    await page.goto('/security/overview');
     await expect(page.getByTestId('security-hub-context')).toBeVisible({ timeout: 15_000 });
     await followTestLink(page, 'security-context-intelligence-link', /\/intelligence/);
   });
 
   test('phase 2291: cost hosted link', async ({ page }) => {
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await expect(page.getByTestId('cost-hub-context')).toBeVisible({ timeout: 15_000 });
     await followTestLink(page, 'cost-context-hosted-link', /\/hosted/);
   });
 
   test('phase 2296: platform fleet link', async ({ page }) => {
-    await page.goto('/platform');
+    await page.goto('/platform/runtime');
     await expect(page.getByTestId('platform-hub-context')).toBeVisible({ timeout: 15_000 });
     await followTestLink(page, 'platform-context-fleet-hub-link', /\/fleet/);
   });

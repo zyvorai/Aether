@@ -137,7 +137,7 @@ test.describe('Phases 681–780 features', () => {
         body: JSON.stringify({ success: true, data: { configured: true, repo_url: 'https://example.com/r.git', branch: 'main' } }),
       }),
     );
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     await page.getByTestId('gitops-drift-link').click();
     await expect(page).toHaveURL(/\/drift/, { timeout: 10_000 });
   });
@@ -251,7 +251,7 @@ test.describe('Phases 681–780 features', () => {
     await page.route('**/api/platform/recommendations', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { items: [] } }) }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/runtime');
     await expect(page.getByTestId('platform-runtime-panel')).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -206,7 +206,7 @@ test.describe('Phases 931–980 features', () => {
     await page.route('**/api/server', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }) }),
     );
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await page.getByTestId('fleet-drift-link').click();
     await expect(page).toHaveURL(/\/drift/, { timeout: 10_000 });
   });

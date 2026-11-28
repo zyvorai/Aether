@@ -198,7 +198,7 @@ test.describe('Phases 7–36 features', () => {
       }),
     );
 
-    await page.goto('/metrics');
+    await page.goto('/metrics/prometheus');
     await expect(page.getByTestId('metrics-prom-setup-banner')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -220,7 +220,7 @@ test.describe('Phases 7–36 features', () => {
         }),
       }),
     );
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await expect(page.getByTestId('cost-fleet-chargeback')).toContainText('Fleet chargeback', { timeout: 10_000 });
   });
 

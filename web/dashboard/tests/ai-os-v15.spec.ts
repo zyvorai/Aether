@@ -63,7 +63,7 @@ test.describe('AI Infrastructure OS v15 — Platform & Ecosystem', () => {
   });
 
   test('ecosystem platform panel on platform page', async ({ page }) => {
-    await page.goto('/platform');
+    await page.goto('/platform/ecosystem');
     await expect(page.getByTestId('ecosystem-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('ecosystem-saas-panel')).toBeVisible();
     await page.getByRole('button', { name: 'Public API' }).click();

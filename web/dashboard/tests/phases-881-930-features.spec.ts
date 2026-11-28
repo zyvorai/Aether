@@ -72,7 +72,7 @@ test.describe('Phases 881–930 features', () => {
     await page.route('**/api/webhooks/queue', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
     );
-    await page.goto('/alerts');
+    await page.goto('/alerts/rules');
     await page.getByTestId('alerts-events-link').first().click();
     await expect(page).toHaveURL(/\/events/, { timeout: 10_000 });
   });
@@ -143,7 +143,7 @@ test.describe('Phases 881–930 features', () => {
     await page.route('**/api/cluster/cilium/status**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: null }) }),
     );
-    await page.goto('/clusters');
+    await page.goto('/clusters/browse');
     await page.getByTestId('clusters-cluster-select').selectOption('prod');
     await expect(page).toHaveURL(/cluster=prod/, { timeout: 10_000 });
   });
@@ -186,7 +186,7 @@ test.describe('Phases 881–930 features', () => {
     await page.route('**/api/cluster/cilium/status**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: null }) }),
     );
-    await page.goto('/clusters');
+    await page.goto('/clusters/browse');
     await page.getByTestId('clusters-namespace-select').selectOption('aether-system');
     await expect(page).toHaveURL(/namespace=aether-system/, { timeout: 10_000 });
   });
@@ -205,7 +205,7 @@ test.describe('Phases 881–930 features', () => {
     await page.route('**/api/server', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }) }),
     );
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await page.getByTestId('fleet-scheduler-link').click();
     await expect(page).toHaveURL(/\/scheduler/, { timeout: 10_000 });
   });

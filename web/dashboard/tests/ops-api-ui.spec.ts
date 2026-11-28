@@ -16,7 +16,7 @@ test.describe('Ops API dashboard wiring', () => {
   });
 
   test('metrics page shows prometheus query when configured', async ({ page }) => {
-    await page.goto('/metrics');
+    await page.goto('/metrics/prometheus');
     await expect(page.getByText(/prometheus metrics/i).first()).toBeVisible({ timeout: 15_000 });
   });
 
@@ -26,7 +26,7 @@ test.describe('Ops API dashboard wiring', () => {
   });
 
   test('alerts page shows webhook queue section', async ({ page }) => {
-    await page.goto('/alerts');
+    await page.goto('/alerts/queue');
     await expect(page.getByText(/webhook retry queue/i).first()).toBeVisible({ timeout: 15_000 });
   });
 });

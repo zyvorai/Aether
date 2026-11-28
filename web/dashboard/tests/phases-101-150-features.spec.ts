@@ -113,7 +113,7 @@ test.describe('Phases 101–150 features', () => {
         body: JSON.stringify({ success: true, data: { items: [] } }),
       }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/cilium');
     await page.getByTestId('platform-cilium-cluster-link').click();
     await expect(page).toHaveURL(/\/clusters.*tab=network|tab=network.*\/clusters/, { timeout: 10_000 });
   });
@@ -133,7 +133,7 @@ test.describe('Phases 101–150 features', () => {
         }),
       }),
     );
-    await page.goto('/gitops');
+    await page.goto('/gitops/sync');
     const link = page.getByTestId('gitops-repo-external-link');
     await expect(link).toBeVisible({ timeout: 10_000 });
     await expect(link).toHaveAttribute('href', 'https://github.com/example/aether-gitops');
@@ -164,7 +164,7 @@ test.describe('Phases 101–150 features', () => {
         }),
       }),
     );
-    await page.goto('/metrics');
+    await page.goto('/metrics/summary');
     await page.getByTestId('metrics-cluster-browser-link').click();
     await expect(page).toHaveURL(/\/clusters.*tab=network|tab=network.*\/clusters/, { timeout: 10_000 });
   });

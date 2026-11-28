@@ -57,7 +57,7 @@ test.describe('AI Infrastructure OS v14 — Security & Compliance', () => {
   });
 
   test('security platform panel on security page', async ({ page }) => {
-    await page.goto('/security');
+    await page.goto('/security/platform');
     await expect(page.getByTestId('security-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('security-score-panel')).toBeVisible();
     await page.getByRole('button', { name: 'Threat hunt' }).click();

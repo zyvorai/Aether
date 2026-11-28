@@ -94,7 +94,7 @@ test.describe('AI Infrastructure OS v17 — Extensions Graduation', () => {
   });
 
   test('extensions graduation panel on observability page', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/extensions');
     await expect(page.getByTestId('extensions-graduation-panel')).toBeVisible({ timeout: 15_000 });
     await page.getByRole('button', { name: 'SRE Chaos' }).click();
     await expect(page.getByTestId('extensions-chaos-panel')).toBeVisible();

@@ -206,7 +206,7 @@ test.describe('Phases 831–880 features', () => {
     await page.route('**/api/cluster/cilium/status**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: null }) }),
     );
-    await page.goto('/clusters');
+    await page.goto('/clusters/browse');
     await expect(page.getByTestId('clusters-kind-select')).toBeVisible({ timeout: 10_000 });
   });
 });
