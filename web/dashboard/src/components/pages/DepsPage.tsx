@@ -324,13 +324,13 @@ function DepsPage({ refreshKey }: { refreshKey?: number } = {}) {
       ) : (
         <>
           <section className="mb-10" data-testid="deps-stats-panel">
-            <div className="flex flex-wrap gap-x-10 gap-y-4">
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.total_workloads}</div>Workloads</div>
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.total_edges}</div>Edges</div>
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.root_workloads}</div>Root</div>
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.leaf_workloads}</div>Leaf</div>
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.max_depth}</div>Max depth</div>
-              <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{graph.stats.has_cycles ? 'Yes' : 'No'}</div>Cycles</div>
+            <div className="stat-ribbon">
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.total_workloads}</div>Workloads</div>
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.total_edges}</div>Edges</div>
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.root_workloads}</div>Root</div>
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.leaf_workloads}</div>Leaf</div>
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.max_depth}</div>Max depth</div>
+              <div className="stat-item"><div className="stat-number text-foreground">{graph.stats.has_cycles ? 'Yes' : 'No'}</div>Cycles</div>
             </div>
           </section>
 

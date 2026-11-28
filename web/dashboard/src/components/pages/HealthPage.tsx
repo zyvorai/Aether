@@ -266,7 +266,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
         ) : null}
       </WorkloadContextBanner>
       {summary && (
-        <section className="mb-10 space-y-8">
+        <section className="mb-6">
           <SectionHeader
             label="Health"
             title="Fleet status"
@@ -298,7 +298,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               data-testid="health-run-checks"
               onClick={() => void runOrchestratorAction('health-check')}
               disabled={orchBusy !== null}
-              className="rounded-xl bg-success/10 border border-success/40 px-4 py-2 text-sm text-success hover:bg-success/10 disabled:opacity-50"
+              className="btn-primary"
             >
               {orchBusy === 'health-check' ? 'Checking…' : 'Run health checks'}
             </button>
@@ -309,7 +309,8 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="glass-input"
+            className="glass-select"
+            style={{ width: 'auto', minWidth: '9rem' }}
             aria-label="Health status filter"
             data-testid="health-status-filter"
           >
@@ -324,7 +325,7 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
               type="button"
               data-testid="health-clear-filter"
               onClick={() => setStatusFilter('all')}
-              className="rounded-lg border glass-divider px-3 py-2 text-xs text-muted hover:text-primary"
+              className="btn-quiet"
             >
               Clear filter
             </button>
@@ -380,20 +381,20 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                 </button>
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="glass py-3">
-                  <div className="text-xs text-subtle mb-1">Total checks</div>
+                <div className="glass-inset-surface p-3">
+                  <div className="text-xs text-muted mb-1">Total checks</div>
                   <div className="text-lg font-semibold text-foreground">{selected.history.total_checks}</div>
                 </div>
-                <div className="glass py-3">
-                  <div className="text-xs text-subtle mb-1">Ready checks</div>
+                <div className="glass-inset-surface p-3">
+                  <div className="text-xs text-muted mb-1">Ready checks</div>
                   <div className="text-lg font-semibold text-success">{selected.history.ready_checks}</div>
                 </div>
-                <div className="glass py-3">
-                  <div className="text-xs text-subtle mb-1">Uptime</div>
+                <div className="glass-inset-surface p-3">
+                  <div className="text-xs text-muted mb-1">Uptime</div>
                   <div className="text-lg font-semibold text-foreground">{selected.history.uptime_percent.toFixed(2)}%</div>
                 </div>
-                <div className="glass py-3">
-                  <div className="text-xs text-subtle mb-1">Last state</div>
+                <div className="glass-inset-surface p-3">
+                  <div className="text-xs text-muted mb-1">Last state</div>
                   <div className="text-lg font-semibold text-foreground">{selected.history.last_state}</div>
                 </div>
               </div>
@@ -408,7 +409,8 @@ function HealthPage({ refreshKey }: { refreshKey?: number } = {}) {
                   <button
                     type="button"
                     onClick={() => void runOrchestratorAction('reset-circuit', selected.workload.name)}
-                    className="text-xs rounded-lg border border-warning/40 px-2 py-1 text-warning hover:bg-warning/10"
+                    className="btn-quiet"
+                    data-tone-action="warning"
                   >
                     Reset circuit
                   </button>

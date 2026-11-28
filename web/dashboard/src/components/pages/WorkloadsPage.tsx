@@ -4,7 +4,7 @@
 import AuroraPage from '../layout/AuroraPage';
 import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List } from 'lucide-react';
+import { Play, Square, Trash2, FileText, ClipboardCheck, Inbox, Plus, Rocket, FileCode2, Layers, Terminal, Info, Star, Download, LayoutGrid, List, ChevronDown } from 'lucide-react';
 import { apiFetch, apiFetchSettled, apiPost, apiDelete, apiPut } from '../../utils/api';
 import { useQueryParam } from '../../utils/urlState';
 import { viewToPath } from '../../utils/dashboardRoutes';
@@ -678,7 +678,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     {
       key: 'runtime',
       header: 'Runtime',
-      width: 110,
+      width: 120,
       render: (w) => <RuntimeBadge runtime={w.runtime} />,
     },
     {
@@ -686,7 +686,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       header: 'Image',
       width: 220,
       render: (w) => (
-        <code className="block truncate rounded-sm bg-surface px-2 py-1 text-xs text-muted" title={w.image}>
+        <code className="block w-fit max-w-full truncate rounded-md bg-surface px-2 py-1 text-xs text-muted" title={w.image}>
           {w.image}
         </code>
       ),
@@ -694,14 +694,15 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     {
       key: 'status',
       header: 'Status',
-      width: 120,
+      // Wide enough for the longest runtime statuses, e.g. "deployed (kubernetes)".
+      width: 192,
       sortValue: (w) => w.status,
       render: (w) => <Badge text={w.status} variant={getStatusVariant(w.status)} />,
     },
     {
       key: 'actions',
       header: 'Actions',
-      width: 140,
+      width: 148,
       render: (w) => {
         const discovered = !isAetherManaged(w);
         const showLogs = !discovered || hasClusterLogs(w.kind);
@@ -712,24 +713,24 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <div className="flex flex-nowrap items-center gap-0.5" onClick={stop}>
             {discovered ? (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Info"><Info size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'overview')} className="icon-btn" title="Info" aria-label="Info"><Info size={14} /></button>
                 {showLogs ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="icon-btn" title="Logs" aria-label="Logs"><FileText size={14} /></button>
                 ) : null}
                 {showShell ? (
-                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Exec into pod"><Terminal size={14} /></button>
+                  <button type="button" onClick={() => openWorkloadDetail(w, 'overview', true)} className="icon-btn" title="Exec into pod" aria-label="Exec into pod"><Terminal size={14} /></button>
                 ) : showShellDenied ? (
-                  <button type="button" disabled className="cursor-not-allowed rounded-sm p-1.5 text-subtle opacity-40" title="Exec requires Operator or Admin role"><Terminal size={14} /></button>
+                  <button type="button" disabled className="icon-btn" title="Exec requires Operator or Admin role" aria-label="Exec requires Operator or Admin role"><Terminal size={14} /></button>
                 ) : null}
               </>
             ) : (
               <>
-                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Logs"><FileText size={14} /></button>
+                <button type="button" onClick={() => openWorkloadDetail(w, 'logs')} className="icon-btn" title="Logs" aria-label="Logs"><FileText size={14} /></button>
                 {canMutate ? (
                   <>
-                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Start"><Play size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-foreground" title="Stop"><Square size={14} /></button>
-                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="rounded-sm p-1.5 text-subtle hover:bg-hover hover:text-danger" title="Delete"><Trash2 size={14} /></button>
+                    <button type="button" onClick={() => handleAction(w.name, 'start')} disabled={actionLoading === `${w.name}-start`} className="icon-btn" title="Start" aria-label="Start"><Play size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'stop', name: w.name })} disabled={actionLoading === `${w.name}-stop`} className="icon-btn" title="Stop" aria-label="Stop"><Square size={14} /></button>
+                    <button type="button" onClick={() => setConfirmAction({ type: 'delete', name: w.name })} disabled={actionLoading === `${w.name}-delete`} className="icon-btn" data-tone-action="danger" title="Delete" aria-label="Delete"><Trash2 size={14} /></button>
                   </>
                 ) : null}
               </>
@@ -785,10 +786,10 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               type="button"
               data-testid="workloads-export-csv"
               onClick={exportFilteredCsv}
-              className="btn-secondary inline-flex items-center gap-2"
+              className="btn-quiet"
               title="Export filtered workloads as CSV"
             >
-              <Download size={16} />
+              <Download size={14} />
               Export CSV
             </button>
             {canMutate ? (
@@ -806,9 +807,9 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
               type="button"
               data-testid="workloads-validate-button"
               onClick={() => setValidateModal(true)}
-              className="btn-secondary inline-flex items-center gap-2"
+              className="btn-quiet"
             >
-              <ClipboardCheck size={16} />
+              <ClipboardCheck size={14} />
               Validate
             </button>
           </>
@@ -819,8 +820,11 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
 
       <div className="min-w-0" data-testid="workloads-list-column">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-      <details className="min-w-0 flex-1 basis-52 pt-1.5 open:basis-full" data-testid="workloads-more-filters">
-        <summary className="cursor-pointer text-sm text-muted hover:text-foreground">More filters</summary>
+      <details className="disclosure min-w-0 flex-1 basis-52 open:basis-full" data-testid="workloads-more-filters">
+        <summary className="btn-quiet">
+          More filters
+          <ChevronDown size={14} aria-hidden />
+        </summary>
         <div className="mt-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5" data-testid="workloads-kind-chips">
@@ -834,14 +838,14 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 key={kind}
                 type="button"
                 onClick={() => setKindFilter(kind)}
-                className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+                className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
                   active
                     ? 'bg-primary/10 text-primary border border-primary/40'
-                    : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
+                    : 'bg-surface-elevated text-muted border border-border hover:text-foreground'
                 }`}
               >
                 {kind === 'all' ? 'All' : kind}
-                <span className="ml-1 opacity-70">{count}</span>
+                <span className="ml-1 tabular-nums">{count}</span>
               </button>
             );
           })}
@@ -875,7 +879,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 >
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${categoricalDotClass(namespace)}`} aria-hidden />
                   {namespace}
-                  <span className="opacity-70">{count}</span>
+                  <span className="tabular-nums">{count}</span>
                 </button>
               );
             })
@@ -892,11 +896,8 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         <button
           type="button"
           onClick={() => setPinnedOnly((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-            pinnedOnly
-              ? 'bg-primary/10 text-primary border border-primary/40'
-              : 'glass-inset-surface text-muted border glass-divider hover:text-foreground'
-          }`}
+          className="btn-quiet !min-h-10"
+          aria-pressed={pinnedOnly}
           title="Show pinned workloads only"
           data-testid="workloads-pinned-filter"
         >
@@ -907,11 +908,12 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
         </div>
       </details>
 
-      <div className="ml-auto flex w-fit items-center gap-1 rounded-xl border glass-divider p-1" data-testid="workloads-view-toggle">
+      <div className="segmented ml-auto" role="group" aria-label="Layout" data-testid="workloads-view-toggle">
           <button
             type="button"
             onClick={() => setViewModePersist('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'cards' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
+            className="segmented-item"
+            aria-pressed={viewMode === 'cards'}
             title="Card view"
           >
             <LayoutGrid size={14} />
@@ -920,7 +922,8 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
           <button
             type="button"
             onClick={() => setViewModePersist('table')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] ${viewMode === 'table' ? 'bg-primary/10 text-primary' : 'text-muted hover:text-foreground'}`}
+            className="segmented-item"
+            aria-pressed={viewMode === 'table'}
             title="Table view"
           >
             <List size={14} />
@@ -986,11 +989,11 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       ) : null}
 
       {selectedNames.size > 0 && canMutate && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3" data-testid="workloads-bulk-bar">
-          <span className="text-sm text-muted">{selectedNames.size} selected</span>
-          <button type="button" onClick={() => void bulkAction('start')} className="px-3 py-1.5 text-sm rounded-lg bg-success-fill text-white hover:brightness-110">Start all</button>
-          <button type="button" onClick={() => void bulkAction('stop')} className="px-3 py-1.5 text-sm rounded-lg bg-warning-fill text-white hover:brightness-110">Stop all</button>
-          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="px-3 py-1.5 text-sm rounded-lg bg-danger-fill text-white hover:brightness-110">Delete all</button>
+        <div className="glass-alert-info mb-4 flex flex-wrap items-center gap-2" data-testid="workloads-bulk-bar">
+          <span className="mr-2 text-sm font-semibold text-foreground">{selectedNames.size} selected</span>
+          <button type="button" onClick={() => void bulkAction('start')} className="rounded-full bg-success-fill px-3.5 py-1.5 text-sm font-medium text-white hover:brightness-110">Start all</button>
+          <button type="button" onClick={() => void bulkAction('stop')} className="rounded-full bg-warning-fill px-3.5 py-1.5 text-sm font-medium text-white hover:brightness-110">Stop all</button>
+          <button type="button" onClick={() => setBulkConfirmDelete(true)} className="rounded-full bg-danger-fill px-3.5 py-1.5 text-sm font-medium text-white hover:brightness-110">Delete all</button>
           <button type="button" onClick={() => setSelectedNames(new Set())} className="px-3 py-1.5 text-sm text-muted hover:text-foreground">Clear</button>
         </div>
       )}
@@ -1064,7 +1067,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
       ) : (
         <div data-testid="workloads-table">
           {canMutate && filteredWorkloads.some((w) => isAetherManaged(w)) ? (
-            <div className="mb-2 flex items-center gap-2 text-[11.5px] text-subtle">
+            <label className="mb-2 flex w-fit items-center gap-2 pl-5 text-xs text-muted">
               <input
                 type="checkbox"
                 aria-label="Select all"
@@ -1075,7 +1078,7 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
                 }}
               />
               Select all
-            </div>
+            </label>
           ) : null}
           <DataTable<WorkloadResponse>
             items={displayWorkloads}

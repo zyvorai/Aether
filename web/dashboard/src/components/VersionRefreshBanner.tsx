@@ -69,13 +69,13 @@ export default function VersionRefreshBanner() {
       >
         Reload to update
       </button>
-      <span className="ml-2 hidden sm:inline text-xs text-warning/80 font-mono">
+      <span className="ml-2 hidden sm:inline text-xs text-warning font-mono">
         server {remoteBuild.slice(0, 19)} · local {localBuild.slice(0, 19)}
       </span>
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-1 text-warning/80 hover:text-foreground"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-1 text-warning hover:text-foreground"
         aria-label="Dismiss update notice"
       >
         <X className="h-4 w-4" />

@@ -48,14 +48,24 @@
   --selected: rgba(0, 0, 0, 0.065);
   --scrim: rgba(0, 0, 0, 0.32);
 
-  /* Elevation */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
-  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08);
-  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.16);
-  --card-edge: rgba(0, 0, 0, 0.05);
+  /* Elevation: a hairline, a contact shadow and a wide soft one. */
+  --shadow-card: 0 1px 2px rgba(17, 19, 28, 0.04), 0 8px 24px -8px rgba(17, 19, 28, 0.09);
+  --shadow-raised: 0 2px 6px rgba(17, 19, 28, 0.05), 0 18px 44px -12px rgba(17, 19, 28, 0.17);
+  --shadow-overlay: 0 8px 24px rgba(17, 19, 28, 0.12), 0 32px 72px -8px rgba(17, 19, 28, 0.24);
+  --shadow-control: 0 1px 2px rgba(17, 19, 28, 0.07);
+  --card-edge: rgba(17, 19, 28, 0.065);
+  --card-highlight: rgba(255, 255, 255, 0);
+
+  /* Ambient colour behind the page: decoration only, never carries meaning. */
+  --wash-a: rgba(0, 113, 227, 0.075);
+  --wash-b: rgba(122, 69, 214, 0.055);
+  --wash-c: rgba(10, 150, 140, 0.04);
+
+  /* Recessed track behind segmented controls and meters. */
+  --track: rgba(17, 19, 28, 0.055);
 
   /* Translucent chrome (navigation bar, menus, dialog backdrop) */
-  --nav-bg: rgba(251, 251, 253, 0.8);
+  --nav-bg: rgba(250, 250, 252, 0.74);
   --nav-border: rgba(0, 0, 0, 0.1);
   --material-bg: rgba(255, 255, 255, 0.9);
   --material-blur: saturate(180%) blur(20px);
@@ -78,8 +88,12 @@
   --terminal-bg: #161617;
   --terminal-fg: #f5f5f7;
 
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-spring: cubic-bezier(0.32, 1.25, 0.5, 1);
+
   /* Shape */
-  --radius-card: 18px;
+  --radius-card: 20px;
   --radius-liquid: 12px;
   --radius-liquid-lg: 14px;
   --radius-pill: 980px;
@@ -95,8 +109,8 @@
   --tracking-hero: -0.028em;
 
   /* Layout */
-  --nav-h: 52px;
-  --content-max-width: 76rem;
+  --nav-h: 54px;
+  --content-max-width: 84rem;
   --section-gap: 3.5rem;
 
   /* Tones: one per destination or category (icons, dots, chart series). */
@@ -114,6 +128,19 @@
   --tone-pink-tint: color-mix(in srgb, var(--tone-pink) 10%, transparent);
   --tone-teal-tint: color-mix(in srgb, var(--tone-teal) 10%, transparent);
   --tone-rust-tint: color-mix(in srgb, var(--tone-rust) 10%, transparent);
+
+  --tone-slate: #5f6b7d;
+  --tone-slate-tint: color-mix(in srgb, var(--tone-slate) 11%, transparent);
+
+  /* Icon tiles: gradients dark enough for a white glyph (3:1) in both themes. */
+  --tile-sky: linear-gradient(160deg, #2b8cff, #0058c4);
+  --tile-violet: linear-gradient(160deg, #9168f0, #5b32bd);
+  --tile-emerald: linear-gradient(160deg, #2a9d4e, #136b2b);
+  --tile-amber: linear-gradient(160deg, #c27c00, #8d5500);
+  --tile-pink: linear-gradient(160deg, #ee4f78, #b91847);
+  --tile-teal: linear-gradient(160deg, #12968b, #076a62);
+  --tile-rust: linear-gradient(160deg, #e5661f, #ad3f06);
+  --tile-slate: linear-gradient(160deg, #737f92, #454d5c);
 
   /* Runtime identity, aliased onto tones. */
   --rt-podman: var(--tone-sky);
@@ -155,9 +182,9 @@
 }
 
 :root[data-theme='dark'] {
-  --background: #000000;
-  --surface: #2a2a2c;
-  --surface-elevated: #1d1d1f;
+  --background: #07070a;
+  --surface: #252529;
+  --surface-elevated: #17171b;
 
   --foreground: #f5f5f7;
   --muted-foreground: #b4b4b9;
@@ -184,14 +211,22 @@
   --selected: rgba(255, 255, 255, 0.11);
   --scrim: rgba(0, 0, 0, 0.6);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.55);
-  --shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.7);
-  --card-edge: rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  --shadow-raised: 0 18px 44px -10px rgba(0, 0, 0, 0.75);
+  --shadow-overlay: 0 24px 72px rgba(0, 0, 0, 0.75);
+  --shadow-control: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --card-edge: rgba(255, 255, 255, 0.085);
+  --card-highlight: rgba(255, 255, 255, 0.045);
 
-  --nav-bg: rgba(22, 22, 23, 0.8);
+  --wash-a: rgba(41, 151, 255, 0.13);
+  --wash-b: rgba(140, 100, 255, 0.1);
+  --wash-c: rgba(60, 200, 190, 0.055);
+
+  --track: rgba(255, 255, 255, 0.07);
+
+  --nav-bg: rgba(13, 13, 16, 0.74);
   --nav-border: rgba(255, 255, 255, 0.12);
-  --material-bg: rgba(36, 36, 38, 0.94);
+  --material-bg: rgba(32, 32, 37, 0.94);
 
   --code-bg: #161617;
   --code-fg: #e8e8ed;
@@ -206,7 +241,7 @@
   --code-comment: #96a096;
   --code-punct: #b8c4d0;
   --code-invalid: #ff7a73;
-  --terminal-bg: #111112;
+  --terminal-bg: #0e0e11;
 
   --tone-sky: #2997ff;
   --tone-violet: #b08bff;
@@ -215,6 +250,7 @@
   --tone-pink: #ff6482;
   --tone-teal: #63d9d0;
   --tone-rust: #ff8a4c;
+  --tone-slate: #a7b1c2;
 
   --iphone-deep-blue-rgb: 164 176 214;
   --iphone-sage-rgb: 166 196 146;

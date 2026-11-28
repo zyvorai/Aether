@@ -30,15 +30,14 @@ export default function StatCard({ title, value, color, icon, isEmpty, compact }
   return (
     <div
       className={cn(
-        'tahoe-stat-tile glass-hover-lift relative rounded-[var(--radius-md)] p-4',
+        'tahoe-stat-tile relative p-4',
         compact && 'p-3',
-        empty && 'opacity-70',
       )}
     >
       {icon ? (
-        <div className={cn('absolute right-3 top-3 opacity-80', accentMap[color])}>{icon}</div>
+        <div className={cn('absolute right-3.5 top-3.5', empty ? 'text-subtle' : accentMap[color])}>{icon}</div>
       ) : null}
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">{title}</p>
+      <p className={cn('mb-1.5 text-[0.8125rem] font-medium text-muted', icon ? 'pr-8' : '')}>{title}</p>
       <p className={cn('tahoe-stat-value', compact ? 'text-2xl' : 'text-3xl', empty ? 'text-muted' : 'text-foreground')}>
         {value}
       </p>

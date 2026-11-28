@@ -28,7 +28,7 @@ export default function PageLoading({ rows = 4, variant = 'skeleton', label, cla
   if (variant === 'spinner' || label) {
     return (
       <div className={`flex flex-col items-center justify-center gap-3 ${className ?? 'py-16'}`} role="status">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
+        <div className="spinner animate-spin" aria-hidden />
         <p className={label || slow ? 'text-sm text-subtle' : 'sr-only'}>
           {label ?? (slow ? 'Still waiting for the server…' : 'Loading…')}
         </p>

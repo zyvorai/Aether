@@ -18,6 +18,14 @@ interface CommandMetricCardProps {
   children?: ReactNode;
 }
 
+const ACCENT_TONE: Record<MetricAccent, string> = {
+  blue: 'sky',
+  purple: 'violet',
+  emerald: 'emerald',
+  amber: 'amber',
+  muted: 'slate',
+};
+
 export default function CommandMetricCard({
   label,
   value,
@@ -34,13 +42,13 @@ export default function CommandMetricCard({
     <button
       type="button"
       onClick={onClick}
-      className={`tahoe-stat-tile group w-full rounded-[var(--radius-md)] border border-border bg-surface p-4 text-left transition hover:border-primary/30 hover:shadow-card ${isEmpty ? 'border-dashed' : ''}`}
+      className="tahoe-stat-tile glass-hover-lift group w-full p-4 text-left"
       data-testid={testId}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted">
-            {icon}
+          <div className="mb-2.5 flex items-center gap-2 text-[13px] font-medium text-muted">
+            <span className="metric-chip" data-tone={ACCENT_TONE[accent]} aria-hidden>{icon}</span>
             {label}
           </div>
           <div

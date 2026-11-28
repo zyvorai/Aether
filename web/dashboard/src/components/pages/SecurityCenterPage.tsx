@@ -170,11 +170,11 @@ export function SecurityStudio({ refreshKey, forcedSection }: { refreshKey?: num
 
       {show('overview') ? (
       <>
-      <section className="mb-10 flex flex-wrap gap-x-10 gap-y-4">
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{highRiskCount}</div>High risk</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{threats?.threats.length ?? 0}</div>Threats</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{secrets.length}</div>Secrets</div>
-        <div className="text-sm text-muted"><div className="text-2xl font-semibold tabular-nums text-foreground">{rotationNeeded.length}</div>Need rotation</div>
+      <section className="stat-ribbon mb-6">
+        <div className="stat-item"><div className="stat-number text-foreground">{highRiskCount}</div>High risk</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{threats?.threats.length ?? 0}</div>Threats</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{secrets.length}</div>Secrets</div>
+        <div className="stat-item"><div className="stat-number text-foreground">{rotationNeeded.length}</div>Need rotation</div>
       </section>
 
       {hardening && (

@@ -534,7 +534,7 @@ function AetherDashboard() {
       case 'migrations':
         return <MigrationsPage />;
       case 'observability':
-        return <ObservabilityPage />;
+        return <ObservabilityPage refreshKey={refreshKey} />;
       case 'labs':
         return <LabsPage />;
       case 'settings':

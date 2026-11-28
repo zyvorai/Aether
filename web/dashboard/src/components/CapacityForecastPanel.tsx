@@ -142,9 +142,9 @@ export default function CapacityForecastPanel() {
                 <li key={`${risk.resource}-${risk.summary}`} className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <span className="font-medium text-warning">{risk.resource}</span>
-                    <span className="text-xs text-warning/80">{risk.days_remaining}d</span>
+                    <span className="text-xs text-warning">{risk.days_remaining}d</span>
                   </div>
-                  <p className="mt-1 text-xs text-warning/80">{risk.summary}</p>
+                  <p className="mt-1 text-xs text-warning">{risk.summary}</p>
                 </li>
               ))}
             </ul>

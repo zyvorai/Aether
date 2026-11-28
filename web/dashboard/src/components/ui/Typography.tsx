@@ -16,7 +16,7 @@ export function PageTitle({ children, className, as: Tag = 'h1', id }: Typograph
   return <Tag id={id} className={cn('text-[clamp(1.75rem,3vw,2.125rem)] font-semibold leading-tight tracking-[var(--tracking-display)]', className)}>{children}</Tag>;
 }
 export function SectionTitle({ children, className, as: Tag = 'h2', id }: TypographyProps) {
-  return <Tag id={id} className={cn('text-[clamp(1.5rem,2.5vw,1.75rem)] font-semibold text-foreground tracking-[var(--tracking-display)]', className)}>{children}</Tag>;
+  return <Tag id={id} className={cn('text-[clamp(1.1875rem,2vw,1.375rem)] font-semibold text-foreground tracking-[var(--tracking-display)]', className)}>{children}</Tag>;
 }
 export function SubsectionTitle({ children, className, as: Tag = 'h3', id }: TypographyProps) {
   return <Tag id={id} className={cn('text-body-lg font-semibold text-foreground', className)}>{children}</Tag>;

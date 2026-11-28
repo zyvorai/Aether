@@ -70,7 +70,7 @@ export default function GlassSection({
               {subtitle ? <p className="mt-1 max-w-2xl text-sm text-muted">{subtitle}</p> : null}
             </div>
           </div>
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
         </CardHeader>
       ) : null}
       <CardBody className={variant === 'panel' && !hasHeader ? 'p-0' : undefined}>{children}</CardBody>

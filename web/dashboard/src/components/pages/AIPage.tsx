@@ -477,17 +477,17 @@ export function AIStudio({ refreshKey, forcedTab }: { refreshKey?: number; force
       ) : null}
       {!forcedTab ? (
         <section className="mb-10 space-y-8">
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
-            <div className="text-sm text-muted">
-              <div className="text-2xl font-semibold tabular-nums text-foreground">{workloads.length}</div>
+          <div className="stat-ribbon">
+            <div className="stat-item">
+              <div className="stat-number text-foreground">{workloads.length}</div>
               Workloads
             </div>
-            <div className="text-sm text-muted">
-              <div className="text-2xl font-semibold tabular-nums text-foreground">{runningCount}</div>
+            <div className="stat-item">
+              <div className="stat-number text-foreground">{runningCount}</div>
               Running
             </div>
-            <div className="text-sm text-muted">
-              <div className="text-2xl font-semibold tabular-nums text-foreground">{workloads.length - runningCount}</div>
+            <div className="stat-item">
+              <div className="stat-number text-foreground">{workloads.length - runningCount}</div>
               Stopped / other
             </div>
             <div className="text-sm text-muted min-w-0">

@@ -25,14 +25,15 @@ export default function FilterChips({ chips, active, onSelect, testId, className
             key={chip.id}
             type="button"
             onClick={() => onSelect(chip.id)}
-            className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
+            aria-pressed={isActive}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               isActive
                 ? 'border border-primary/40 bg-primary/10 text-primary'
-                : 'glass-inset-surface border glass-divider text-muted hover:text-foreground'
+                : 'border border-border bg-surface-elevated text-muted hover:text-foreground'
             }`}
           >
             {chip.label}
-            {chip.count !== undefined ? <span className="ml-1 opacity-70">{chip.count}</span> : null}
+            {chip.count !== undefined ? <span className="ml-1 tabular-nums">{chip.count}</span> : null}
           </button>
         );
       })}
