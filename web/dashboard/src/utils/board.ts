@@ -126,7 +126,14 @@ function plural(n: number, one: string, many = `${one}s`): string {
  * One sentence for the whole fleet. It only says everything is ready when every
  * workload has a recent ready check and every record could be read.
  */
-export function verdict(tiles: BoardTile[], unavailable: string[]): Verdict {
+export function verdict(tiles: BoardTile[], unavailable: string[], offline = false): Verdict {
+  const now = currentVerdict(tiles, unavailable);
+  if (!offline) return now;
+  // Without a connection this describes the past, so it must not look all clear.
+  return { ...now, tone: now.tone === 'bad' ? 'bad' : 'warn', title: `Last known: ${now.title}` };
+}
+
+function currentVerdict(tiles: BoardTile[], unavailable: string[]): Verdict {
   if (tiles.length === 0) return { tone: 'unknown', title: 'No managed workloads', detail: 'Nothing is being watched.' };
   const failing = tiles.filter((t) => tileTone(t) === 'bad').length;
   const blind = tiles.filter((t) => !hasOpenIncident(t) && ['unreadable', 'unknown', 'stale', 'no_data'].includes(t.state)).length;
@@ -155,7 +162,7 @@ export function verdict(tiles: BoardTile[], unavailable: string[]): Verdict {
   }
   return {
     tone: 'ok',
-    title: stopped > 0 ? `${plural(ready, 'workload')} ready` : `All ${plural(ready, 'workload')} ready`,
+    title: stopped > 0 || ready === 1 ? `${plural(ready, 'workload')} ready` : `All ${ready} workloads ready`,
     detail: stopped > 0 ? `${stopped} stopped on purpose` : 'At the last check, with no open incident',
   };
 }

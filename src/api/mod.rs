@@ -929,11 +929,6 @@ fn env_secs_or_off(name: &str, default: u64) -> u64 {
         .unwrap_or(default)
 }
 
-/// Seconds between health observations (`AETHER_OBSERVE_SECS`, `0` is off).
-fn observe_interval_secs() -> u64 {
-    env_secs_or_off("AETHER_OBSERVE_SECS", 60)
-}
-
 async fn run_observation_loop(every_secs: u64, app_state: AppState) {
     tracing::info!("health observation: every {every_secs}s");
     let mut tick = tokio::time::interval(std::time::Duration::from_secs(every_secs));
@@ -1050,7 +1045,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
 
     // Record every workload's status so health history, incidents and
     // availability fill in while `serve` runs. AETHER_OBSERVE_SECS=0 turns it off.
-    let observe_secs = observe_interval_secs();
+    let observe_secs = env_secs_or_off("AETHER_OBSERVE_SECS", 60);
     if observe_secs > 0 {
         let app = app_state.clone();
         tokio::spawn(async move {
@@ -2135,6 +2130,10 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/workloads/{name}/explain", get(api_explain))
         .route("/api/workloads/{name}/preview", post(api_preview))
         .route("/api/board", get(board_handlers::api_board))
+        .route(
+            "/api/workloads/{name}/timeline",
+            get(board_handlers::api_timeline),
+        )
         .route("/api/changes", get(api_changes))
         .route("/api/attention", get(api_attention))
         .route("/api/ops-report", get(api_ops_report))

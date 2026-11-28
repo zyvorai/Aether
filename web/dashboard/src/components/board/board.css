@@ -79,6 +79,12 @@
 .board-tile-meta span { display: inline-flex; align-items: center; gap: 0.3rem; }
 .board-tile-meta svg { width: 0.8rem; height: 0.8rem; }
 .board-tile-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; border-top: 1px solid var(--border); padding-top: 0.5rem; }
+.board-action {
+  display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2rem; padding: 0.25rem 0.7rem; cursor: pointer;
+  border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 500; color: var(--primary);
+}
+.board-action:hover, .board-action[aria-pressed='true'] { background: var(--accent-tint); }
+.board-action svg { width: 0.85rem; height: 0.85rem; }
 
 /* ---- Uptime strip: colour plus shape, so it reads without colour ---- */
 .uptime-strip { display: flex; gap: 2px; height: 1.75rem; }
@@ -131,4 +137,45 @@ body.board-wall-open .drawer-root { z-index: 52; }
 }
 @media (prefers-reduced-motion: reduce) {
   .board-link[data-link='live'] .board-link-dot { animation: none; }
+}
+
+/* ---- Workload drawer and timeline ---- */
+.board-drawer { padding-bottom: 1rem; }
+.board-timeline { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
+.board-timeline [data-tone='bad'] { --tone: var(--danger); }
+.board-timeline [data-tone='warn'] { --tone: var(--warning); }
+.board-timeline [data-tone='idle'] { --tone: var(--tone-violet); }
+.board-timeline [data-tone='unknown'] { --tone: var(--subtle); }
+.board-timeline [data-tone='info'] { --tone: var(--primary); }
+.timeline-filters { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.timeline-filter {
+  display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2rem; padding: 0.25rem 0.75rem; cursor: pointer;
+  border-radius: var(--radius-pill); border: 1px solid var(--border); font-size: 0.8rem; color: var(--muted-foreground);
+}
+.timeline-filter span { font-family: var(--mono); font-size: 0.72rem; color: var(--subtle); }
+.timeline-filter[aria-pressed='true'] { background: var(--foreground); border-color: var(--foreground); color: var(--background); }
+.timeline-filter[aria-pressed='true'] span { color: inherit; opacity: 0.75; }
+.timeline-coverage { font-size: 0.82rem; color: var(--muted-foreground); }
+.timeline-day { margin: 0.35rem 0 0.4rem; font-size: 0.72rem; font-weight: 650; text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); color: var(--subtle); }
+.timeline-list { position: relative; }
+.timeline-entry { position: relative; display: grid; grid-template-columns: 0.9rem 4.4rem minmax(0, 1fr); gap: 0 0.5rem; padding-bottom: 0.8rem; }
+/* The rail joining the entries of a day. */
+.timeline-entry::before { content: ''; position: absolute; left: calc(0.45rem - 1px); top: 0.9rem; bottom: -0.15rem; width: 2px; background: var(--border); }
+.timeline-entry:last-child::before { display: none; }
+.timeline-dot { width: 0.7rem; height: 0.7rem; margin: 0.3rem 0 0 0.1rem; border-radius: 50%; background: var(--tone); }
+/* A gap in the checks is a hollow marker beside a dashed rail. */
+.timeline-entry[data-tone='unknown'] .timeline-dot { background: var(--surface-elevated); border: 2px dashed var(--tone); }
+.timeline-entry[data-kind='checks-gap']::before { background: repeating-linear-gradient(to bottom, var(--border-strong) 0 4px, transparent 4px 8px); }
+.timeline-time { font-family: var(--mono); font-size: 0.72rem; line-height: 1.4rem; color: var(--subtle); }
+.timeline-body { min-width: 0; overflow-wrap: anywhere; }
+.timeline-title { font-size: 0.88rem; font-weight: 600; color: var(--foreground); }
+.timeline-category { margin-right: 0.45rem; padding: 0.05rem 0.4rem; border-radius: 0.35rem; background: var(--hover); font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted-foreground); vertical-align: 0.1em; }
+.timeline-detail { font-size: 0.8rem; color: var(--muted-foreground); }
+.timeline-fields { font-family: var(--mono); font-size: 0.72rem; color: var(--subtle); }
+.timeline-link { display: inline-block; margin-top: 0.15rem; border-radius: 4px; font-size: 0.8rem; color: var(--primary); cursor: pointer; text-align: left; }
+.timeline-link:hover { text-decoration: underline; }
+@media (max-width: 480px) {
+  .timeline-entry { grid-template-columns: 0.9rem minmax(0, 1fr); }
+  .timeline-time { grid-column: 2; line-height: 1.1rem; }
+  .timeline-body { grid-column: 2; }
 }

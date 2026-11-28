@@ -23,6 +23,7 @@ pub mod report;
 pub mod revisions;
 pub mod rollback;
 pub mod store;
+pub mod timeline;
 
 use std::path::PathBuf;
 use std::sync::OnceLock;

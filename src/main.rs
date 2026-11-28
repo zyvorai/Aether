@@ -6,6 +6,7 @@
 mod cli;
 mod commands;
 mod operator_commands;
+mod timeline_command;
 
 use aether::state::StateStore;
 use anyhow::Result;
@@ -262,6 +263,12 @@ async fn main() -> Result<()> {
             limit,
         } => operator_commands::changes_command(&since, workload, limit),
         Commands::Incidents { action } => operator_commands::incidents_command(action),
+        Commands::Timeline {
+            name,
+            since,
+            only,
+            limit,
+        } => timeline_command::timeline_command(&name, &since, only.as_deref(), limit),
         Commands::Attention => operator_commands::attention_command(),
         Commands::OpsReport { since, format, out } => {
             operator_commands::ops_report_command(&since, &format, out.as_deref())

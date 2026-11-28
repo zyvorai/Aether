@@ -121,6 +121,11 @@ describe('status board', () => {
     expect(verdict([], []).tone).toBe('unknown');
   });
 
+  it('does not look all clear while the server cannot be reached', () => {
+    expect(verdict([tile('a')], [], true)).toMatchObject({ tone: 'warn', title: 'Last known: 1 workload ready' });
+    expect(verdict([tile('a', { state: 'not_ready' })], [], true).tone).toBe('bad');
+  });
+
   it('describes cells without calling missing data healthy', () => {
     expect(cellTitle(cell({ state: 'no_data', checks: 0, ready: 0, covered: 0 }), 3600)).toContain('no checks recorded');
     const gappy = cell({ covered: 0.25 });

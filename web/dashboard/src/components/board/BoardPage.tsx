@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Activity, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
+import { Activity, History, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiPost } from '../../utils/api';
 import {
@@ -19,6 +19,7 @@ import {
   type BoardFilter,
 } from '../../utils/board';
 import { friendlyError } from '../../utils/operator';
+import { formatOnly, parseOnly, parseRange } from '../../utils/timeline';
 import EmptyState from '../EmptyState';
 import PageLoadError from '../PageLoadError';
 import PageLoading from '../PageLoading';
@@ -29,6 +30,7 @@ import StatusTile, { ToneIcon } from './StatusTile';
 import { StripLegend } from './UptimeStrip';
 import { useBoard } from './useBoard';
 import WallScreen, { enterFullscreen } from './WallScreen';
+import WorkloadDrawer from './WorkloadDrawer';
 import './board.css';
 
 const FILTER_LABELS: Record<BoardFilter, string> = {
@@ -49,6 +51,7 @@ function BoardPage({ refreshKey, paused = false }: { refreshKey?: number; paused
   const window_ = parseWindow(params.get('window') ?? '');
   const filter = parseFilter(params.get('show') ?? '');
   const wall = params.get('wall') === '1';
+  const selected = params.get('workload') ?? '';
   const board = useBoard(window_, refreshKey, paused);
   const { canMutate } = useAuth();
   const [checking, setChecking] = useState(false);
@@ -73,6 +76,10 @@ function BoardPage({ refreshKey, paused = false }: { refreshKey?: number; paused
     [board.data, board.fetchedAt, board.now],
   );
 
+  function open(name: string) {
+    set({ workload: name });
+  }
+
   async function checkNow() {
     setChecking(true);
     setCheckError(null);
@@ -90,7 +97,7 @@ function BoardPage({ refreshKey, paused = false }: { refreshKey?: number; paused
   }
 
   const data = board.data;
-  const summary = verdict(tiles, data.unavailable);
+  const summary = verdict(tiles, data.unavailable, board.error !== null);
   const counts = filterCounts(tiles);
   const shown = tiles.filter((t) => matchesFilter(t, filter));
   const windowLabel = BOARD_WINDOWS.find((w) => w.key === window_)?.label ?? window_;
@@ -185,7 +192,20 @@ function BoardPage({ refreshKey, paused = false }: { refreshKey?: number; paused
     ) : (
       <div className="board-grid" data-testid="board-grid">
         {shown.map((tile) => (
-          <StatusTile key={tile.name} tile={tile} bucketSecs={data.bucket_secs} windowLabel={windowLabel} now={board.now} />
+          <StatusTile
+            key={tile.name}
+            tile={tile}
+            bucketSecs={data.bucket_secs}
+            windowLabel={windowLabel}
+            now={board.now}
+            onOpen={open}
+            footer={
+              <button type="button" className="board-action focus-ring" onClick={() => open(tile.name)} aria-label={`Timeline of ${tile.name}`}>
+                <History aria-hidden />
+                Timeline
+              </button>
+            }
+          />
         ))}
       </div>
     );
@@ -200,18 +220,44 @@ function BoardPage({ refreshKey, paused = false }: { refreshKey?: number; paused
     </div>
   );
 
+  const index = shown.findIndex((t) => t.name === selected);
+  const drawer = selected ? (
+    <WorkloadDrawer
+      name={selected}
+      tile={tiles.find((t) => t.name === selected)}
+      bucketSecs={data.bucket_secs}
+      windowLabel={windowLabel}
+      now={board.now}
+      refreshKey={board.fetchedAt}
+      range={parseRange(params.get('since') ?? '')}
+      only={parseOnly(params.get('only') ?? '')}
+      onRange={(since) => set({ since: since === '24h' ? '' : since })}
+      onOnly={(only) => set({ only: formatOnly(only) })}
+      onClose={() => set({ workload: '', since: '', only: '' })}
+      stepper={index < 0 ? undefined : { index, count: shown.length, onStep: (delta) => shown[index + delta] && open(shown[index + delta].name) }}
+    />
+  ) : null;
+
   if (wall) {
     return (
-      <WallScreen onExit={() => set({ wall: '' })}>
-        <header className="board-wall-head">
-          <h2>Aether status</h2>
-          <time dateTime={new Date(board.now).toISOString()}>{clock(board.now)}</time>
-        </header>
-        {content}
-      </WallScreen>
+      <>
+        <WallScreen covered={drawer !== null} onExit={() => set({ wall: '' })}>
+          <header className="board-wall-head">
+            <h2>Aether status</h2>
+            <time dateTime={new Date(board.now).toISOString()}>{clock(board.now)}</time>
+          </header>
+          {content}
+        </WallScreen>
+        {drawer}
+      </>
     );
   }
-  return content;
+  return (
+    <>
+      {content}
+      {drawer}
+    </>
+  );
 }
 
 export default withAuroraPage('board', BoardPage);

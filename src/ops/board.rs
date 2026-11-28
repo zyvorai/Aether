@@ -35,6 +35,15 @@ pub fn stale_after_secs(observe_secs: u64) -> i64 {
         .clamp(MIN_STALE_SECS, 7 * 86_400)
 }
 
+/// How often `aether serve` checks workloads: `AETHER_OBSERVE_SECS`, 60 when
+/// unset, `0` when observation is off.
+pub fn observe_secs_from_env() -> u64 {
+    std::env::var("AETHER_OBSERVE_SECS")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(60)
+}
+
 /// Where the cells of an uptime strip come from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {

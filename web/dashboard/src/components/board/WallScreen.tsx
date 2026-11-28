@@ -16,7 +16,7 @@ export function enterFullscreen() {
  * Covers the whole window for a shared monitor, keeps the screen awake where the
  * browser allows it, and leaves on Escape.
  */
-export default function WallScreen({ onExit, children }: { onExit: () => void; children: ReactNode }) {
+export default function WallScreen({ onExit, covered, children }: { onExit: () => void; covered: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const exit = useRef(onExit);
   exit.current = onExit;
@@ -72,7 +72,18 @@ export default function WallScreen({ onExit, children }: { onExit: () => void; c
   }, []);
 
   return createPortal(
-    <div ref={ref} className="board-wall" role="dialog" aria-modal="true" aria-label="Status wall" tabIndex={-1} data-testid="board-wall">
+    // A drawer opened from the wall is then the modal dialog: it ignores keys while
+    // another element claims to be modal.
+    <div
+      ref={ref}
+      className="board-wall"
+      role="dialog"
+      aria-modal={covered ? undefined : true}
+      aria-label="Status wall"
+      inert={covered}
+      tabIndex={-1}
+      data-testid="board-wall"
+    >
       {children}
     </div>,
     document.body,
