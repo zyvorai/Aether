@@ -25,6 +25,7 @@ import StatRibbon from '../StatRibbon';
 import SegmentedControl from '../ui/SegmentedControl';
 import { categoricalDotClass } from '../../utils/categoricalColor';
 import DataTable, { type DataTableColumn } from '../ui/DataTable';
+import { bulkSummary } from '../../utils/bulkResult';
 import { countByCondition, needsAttention, statusVariant, workloadCondition } from '../../utils/workloadStatus';
 import Modal from '../Modal';
 import Drawer from '../ui/Drawer';
@@ -457,12 +458,15 @@ function WorkloadsPage({ initialSelectedName, onClearInitialSelection, refreshKe
     });
     if (names.length === 0) return;
     setActionLoading(`bulk-${action}`);
+    const outcomes = [];
     for (const name of names) {
-      await apiPost(`/workloads/${name}/${action}`);
+      const res = await apiPost(`/workloads/${name}/${action}`);
+      outcomes.push({ name, success: res.success, error: res.error });
     }
     setActionLoading(null);
     setSelectedNames(new Set());
-    toast(`Bulk ${action} completed for ${names.length} workload(s)`, 'success');
+    const summary = bulkSummary(action, outcomes);
+    toast(summary.message, summary.type);
     load();
   }
 

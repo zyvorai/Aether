@@ -11,6 +11,7 @@ import { viewToPath } from '../utils/dashboardRoutes';
 import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
 import { statusVariant } from '../utils/workloadStatus';
+import { expectSuccess } from '../utils/workloadActions';
 import {
   pickExecPodName,
   pickExecReadyPodName,
@@ -651,12 +652,8 @@ export default function WorkloadDetail({
     setActionLoading(action);
     try {
       if (isAetherManaged) {
-        if (action === 'stop') await apiPost(`/workloads/${workload.name}/stop`);
-        else if (action === 'start') await apiPost(`/workloads/${workload.name}/start`);
-        else if (action === 'restart') {
-          await apiPost(`/workloads/${workload.name}/restart`);
-        }         else if (action === 'rollback') {
-          await apiPost(`/workloads/${workload.name}/rollback`, {});
+        if (action === 'stop' || action === 'start' || action === 'restart' || action === 'rollback') {
+          expectSuccess(await apiPost(`/workloads/${workload.name}/${action}`, {}), action);
         } else if (action === 'build') {
           const res = await apiPost<{ full_name?: string; message?: string }>(`/workloads/${workload.name}/build`);
           if (res.success) {
@@ -665,7 +662,9 @@ export default function WorkloadDetail({
             setBuildResult(res.error ?? 'Build failed');
           }
         } else if (action === 'delete') {
-          await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          const res = await apiDelete(`/workloads/${workload.name}`, { label: `Delete workload "${workload.name}"` });
+          if (res.error === 'cancelled') return;
+          expectSuccess(res, action);
           onClose();
         }
       } else if (workload.cluster && workload.namespace && workload.kind) {
@@ -683,7 +682,7 @@ export default function WorkloadDetail({
           replicas: Number.isFinite(scaleReplicas) ? scaleReplicas : undefined,
         });
         if (!response.success) {
-          throw new Error(response.error ?? `cluster action ${action} failed`);
+          expectSuccess(response, action);
         }
         if (action === 'scale' && typeof scaleReplicas === 'number' && Number.isFinite(scaleReplicas)) {
           setReplicasInput(String(scaleReplicas));
@@ -704,7 +703,8 @@ export default function WorkloadDetail({
         }
       }
     } catch (e) {
-      console.error(`Action ${action} failed:`, e);
+      toast(e instanceof Error ? e.message : `${action} failed`, 'error');
+      onAction();
     } finally {
       setActionLoading('');
     }
