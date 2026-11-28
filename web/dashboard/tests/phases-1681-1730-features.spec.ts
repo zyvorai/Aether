@@ -30,7 +30,7 @@ test.describe('Phases 1681–1730 features', () => {
     await page.goto('/cost?workload=web');
     await expect(page.getByTestId('cost-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('cost-workload-context').getByTestId('cost-metrics-link').click();
-    await expect(page).toHaveURL(/\/metrics\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/metrics\/prometheus\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1686: scheduler workload context cost link', async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe('Phases 1681–1730 features', () => {
     await page.goto('/scheduler?workload=web');
     await expect(page.getByTestId('scheduler-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('scheduler-context-cost-link').click();
-    await expect(page).toHaveURL(/\/cost\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/cost\/estimate\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1691: plugins editor link from workload filter', async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe('Phases 1681–1730 features', () => {
     await expect(page.getByTestId('platform-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('platform-links-more').click();
     await page.getByTestId('platform-clusters-link').click();
-    await expect(page).toHaveURL(/\/clusters\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/clusters\/browse\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1698: clusters platform cross-link', async ({ page }) => {
@@ -96,7 +96,7 @@ test.describe('Phases 1681–1730 features', () => {
     await page.goto('/clusters?workload=web');
     await expect(page.getByTestId('clusters-workload-context')).toContainText('web', { timeout: 15_000 });
     await page.getByTestId('clusters-platform-link').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1700: overview platform link', async ({ page }) => {
@@ -120,6 +120,6 @@ test.describe('Phases 1681–1730 features', () => {
     await page.goto('/ai?workload=web');
     await expect(page.getByTestId('ai-workload-context')).toContainText('web', { timeout: 15_000 });
     await page.getByTestId('ai-context-intelligence-link').click();
-    await expect(page).toHaveURL(/\/intelligence\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/intelligence\/predictions\?workload=web/, { timeout: 10_000 });
   });
 });

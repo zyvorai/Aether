@@ -86,7 +86,7 @@ network:
     await dialog.getByTestId('workloads-deploy-submit').click({ force: true });
     await expect(dialog.getByTestId('deploy-success-panel')).toBeVisible({ timeout: 15_000 });
     await dialog.getByTestId('deploy-success-intelligence-link').click();
-    await expect(page).toHaveURL(new RegExp(`/intelligence\\?workload=${unique}`), { timeout: 10_000 });
+    await expect(page).toHaveURL(new RegExp(`/intelligence/predictions\\?workload=${unique}`), { timeout: 10_000 });
   });
 
   test('phase 1394: workload events tab health link', async ({ page }) => {
@@ -185,7 +185,7 @@ network:
     await dialog.getByTestId('workloads-deploy-submit').click({ force: true });
     await expect(dialog.getByTestId('deploy-success-panel')).toBeVisible({ timeout: 15_000 });
     await dialog.getByTestId('deploy-success-gitops-link').click();
-    await expect(page).toHaveURL(new RegExp(`/gitops\\?workload=${unique}`), { timeout: 10_000 });
+    await expect(page).toHaveURL(new RegExp(`/gitops/sync\\?workload=${unique}`), { timeout: 10_000 });
   });
 
   test('phase 1417: compose workload context banner', async ({ page }) => {

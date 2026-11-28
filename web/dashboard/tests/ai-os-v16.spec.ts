@@ -104,7 +104,7 @@ test.describe('AI Infrastructure OS v16 — Lab Graduation', () => {
   });
 
   test('labs graduation panel on labs page', async ({ page }) => {
-    await page.goto('/labs');
+    await page.goto('/labs/graduation');
     await expect(page.getByTestId('labs-graduation-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('labs-overview-panel')).toBeVisible();
     await page.getByRole('button', { name: 'Terraform' }).click();

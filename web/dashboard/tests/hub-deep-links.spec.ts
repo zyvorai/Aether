@@ -27,7 +27,7 @@ test.describe('Links that carry filters', () => {
 
   test('the command palette reaches the sub-page', async ({ page }) => {
     await page.goto('/events');
-    await page.keyboard.press('ControlOrMeta+k');
+    await page.getByRole('button', { name: 'Search pages, workloads and actions' }).click();
     await page.getByPlaceholder('Search pages, workloads, and actions…').fill('intent infrastructure pipeline');
     await page.getByRole('button', { name: 'Run intent to infrastructure pipeline' }).click();
     await expect(page).toHaveURL(/\/ai\/pipeline\?tab=pipeline$/);

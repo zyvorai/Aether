@@ -81,7 +81,7 @@ test.describe('AI Infrastructure OS v18 — Production & Trust', () => {
   });
 
   test('production trust panel on platform page', async ({ page }) => {
-    await page.goto('/platform');
+    await page.goto('/platform/trust');
     await expect(page.getByTestId('production-trust-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('production-scorecard-panel')).toBeVisible();
     await page.getByTestId('production-trust-panel').getByRole('button', { name: 'Auth' }).click();

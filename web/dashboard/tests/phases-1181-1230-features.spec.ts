@@ -32,7 +32,7 @@ test.describe('Phases 1181–1230 features', () => {
     });
     await page.goto('/events?workload=web');
     await page.getByTestId('events-alerts-link').first().click();
-    await expect(page).toHaveURL(/\/alerts\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/alerts\/rules\?workload=web/, { timeout: 10_000 });
   });
 
 

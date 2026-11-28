@@ -25,12 +25,12 @@ test.describe('Phases 2231–2280 features', () => {
   });
 
   test('phase 2236: intelligence orchestrator link', async ({ page }) => {
-    await page.goto('/intelligence');
+    await page.goto('/intelligence/predictions');
     await followTestLink(page, 'intelligence-context-orchestrator-link', /\/health-monitor/);
   });
 
   test('phase 2241: fleet intelligence link', async ({ page }) => {
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await followTestLink(page, 'fleet-context-intelligence-link', /\/intelligence/);
   });
 

@@ -64,14 +64,14 @@ test.describe('Fleet edge and federation tabs', () => {
 
   test('edge sites tab shows agent health', async ({ page }) => {
     await page.goto('/fleet?tab=edge');
-    await expect(page.getByTestId('fleet-edge-tab')).toBeVisible();
+    await expect(page.getByTestId('section-tabs').getByRole('link', { name: 'Edge Fleet' })).toBeVisible();
     await expect(page.getByText('edge-lab')).toBeVisible();
     await expect(page.getByText(/queue depth/i)).toBeVisible();
   });
 
   test('placement tab shows federation plan', async ({ page }) => {
     await page.goto('/fleet?tab=placement&workload=demo');
-    await expect(page.getByTestId('fleet-placement-tab')).toBeVisible();
+    await expect(page.getByTestId('section-tabs').getByRole('link', { name: 'Fleet Placement' })).toBeVisible();
     await page.getByTestId('fleet-placement-run').click();
     await expect(page.getByText('kind-lab')).toBeVisible();
   });

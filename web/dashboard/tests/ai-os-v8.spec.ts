@@ -81,19 +81,20 @@ test.describe('AI Infrastructure OS v8 — Multi-Cloud & Federation', () => {
   });
 
   test('federation platform panel on fleet page', async ({ page }) => {
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await expect(page.getByTestId('federation-platform-panel')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('federation-execute-dry-run')).toBeVisible();
   });
 
   test('unified fabric panel on fabric page', async ({ page }) => {
-    await page.goto('/fabric');
+    await page.goto('/fabric/unified');
     await expect(page.getByTestId('unified-fabric-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('migration panels on migrations page', async ({ page }) => {
-    await page.goto('/migrations');
+    await page.goto('/migrations/replication');
     await expect(page.getByTestId('volume-replication-panel')).toBeVisible({ timeout: 15_000 });
+    await page.goto('/migrations/waves');
     await expect(page.getByTestId('migration-wave-panel')).toBeVisible();
   });
 });

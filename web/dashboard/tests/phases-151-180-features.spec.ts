@@ -59,7 +59,7 @@ test.describe('Phases 151–180 features', () => {
         body: JSON.stringify({ success: true, data: [] }),
       }),
     );
-    await page.goto('/alerts');
+    await page.goto('/alerts/channels');
     await page.getByRole('button', { name: 'Add webhook' }).click();
     await expect(page.getByTestId('alerts-add-channel-form')).toBeVisible({ timeout: 10_000 });
   });
@@ -102,7 +102,7 @@ test.describe('Phases 151–180 features', () => {
         }),
       }),
     );
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await page.getByRole('link', { name: 'api' }).click();
     await expect(page).toHaveURL(/workload=api/, { timeout: 10_000 });
   });

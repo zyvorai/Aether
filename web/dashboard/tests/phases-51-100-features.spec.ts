@@ -27,7 +27,7 @@ test.describe('Phases 51–100 features', () => {
         }),
       }),
     );
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await page.getByRole('link', { name: 'Cost optimize →' }).click();
     await expect(page).toHaveURL(/\/intelligence.*tab=cost|tab=cost.*\/intelligence/, { timeout: 10_000 });
   });
@@ -69,7 +69,7 @@ test.describe('Phases 51–100 features', () => {
       }),
     );
 
-    await page.goto('/metrics');
+    await page.goto('/metrics/chargeback');
     await page.getByRole('button', { name: 'web' }).click();
     await expect(page).toHaveURL(/workload=web/, { timeout: 10_000 });
   });
@@ -173,7 +173,7 @@ test.describe('Phases 51–100 features', () => {
         body: JSON.stringify({ success: true, data: [] }),
       }),
     );
-    await page.goto('/alerts');
+    await page.goto('/alerts/queue');
     await expect(page.getByTestId('alerts-webhook-queue')).toBeVisible({ timeout: 10_000 });
   });
 });

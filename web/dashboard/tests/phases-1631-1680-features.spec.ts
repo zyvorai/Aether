@@ -102,7 +102,7 @@ test.describe('Phases 1631–1680 features', () => {
     await page.goto('/platform?workload=web');
     await expect(page.getByTestId('breadcrumb-workload')).toHaveText('web', { timeout: 10_000 });
     await page.getByTestId('breadcrumb-workload').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1651: rbac workload context openapi link', async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe('Phases 1631–1680 features', () => {
     await page.goto('/metrics?workload=web');
     await expect(page.getByTestId('metrics-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('metrics-cost-link').click();
-    await expect(page).toHaveURL(/\/cost\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/cost\/estimate\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1666: editor gitops link from workload context', async ({ page }) => {
@@ -161,7 +161,7 @@ test.describe('Phases 1631–1680 features', () => {
     await page.goto('/editor?workload=web');
     await expect(page.getByTestId('editor-gitops-link')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('editor-gitops-link').click();
-    await expect(page).toHaveURL(/\/gitops\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/gitops\/sync\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1671: workload detail openapi quick link', async ({ page }) => {

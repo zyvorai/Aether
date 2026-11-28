@@ -63,7 +63,7 @@ test.describe('Phases 481–580 features', () => {
     await page.route('**/api/server', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { integrations: {} } }) }),
     );
-    await page.goto('/fleet');
+    await page.goto('/fleet/overview');
     await page.getByTestId('fleet-clusters-link').click();
     await expect(page).toHaveURL(/\/clusters/, { timeout: 10_000 });
   });
@@ -92,7 +92,7 @@ test.describe('Phases 481–580 features', () => {
     await page.route('**/api/webhooks/**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) }),
     );
-    await page.goto('/alerts');
+    await page.goto('/alerts/rules');
     await page.getByTestId('alerts-events-link').first().click();
     await expect(page).toHaveURL(/\/events/, { timeout: 10_000 });
   });
@@ -108,7 +108,7 @@ test.describe('Phases 481–580 features', () => {
         }),
       }),
     );
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await expect(page.getByTestId('cost-estimate-form')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -209,7 +209,7 @@ test.describe('Phases 481–580 features', () => {
         }),
       }),
     );
-    await page.goto('/affinity');
+    await page.goto('/affinity/recommend');
     await expect(page.getByTestId('affinity-recommend-panel')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -235,7 +235,7 @@ test.describe('Phases 481–580 features', () => {
     await page.route('**/api/platform/recommendations', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { items: [] } }) }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/runtime');
     await page.getByTestId('platform-audit-link').click();
     await expect(page).toHaveURL(/\/audit/, { timeout: 10_000 });
   });

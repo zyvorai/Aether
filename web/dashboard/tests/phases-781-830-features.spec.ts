@@ -112,7 +112,7 @@ test.describe('Phases 781–830 features', () => {
     await page.route('**/api/platform/recommendations', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { items: [] } }) }),
     );
-    await page.goto('/platform');
+    await page.goto('/platform/runtime');
     await page.getByTestId('platform-backups-link').click();
     await expect(page).toHaveURL(/\/backups/, { timeout: 10_000 });
   });
@@ -154,7 +154,7 @@ test.describe('Phases 781–830 features', () => {
         }),
       }),
     );
-    await page.goto('/cost');
+    await page.goto('/cost/estimate');
     await page.getByTestId('cost-scheduler-link').click();
     await expect(page).toHaveURL(/\/scheduler/, { timeout: 10_000 });
   });

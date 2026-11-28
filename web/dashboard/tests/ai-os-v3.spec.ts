@@ -30,17 +30,17 @@ test.describe('AI Infrastructure OS v3', () => {
   });
 
   test('autonomous mode panel on settings', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('/settings/autonomous');
     await expect(page.getByTestId('autonomous-mode-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('self-healing panel on observability', async ({ page }) => {
-    await page.goto('/observability');
+    await page.goto('/observability/self-healing');
     await expect(page.getByTestId('self-healing-panel')).toBeVisible({ timeout: 15_000 });
   });
 
   test('knowledge graph on labs', async ({ page }) => {
-    await page.goto('/labs');
+    await page.goto('/labs/knowledge-graph');
     await expect(page.getByTestId('knowledge-graph-panel')).toBeVisible({ timeout: 15_000 });
   });
 
