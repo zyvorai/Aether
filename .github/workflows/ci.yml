@@ -207,7 +207,7 @@ jobs:
       - name: Run observability API smoke
         run: |
           chmod +x scripts/k8s-api-smoke.sh
-          ../../target/release/aether serve --host 127.0.0.1 --port 5090 &
+          ./target/release/aether serve --host 127.0.0.1 --port 5090 &
           SERVER_PID=$!
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5090/health && break; sleep 1; done
           AETHER_API=http://127.0.0.1:5090 scripts/k8s-api-smoke.sh
