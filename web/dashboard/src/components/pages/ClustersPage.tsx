@@ -1726,7 +1726,7 @@ export function ClustersStudio({ forcedTab }: { forcedTab?: ClustersTab } = {}) 
                 </div>
                 {portForwardSession && (
                   <div data-testid="clusters-port-forward-active" className="mt-3 glass-table-row rounded-md px-3 py-2 text-sm text-muted">
-                    Active: <span className="text-success">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
+                    Active: <span className="text-success" data-testid="clusters-port-forward-url">{portForwardSession.local_url}</span> {'->'} {portForwardSession.target_kind}/{portForwardSession.target_name}:{portForwardSession.remote_port}
                   </div>
                 )}
               </div>
