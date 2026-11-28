@@ -8,7 +8,7 @@
  */
 
 import type { AppView, Event, HealthSummary, SecretSummary, WorkloadResponse } from '../types/api';
-import type { AttentionQueue } from '../types/operator';
+import type { AttentionItem as AttentionEntry, AttentionQueue } from '../types/operator';
 import { attentionTarget } from './operator';
 import { countByCondition, workloadCondition } from './workloadStatus';
 
@@ -50,10 +50,27 @@ function eventSeverity(severity: string): AttentionSeverity | null {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
+/** Which events only announce something a server queue entry already reports. */
+const ANNOUNCEMENTS: Record<string, RegExp> = {
+  'open-incident': /^incident opened$/i,
+  'failed-operation': /^(build|deploy|update|stop|delete) failed$/i,
+};
+
+function announces(event: Event, entry: AttentionEntry): boolean {
+  return event.workload === entry.workload && (ANNOUNCEMENTS[entry.kind]?.test(event.title) ?? false);
+}
+
 export function buildAttention({ workloads, events, secrets, health, operator }: AttentionSources): AttentionItem[] {
   const items: AttentionItem[] = [];
-  const open = (events ?? []).filter((event) => !event.acknowledged && eventSeverity(event.severity));
+  // Informational entries (holds, stale data) stay on the Operations Desk.
+  const recorded = (operator?.items ?? []).filter((entry) => entry.level !== 'info');
+  const allOpen = (events ?? []).filter((event) => !event.acknowledged && eventSeverity(event.severity));
+  // One problem, one row: the server's entry says more than the event that announced it.
+  const open = allOpen.filter((event) => !recorded.some((entry) => announces(event, entry)));
+  const escalates = (entry: AttentionEntry) =>
+    entry.level === 'critical' || allOpen.some((event) => announces(event, entry) && eventSeverity(event.severity) === 'critical');
   const covered = new Set<Event>();
+  const listed = new Set<AttentionEntry>();
 
   for (const workload of workloads ?? []) {
     const condition = workloadCondition(workload.status);
@@ -61,13 +78,19 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
     const related = open.filter((event) => event.workload === workload.name);
     related.forEach((event) => covered.add(event));
     const latest = related[0];
+    const known = recorded.filter((entry) => entry.workload === workload.name);
+    known.forEach((entry) => listed.add(entry));
+    const detail = [
+      ...known.map((entry) => `${entry.title}: ${entry.detail}`),
+      ...(latest
+        ? [`${latest.title}: ${latest.message}${related.length > 1 ? ` (+${plural(related.length - 1, 'more open event')})` : ''}`]
+        : []),
+    ].join('; ');
     items.push({
       id: `workload-${workload.name}`,
-      severity: condition === 'failing' ? 'critical' : 'warning',
+      severity: condition === 'failing' || known.some(escalates) ? 'critical' : 'warning',
       title: `${workload.name} is ${workload.status}`,
-      detail: latest
-        ? `${latest.title}: ${latest.message}${related.length > 1 ? ` (+${plural(related.length - 1, 'more open event')})` : ''}`
-        : (workload.status_detail ?? `${workload.runtime} workload`),
+      detail: detail || (workload.status_detail ?? `${workload.runtime} workload`),
       view: 'workloads',
       query: { workload: workload.name },
     });
@@ -117,20 +140,13 @@ export function buildAttention({ workloads, events, secrets, health, operator }:
     });
   }
 
-  // Informational entries (holds, stale data) stay on the Operations Desk. A workload already listed
-  // above keeps its one row and gains what the server knows about it.
-  for (const entry of operator?.items ?? []) {
-    if (entry.level === 'info') continue;
-    const row = items.find((item) => item.id === `workload-${entry.workload}`);
-    if (row) {
-      row.detail = `${row.detail}; ${entry.title}`;
-      if (entry.level === 'critical') row.severity = 'critical';
-      continue;
-    }
+  // What the server recorded about workloads that have no row of their own yet.
+  for (const entry of recorded) {
+    if (listed.has(entry)) continue;
     const target = attentionTarget(entry);
     items.push({
       id: `operator-${entry.kind}-${entry.workload ?? ''}-${entry.title}`,
-      severity: entry.level,
+      severity: escalates(entry) ? 'critical' : 'warning',
       title: entry.workload ? `${entry.workload}: ${entry.title}` : entry.title,
       detail: entry.detail,
       view: target ? 'operations' : 'audit',
