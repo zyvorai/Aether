@@ -2038,6 +2038,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/api/sla/{workload}", get(api_sla_check))
         .route("/api/events", get(api_events_list))
         .route("/api/events/summary", get(api_events_summary))
+        .route("/api/events/{id}/acknowledge", post(api_event_acknowledge))
         .route(
             "/api/platform/recommendations",
             get(api_platform_recommendations),

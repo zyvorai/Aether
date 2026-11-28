@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Events can be acknowledged: `POST /api/events/{id}/acknowledge` (Operator or Admin) and a button on the Events page, which already showed unacknowledged counts.
+
 ### Fixed: stop, then start or restart, on Podman and Docker
 - Start and Restart failed with `name "<workload>" is already in use`, because a stopped container keeps its name (API, CLI `restart` and `run`, self-healing, snapshot rollback). The stopped container Aether created is now renamed aside, removed once its replacement runs, and restored if it does not. A running container, or one Aether did not create, is never moved.
 - A failed `update` on Podman or Docker removed the old container first and could leave nothing. The old container is now kept and started again.

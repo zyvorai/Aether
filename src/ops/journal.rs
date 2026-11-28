@@ -111,6 +111,11 @@ pub fn publish(dir: &Path, events: Vec<Event>) -> Result<()> {
     Ok(())
 }
 
+/// Mark one event as seen. `false` when there is no event with that id.
+pub fn acknowledge_event(dir: &Path, id: u64) -> Result<bool> {
+    store::update(&events_path(dir), |bus: &mut EventBus| bus.acknowledge(id))
+}
+
 /// Record the outcome of a runtime migration as one entry, beside the
 /// individual stop, deploy and delete it is made of.
 pub fn record_migration(

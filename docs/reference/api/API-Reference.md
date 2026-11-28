@@ -891,6 +891,16 @@ curl http://localhost:5090/api/events
 
 ---
 
+### POST `/api/events/:id/acknowledge` -- Acknowledge an Event
+
+Marks one event as seen. Requires the Operator or Admin role; unknown IDs return 404.
+
+```bash
+curl -X POST http://localhost:5090/api/events/1/acknowledge
+```
+
+---
+
 ### GET `/api/events/summary` -- Event Summary
 
 ```bash

@@ -367,6 +367,7 @@ export interface HealthHistorySummary {
 
 // ─── Events ──────────────────────────────────────────────────────────
 export interface Event {
+  id: number;
   timestamp: string;
   severity: string;
   category: string;

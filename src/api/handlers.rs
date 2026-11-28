@@ -2959,6 +2959,15 @@ pub(crate) async fn api_events_summary() -> impl IntoResponse {
     }
 }
 
+/// POST /api/events/{id}/acknowledge - Mark an event as seen (Operator or Admin)
+pub(crate) async fn api_event_acknowledge(Path(id): Path<u64>) -> impl IntoResponse {
+    match crate::ops::journal::acknowledge_event(&crate::ops::data_dir(), id) {
+        Ok(true) => ok_json(format!("Event {id} acknowledged")),
+        Ok(false) => err_not_found(format!("Event {id} not found")),
+        Err(e) => err_internal(e),
+    }
+}
+
 /// GET /api/cluster/summary - Native kubeconfig-backed cluster summary
 pub(crate) async fn api_cluster_summary() -> impl IntoResponse {
     ok_json(crate::kubecluster::cluster_summary().await)
