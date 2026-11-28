@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The workload panel's Spec tab shows the last applied revision of a managed workload, with secret values redacted.
 - Events can be acknowledged: `POST /api/events/{id}/acknowledge` (Operator or Admin) and a button on the Events page, which already showed unacknowledged counts.
 
 ### Fixed: stop, then start or restart, on Podman and Docker

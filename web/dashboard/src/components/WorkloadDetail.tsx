@@ -12,6 +12,7 @@ import { pathWithQuery } from '../utils/urlState';
 import { applicationLabel, isK8sApplication, workspaceLabel } from '../utils/k8sUx';
 import { statusVariant } from '../utils/workloadStatus';
 import { expectSuccess } from '../utils/workloadActions';
+import AppliedSpec from './AppliedSpec';
 import {
   pickExecPodName,
   pickExecReadyPodName,
@@ -1811,7 +1812,7 @@ export default function WorkloadDetail({
         {activeTab === 'manifest' && (
           <div className="space-y-4">
             {isAetherManaged ? (
-              <p className="text-subtle">Manifest inspection is currently available for Kubernetes resources discovered directly from the cluster.</p>
+              <AppliedSpec name={workload.name} />
             ) : !clusterDetail ? (
               <p className="text-subtle">Loading Kubernetes resource details...</p>
             ) : (
