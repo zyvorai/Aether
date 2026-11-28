@@ -131,6 +131,11 @@ pub fn show_help() {
                     "aether incidents show 1".into()
                 ],
                 vec![
+                    "timeline <name>".into(),
+                    "One workload's history".into(),
+                    "aether timeline my-app --only health,incidents".into()
+                ],
+                vec![
                     "explain <name>".into(),
                     "Why it runs where it does".into(),
                     "aether explain my-app".into()

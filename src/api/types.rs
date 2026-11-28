@@ -48,6 +48,8 @@ pub enum ServerEvent {
     EventEmitted { message: String, severity: String },
     /// Health status update
     HealthUpdate { workload: String, status: String },
+    /// A round of health checks was recorded
+    ObservationRound { observed: usize, errors: usize },
     /// Migration progress for live activity cards
     MigrationProgress {
         workload: String,

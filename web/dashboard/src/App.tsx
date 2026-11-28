@@ -150,6 +150,7 @@ import AlertsChannelsPage from './components/pages/AlertsChannelsPage';
 import AlertsRulesPage from './components/pages/AlertsRulesPage';
 import AlertsTestPage from './components/pages/AlertsTestPage';
 import AlertsQueuePage from './components/pages/AlertsQueuePage';
+import BoardPage from './components/board/BoardPage';
 
 function AetherDashboard() {
   const navigate = useNavigate();
@@ -733,6 +734,8 @@ function AetherDashboard() {
         return <ObsAutonomousSrePage />;
       case 'obs-extensions':
         return <ObsExtensionsPage />;
+      case 'board':
+        return <BoardPage refreshKey={refreshKey} paused={live.paused} />;
       case 'operations':
         return <OperationsPage refreshKey={refreshKey} />;
       case 'obs-reliability':

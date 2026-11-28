@@ -530,6 +530,21 @@ pub(crate) enum Commands {
         limit: usize,
     },
 
+    /// One workload's changes, health transitions, incidents, notes and holds
+    Timeline {
+        /// Workload name
+        name: String,
+        /// Window: 30m, 24h, 7d, or an RFC 3339 time
+        #[arg(long, default_value = "24h")]
+        since: String,
+        /// Only these: changes, health, incidents, notes, holds (comma separated)
+        #[arg(long, value_name = "KINDS")]
+        only: Option<String>,
+        /// Most entries to show
+        #[arg(long, default_value_t = 100)]
+        limit: usize,
+    },
+
     /// Incidents detected from health checks (list, show, acknowledge, annotate)
     Incidents {
         #[command(subcommand)]
@@ -1204,6 +1219,7 @@ impl Commands {
             Self::History { .. } => "history",
             Self::Preview { .. } => "preview",
             Self::Changes { .. } => "changes",
+            Self::Timeline { .. } => "timeline",
             Self::Incidents { .. } => "incidents",
             Self::Attention => "attention",
             Self::OpsReport { .. } => "ops-report",

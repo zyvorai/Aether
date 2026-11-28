@@ -7,6 +7,7 @@
 //! Supports optional API key authentication via AETHER_API_KEY environment variable.
 //! Supports optional HTTPS via --tls-cert and --tls-key flags.
 
+mod board_handlers;
 mod ecosystem_handlers;
 mod fleet_handlers;
 mod handlers;
@@ -940,6 +941,14 @@ async fn run_observation_loop(every_secs: u64, app_state: AppState) {
         let workloads: Vec<_> = store.list().into_iter().cloned().collect();
         match crate::ops::incidents::collect(&crate::ops::data_dir(), &workloads, None).await {
             Ok(report) => {
+                // New checks were recorded: live views reload from the records.
+                let round = types::ServerEvent::ObservationRound {
+                    observed: report.observed,
+                    errors: report.errors.len(),
+                };
+                if let Ok(json) = serde_json::to_string(&round) {
+                    let _ = app_state.event_tx.send(json);
+                }
                 if !report.opened.is_empty() || !report.resolved.is_empty() {
                     let event = types::ServerEvent::HealthUpdate {
                         workload: "fleet".to_string(),
@@ -2121,6 +2130,11 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         )
         .route("/api/workloads/{name}/explain", get(api_explain))
         .route("/api/workloads/{name}/preview", post(api_preview))
+        .route("/api/board", get(board_handlers::api_board))
+        .route(
+            "/api/workloads/{name}/timeline",
+            get(board_handlers::api_timeline),
+        )
         .route("/api/changes", get(api_changes))
         .route("/api/attention", get(api_attention))
         .route("/api/ops-report", get(api_ops_report))

@@ -749,6 +749,7 @@ export interface ForgeNode {
 export type AppView =
   | 'overview'
   | 'operations'
+  | 'board'
   | 'fabric'
   | 'migrations'
   | 'observability'

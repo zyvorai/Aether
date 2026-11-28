@@ -32,7 +32,7 @@ interface NavSectionDefinition {
 }
 
 export const NAV_SECTIONS: NavSectionDefinition[] = [
-  { id: 'workspace', label: 'Workspace', views: ['overview', 'operations', 'workloads', 'applications', 'fabric'] },
+  { id: 'workspace', label: 'Workspace', views: ['overview', 'board', 'operations', 'workloads', 'applications', 'fabric'] },
   { id: 'build', label: 'Build and deploy', views: ['editor', 'compose', 'templates', 'helm', 'gitops', 'migrations', 'envs', 'plugins'] },
   { id: 'observe', label: 'Observe', views: ['observability', 'health', 'events', 'alerts', 'metrics', 'activity', 'sla'] },
   { id: 'infrastructure', label: 'Infrastructure', views: ['clusters', 'fleet', 'scheduler', 'deps', 'forge', 'storage', 'backups'] },
