@@ -493,7 +493,7 @@ aether list
 | REST API and web dashboard | [Web UI Guide](../reference/WEBUI.md) |
 | Security and secrets | [Security Guide](../features/security.md) |
 | CI/CD integration | [CI/CD Guide](../guides/operations/CICD.md) |
-| Full documentation index | [Documentation Index](../index.md) |
+| Full documentation index | [Documentation Index](../documentation.md) |
 | Documentation hub | [README](https://github.com/zyvorai/Aether/blob/main/docs/README.md) |
 
 ---

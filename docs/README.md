@@ -10,13 +10,13 @@ Universal runtime portability — deploy once, run on Podman, Kubernetes, or Kub
 |------|----------|
 | Install | [Getting started — Installation](getting-started/01-Installation.md) |
 | Quick start | [Getting started — Quick Start](getting-started/02-Quick-Start.md) |
-| Container image (GHCR, private; request access at sales@zyvor.dev) | `ghcr.io/zyvorai/aether` — see [Installation § Container](getting-started/01-Installation.md#-option-4-container-image) and [README](https://github.com/zyvorai/Aether/blob/main/README.md#run-from-ghcr-container) |
+| Container image (GHCR, private; request access at sales@zyvor.dev) | `ghcr.io/zyvorai/aether` — see [Installation § Container](getting-started/01-Installation.md#option-4-container-image) and [Project reference](reference/PROJECT-REFERENCE.md#run-from-the-container-image) |
 | User guide (feature map) | [User Guide](user-guide/aether-user-guide.md) · [PDF](user-guide/aether-user-guide.pdf) |
 | Dashboard manual | [User guide hub](user-guide/README.md) |
 | Product overview | [PRODUCT.md](PRODUCT.md) |
 | Ecosystem | [ECOSYSTEM.md](ECOSYSTEM.md) |
 | Migration internals | [MIGRATION-INTERNALS](guides/migration/MIGRATION-INTERNALS.md) |
-| Full index | [index.md](index.md) |
+| Full index | [documentation.md](documentation.md) |
 | User journeys | [USER_STORIES.md](USER_STORIES.md) |
 
 ## By topic

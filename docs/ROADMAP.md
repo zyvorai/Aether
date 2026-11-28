@@ -357,4 +357,4 @@ Update this file when items graduate to Ship.
 
 - [Deployment topologies](architecture/DEPLOYMENT-TOPOLOGIES.md) — HA / hybrid layouts
 - [Enterprise security](guides/security/ENTERPRISE-SECURITY.md) — OIDC / SAML / RBAC
-- [Trust Layer guides](index.md#trust-and-proof)
+- [Trust Layer guides](documentation.md#trust-and-proof)

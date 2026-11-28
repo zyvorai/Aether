@@ -1,0 +1,385 @@
+{#-
+  Copyright 2026 ZyvorAI Labs Private Limited
+  SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
+
+  The product home page, used by docs/index.md (template: landing.html). It is
+  a complete document and does not extend the MkDocs theme, so it loads two
+  stylesheets, its own pictures and nothing from another origin.
+
+  Every statement here has to be checkable against the repository. When the
+  behaviour changes, change the sentence. Pictures: docs/assets/marketing/.
+-#}
+{%- set repo = config.repo_url -%}
+{%- set trial = "mailto:sales@zyvor.dev?subject=Aether%2030-day%20trial" -%}
+
+{#- A themed picture: a phone capture on narrow screens, if there is one. -#}
+{%- macro shot(wide, width, height, alt, phone=none, phone_w=0, phone_h=0, small=false, theme=none, eager=false) -%}
+<picture>
+  {%- if phone %}
+  {%- if theme != "dark" %}
+  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="{{ ('assets/marketing/' ~ phone ~ '-dark.webp') | url }}" width="{{ phone_w }}" height="{{ phone_h }}">
+  <source media="(max-width: 640px)" srcset="{{ ('assets/marketing/' ~ phone ~ '-light.webp') | url }}" width="{{ phone_w }}" height="{{ phone_h }}">
+  {%- else %}
+  <source media="(max-width: 640px)" srcset="{{ ('assets/marketing/' ~ phone ~ '-dark.webp') | url }}" width="{{ phone_w }}" height="{{ phone_h }}">
+  {%- endif %}
+  {%- endif %}
+  {%- if theme != "dark" %}
+  <source media="(prefers-color-scheme: dark)" {% if small %}srcset="{{ ('assets/marketing/' ~ wide ~ '-dark-1000.webp') | url }} 1000w, {{ ('assets/marketing/' ~ wide ~ '-dark.webp') | url }} 2000w" sizes="(max-width: 1180px) 94vw, 1120px"{% else %}srcset="{{ ('assets/marketing/' ~ wide ~ '-dark.webp') | url }}"{% endif %} width="{{ width }}" height="{{ height }}">
+  {%- endif %}
+  <img src="{{ ('assets/marketing/' ~ wide ~ '-' ~ (theme or 'light') ~ '.webp') | url }}"
+    {%- if small %} srcset="{{ ('assets/marketing/' ~ wide ~ '-' ~ (theme or 'light') ~ '-1000.webp') | url }} 1000w, {{ ('assets/marketing/' ~ wide ~ '-' ~ (theme or 'light') ~ '.webp') | url }} 2000w" sizes="(max-width: 1180px) 94vw, 1120px"{% endif %}
+    width="{{ width }}" height="{{ height }}" alt="{{ alt }}" {% if eager %}fetchpriority="high"{% else %}loading="lazy" decoding="async"{% endif %}>
+</picture>
+{%- endmacro -%}
+
+{%- macro cell(kind, note="") -%}
+{%- set labels = {"ok": "● Yes", "part": "◐ Partly", "no": "○ Ignored"} -%}
+<td><span class="s-{{ kind }}">{{ labels[kind] }}</span>{% if note %}<small>{{ note }}</small>{% endif %}</td>
+{%- endmacro -%}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Aether: one workload spec for Podman, Kubernetes and KubeVirt</title>
+  <meta name="description" content="{{ page.meta.description }}">
+  {%- if page.canonical_url %}
+  <link rel="canonical" href="{{ page.canonical_url }}">
+  <meta property="og:url" content="{{ page.canonical_url }}">
+  {%- endif %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Aether">
+  <meta property="og:title" content="Aether: one spec, three runtimes">
+  <meta property="og:description" content="{{ page.meta.description }}">
+  <meta property="og:image" content="{{ config.site_url }}assets/social-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="{{ 'assets/brand/favicon.ico' | url }}" sizes="32x32">
+  <link rel="icon" href="{{ 'assets/brand/favicon.svg' | url }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ 'assets/brand/apple-touch-icon.png' | url }}">
+  <link rel="stylesheet" href="{{ 'stylesheets/apple-glass.css' | url }}">
+  <link rel="stylesheet" href="{{ 'stylesheets/landing.css' | url }}">
+  <script>
+    /* The documentation index used to live here. Send its old anchors on. */
+    if (location.hash.length > 1 && location.hash.indexOf('#lp-') !== 0) {
+      location.replace('{{ "documentation/" | url }}' + location.hash);
+    }
+  </script>
+</head>
+<body class="lp">
+  <a class="lp-skip" href="#lp-main">Skip to content</a>
+
+  <header class="lp-nav">
+    <nav class="lp-wrap lp-nav-row" aria-label="Main">
+      <a class="lp-brand" href="#lp-main" aria-label="Aether, top of page">
+        <img src="{{ 'assets/brand/aether-icon.svg' | url }}" alt="" width="28" height="28">
+        <svg viewBox="0 -40 580 144" aria-hidden="true" focusable="false">
+          <g fill-rule="evenodd">
+            <path d="M0 50a51 51 0 1 0 102 0a51 51 0 1 0 -102 0ZM19 50a32 34 0 1 1 64 0a32 34 0 1 1 -64 0Z"/>
+            <path d="M83 0H102V100H83Z"/>
+            <path d="M210.189 81.399A51 51 0 1 1 220.517 57H138.686A32 34 0 0 0 195.78 70.142ZM139.415 40A32 34 0 0 1 200.585 40Z"/>
+            <path d="M242 -24H261V0H285V17H261V66A15 17 0 0 0 276 83H287V100H276A34 34 0 0 1 242 66V17H230V0H242Z"/>
+            <path d="M302 -40H321V100H302Z"/>
+            <path d="M302 44A45 45 0 0 1 392 44V100H373V44A26 28 0 0 0 321 44V100H302Z"/>
+            <path d="M498.189 81.399A51 51 0 1 1 508.517 57H426.686A32 34 0 0 0 483.78 70.142ZM427.415 40A32 34 0 0 1 488.585 40Z"/>
+            <path d="M524 0H543V100H524Z"/>
+            <path d="M524 45A46 46 0 0 1 570 -1H580V16H570A27 29 0 0 0 543 45V100H524Z"/>
+          </g>
+        </svg>
+      </a>
+      <ul>
+        <li class="lp-wide"><a href="#lp-runtimes">Runtimes</a></li>
+        <li class="lp-wide"><a href="#lp-move">Migrate</a></li>
+        <li class="lp-wide"><a href="#lp-operate">Operate</a></li>
+        <li><a href="{{ 'documentation/' | url }}">Docs</a></li>
+        <li><a href="{{ repo }}">GitHub</a></li>
+        <li><a class="lp-btn" href="{{ 'getting-started/02-Quick-Start/' | url }}">Get started</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="lp-main">
+
+    <section class="lp-section lp-hero" aria-labelledby="lp-title">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow">Aether, by Zyvor</p>
+        <h1 id="lp-title">One spec. <span class="lp-grad">Three runtimes.</span></h1>
+        <p class="lp-lead">Describe a workload once. Run it on Podman, Kubernetes or KubeVirt, and move it between them.</p>
+        <div class="lp-actions">
+          <a class="lp-btn" href="{{ 'getting-started/02-Quick-Start/' | url }}">Get started</a>
+          <a class="lp-btn lp-btn-ghost" href="{{ trial }}">Request a 30-day trial</a>
+        </div>
+        <p class="lp-fine">Source-available under the <a href="{{ repo }}/blob/main/LICENSE">Zyvor Production Licence v2.0</a>. A paid Order is required before you copy, build or run it. A 30-day trial is available on request, as an evaluation Order at no charge.</p>
+        <figure class="lp-art">
+          <div class="lp-shot">
+            {{ shot("board-wall", 2000, 1497, "Aether status board with six sample workloads: one not ready with an open incident, one stopped on purpose, one on a change hold, and a 24 hour uptime strip on each.", phone="board-phone", phone_w=780, phone_h=1560, small=true, eager=true) }}
+          </div>
+          <figcaption>The status board. The real dashboard, showing sample data.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="lp-section lp-alt" id="lp-runtimes" aria-labelledby="lp-spec-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-spec-title">Write it once.</h2>
+          <p class="lp-lead">One <code>aether/v1</code> file says what to build, what it needs, and where it is allowed to run.</p>
+        </div>
+        <div class="lp-spec lp-reveal">
+          <div class="lp-code">
+            <div class="lp-code-title">workload.yaml</div>
+            <pre tabindex="0" aria-label="Example workload specification"><code><span class="k">apiVersion</span>: <span class="v">aether/v1</span>
+<span class="k">kind</span>: <span class="v">Workload</span>
+<span class="k">metadata</span>:
+  <span class="k">name</span>: <span class="v">demo-webserver</span>
+  <span class="k">owner</span>: <span class="v">team</span>
+  <span class="k">project</span>: <span class="v">demo</span>
+<span class="k">build</span>:
+  <span class="k">context</span>: <span class="v">"."</span>
+  <span class="k">dockerfile</span>: <span class="v">Dockerfile</span>
+  <span class="k">registry</span>: <span class="v">localhost</span>
+<span class="k">requirements</span>:
+  <span class="k">cpu</span>: <span class="v">"500m"</span>
+  <span class="k">memory</span>: <span class="v">256Mi</span>
+  <span class="k">storage</span>: <span class="v">1Gi</span>
+<span class="k">runtime</span>:
+  <span class="k">preferred</span>: <span class="v">auto</span>
+  <span class="k">allow</span>: [<span class="v">container</span>, <span class="v">kube</span>, <span class="v">kubevirt</span>]
+<span class="k">network</span>:
+  <span class="k">service</span>: <span class="v">true</span>
+  <span class="k">ports</span>:
+    - <span class="k">containerPort</span>: <span class="v">8080</span>
+      <span class="k">servicePort</span>: <span class="v">80</span></code></pre>
+          </div>
+          <svg class="lp-fan" viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path class="a" d="M300 0C300 62 98 38 98 100"/>
+            <path class="b" d="M300 0V100"/>
+            <path class="c" d="M300 0C300 62 502 38 502 100"/>
+          </svg>
+          <ul class="lp-grid lp-grid-3">
+            <li class="lp-card lp-lane lp-lane-a"><h3>Podman</h3><p>Containers on one host: laptops, edge machines and CI runners. A Docker adapter is included too.</p></li>
+            <li class="lp-card lp-lane lp-lane-b"><h3>Kubernetes</h3><p>Cluster workloads with services, ingress and autoscaling.</p></li>
+            <li class="lp-card lp-lane lp-lane-c"><h3>KubeVirt</h3><p>Virtual machines on Kubernetes, for isolation, GPUs and live migration.</p></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section" aria-labelledby="lp-matrix-title">
+      <div class="lp-narrow">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-matrix-title">Know what gets lost. <span class="lp-grad">Before it does.</span></h2>
+          <p class="lp-lead">Runtimes are not equal. <code>aether portability</code> shows which of your fields each one honours, without touching a runtime.</p>
+        </div>
+        <div class="lp-table-wrap lp-reveal">
+          <table>
+            <thead>
+              <tr><th scope="col">Spec field</th><th scope="col">Podman</th><th scope="col">Kubernetes</th><th scope="col">KubeVirt</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row"><code>requirements.<wbr>cpu</code></th>{{ cell("part", "Only when rootful") }}{{ cell("ok") }}{{ cell("ok", "As vCPU cores") }}</tr>
+              <tr><th scope="row"><code>requirements.<wbr>gpu</code></th>{{ cell("no") }}{{ cell("part", "Needs a device plugin") }}{{ cell("ok") }}</tr>
+              <tr><th scope="row"><code>network.<wbr>ports</code></th>{{ cell("ok") }}{{ cell("ok") }}{{ cell("no") }}</tr>
+              <tr><th scope="row"><code>persistence</code></th>{{ cell("no") }}{{ cell("ok") }}{{ cell("part", "Class and access mode") }}</tr>
+              <tr><th scope="row"><code>health.<wbr>liveness</code></th>{{ cell("part", "Needs curl or bash in the image") }}{{ cell("ok") }}{{ cell("no") }}</tr>
+              <tr><th scope="row"><code>ingress</code></th>{{ cell("no") }}{{ cell("ok") }}{{ cell("no") }}</tr>
+              <tr><th scope="row"><code>scaling</code></th>{{ cell("no") }}{{ cell("ok") }}{{ cell("no") }}</tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="lp-fine lp-after">An excerpt of the matrix Aether ships. <a href="{{ 'guides/spec-tools/' | url }}">Lint, portability and plan</a> all work offline.</p>
+      </div>
+    </section>
+
+    <section class="lp-section lp-alt" aria-labelledby="lp-why-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-why-title">Ask why.</h2>
+          <p class="lp-lead">Aether scores each runtime you allow, and shows the reasons and warnings behind every score.</p>
+        </div>
+        <ul class="lp-grid lp-grid-4 lp-dims lp-reveal">
+          <li class="lp-card"><strong>30%</strong><h3>Cost</h3><p>What this size of workload costs to run there.</p></li>
+          <li class="lp-card"><strong>30%</strong><h3>Performance</h3><p>How CPU, memory and GPU needs fit.</p></li>
+          <li class="lp-card"><strong>25%</strong><h3>Reliability</h3><p>Health, restarts and isolation.</p></li>
+          <li class="lp-card"><strong>15%</strong><h3>Availability</h3><p>High availability, scaling and uptime profile.</p></li>
+        </ul>
+        <div class="lp-code lp-command lp-reveal">
+          <pre tabindex="0" aria-label="Command"><code>aether --spec workload.yaml decide --explain</code></pre>
+        </div>
+        <p class="lp-fine lp-after">Default weights shown; they are yours to change, and an <code>intent:</code> block shifts them. It is a rule-based estimate from your spec, not a benchmark: pass <code>--runtime</code> and that is where it goes. <a href="{{ 'guides/decision-engine/SCORING/' | url }}">How scoring works</a></p>
+      </div>
+    </section>
+
+    <section class="lp-section" id="lp-move" aria-labelledby="lp-move-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-move-title">Then move it.</h2>
+          <p class="lp-lead">Change runtime with one command and pick how careful to be.</p>
+        </div>
+        <div class="lp-code lp-command lp-reveal">
+          <pre tabindex="0" aria-label="Command"><code>aether migrate demo-webserver kubevirt --strategy blue-green</code></pre>
+        </div>
+        <ul class="lp-grid lp-grid-4 lp-steps lp-reveal">
+          <li class="lp-card"><h3>Immediate</h3><p>Stop the source, start the target, check it. Restarts the source if the target fails.</p></li>
+          <li class="lp-card"><h3>Blue-green <span class="lp-tag">Default</span></h3><p>Start the target while the source runs. Check it, wait up to 30 seconds, then remove the source.</p></li>
+          <li class="lp-card"><h3>Rolling</h3><p>Start the target, retry its health check, then step to 100% with a check at each step.</p></li>
+          <li class="lp-card"><h3>Canary</h3><p>Check the target at 10, 25, 50, 75 and 100 percent. Remove it if a step fails.</p></li>
+        </ul>
+        <div class="lp-note lp-reveal">
+          <strong>What a migration does not move</strong>
+          <p>Volume data, databases, IP addresses and DNS stay where they are. The percentages are health-gated steps: Aether does not split live traffic between runtimes. <a href="{{ 'guides/migration/MIGRATION-INTERNALS/' | url }}#limits-matrix">Read the limits</a></p>
+        </div>
+        <p class="lp-fine lp-after">Moving a KubeVirt VM to another node instead? <code>aether live-migrate</code> does that, for specs that enable it.</p>
+      </div>
+    </section>
+
+    <section class="lp-section lp-chapter-night" id="lp-operate" aria-labelledby="lp-board-title">
+      <div class="lp-wrap lp-split">
+        <div class="lp-head-left lp-reveal">
+          <h2 id="lp-board-title">Every workload. <span class="lp-grad">One glance.</span></h2>
+          <p class="lp-lead">A live tile for each managed workload: observed state, uptime strip, open incidents and holds.</p>
+          <ul class="lp-points">
+            <li><b>No data stays no data.</b>A period without a health check is drawn empty. It never counts as healthy.</li>
+            <li><b>Planned is not broken.</b>A workload you stopped through Aether says so, and opens no incident.</li>
+            <li><b>Wall or pocket.</b>A wall mode for the shared screen, and a layout that works on a phone.</li>
+          </ul>
+        </div>
+        <figure class="lp-art lp-reveal">
+          <div class="lp-shot">
+            <picture>
+              <source media="(max-width: 640px)" srcset="{{ 'assets/marketing/board-wall-dark-1000.webp' | url }}" width="1000" height="749">
+              <img src="{{ 'assets/marketing/board-phone-dark.webp' | url }}" width="780" height="1560" loading="lazy" decoding="async" alt="The status board on a phone: one workload needs attention, with its open incident and uptime strip.">
+            </picture>
+          </div>
+          <figcaption>Sample data.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="lp-section" aria-labelledby="lp-history-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-history-title">What changed? <span class="lp-grad">It is written down.</span></h2>
+          <p class="lp-lead">Changes, health, incidents, notes and holds on one timeline, with the spec diff and what it means on each runtime.</p>
+        </div>
+        <figure class="lp-art lp-art-wide lp-feature-shot lp-feature-narrow lp-reveal">
+          <div class="lp-shot">
+            {{ shot("timeline", 1500, 1606, "Workload timeline: an incident, a health change and a spec update, with a table showing that raising memory replaces the workload on Podman and KubeVirt and causes a rolling restart on Kubernetes.", phone="timeline-phone", phone_w=960, phone_h=1249) }}
+          </div>
+          <figcaption>A workload timeline, sample data. Changes made outside Aether are not recorded.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="lp-section lp-alt" aria-labelledby="lp-preview-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-preview-title">Look before you leap.</h2>
+          <p class="lp-lead">Preview an update, restart, stop, migration, rollback or delete. Blocked, caution or clear, and nothing changes.</p>
+        </div>
+        <figure class="lp-art lp-art-wide lp-feature-shot lp-feature-mid lp-reveal">
+          <div class="lp-shot">
+            {{ shot("preview", 1400, 807, "A change hold on the billing workload, and a delete preview marked blocked because of that hold.", phone="preview-phone", phone_w=820, phone_h=1096) }}
+          </div>
+          <figcaption>A change hold blocking a delete, sample data.</figcaption>
+        </figure>
+        <div class="lp-note lp-reveal">
+          <strong>How far this has been proven</strong>
+          <p>The status board and operations features have so far been verified against a test double for Podman, not against real runtimes. A hold does not stop <code>kubectl</code> or <code>podman</code>, and a rollback restores the spec, not volume data. <a href="{{ 'guides/operations/OPERATIONS-DESK/' | url }}">Operations desk guide</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section" aria-labelledby="lp-surfaces-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-surfaces-title">One engine. Four ways in.</h2>
+          <p class="lp-lead">The same control plane and the same state, wherever you work.</p>
+        </div>
+        <ul class="lp-grid lp-grid-4 lp-surfaces lp-reveal">
+          <li class="lp-card"><h3>Command line</h3><p>Deploy, migrate and inspect, with JSON and YAML output.</p><code>aether run</code></li>
+          <li class="lp-card"><h3>Terminal UI</h3><p>A full-screen view of your workloads in the terminal.</p><code>aether tui</code></li>
+          <li class="lp-card"><h3>Web dashboard</h3><p>Light and dark, with a command palette and live updates.</p><code>aether serve</code></li>
+          <li class="lp-card"><h3>REST and events</h3><p>An HTTP API, a server-sent event stream and Prometheus metrics.</p><code>/api</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="lp-section lp-alt" aria-labelledby="lp-trust-title">
+      <div class="lp-wrap">
+        <div class="lp-head lp-reveal">
+          <h2 id="lp-trust-title">Built to answer for itself.</h2>
+        </div>
+        <ul class="lp-grid lp-grid-4 lp-steps lp-reveal">
+          <li class="lp-card"><h3>Roles</h3><p>Admin, Operator and Viewer, enforced by the API. Sign-in with OIDC, SAML or LDAP.</p></li>
+          <li class="lp-card"><h3>Audit trail</h3><p>Changes are recorded with who made them. Hash checks catch careless edits, not a determined attacker.</p></li>
+          <li class="lp-card"><h3>Secrets</h3><p>Encrypted at rest with AES-256-GCM. Set your own key before you rely on it.</p></li>
+          <li class="lp-card"><h3>Offline licence check</h3><p>The key is verified on your machine. Nothing is sent to Zyvor.</p></li>
+        </ul>
+        <p class="lp-fine lp-after"><a href="{{ 'features/security/' | url }}">Security features</a></p>
+      </div>
+    </section>
+
+    <section class="lp-section lp-cta" aria-labelledby="lp-start-title">
+      <div class="lp-narrow lp-reveal">
+        <img class="lp-cta-mark" src="{{ 'assets/brand/aether-icon.svg' | url }}" alt="" width="84" height="84" loading="lazy">
+        <h2 id="lp-start-title">Start with one file.</h2>
+        <p class="lp-lead">Request a trial, build from source, and point Aether at the runtime you already have.</p>
+        <div class="lp-actions">
+          <a class="lp-btn" href="{{ trial }}">Request a 30-day trial</a>
+          <a class="lp-btn lp-btn-ghost" href="{{ 'getting-started/02-Quick-Start/' | url }}">Quick start</a>
+          <a class="lp-btn lp-btn-ghost" href="https://zyvor.dev/buy#aether">Pricing</a>
+        </div>
+        <p class="lp-fine">Production and any other use needs a paid Order under the Zyvor Production Licence v2.0. A public repository, package or working key grants no further rights. <a href="{{ repo }}/blob/main/LICENSE">Read the licence</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lp-footer">
+    <div class="lp-wrap">
+      <nav aria-label="Footer">
+        <ul>
+          <li><a href="{{ 'documentation/' | url }}">Documentation</a></li>
+          <li><a href="{{ 'getting-started/01-Installation/' | url }}">Installation</a></li>
+          <li><a href="{{ 'user-guide/' | url }}">User guide</a></li>
+          <li><a href="{{ 'reference/api/API-Reference/' | url }}">API reference</a></li>
+          <li><a href="{{ 'ROADMAP/' | url }}">Roadmap</a></li>
+          <li><a href="{{ repo }}/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="{{ 'legal/' | url }}">Legal</a></li>
+          <li><a href="{{ repo }}">GitHub</a></li>
+          <li><a href="mailto:sales@zyvor.dev?subject=Aether">Contact sales</a></li>
+        </ul>
+      </nav>
+      <p class="lp-company">
+        <img src="{{ 'assets/readme/zyvor-logo.svg' | url }}" alt="" width="24" height="24" loading="lazy">
+        <span>Aether is a <a href="https://zyvor.dev">Zyvor</a> product. © 2026 Zyvor AI Labs Private Limited.</span>
+      </p>
+      <p>Podman, Docker, Kubernetes and KubeVirt are trademarks of their respective owners, named to describe compatibility. Screens show the Aether dashboard with sample data.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Sections ease in as they arrive. Without script, or with reduced motion,
+       everything is simply visible. */
+    (function () {
+      if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var items = document.querySelectorAll('.lp-reveal');
+      var seen = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting || e.boundingClientRect.top < 0) {
+            e.target.classList.add('lp-in');
+            seen.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      items.forEach(function (el) {
+        if (el.getBoundingClientRect().top < innerHeight) el.classList.add('lp-in');
+        seen.observe(el);
+      });
+      document.documentElement.classList.add('lp-motion');
+    })();
+  </script>
+</body>
+</html>
