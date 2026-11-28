@@ -12,10 +12,10 @@ Each allowed runtime receives four dimension scores (0–1):
 
 | Dimension | Default weight | What it measures |
 |-----------|----------------|------------------|
-| Cost | 0.25 | Resource size vs runtime economics |
-| Performance | 0.25 | CPU/memory/GPU fit |
+| Cost | 0.30 | Resource size vs runtime economics |
+| Performance | 0.30 | CPU/memory/GPU fit |
 | Reliability | 0.25 | Health, restart, isolation |
-| Availability | 0.25 | HA, scaling, runtime uptime profile |
+| Availability | 0.15 | HA, scaling, runtime uptime profile |
 
 **Total score** = weighted sum × intent multipliers × workload-class adjustments.
 
