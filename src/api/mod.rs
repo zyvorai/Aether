@@ -1149,6 +1149,7 @@ pub async fn start_server(config: ApiConfig) -> anyhow::Result<()> {
         .route("/assets/aether-dashboard.css", get(serve_dashboard_css))
         .route("/assets/aether-dashboard.js", get(serve_dashboard_js))
         .route("/zyvor-logo.svg", get(serve_zyvor_logo_svg))
+        .merge(brand_asset_routes())
         .route("/health", get(health_check))
         .route("/api/licence", get(api_licence))
         .route("/api/events/stream", get(sse_events))

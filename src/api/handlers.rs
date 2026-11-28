@@ -474,6 +474,47 @@ const DASHBOARD_JS: &str = include_str!("../../web/dashboard/dist/assets/aether-
 // otherwise 404s into the SPA fallback below and silently renders as a
 // broken image. Embed those referenced-by-name here too.
 const ZYVOR_LOGO_SVG: &str = include_str!("../../web/dashboard/public/zyvor-logo.svg");
+/// Aether favicon, app icons and web manifest as `(path, content type, bytes)`.
+/// Every file `index.html` or the manifest points at must be listed here.
+const BRAND_ASSETS: &[(&str, &str, &[u8])] = &[
+    (
+        "/favicon.svg",
+        "image/svg+xml",
+        include_bytes!("../../web/dashboard/public/favicon.svg"),
+    ),
+    (
+        "/favicon.ico",
+        "image/x-icon",
+        include_bytes!("../../web/dashboard/public/favicon.ico"),
+    ),
+    (
+        "/apple-touch-icon.png",
+        "image/png",
+        include_bytes!("../../web/dashboard/public/apple-touch-icon.png"),
+    ),
+    (
+        "/icon-192.png",
+        "image/png",
+        include_bytes!("../../web/dashboard/public/icon-192.png"),
+    ),
+    (
+        "/icon-512.png",
+        "image/png",
+        include_bytes!("../../web/dashboard/public/icon-512.png"),
+    ),
+    (
+        "/icon-maskable-512.png",
+        "image/png",
+        include_bytes!("../../web/dashboard/public/icon-maskable-512.png"),
+    ),
+    (
+        "/site.webmanifest",
+        "application/manifest+json",
+        include_bytes!("../../web/dashboard/public/site.webmanifest"),
+    ),
+];
+// Stable file names, so let browsers revalidate daily to pick up a new release.
+const BRAND_CACHE_CONTROL: &str = "public, max-age=86400";
 const DASHBOARD_CACHE_CONTROL: &str = "no-store, no-cache, must-revalidate, max-age=0";
 
 /// GET / - Serve the web dashboard
@@ -519,6 +560,30 @@ pub(crate) async fn serve_zyvor_logo_svg() -> impl IntoResponse {
             (header::CACHE_CONTROL, "public, max-age=31536000, immutable"),
         ],
         ZYVOR_LOGO_SVG,
+    )
+}
+
+/// GET /favicon.svg and friends - Serve the embedded Aether icons and manifest
+pub(crate) fn brand_asset_routes<S>() -> axum::Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
+    BRAND_ASSETS.iter().fold(
+        axum::Router::new(),
+        |router, &(path, content_type, body)| {
+            router.route(
+                path,
+                axum::routing::get(move || async move {
+                    (
+                        [
+                            (header::CONTENT_TYPE, content_type),
+                            (header::CACHE_CONTROL, BRAND_CACHE_CONTROL),
+                        ],
+                        body,
+                    )
+                }),
+            )
+        },
     )
 }
 
@@ -5917,5 +5982,64 @@ mod spec_api_tests {
         let q = axum::extract::Query(SpecCiQuery { spec: None });
         let (st, _) = call(api_spec_ci(Path("jenkins".into()), q)).await;
         assert_eq!(st, StatusCode::BAD_REQUEST);
+    }
+}
+
+#[cfg(test)]
+mod brand_asset_tests {
+    use super::*;
+    use axum::body::{to_bytes, Body};
+    use tower::ServiceExt as _;
+
+    #[tokio::test]
+    async fn every_brand_asset_is_served_with_its_content_type() {
+        for &(path, content_type, body) in BRAND_ASSETS {
+            let req = axum::http::Request::get(path).body(Body::empty()).unwrap();
+            let res = brand_asset_routes::<()>().oneshot(req).await.unwrap();
+            assert_eq!(res.status(), StatusCode::OK, "{path}");
+            assert_eq!(res.headers()[header::CONTENT_TYPE], content_type, "{path}");
+            let served = to_bytes(res.into_body(), 1 << 20).await.unwrap();
+            assert_eq!(&served[..], body, "{path}");
+        }
+    }
+
+    #[test]
+    fn brand_asset_bytes_match_their_type() {
+        for &(path, content_type, body) in BRAND_ASSETS {
+            let ok = match content_type {
+                "image/png" => body.starts_with(b"\x89PNG\r\n\x1a\n"),
+                "image/x-icon" => body.starts_with(&[0, 0, 1, 0]),
+                "image/svg+xml" => body.starts_with(b"<svg"),
+                "application/manifest+json" => {
+                    serde_json::from_slice::<serde_json::Value>(body).is_ok()
+                }
+                _ => false,
+            };
+            assert!(ok, "{path} is not {content_type}");
+        }
+    }
+
+    #[test]
+    fn every_icon_the_page_and_manifest_name_is_embedded() {
+        let page = include_str!("../../web/dashboard/index.html");
+        let manifest: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../web/dashboard/public/site.webmanifest"
+        ))
+        .unwrap();
+        let linked = page
+            .lines()
+            .filter(|l| l.contains("rel=\"icon\"") || l.contains("apple-touch-icon\""))
+            .chain(page.lines().filter(|l| l.contains("rel=\"manifest\"")))
+            .filter_map(|l| l.split("href=\"").nth(1)?.split('"').next());
+        let icons = manifest["icons"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|i| i["src"].as_str().unwrap());
+        let wanted: Vec<&str> = linked.chain(icons).collect();
+        assert!(wanted.len() >= 7, "found only {wanted:?}");
+        for path in wanted {
+            assert!(BRAND_ASSETS.iter().any(|a| a.0 == path), "{path}");
+        }
     }
 }

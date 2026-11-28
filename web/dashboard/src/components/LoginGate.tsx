@@ -20,6 +20,7 @@ import {
   User,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { AetherIcon, AetherWordmark } from './brand';
 import {
   apiFetchAuthProviders,
   apiFetchHealth,
@@ -185,13 +186,11 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
 
       <section className="login-chapter login-hero text-center" aria-label="Aether">
         <div className="relative z-10 flex flex-col items-center">
-          <a href={ZYVOR_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3" title="zyvor.dev">
-            <img src="/zyvor-logo.svg" alt="Zyvor" width={40} height={40} className="rounded-xl shrink-0" />
-            <div className="text-left">
-              <div className="text-lg font-semibold tracking-tight text-foreground">Aether</div>
-              <div className="text-[11px] uppercase tracking-[0.04em] text-muted">Universal runtime control plane</div>
-            </div>
-          </a>
+          <div className="flex flex-col items-center">
+            <AetherIcon size={76} className="mb-5 hidden drop-shadow-xl lg:block" />
+            <AetherWordmark height={32} title="Aether" className="text-foreground" />
+            <div className="mt-2 text-[11px] uppercase tracking-[0.14em] text-muted">Universal runtime control plane</div>
+          </div>
           {health ? (
             <span
               data-tone="sky"
@@ -264,6 +263,8 @@ export default function LoginGate({ onAuthenticated, notice }: LoginGateProps) {
       <section id="login-sign-in-chapter" className="login-chapter login-panel" aria-label="Sign in">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
+            {/* Narrow screens put sign-in first, so the app icon leads here. */}
+            <AetherIcon size={56} className="mx-auto mb-5 lg:hidden" />
             <p className="text-xs font-semibold uppercase tracking-[0.04em] text-primary">Aether console</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">

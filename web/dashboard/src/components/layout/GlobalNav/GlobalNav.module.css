@@ -10,20 +10,9 @@
   border-bottom: 1px solid var(--nav-border);
 }
 .gnavInner { height: 100%; padding: 0 16px; display: flex; align-items: center; gap: 4px; }
-.mark { display: flex; align-items: center; gap: 8px; min-height: 36px; color: var(--foreground); background: none; border: 0; cursor: pointer; border-radius: 8px; }
-.markBadge {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--foreground);
-  color: var(--background);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 11px;
-}
-.word { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: var(--tracking-display); }
+.mark { display: flex; align-items: center; min-height: 36px; padding: 0 4px; color: var(--foreground); background: none; border: 0; cursor: pointer; border-radius: 8px; }
+/* The wordmark in the lockup; hidden on the narrowest screens. */
+.word { display: flex; }
 .envBadge {
   align-items: center;
   max-width: 14rem;
@@ -107,5 +96,5 @@
   .accountChevron { display: none; }
 }
 @media (max-width: 359px) {
-  .word { display: none; }
+  .mark .word { display: none; }
 }
