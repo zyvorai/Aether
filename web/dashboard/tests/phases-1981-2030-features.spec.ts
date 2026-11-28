@@ -21,7 +21,7 @@ test.describe('Phases 1981–2030 features', () => {
     await expect(page.getByTestId('platform-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('platform-links-more').click();
     await page.getByTestId('platform-intelligence-link').click();
-    await expect(page).toHaveURL(/\/intelligence\?workload=web.*tab=predictions/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/intelligence\/predictions\?workload=web.*tab=predictions/, { timeout: 10_000 });
   });
 
   test('phase 1991: gitops editor link', async ({ page }) => {

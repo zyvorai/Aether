@@ -35,7 +35,7 @@ test.describe('Phases 2081–2130 features', () => {
     await page.goto('/compose?workload=web');
     await expect(page.getByTestId('compose-workload-context')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('compose-workload-context').getByTestId('compose-context-gitops-link').click();
-    await expect(page).toHaveURL(/\/gitops\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/gitops\/sync\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 2101: workloads gitops link', async ({ page }) => {

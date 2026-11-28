@@ -73,7 +73,7 @@ test.describe('Phases 1781–1830 features', () => {
     await expect(page.getByTestId('workloads-context-banner')).toContainText('web', { timeout: 10_000 });
     await page.getByTestId('workloads-links-more').click();
     await page.getByTestId('workloads-platform-link').click();
-    await expect(page).toHaveURL(/\/platform\?workload=web/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/platform\/runtime\?workload=web/, { timeout: 10_000 });
   });
 
   test('phase 1801: sla drift link', async ({ page }) => {
