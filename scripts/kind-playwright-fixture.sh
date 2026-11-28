@@ -35,7 +35,6 @@ spec:
     image: nginx:1.25-alpine
     ports:
     - containerPort: 80
-    command: ["/bin/sh", "-c", "while true; do echo aether-exec-ok; sleep 3600; done"]
 YAML
 
 kubectl wait --for=condition=Ready pod/nginx-playwright -n default --timeout=120s
